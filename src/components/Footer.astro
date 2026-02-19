@@ -1,0 +1,39 @@
+---
+const currentYear = new Date().getFullYear();
+---
+
+<footer class="border-t border-slate-800 py-12">
+  <div class="mx-auto max-w-7xl px-6">
+    <div class="flex flex-col items-center justify-between gap-6 md:flex-row">
+      <div class="flex flex-col items-center gap-2 md:items-start">
+        <a href="/" class="text-lg font-bold">
+          <span class="gradient-text">Datanika</span>
+        </a>
+        <p class="text-sm text-slate-500">
+          Built with <span class="text-slate-400">dlt</span> + <span class="text-slate-400">dbt</span>
+        </p>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-center gap-6">
+        <a href="https://github.com/datanika/datanika" class="text-sm text-slate-400 transition-colors hover:text-white">
+          GitHub
+        </a>
+        <a href="#" class="text-sm text-slate-400 transition-colors hover:text-white">
+          Documentation
+        </a>
+        <a href="#" class="text-sm text-slate-400 transition-colors hover:text-white">
+          Privacy
+        </a>
+        <a href="#" class="text-sm text-slate-400 transition-colors hover:text-white">
+          Terms
+        </a>
+      </div>
+    </div>
+
+    <div class="mt-8 border-t border-slate-800/60 pt-6 text-center">
+      <p class="text-sm text-slate-500">
+        &copy; {currentYear} Datanika. All rights reserved.
+      </p>
+    </div>
+  </div>
+</footer>

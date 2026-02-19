@@ -1,0 +1,45 @@
+---
+---
+
+<section class="relative overflow-hidden pt-32 pb-20 md:pt-44 md:pb-32">
+  <!-- Background glows -->
+  <div class="glow -top-40 -left-40 bg-violet-600"></div>
+  <div class="glow -right-40 top-20 bg-cyan-500"></div>
+
+  <div class="relative mx-auto max-w-7xl px-6 text-center">
+    <div class="mx-auto max-w-3xl">
+      <h1 class="text-4xl font-extrabold tracking-tight text-white sm:text-5xl md:text-6xl lg:text-7xl">
+        Your Data Pipeline
+        <span class="gradient-text">Platform</span>
+      </h1>
+      <p class="mt-6 text-lg leading-relaxed text-slate-400 md:text-xl">
+        Extract, load, and transform your data with
+        <strong class="text-slate-200">dlt</strong> and
+        <strong class="text-slate-200">dbt</strong>.
+        Schedule pipelines, monitor runs, and collaborate across your team — all in one place.
+      </p>
+      <div class="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+        <a href="https://app.datanika.com" class="btn-primary text-lg">
+          Get Started Free
+        </a>
+        <a href="#features" class="btn-secondary text-lg">
+          Learn More
+        </a>
+      </div>
+    </div>
+
+    <!-- Decorative code snippet -->
+    <div class="mx-auto mt-16 max-w-2xl rounded-xl border border-slate-800 bg-slate-900/50 p-6 text-left backdrop-blur-sm">
+      <div class="flex items-center gap-2 mb-4">
+        <div class="h-3 w-3 rounded-full bg-red-500/60"></div>
+        <div class="h-3 w-3 rounded-full bg-yellow-500/60"></div>
+        <div class="h-3 w-3 rounded-full bg-green-500/60"></div>
+      </div>
+      <pre class="overflow-x-auto text-sm leading-relaxed"><code><span class="text-slate-500"># Connect → Extract & Load → Transform → Analytics</span>
+<span class="text-violet-400">source</span>: postgresql://warehouse:5432/sales
+<span class="text-cyan-400">pipeline</span>: daily_sales_sync
+<span class="text-violet-400">schedule</span>: "0 6 * * *"
+<span class="text-cyan-400">transform</span>: models/staging/stg_orders.sql</code></pre>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,66 @@
+---
+const links = [
+  { label: "Features", href: "#features" },
+  { label: "How It Works", href: "#how-it-works" },
+  { label: "Integrations", href: "#integrations" },
+  { label: "Pricing", href: "#pricing" },
+];
+---
+
+<nav class="fixed top-0 left-0 right-0 z-50 border-b border-slate-800/60 bg-[#0a0a0f]/80 backdrop-blur-lg">
+  <div class="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+    <a href="/" class="text-xl font-bold tracking-tight">
+      <span class="gradient-text">Datanika</span>
+    </a>
+
+    <!-- Desktop links -->
+    <div class="hidden items-center gap-8 md:flex">
+      {links.map((link) => (
+        <a
+          href={link.href}
+          class="text-sm text-slate-400 transition-colors hover:text-white"
+        >
+          {link.label}
+        </a>
+      ))}
+    </div>
+
+    <a href="https://app.datanika.com" class="btn-primary hidden text-sm md:inline-block">
+      Get Started
+    </a>
+
+    <!-- Mobile menu button -->
+    <button
+      id="mobile-menu-btn"
+      class="text-slate-400 hover:text-white md:hidden"
+      aria-label="Toggle menu"
+    >
+      <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+      </svg>
+    </button>
+  </div>
+
+  <!-- Mobile menu -->
+  <div id="mobile-menu" class="hidden border-t border-slate-800 px-6 pb-4 md:hidden">
+    {links.map((link) => (
+      <a
+        href={link.href}
+        class="block py-2 text-sm text-slate-400 transition-colors hover:text-white"
+      >
+        {link.label}
+      </a>
+    ))}
+    <a href="https://app.datanika.com" class="btn-primary mt-2 block text-center text-sm">
+      Get Started
+    </a>
+  </div>
+</nav>
+
+<script>
+  const btn = document.getElementById("mobile-menu-btn");
+  const menu = document.getElementById("mobile-menu");
+  btn?.addEventListener("click", () => {
+    menu?.classList.toggle("hidden");
+  });
+</script>
