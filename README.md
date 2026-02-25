@@ -1,43 +1,76 @@
-# Astro Starter Kit: Minimal
+# Datanika Landing Page
 
-```sh
-npm create astro@latest -- --template minimal
+Marketing website for [Datanika](../datanika/) — a data pipeline management platform.
+
+## Tech Stack
+
+- **Astro 5** — static site generator
+- **Tailwind CSS 4** — utility-first styling via `@tailwindcss/vite`
+- **Inter** — Google Fonts (weights 400–800)
+
+## Project Structure
+
 ```
-
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
-
-## 🚀 Project Structure
-
-Inside of your Astro project, you'll see the following folders and files:
-
-```text
-/
-├── public/
+datanika-landing/
 ├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
+│   ├── components/
+│   │   ├── Navbar.astro          # Fixed nav with logo, links, mobile menu
+│   │   ├── Hero.astro            # Headline, CTAs, decorative code snippet
+│   │   ├── Features.astro        # 6 feature cards grid
+│   │   ├── HowItWorks.astro      # 3-step workflow (Connect → Build → Run)
+│   │   ├── Integrations.astro    # 13 integration logos
+│   │   ├── Pricing.astro         # 4-tier pricing table
+│   │   ├── CtaBanner.astro       # Final call-to-action section
+│   │   └── Footer.astro          # Links and copyright
+│   ├── layouts/
+│   │   └── Layout.astro          # Base HTML layout with meta, fonts, styles
+│   ├── pages/
+│   │   └── index.astro           # Single page composing all components
+│   └── styles/
+│       └── global.css            # Tailwind import + custom theme
+├── astro.config.mjs
+├── package.json
+└── tsconfig.json
 ```
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+## Page Sections
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+### Feature Cards (6)
 
-Any static assets, like images, can be placed in the `public/` directory.
+1. **Extract & Load** — databases, APIs, files, Google Sheets via dlt
+2. **Transform** — SQL transformations powered by dbt-core
+3. **Orchestrate** — cron scheduling with detailed run logs
+4. **Multi-Tenant** — org isolation with 4-tier RBAC
+5. **Data Catalog** — auto-generated schema/table/column browser
+6. **SQL Editor** — full-screen editor with autocomplete and compiled SQL preview
 
-## 🧞 Commands
+### Integrations (13)
 
-All commands are run from the root of the project, from a terminal:
+PostgreSQL, MySQL, MSSQL, SQLite, BigQuery, Snowflake, Redshift, ClickHouse, MongoDB, S3, REST API, CSV/JSON/Parquet, Google Sheets
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
+### Pricing Tiers (4)
 
-## 👀 Want to learn more?
+| Tier | Price | Highlights |
+|------|-------|------------|
+| **Free** | $0/forever | 3 pipelines, 1 member, core integrations |
+| **Pro** | $49/month | Unlimited pipelines, 3 members, SQL editor, catalog |
+| **Team** | $99/month | 20 members, RBAC, dependency graph |
+| **Self-Hosted** | $1,999/year | Unlimited members, on-premise, SSO, dedicated support |
 
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+## Commands
+
+```bash
+npm install           # install dependencies
+npm run dev           # dev server on localhost:4321
+npm run build         # production build to dist/
+npm run preview       # preview production build
+```
+
+## Design Notes
+
+- **Dark theme** — near-black background (`#0a0a0f`) with slate text
+- **Gradient accents** — violet (`#8b5cf6`) to cyan (`#06b6d4`) on text, buttons, and borders
+- **Glassmorphism** — navbar uses `backdrop-blur-lg` with semi-transparent background
+- **Responsive** — mobile-first with `sm`/`md`/`lg` breakpoints
+- **Glow effects** — blurred circular gradients for depth
+- **Card borders** — all sections use bordered cards with subtle backgrounds
