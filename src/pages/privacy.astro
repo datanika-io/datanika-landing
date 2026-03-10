@@ -1,0 +1,138 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Navbar from "../components/Navbar.astro";
+import Footer from "../components/Footer.astro";
+---
+
+<Layout title="Privacy Policy — Datanika" description="Privacy Policy for Datanika data pipeline platform.">
+  <Navbar />
+  <main class="mx-auto max-w-4xl px-6 py-20">
+    <h1 class="mb-2 text-4xl font-bold gradient-text">Privacy Policy</h1>
+    <p class="mb-10 text-sm text-slate-500">Last updated: March 10, 2026</p>
+
+    <div class="space-y-8 text-slate-300 leading-relaxed [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:text-white [&_h2]:mb-3 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:space-y-1 [&_table]:w-full [&_table]:text-sm [&_th]:text-left [&_th]:py-2 [&_th]:pr-4 [&_th]:text-slate-400 [&_td]:py-2 [&_td]:pr-4">
+
+      <section>
+        <h2>1. Data Controller</h2>
+        <p>Individual Entrepreneur Evgenii Timofeev<br />Mikheil Tsinamdzgvrishvili st. 52, Tbilisi, Georgia<br />Identification number: 302355868<br />Email: <a href="mailto:info@datanika.io" class="text-violet-400 hover:underline">info@datanika.io</a></p>
+      </section>
+
+      <section>
+        <h2>2. Information We Collect</h2>
+
+        <p class="font-medium text-white mt-4 mb-2">Account information</p>
+        <ul>
+          <li>Name, email address (provided at registration or via OAuth)</li>
+          <li>Organization name</li>
+          <li>Authentication provider (Google, GitHub) and associated profile data</li>
+        </ul>
+
+        <p class="font-medium text-white mt-4 mb-2">Billing information</p>
+        <ul>
+          <li>Payment details are processed by Paddle.com (our Merchant of Record). We only store card brand and last four digits for display purposes.</li>
+          <li>We do not store full card numbers, CVVs, or bank account details.</li>
+        </ul>
+
+        <p class="font-medium text-white mt-4 mb-2">Usage data</p>
+        <ul>
+          <li>Pipeline run history, transformation logs, and configuration metadata</li>
+          <li>Feature usage metrics (model runs, connections, schedules) for billing</li>
+        </ul>
+
+        <p class="font-medium text-white mt-4 mb-2">Technical data</p>
+        <ul>
+          <li>IP address, browser type, operating system</li>
+          <li>Access logs (timestamps, requested URLs)</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>3. How We Use Your Information</h2>
+        <table>
+          <thead>
+            <tr><th>Purpose</th><th>Legal basis</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Provide and maintain the Service</td><td>Contract performance</td></tr>
+            <tr><td>Process payments and billing</td><td>Contract performance</td></tr>
+            <tr><td>Send service notifications (outages, security alerts)</td><td>Legitimate interest</td></tr>
+            <tr><td>Improve the Service and fix bugs</td><td>Legitimate interest</td></tr>
+            <tr><td>Comply with legal obligations</td><td>Legal requirement</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2>4. Data Sharing</h2>
+        <p>We do not sell your personal data. We share data only with:</p>
+        <ul>
+          <li><strong>Paddle.com</strong> — payment processing (as Merchant of Record)</li>
+          <li><strong>Hetzner Online GmbH</strong> — infrastructure hosting (servers in Germany)</li>
+          <li><strong>Cloudflare, Inc.</strong> — CDN, DDoS protection, DNS</li>
+          <li><strong>Google / GitHub</strong> — only if you use OAuth sign-in (authentication data)</li>
+          <li><strong>Law enforcement</strong> — only when required by law or valid legal process</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>5. Data Storage and Security</h2>
+        <ul>
+          <li>Your data is stored on servers in Nuremberg, Germany (Hetzner Cloud).</li>
+          <li>All data in transit is encrypted via TLS. Database credentials are encrypted at rest using Fernet symmetric encryption.</li>
+          <li>Access to production systems is restricted to authorized personnel only.</li>
+          <li>We perform daily database backups with 30-day retention.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>6. Data Retention</h2>
+        <ul>
+          <li>Account data is retained while your account is active.</li>
+          <li>After account deletion, personal data is removed within 30 days.</li>
+          <li>Pipeline run logs are retained for 90 days, then automatically purged.</li>
+          <li>Billing records are retained for 7 years as required by tax law.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>7. Your Rights</h2>
+        <p>You have the right to:</p>
+        <ul>
+          <li><strong>Access</strong> — request a copy of your personal data</li>
+          <li><strong>Rectification</strong> — correct inaccurate data</li>
+          <li><strong>Deletion</strong> — request deletion of your account and data</li>
+          <li><strong>Portability</strong> — receive your data in a machine-readable format</li>
+          <li><strong>Objection</strong> — object to processing based on legitimate interest</li>
+        </ul>
+        <p class="mt-2">To exercise any of these rights, email <a href="mailto:info@datanika.io" class="text-violet-400 hover:underline">info@datanika.io</a>. We will respond within 30 days.</p>
+      </section>
+
+      <section>
+        <h2>8. Cookies</h2>
+        <p>The Service uses only essential cookies required for authentication and session management. We do not use tracking cookies, analytics cookies, or third-party advertising cookies.</p>
+      </section>
+
+      <section>
+        <h2>9. International Transfers</h2>
+        <p>Your data is processed in the European Union (Germany). If you access the Service from outside the EU, your data will be transferred to and processed in Germany.</p>
+      </section>
+
+      <section>
+        <h2>10. Children</h2>
+        <p>The Service is not intended for users under 18 years of age. We do not knowingly collect data from children.</p>
+      </section>
+
+      <section>
+        <h2>11. Changes to This Policy</h2>
+        <p>We may update this Privacy Policy from time to time. We will notify you of material changes via email or through the Service. The "Last updated" date at the top indicates the latest revision.</p>
+      </section>
+
+      <section>
+        <h2>12. Contact</h2>
+        <p>For privacy-related questions or requests, contact us at <a href="mailto:info@datanika.io" class="text-violet-400 hover:underline">info@datanika.io</a>.</p>
+      </section>
+
+    </div>
+  </main>
+  <Footer />
+</Layout>

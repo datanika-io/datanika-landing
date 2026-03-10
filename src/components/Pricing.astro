@@ -6,56 +6,42 @@ const tiers = [
     period: "forever",
     description: "For individuals exploring data pipelines.",
     features: [
-      "Up to 3 pipelines",
       "1 team member",
-      "Community support",
+      "5 connections",
+      "2 schedules",
+      "500 model runs / month",
       "Core integrations",
+      "Community support",
     ],
     cta: "Get Started",
     highlighted: false,
   },
   {
     name: "Pro",
-    price: "$49",
+    price: "$79",
     period: "/month",
-    description: "For professionals and small teams.",
+    description: "For teams that need power and scale.",
     features: [
-      "Unlimited pipelines",
-      "Up to 3 team members",
-      "Priority support",
+      "5 team members",
+      "25 connections",
+      "Unlimited schedules",
+      "15,000 model runs / month",
       "All integrations",
-      "SQL editor & preview",
-      "Data catalog",
+      "Priority support",
     ],
     cta: "Start Free Trial",
     highlighted: true,
   },
   {
-    name: "Team",
-    price: "$99",
-    period: "/month",
-    description: "For growing teams that need collaboration.",
+    name: "Enterprise",
+    price: "Custom",
+    period: "",
+    description: "For organizations with advanced needs.",
     features: [
-      "Everything in Pro",
-      "Up to 20 team members",
-      "Role-based access (RBAC)",
-      "Advanced scheduling",
-      "Dependency graph",
-      "Team support",
-    ],
-    cta: "Start Free Trial",
-    highlighted: false,
-  },
-  {
-    name: "Self-Hosted",
-    price: "$1,999",
-    period: "/year",
-    description: "Full control on your own infrastructure.",
-    features: [
-      "Everything in Team",
       "Unlimited team members",
-      "Deploy on-premise or private cloud",
-      "License + updates included",
+      "Unlimited connections",
+      "Unlimited schedules",
+      "Unlimited model runs",
       "SSO & SAML",
       "Dedicated support",
     ],
@@ -76,7 +62,7 @@ const tiers = [
       </p>
     </div>
 
-    <div class="mt-16 grid gap-6 lg:grid-cols-4">
+    <div class="mt-16 grid gap-6 lg:grid-cols-3 max-w-5xl mx-auto">
       {tiers.map((tier) => (
         <div
           class:list={[
@@ -112,7 +98,7 @@ const tiers = [
           </ul>
 
           <a
-            href="https://app.datanika.com"
+            href="https://app.datanika.io"
             class:list={[
               "mt-8 block w-full rounded-lg py-3 text-center text-sm font-semibold transition-colors",
               tier.highlighted
