@@ -73,7 +73,7 @@ Tests:
     <li>Select a <strong>Destination Connection</strong> (the database where the model will be built)</li>
     <li>Choose a <strong>Materialization</strong>: <code>view</code>, <code>table</code>, <code>incremental</code>, <code>ephemeral</code>, or <code>snapshot</code></li>
     <li>Optionally set a target <strong>Schema</strong> (e.g., <code>analytics</code>) and <strong>Tags</strong></li>
-    <li>Write your SQL in the editor — use <code>{{ ref('model_name') }}</code> to reference other models</li>
+    <li>Write your SQL in the editor — use <code set:text={"{{ ref('model_name') }}"} /> to reference other models</li>
     <li>Click <strong>Preview SQL</strong> to compile and verify before running</li>
     <li>Click <strong>Create Transformation</strong> to save, then click <strong>Run</strong> to execute</li>
   </ol>
