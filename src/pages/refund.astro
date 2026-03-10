@@ -1,0 +1,69 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Navbar from "../components/Navbar.astro";
+import Footer from "../components/Footer.astro";
+---
+
+<Layout title="Refund Policy — Datanika" description="Refund Policy for Datanika data pipeline platform.">
+  <Navbar />
+  <main class="mx-auto max-w-4xl px-6 py-20">
+    <h1 class="mb-2 text-4xl font-bold gradient-text">Refund Policy</h1>
+    <p class="mb-10 text-sm text-slate-500">Last updated: March 10, 2026</p>
+
+    <div class="space-y-8 text-slate-300 leading-relaxed [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:text-white [&_h2]:mb-3 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:space-y-1">
+
+      <section>
+        <h2>1. Overview</h2>
+        <p>Datanika offers a free tier with no payment required. Paid subscriptions (Pro, Enterprise) are billed on a recurring basis through Paddle.com, our Merchant of Record. This policy outlines how refunds and cancellations are handled.</p>
+      </section>
+
+      <section>
+        <h2>2. Free Plan</h2>
+        <p>The Free plan requires no payment and is available indefinitely. There is nothing to refund.</p>
+      </section>
+
+      <section>
+        <h2>3. Paid Subscriptions</h2>
+        <ul>
+          <li>All subscription fees are non-refundable.</li>
+          <li>You may cancel your subscription at any time. Upon cancellation, you will retain access to paid features until the end of your current billing period.</li>
+          <li>No partial-period refunds are issued for unused time within a billing cycle.</li>
+          <li>Downgrading from a paid plan to the Free plan follows the same rule — access continues until the end of the billing period.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>4. Usage-Based Charges</h2>
+        <p>Overage charges for model runs beyond your plan's included limit are billed at the end of each billing cycle. These charges reflect actual usage and are non-refundable.</p>
+      </section>
+
+      <section>
+        <h2>5. Exceptions</h2>
+        <p>We may issue a pro-rata refund of prepaid fees in the following cases:</p>
+        <ul>
+          <li>Datanika experiences a prolonged service outage (more than 72 consecutive hours) that materially prevents you from using the platform.</li>
+          <li>Datanika materially breaches its obligations under the Terms of Service and fails to remedy the breach within 30 days of written notice.</li>
+          <li>A billing error results in an incorrect charge — we will correct it promptly.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>6. How to Request a Refund</h2>
+        <p>If you believe you qualify for a refund under the exceptions above, contact us at <a href="mailto:info@datanika.io" class="text-violet-400 hover:underline">info@datanika.io</a> with your account email and a description of the issue. We will review your request and respond within 7 business days.</p>
+      </section>
+
+      <section>
+        <h2>7. Chargebacks</h2>
+        <p>If you have a billing concern, please contact us before initiating a chargeback with your bank. We are committed to resolving disputes promptly and fairly.</p>
+      </section>
+
+      <section>
+        <h2>8. Contact</h2>
+        <p>For billing questions, contact us at <a href="mailto:info@datanika.io" class="text-violet-400 hover:underline">info@datanika.io</a>.</p>
+        <p class="mt-2 text-sm text-slate-500">Individual Entrepreneur Evgenii Timofeev<br />Mikheil Tsinamdzgvrishvili st. 52, Tbilisi, Georgia<br />ID: 302355868</p>
+      </section>
+
+    </div>
+  </main>
+  <Footer />
+</Layout>
