@@ -1,0 +1,42 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+---
+
+<DocsLayout title="API Keys">
+  <h1>API Keys</h1>
+  <p class="text-lg text-slate-400">Programmatic access for automation and integrations.</p>
+
+  <h2>Overview</h2>
+  <p><strong>API keys</strong> provide programmatic access to Datanika's API. Use them to trigger runs, query status, or integrate with CI/CD pipelines and external tools.</p>
+
+  <h3>Properties</h3>
+  <table>
+    <thead><tr><th>Field</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>name</code></td><td>Descriptive name (e.g., "CI/CD pipeline key")</td></tr>
+      <tr><td><code>scopes</code></td><td>Permission scopes limiting what the key can access</td></tr>
+      <tr><td><code>expires_at</code></td><td>Optional expiration date</td></tr>
+      <tr><td><code>last_used_at</code></td><td>Timestamp of last usage (tracked automatically)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Security</h2>
+  <ul>
+    <li>API keys are displayed <strong>only once</strong> at creation. Store them securely.</li>
+    <li>Keys are hashed with bcrypt before storage — we cannot recover a lost key.</li>
+    <li>Each key is tied to a specific user and organization.</li>
+    <li>Set an expiration date for keys used in temporary workflows.</li>
+    <li>Revoke keys instantly from the settings page.</li>
+  </ul>
+
+  <h2>Usage</h2>
+  <p>Include the API key in the <code>Authorization</code> header:</p>
+  <pre><code>curl -H "Authorization: Bearer dnk_your_api_key_here" \
+     https://app.datanika.io/api/v1/runs</code></pre>
+
+  <h3>Example</h3>
+  <pre><code>API Key: "GitHub Actions deploy key"
+Scopes: [runs.create, runs.read]
+Expires: 2027-01-01
+Created by: alice@acme.com</code></pre>
+</DocsLayout>

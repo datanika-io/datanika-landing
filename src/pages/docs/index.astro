@@ -1,0 +1,78 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+---
+
+<DocsLayout title="Overview">
+  <h1 class="gradient-text">Documentation</h1>
+  <p class="text-lg text-slate-400 mb-8">Learn how to build, orchestrate, and monitor data pipelines with Datanika.</p>
+
+  <h2>What is Datanika?</h2>
+  <p>Datanika is a data pipeline management platform that combines <strong>dlt</strong> (data load tool) for extracting and loading data with <strong>dbt</strong> (data build tool) for transformations. It provides a visual interface for managing your entire data workflow — from connecting sources to scheduling automated runs.</p>
+
+  <h2>Core Concepts</h2>
+  <p>Datanika is built around these key concepts:</p>
+
+  <div class="mt-6 grid gap-4 sm:grid-cols-2">
+    <a href="/docs/organizations" class="block rounded-xl border border-slate-800 p-5 transition-colors hover:border-violet-500/50">
+      <h3 class="!mt-0 text-white">Organizations & Members</h3>
+      <p class="text-sm text-slate-400 !mb-0">Workspaces, team members, and role-based access control.</p>
+    </a>
+    <a href="/docs/connections" class="block rounded-xl border border-slate-800 p-5 transition-colors hover:border-violet-500/50">
+      <h3 class="!mt-0 text-white">Connections</h3>
+      <p class="text-sm text-slate-400 !mb-0">Data sources and destinations — databases, APIs, cloud warehouses, files.</p>
+    </a>
+    <a href="/docs/uploads" class="block rounded-xl border border-slate-800 p-5 transition-colors hover:border-violet-500/50">
+      <h3 class="!mt-0 text-white">Uploads</h3>
+      <p class="text-sm text-slate-400 !mb-0">Extract data from sources and load it into destinations using dlt.</p>
+    </a>
+    <a href="/docs/transformations" class="block rounded-xl border border-slate-800 p-5 transition-colors hover:border-violet-500/50">
+      <h3 class="!mt-0 text-white">Transformations</h3>
+      <p class="text-sm text-slate-400 !mb-0">SQL-based data transformations powered by dbt.</p>
+    </a>
+    <a href="/docs/pipelines" class="block rounded-xl border border-slate-800 p-5 transition-colors hover:border-violet-500/50">
+      <h3 class="!mt-0 text-white">Pipelines</h3>
+      <p class="text-sm text-slate-400 !mb-0">Orchestrate multiple transformations as a single dbt pipeline.</p>
+    </a>
+    <a href="/docs/scheduling" class="block rounded-xl border border-slate-800 p-5 transition-colors hover:border-violet-500/50">
+      <h3 class="!mt-0 text-white">Scheduling & Dependencies</h3>
+      <p class="text-sm text-slate-400 !mb-0">Automate runs with cron schedules and define execution order.</p>
+    </a>
+    <a href="/docs/runs" class="block rounded-xl border border-slate-800 p-5 transition-colors hover:border-violet-500/50">
+      <h3 class="!mt-0 text-white">Runs & Monitoring</h3>
+      <p class="text-sm text-slate-400 !mb-0">Track execution history, logs, and errors.</p>
+    </a>
+    <a href="/docs/catalog" class="block rounded-xl border border-slate-800 p-5 transition-colors hover:border-violet-500/50">
+      <h3 class="!mt-0 text-white">Data Catalog</h3>
+      <p class="text-sm text-slate-400 !mb-0">Browse all tables and models discovered across your pipelines.</p>
+    </a>
+    <a href="/docs/file-uploads" class="block rounded-xl border border-slate-800 p-5 transition-colors hover:border-violet-500/50">
+      <h3 class="!mt-0 text-white">File Uploads</h3>
+      <p class="text-sm text-slate-400 !mb-0">Upload CSV, JSON, or Parquet files directly into your warehouse.</p>
+    </a>
+    <a href="/docs/api-keys" class="block rounded-xl border border-slate-800 p-5 transition-colors hover:border-violet-500/50">
+      <h3 class="!mt-0 text-white">API Keys</h3>
+      <p class="text-sm text-slate-400 !mb-0">Programmatic access for automation and integrations.</p>
+    </a>
+    <a href="/docs/audit-log" class="block rounded-xl border border-slate-800 p-5 transition-colors hover:border-violet-500/50">
+      <h3 class="!mt-0 text-white">Audit Log</h3>
+      <p class="text-sm text-slate-400 !mb-0">Track all actions performed by team members.</p>
+    </a>
+  </div>
+
+  <h2>Data Flow</h2>
+  <p>The typical data flow in Datanika follows this pattern:</p>
+  <pre><code>Sources ──&gt; Uploads (dlt) ──&gt; Transformations (dbt) ──&gt; Analytics
+   │          Extract+Load        Transform              │
+   │                                                     │
+   └── Connections ──────────────────────── Connections ──┘
+       (source)                             (destination)</code></pre>
+
+  <ol class="list-decimal pl-6 space-y-2 mt-4">
+    <li><strong>Connect</strong> your data sources and destinations</li>
+    <li><strong>Upload</strong> data from sources into your warehouse using dlt</li>
+    <li><strong>Transform</strong> raw data with SQL using dbt models</li>
+    <li><strong>Orchestrate</strong> with pipelines that run multiple transformations</li>
+    <li><strong>Schedule</strong> everything to run automatically</li>
+    <li><strong>Monitor</strong> run history, logs, and data quality</li>
+  </ol>
+</DocsLayout>

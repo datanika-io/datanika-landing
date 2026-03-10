@@ -1,0 +1,64 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+---
+
+<DocsLayout title="Runs & Monitoring">
+  <h1>Runs & Monitoring</h1>
+  <p class="text-lg text-slate-400">Track execution history, logs, and errors for all your data jobs.</p>
+
+  <h2>Overview</h2>
+  <p>A <strong>run</strong> is a single execution of an upload, transformation, or pipeline. Every time a job is triggered — manually or by a schedule — a run record is created to track its progress, outcome, and logs.</p>
+
+  <h3>Properties</h3>
+  <table>
+    <thead><tr><th>Field</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>target</code></td><td>The upload, transformation, or pipeline that was executed</td></tr>
+      <tr><td><code>status</code></td><td>Current state of the run (see below)</td></tr>
+      <tr><td><code>started_at</code></td><td>When execution began</td></tr>
+      <tr><td><code>finished_at</code></td><td>When execution completed (or failed)</td></tr>
+      <tr><td><code>rows_loaded</code></td><td>Number of rows processed (for uploads)</td></tr>
+      <tr><td><code>logs</code></td><td>Full execution logs (streamed in real-time)</td></tr>
+      <tr><td><code>error_message</code></td><td>Error details if the run failed</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Statuses</h2>
+  <table>
+    <thead><tr><th>Status</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>pending</code></td><td>Run is queued, waiting for a worker</td></tr>
+      <tr><td><code>running</code></td><td>Execution is in progress</td></tr>
+      <tr><td><code>success</code></td><td>Run completed without errors</td></tr>
+      <tr><td><code>failed</code></td><td>Run encountered an error</td></tr>
+      <tr><td><code>cancelled</code></td><td>Run was manually cancelled</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Run History</h2>
+  <p>The run history view lets you filter and browse all past executions:</p>
+  <ul>
+    <li>Filter by <strong>status</strong> (success, failed, etc.)</li>
+    <li>Filter by <strong>target type</strong> (upload, transformation, pipeline)</li>
+    <li>Filter by <strong>date range</strong></li>
+    <li>View <strong>streaming logs</strong> in real-time for running jobs</li>
+  </ul>
+
+  <h3>Example</h3>
+  <pre><code>Run #1247
+Target: Upload → "Sync Stripe data"
+Status: success
+Started: 2026-03-10 02:00:03 UTC
+Finished: 2026-03-10 02:03:47 UTC
+Duration: 3m 44s
+Rows loaded: 15,832</code></pre>
+
+  <h2>Error Handling & Retries</h2>
+  <p>When a run fails:</p>
+  <ul>
+    <li>The full error message and stack trace are captured in the run logs</li>
+    <li>The run status is set to <code>failed</code></li>
+    <li>If notifications are configured, team members are alerted</li>
+    <li>Failed runs can be retried manually from the UI</li>
+  </ul>
+</DocsLayout>

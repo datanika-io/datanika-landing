@@ -1,0 +1,72 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+---
+
+<DocsLayout title="Scheduling & Dependencies">
+  <h1>Scheduling & Dependencies</h1>
+  <p class="text-lg text-slate-400">Automate runs with cron schedules and define execution order with a dependency graph.</p>
+
+  <h2>Schedules</h2>
+  <p>A <strong>schedule</strong> triggers automated runs of uploads, transformations, or pipelines on a recurring basis using cron expressions.</p>
+
+  <h3>Properties</h3>
+  <table>
+    <thead><tr><th>Field</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>target</code></td><td>The upload, transformation, or pipeline to run</td></tr>
+      <tr><td><code>cron_expression</code></td><td>Cron schedule (e.g., <code>0 2 * * *</code> for daily at 2am)</td></tr>
+      <tr><td><code>timezone</code></td><td>Timezone for the schedule (default: UTC)</td></tr>
+      <tr><td><code>is_active</code></td><td>Enable or disable the schedule</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Cron Examples</h3>
+  <table>
+    <thead><tr><th>Expression</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><code>0 * * * *</code></td><td>Every hour</td></tr>
+      <tr><td><code>0 2 * * *</code></td><td>Daily at 2:00 AM</td></tr>
+      <tr><td><code>0 9 * * 1</code></td><td>Every Monday at 9:00 AM</td></tr>
+      <tr><td><code>*/15 * * * *</code></td><td>Every 15 minutes</td></tr>
+      <tr><td><code>0 0 1 * *</code></td><td>First day of every month at midnight</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Example</h3>
+  <pre><code>Schedule: "Nightly CRM sync"
+Target: Upload → "Sync Stripe data"
+Cron: 0 2 * * *
+Timezone: Europe/Berlin
+Active: yes</code></pre>
+
+  <h2>Dependencies</h2>
+  <p>A <strong>dependency</strong> defines the execution order between two nodes. When a downstream node is triggered, Datanika checks that the upstream node has completed successfully within the specified timeframe.</p>
+
+  <h3>Properties</h3>
+  <table>
+    <thead><tr><th>Field</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>upstream</code></td><td>The node that must complete first</td></tr>
+      <tr><td><code>downstream</code></td><td>The node that depends on the upstream</td></tr>
+      <tr><td><code>check_timeframe</code></td><td>Optional — how recent the upstream run must be (e.g., "2 hours")</td></tr>
+    </tbody>
+  </table>
+
+  <h3>DAG Visualization</h3>
+  <p>Dependencies form a directed acyclic graph (DAG). Datanika validates the graph to prevent circular dependencies and displays it visually in the dashboard.</p>
+
+  <pre><code>Upload: CRM Data ──┐
+                    ├──&gt; Transform: dim_customers ──&gt; Pipeline: Analytics
+Upload: Billing  ──┘</code></pre>
+
+  <p>In this example, the "Analytics" pipeline depends on "dim_customers", which in turn depends on both "CRM Data" and "Billing" uploads completing successfully.</p>
+
+  <h2>How It Works</h2>
+  <ol class="list-decimal pl-6 space-y-2">
+    <li>The scheduler triggers a node based on its cron expression</li>
+    <li>Before execution, Datanika checks all upstream dependencies</li>
+    <li>If an upstream hasn't run successfully (within the timeframe), the run is skipped</li>
+    <li>If all dependencies are satisfied, the run proceeds</li>
+    <li>Downstream nodes are not automatically triggered — each must have its own schedule</li>
+  </ol>
+</DocsLayout>

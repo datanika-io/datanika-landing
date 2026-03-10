@@ -1,0 +1,48 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+---
+
+<DocsLayout title="File Uploads">
+  <h1>File Uploads</h1>
+  <p class="text-lg text-slate-400">Upload CSV, JSON, or Parquet files directly into your warehouse.</p>
+
+  <h2>Overview</h2>
+  <p><strong>File uploads</strong> let you drag and drop data files directly into Datanika. The files are parsed, validated, and loaded into your destination database — no connection setup required for the source side.</p>
+
+  <h3>Supported Formats</h3>
+  <table>
+    <thead><tr><th>Format</th><th>Extensions</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>CSV</td><td><code>.csv</code></td><td>Auto-detects delimiter, encoding, and headers</td></tr>
+      <tr><td>JSON</td><td><code>.json</code></td><td>Supports arrays of objects and nested structures</td></tr>
+      <tr><td>Parquet</td><td><code>.parquet</code></td><td>Binary columnar format — fastest for large files</td></tr>
+    </tbody>
+  </table>
+
+  <h3>File Metadata</h3>
+  <table>
+    <thead><tr><th>Field</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>original_name</code></td><td>Original filename as uploaded</td></tr>
+      <tr><td><code>content_type</code></td><td>MIME type (e.g., <code>text/csv</code>)</td></tr>
+      <tr><td><code>file_size</code></td><td>Size in bytes</td></tr>
+      <tr><td><code>file_hash</code></td><td>SHA-256 hash for deduplication</td></tr>
+    </tbody>
+  </table>
+
+  <h2>How It Works</h2>
+  <ol class="list-decimal pl-6 space-y-2">
+    <li>Drag and drop a file (or click to browse)</li>
+    <li>Datanika validates the file format and previews the data</li>
+    <li>Choose a destination connection and target schema/table name</li>
+    <li>Select write disposition (append, replace, or merge)</li>
+    <li>Run the upload — data is loaded into your warehouse</li>
+  </ol>
+
+  <h3>Example</h3>
+  <pre><code>File: sales_q1_2026.csv
+Size: 2.4 MB
+Destination: Analytics DB → raw.sales_q1
+Write mode: replace
+Result: 48,293 rows loaded</code></pre>
+</DocsLayout>

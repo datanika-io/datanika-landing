@@ -1,0 +1,57 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+---
+
+<DocsLayout title="Pipelines">
+  <h1>Pipelines</h1>
+  <p class="text-lg text-slate-400">Orchestrate multiple transformations as a single dbt pipeline.</p>
+
+  <h2>Overview</h2>
+  <p>A <strong>pipeline</strong> executes one or more dbt models together in a single run. While individual transformations can be run standalone, pipelines let you orchestrate them — running selected models with a specific dbt command.</p>
+
+  <h3>Properties</h3>
+  <table>
+    <thead><tr><th>Field</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>name</code></td><td>Display name (e.g., "Nightly analytics refresh")</td></tr>
+      <tr><td><code>description</code></td><td>Optional description</td></tr>
+      <tr><td><code>destination_connection</code></td><td>Which database to run against</td></tr>
+      <tr><td><code>command</code></td><td>dbt command to execute (see below)</td></tr>
+      <tr><td><code>models</code></td><td>List of selected models to run</td></tr>
+      <tr><td><code>custom_selector</code></td><td>Optional dbt selector expression for advanced filtering</td></tr>
+      <tr><td><code>full_refresh</code></td><td>Force full rebuild of incremental models</td></tr>
+      <tr><td><code>status</code></td><td><code>draft</code>, <code>active</code>, <code>paused</code>, or <code>error</code></td></tr>
+    </tbody>
+  </table>
+
+  <h2>Commands</h2>
+  <table>
+    <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><code>run</code></td><td>Build selected models (default)</td></tr>
+      <tr><td><code>build</code></td><td>Run models + tests in dependency order</td></tr>
+      <tr><td><code>test</code></td><td>Run data quality tests only</td></tr>
+      <tr><td><code>seed</code></td><td>Load CSV seed files into the warehouse</td></tr>
+      <tr><td><code>snapshot</code></td><td>Execute SCD Type 2 snapshots</td></tr>
+      <tr><td><code>compile</code></td><td>Compile SQL without executing (preview)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Example</h3>
+  <pre><code>Pipeline: "Nightly Analytics Refresh"
+Destination: Postgres → Analytics DB
+Command: build
+Models: [stg_customers, stg_orders, dim_customers, fct_revenue]
+Full Refresh: false</code></pre>
+
+  <h2>Model Selection</h2>
+  <p>You can select models to run in two ways:</p>
+  <ul>
+    <li><strong>Pick from list</strong> — select individual models from the UI</li>
+    <li><strong>Custom selector</strong> — use dbt selector syntax for advanced patterns:
+      <pre><code>tag:nightly          # all models tagged "nightly"
+stg_*                # all staging models
++dim_customers       # dim_customers and all upstream dependencies</code></pre>
+    </li>
+  </ul>
+</DocsLayout>

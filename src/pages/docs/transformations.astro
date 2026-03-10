@@ -1,0 +1,73 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+---
+
+<DocsLayout title="Transformations">
+  <h1>Transformations</h1>
+  <p class="text-lg text-slate-400">SQL-based data transformations powered by dbt.</p>
+
+  <h2>Overview</h2>
+  <p>A <strong>transformation</strong> is a SQL model managed by <a href="https://www.getdbt.com">dbt</a>. Write SQL to transform raw data into clean, analytics-ready tables. Datanika handles the dbt project structure, compilation, and execution behind the scenes.</p>
+
+  <h3>Properties</h3>
+  <table>
+    <thead><tr><th>Field</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>name</code></td><td>Model name — becomes the dbt model filename (e.g., "dim_customers")</td></tr>
+      <tr><td><code>description</code></td><td>Optional description</td></tr>
+      <tr><td><code>sql_body</code></td><td>The SQL transformation logic</td></tr>
+      <tr><td><code>materialization</code></td><td>How the model is stored (see below)</td></tr>
+      <tr><td><code>schema_name</code></td><td>Target schema (e.g., "staging", "analytics")</td></tr>
+      <tr><td><code>destination_connection</code></td><td>Which database to run against</td></tr>
+      <tr><td><code>tags</code></td><td>dbt tags for selective execution</td></tr>
+      <tr><td><code>tests_config</code></td><td>Data quality tests (see below)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Materializations</h2>
+  <table>
+    <thead><tr><th>Type</th><th>Behavior</th><th>Use case</th></tr></thead>
+    <tbody>
+      <tr><td><code>view</code></td><td>Creates a database view</td><td>Lightweight, always fresh, small datasets</td></tr>
+      <tr><td><code>table</code></td><td>Creates a physical table (rebuilt each run)</td><td>Frequently queried, moderate datasets</td></tr>
+      <tr><td><code>incremental</code></td><td>Only processes new/changed rows</td><td>Large datasets, append-heavy workloads</td></tr>
+      <tr><td><code>ephemeral</code></td><td>Inlined as CTE, not materialized</td><td>Intermediate logic, no direct querying</td></tr>
+      <tr><td><code>snapshot</code></td><td>SCD Type 2 — tracks historical changes</td><td>Slowly changing dimensions</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Data Quality Tests</h2>
+  <p>Add tests to validate your transformed data. Tests run after each transformation and flag issues:</p>
+  <ul>
+    <li><code>not_null</code> — column must not contain NULL values</li>
+    <li><code>unique</code> — column values must be unique</li>
+    <li><code>accepted_values</code> — column must only contain specified values</li>
+    <li><code>relationships</code> — referential integrity to another model</li>
+  </ul>
+
+  <h3>Example</h3>
+  <pre><code>Transformation: "dim_customers"
+Schema: analytics
+Materialization: table
+
+SQL:
+  SELECT
+    c.id AS customer_id,
+    c.name,
+    c.email,
+    COUNT(o.id) AS total_orders,
+    SUM(o.amount) AS lifetime_value
+  FROM raw_stripe.customers c
+  LEFT JOIN raw_stripe.orders o ON o.customer_id = c.id
+  GROUP BY c.id, c.name, c.email
+
+Tests:
+  - customer_id: not_null, unique
+  - email: not_null</code></pre>
+
+  <h2>SQL Preview</h2>
+  <p>Use the <strong>Compile</strong> feature to preview the compiled SQL before running. This shows the exact query dbt will execute, with all Jinja and ref() calls resolved.</p>
+
+  <h2>dbt Packages</h2>
+  <p>Install community dbt packages (e.g., <code>dbt_utils</code>, <code>dbt_date</code>) to extend your transformations with reusable macros and tests. Manage packages through the UI — Datanika handles <code>packages.yml</code> and <code>dbt deps</code> automatically.</p>
+</DocsLayout>

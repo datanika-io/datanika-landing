@@ -1,0 +1,60 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+---
+
+<DocsLayout title="Organizations & Members">
+  <h1>Organizations & Members</h1>
+  <p class="text-lg text-slate-400">Workspaces, team collaboration, and role-based access control.</p>
+
+  <h2>Organizations</h2>
+  <p>An <strong>organization</strong> is the top-level workspace in Datanika. All resources — connections, uploads, transformations, pipelines, and schedules — belong to an organization. Data is fully isolated between organizations.</p>
+
+  <h3>Properties</h3>
+  <table>
+    <thead><tr><th>Field</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>name</code></td><td>Display name of the organization (e.g., "Acme Corp")</td></tr>
+      <tr><td><code>slug</code></td><td>Unique URL-safe identifier (e.g., "acme-corp")</td></tr>
+      <tr><td><code>default_dbt_schema</code></td><td>Default schema name for dbt projects (default: "datanika")</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Example</h3>
+  <p>When you sign up, you create your first organization. You can then invite team members and assign roles.</p>
+  <pre><code>Organization: "My Data Team"
+Slug: my-data-team
+Default dbt schema: analytics</code></pre>
+
+  <h2>Members</h2>
+  <p>Each user can belong to multiple organizations. A <strong>membership</strong> defines the relationship between a user and an organization, including their role.</p>
+
+  <h2>Roles</h2>
+  <p>Datanika uses four roles with hierarchical permissions:</p>
+
+  <table>
+    <thead><tr><th>Role</th><th>Permissions</th></tr></thead>
+    <tbody>
+      <tr><td><code>Owner</code></td><td>Full access. Can delete the organization, manage billing, and transfer ownership.</td></tr>
+      <tr><td><code>Admin</code></td><td>Manage members, connections, and all resources. Cannot delete the organization.</td></tr>
+      <tr><td><code>Editor</code></td><td>Create and modify uploads, transformations, pipelines, and schedules.</td></tr>
+      <tr><td><code>Viewer</code></td><td>Read-only access to all resources, runs, and logs.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Example</h3>
+  <pre><code>Organization: "Acme Corp"
+Members:
+  - alice@acme.com    → Owner
+  - bob@acme.com      → Admin
+  - carol@acme.com    → Editor
+  - dave@acme.com     → Viewer</code></pre>
+
+  <h2>Authentication</h2>
+  <p>Users can sign in with:</p>
+  <ul>
+    <li><strong>Email & password</strong> — standard registration with bcrypt-hashed passwords</li>
+    <li><strong>Google OAuth</strong> — sign in with your Google account</li>
+    <li><strong>GitHub OAuth</strong> — sign in with your GitHub account</li>
+  </ul>
+  <p>OAuth users are automatically created on first sign-in. No separate registration step is needed.</p>
+</DocsLayout>

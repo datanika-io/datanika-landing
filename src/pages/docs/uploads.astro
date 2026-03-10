@@ -1,0 +1,63 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+---
+
+<DocsLayout title="Uploads">
+  <h1>Uploads</h1>
+  <p class="text-lg text-slate-400">Extract data from sources and load it into destinations using dlt.</p>
+
+  <h2>Overview</h2>
+  <p>An <strong>upload</strong> is an Extract + Load job powered by <a href="https://dlthub.com">dlt</a> (data load tool). It reads data from a source connection, applies optional configuration, and loads it into a destination connection.</p>
+
+  <h3>Properties</h3>
+  <table>
+    <thead><tr><th>Field</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>name</code></td><td>Display name (e.g., "Load CRM data")</td></tr>
+      <tr><td><code>description</code></td><td>Optional description</td></tr>
+      <tr><td><code>source_connection</code></td><td>Where to read data from</td></tr>
+      <tr><td><code>destination_connection</code></td><td>Where to load data into</td></tr>
+      <tr><td><code>dlt_config</code></td><td>dlt pipeline configuration (tables, write mode, schema)</td></tr>
+      <tr><td><code>status</code></td><td><code>draft</code>, <code>active</code>, <code>paused</code>, or <code>error</code></td></tr>
+    </tbody>
+  </table>
+
+  <h2>Load Modes</h2>
+  <p>Uploads support two modes:</p>
+  <ul>
+    <li><strong>Single table</strong> — load a specific table or query from the source</li>
+    <li><strong>Full database</strong> — replicate all tables from the source database</li>
+  </ul>
+
+  <h2>Write Disposition</h2>
+  <p>Control how data is written to the destination:</p>
+  <table>
+    <thead><tr><th>Mode</th><th>Behavior</th></tr></thead>
+    <tbody>
+      <tr><td><code>append</code></td><td>Add new rows without touching existing data</td></tr>
+      <tr><td><code>replace</code></td><td>Drop and recreate the table on each run</td></tr>
+      <tr><td><code>merge</code></td><td>Upsert — update existing rows and insert new ones (requires a primary key)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Schema Contract</h2>
+  <p>Define how Datanika handles schema changes detected in the source:</p>
+  <table>
+    <thead><tr><th>Mode</th><th>Behavior</th></tr></thead>
+    <tbody>
+      <tr><td><code>evolve</code></td><td>Automatically add new columns (default)</td></tr>
+      <tr><td><code>freeze</code></td><td>Reject runs if schema changes are detected</td></tr>
+      <tr><td><code>discard</code></td><td>Silently ignore new columns</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Example</h3>
+  <pre><code>Upload: "Sync Stripe data"
+Source: REST API → Stripe API
+Destination: Postgres → Analytics DB
+Config:
+  tables: [customers, invoices, subscriptions]
+  write_disposition: merge
+  primary_key: id
+  schema: raw_stripe</code></pre>
+</DocsLayout>

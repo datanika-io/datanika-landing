@@ -1,0 +1,82 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+---
+
+<DocsLayout title="Connections">
+  <h1>Connections</h1>
+  <p class="text-lg text-slate-400">Data sources and destinations — databases, APIs, cloud warehouses, and files.</p>
+
+  <h2>Overview</h2>
+  <p>A <strong>connection</strong> represents a data source or destination. Connections store encrypted credentials and configuration needed to access external systems. They are reusable across multiple uploads and pipelines.</p>
+
+  <h3>Properties</h3>
+  <table>
+    <thead><tr><th>Field</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>name</code></td><td>Display name (e.g., "Production Postgres")</td></tr>
+      <tr><td><code>connection_type</code></td><td>Type of system (see supported types below)</td></tr>
+      <tr><td><code>direction</code></td><td><code>source</code>, <code>destination</code>, or <code>both</code></td></tr>
+      <tr><td><code>config</code></td><td>Connection credentials (encrypted at rest with Fernet)</td></tr>
+      <tr><td><code>freshness_config</code></td><td>Optional source freshness checks (warn/error thresholds)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Supported Types</h2>
+
+  <h3>Databases</h3>
+  <table>
+    <thead><tr><th>Type</th><th>Direction</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><code>postgres</code></td><td>Source & Destination</td><td>PostgreSQL 12+</td></tr>
+      <tr><td><code>mysql</code></td><td>Source & Destination</td><td>MySQL 5.7+</td></tr>
+      <tr><td><code>mssql</code></td><td>Source & Destination</td><td>SQL Server 2016+</td></tr>
+      <tr><td><code>sqlite</code></td><td>Source</td><td>Local SQLite files</td></tr>
+      <tr><td><code>mongodb</code></td><td>Source</td><td>MongoDB 4.0+</td></tr>
+      <tr><td><code>clickhouse</code></td><td>Destination</td><td>ClickHouse 21+</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Cloud Warehouses</h3>
+  <table>
+    <thead><tr><th>Type</th><th>Direction</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><code>bigquery</code></td><td>Destination</td><td>Google BigQuery (service account JSON)</td></tr>
+      <tr><td><code>snowflake</code></td><td>Destination</td><td>Snowflake (account, warehouse, database)</td></tr>
+      <tr><td><code>redshift</code></td><td>Destination</td><td>Amazon Redshift</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Files & APIs</h3>
+  <table>
+    <thead><tr><th>Type</th><th>Direction</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><code>csv</code></td><td>Source</td><td>CSV files (local or uploaded)</td></tr>
+      <tr><td><code>json</code></td><td>Source</td><td>JSON files (local or uploaded)</td></tr>
+      <tr><td><code>parquet</code></td><td>Source</td><td>Parquet files (local or uploaded)</td></tr>
+      <tr><td><code>s3</code></td><td>Source</td><td>Amazon S3 bucket (CSV/JSON/Parquet)</td></tr>
+      <tr><td><code>google_sheets</code></td><td>Source</td><td>Google Sheets (service account)</td></tr>
+      <tr><td><code>rest_api</code></td><td>Source</td><td>Any REST API with configurable endpoints</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Security</h2>
+  <p>All connection credentials are <strong>encrypted at rest</strong> using Fernet symmetric encryption before being stored in the database. Credentials are only decrypted in memory when a run is executed.</p>
+
+  <h3>Example</h3>
+  <pre><code>Connection: "Production Postgres"
+Type: postgres
+Direction: source
+Config:
+  host: db.example.com
+  port: 5432
+  database: production
+  username: readonly_user
+  password: ••••••••</code></pre>
+
+  <h2>Source Freshness</h2>
+  <p>You can configure freshness checks on source connections to monitor whether data is arriving on time. This uses dbt's source freshness feature.</p>
+  <pre><code>Freshness Config:
+  loaded_at_field: updated_at
+  warn_after: 12 hours
+  error_after: 24 hours</code></pre>
+</DocsLayout>

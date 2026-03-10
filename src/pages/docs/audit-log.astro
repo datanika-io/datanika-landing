@@ -1,0 +1,52 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+---
+
+<DocsLayout title="Audit Log">
+  <h1>Audit Log</h1>
+  <p class="text-lg text-slate-400">Track all actions performed by team members for compliance and debugging.</p>
+
+  <h2>Overview</h2>
+  <p>The <strong>audit log</strong> records every significant action in your organization. Entries are immutable — they cannot be edited or deleted. Use the audit log for security reviews, compliance, and troubleshooting.</p>
+
+  <h3>Properties</h3>
+  <table>
+    <thead><tr><th>Field</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>user</code></td><td>Who performed the action</td></tr>
+      <tr><td><code>action</code></td><td>Type of action (see below)</td></tr>
+      <tr><td><code>resource_type</code></td><td>What type of entity was affected (e.g., "Connection", "Pipeline")</td></tr>
+      <tr><td><code>resource_id</code></td><td>ID of the affected entity</td></tr>
+      <tr><td><code>old_values</code></td><td>Previous state (for updates and deletes)</td></tr>
+      <tr><td><code>new_values</code></td><td>New state (for creates and updates)</td></tr>
+      <tr><td><code>ip_address</code></td><td>IP address of the user</td></tr>
+      <tr><td><code>created_at</code></td><td>When the action occurred</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Tracked Actions</h2>
+  <table>
+    <thead><tr><th>Action</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>create</code></td><td>A new resource was created</td></tr>
+      <tr><td><code>update</code></td><td>An existing resource was modified</td></tr>
+      <tr><td><code>delete</code></td><td>A resource was deleted</td></tr>
+      <tr><td><code>login</code></td><td>User signed in</td></tr>
+      <tr><td><code>logout</code></td><td>User signed out</td></tr>
+      <tr><td><code>run</code></td><td>A run was triggered</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Example</h3>
+  <pre><code set:text={`Audit Log Entry:
+  User: alice@acme.com
+  Action: update
+  Resource: Connection #12 ("Production Postgres")
+  Old values: { "name": "Prod DB" }
+  New values: { "name": "Production Postgres" }
+  IP: 203.0.113.42
+  Time: 2026-03-10 14:23:07 UTC`} /></pre>
+
+  <h2>Retention</h2>
+  <p>Audit log entries are retained for the lifetime of your organization. They are included in database backups and can be exported on request.</p>
+</DocsLayout>

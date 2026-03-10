@@ -1,0 +1,56 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+---
+
+<DocsLayout title="Data Catalog">
+  <h1>Data Catalog</h1>
+  <p class="text-lg text-slate-400">Browse all tables and models discovered across your pipelines.</p>
+
+  <h2>Overview</h2>
+  <p>The <strong>data catalog</strong> automatically indexes every table and model created by your uploads and transformations. It provides a searchable inventory of all data assets in your organization.</p>
+
+  <h3>Properties</h3>
+  <table>
+    <thead><tr><th>Field</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>entry_type</code></td><td><code>source_table</code> (from uploads) or <code>dbt_model</code> (from transformations)</td></tr>
+      <tr><td><code>origin</code></td><td>Which upload, transformation, or pipeline created this entry</td></tr>
+      <tr><td><code>table_name</code></td><td>Table name in the database</td></tr>
+      <tr><td><code>schema_name</code></td><td>Schema name (e.g., "raw_stripe", "analytics")</td></tr>
+      <tr><td><code>dataset_name</code></td><td>Dataset identifier (platform-specific)</td></tr>
+      <tr><td><code>connection</code></td><td>Which connection this table lives in</td></tr>
+      <tr><td><code>description</code></td><td>Optional human-readable description</td></tr>
+      <tr><td><code>columns</code></td><td>Column metadata — names, types, descriptions</td></tr>
+    </tbody>
+  </table>
+
+  <h2>How It Works</h2>
+  <p>Catalog entries are created automatically when:</p>
+  <ul>
+    <li>An <strong>upload</strong> loads data — each destination table becomes a <code>source_table</code> entry</li>
+    <li>A <strong>transformation</strong> or <strong>pipeline</strong> runs — each dbt model becomes a <code>dbt_model</code> entry</li>
+  </ul>
+  <p>Column metadata (names, types) is captured from the dbt manifest after each run.</p>
+
+  <h3>Example</h3>
+  <pre><code>Catalog Entry:
+  Type: source_table
+  Table: raw_stripe.customers
+  Schema: raw_stripe
+  Origin: Upload → "Sync Stripe data"
+  Connection: Analytics DB
+  Columns:
+    - id (bigint)
+    - name (varchar)
+    - email (varchar)
+    - created_at (timestamp)</code></pre>
+
+  <h2>Search & Browse</h2>
+  <p>Use the catalog UI to:</p>
+  <ul>
+    <li>Search tables by name or schema</li>
+    <li>Filter by entry type (source tables vs. dbt models)</li>
+    <li>See which upload or transformation created each table</li>
+    <li>View column-level metadata</li>
+  </ul>
+</DocsLayout>
