@@ -40,6 +40,19 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
     </tbody>
   </table>
 
+  <h2>How to create an upload</h2>
+  <ol class="list-decimal pl-6 space-y-2">
+    <li>Navigate to <strong>Uploads</strong> in the sidebar</li>
+    <li>Click <strong>New Upload</strong></li>
+    <li>Enter a name and optional description</li>
+    <li>Select a <strong>Source</strong> connection (where data comes from)</li>
+    <li>Select a <strong>Destination</strong> connection (where data goes)</li>
+    <li>Choose mode: <strong>Single table</strong> (specify table name) or <strong>Full database</strong> (replicate all tables)</li>
+    <li>Select a write disposition: <code>append</code>, <code>replace</code>, or <code>merge</code> (merge requires a primary key)</li>
+    <li>Optionally enable <strong>incremental loading</strong> by specifying a cursor column (e.g., <code>updated_at</code>)</li>
+    <li>Click <strong>Create Upload</strong> to save, then click <strong>Run</strong> to execute</li>
+  </ol>
+
   <h2>Schema Contract</h2>
   <p>Define how Datanika handles schema changes detected in the source:</p>
   <table>

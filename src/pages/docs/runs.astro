@@ -53,6 +53,16 @@ Finished: 2026-03-10 02:03:47 UTC
 Duration: 3m 44s
 Rows loaded: 15,832</code></pre>
 
+  <h2>How to monitor and manage runs</h2>
+  <ol class="list-decimal pl-6 space-y-2">
+    <li>Navigate to <strong>Runs</strong> in the sidebar to see all execution history</li>
+    <li>Use the <strong>Status</strong> filter to show only <code>success</code>, <code>failed</code>, <code>running</code>, or <code>pending</code> runs</li>
+    <li>Use the <strong>Target type</strong> filter to narrow down to uploads, transformations, or pipelines</li>
+    <li>Click on a run row to expand <strong>Logs</strong> — logs stream in real-time for running jobs</li>
+    <li>For failed runs, check the <strong>Error</strong> column for a summary and the logs for the full stack trace</li>
+    <li>To re-run a failed job, go back to the source (upload/transformation/pipeline) and click <strong>Run</strong></li>
+  </ol>
+
   <h2>Error Handling & Retries</h2>
   <p>When a run fails:</p>
   <ul>

@@ -44,6 +44,19 @@ Command: build
 Models: [stg_customers, stg_orders, dim_customers, fct_revenue]
 Full Refresh: false</code></pre>
 
+  <h2>How to create a pipeline</h2>
+  <ol class="list-decimal pl-6 space-y-2">
+    <li>Navigate to <strong>Pipelines</strong> in the sidebar</li>
+    <li>Click <strong>New Pipeline</strong></li>
+    <li>Enter a name and optional description</li>
+    <li>Select a <strong>Destination Connection</strong></li>
+    <li>Choose a <strong>dbt Command</strong>: <code>build</code> (run + test), <code>run</code>, <code>test</code>, <code>seed</code>, <code>snapshot</code>, or <code>compile</code></li>
+    <li>Add models: click <strong>Add Model</strong> and select from your transformations. Optionally include upstream (+) or downstream (+) dependencies</li>
+    <li>Alternatively, use a <strong>Custom Selector</strong> for advanced patterns (e.g., <code>tag:nightly</code> or <code>+dim_customers</code>)</li>
+    <li>Toggle <strong>Full Refresh</strong> if you want to rebuild incremental models from scratch</li>
+    <li>Click <strong>Create Pipeline</strong> to save, then click <strong>Run</strong> to execute</li>
+  </ol>
+
   <h2>Model Selection</h2>
   <p>You can select models to run in two ways:</p>
   <ul>

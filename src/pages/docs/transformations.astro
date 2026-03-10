@@ -65,6 +65,20 @@ Tests:
   - customer_id: not_null, unique
   - email: not_null</code></pre>
 
+  <h2>How to create a transformation</h2>
+  <ol class="list-decimal pl-6 space-y-2">
+    <li>Navigate to <strong>Transformations</strong> in the sidebar</li>
+    <li>Click <strong>New Transformation</strong></li>
+    <li>Enter a model name (e.g., <code>dim_customers</code>) — letters, digits, underscores, and hyphens only</li>
+    <li>Select a <strong>Destination Connection</strong> (the database where the model will be built)</li>
+    <li>Choose a <strong>Materialization</strong>: <code>view</code>, <code>table</code>, <code>incremental</code>, <code>ephemeral</code>, or <code>snapshot</code></li>
+    <li>Optionally set a target <strong>Schema</strong> (e.g., <code>analytics</code>) and <strong>Tags</strong></li>
+    <li>Write your SQL in the editor — use <code>{{ ref('model_name') }}</code> to reference other models</li>
+    <li>Click <strong>Preview SQL</strong> to compile and verify before running</li>
+    <li>Click <strong>Create Transformation</strong> to save, then click <strong>Run</strong> to execute</li>
+  </ol>
+  <p>For a full-screen editing experience, click <strong>SQL Editor</strong> to open the dedicated editor with autocomplete.</p>
+
   <h2>SQL Preview</h2>
   <p>Use the <strong>Compile</strong> feature to preview the compiled SQL before running. This shows the exact query dbt will execute, with all Jinja and ref() calls resolved.</p>
 

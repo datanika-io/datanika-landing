@@ -73,6 +73,18 @@ Config:
   username: readonly_user
   password: ••••••••</code></pre>
 
+  <h2>How to add a connection</h2>
+  <ol class="list-decimal pl-6 space-y-2">
+    <li>Navigate to <strong>Connections</strong> in the sidebar</li>
+    <li>Click <strong>New Connection</strong></li>
+    <li>Enter a descriptive name (e.g., "Production Postgres")</li>
+    <li>Select the connection type from the dropdown (e.g., <code>postgres</code>, <code>bigquery</code>, <code>s3</code>)</li>
+    <li>Fill in the required fields — host, port, database, credentials, etc. Fields change based on the selected type</li>
+    <li>Click <strong>Test Connection</strong> to verify credentials are correct</li>
+    <li>Click <strong>Create Connection</strong> to save</li>
+  </ol>
+  <p>You can also toggle <strong>Use raw JSON config</strong> to paste connection credentials as a JSON object directly.</p>
+
   <h2>Source Freshness</h2>
   <p>You can configure freshness checks on source connections to monitor whether data is arriving on time. This uses dbt's source freshness feature.</p>
   <pre><code>Freshness Config:

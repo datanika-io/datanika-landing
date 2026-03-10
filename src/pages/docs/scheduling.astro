@@ -39,6 +39,28 @@ Cron: 0 2 * * *
 Timezone: Europe/Berlin
 Active: yes</code></pre>
 
+  <h2>How to create a schedule</h2>
+  <ol class="list-decimal pl-6 space-y-2">
+    <li>Navigate to <strong>Schedules</strong> in the sidebar</li>
+    <li>Click <strong>New Schedule</strong></li>
+    <li>Start typing the <strong>Target name</strong> — autocomplete will suggest available uploads, transformations, and pipelines</li>
+    <li>Enter a <strong>Cron expression</strong> (e.g., <code>0 2 * * *</code> for daily at 2 AM)</li>
+    <li>Optionally set a <strong>Timezone</strong> (defaults to UTC)</li>
+    <li>Click <strong>Create Schedule</strong> — the schedule is active immediately</li>
+    <li>Use the <strong>Pause</strong>/<strong>Resume</strong> buttons to temporarily disable a schedule</li>
+  </ol>
+
+  <h2>How to set up dependencies</h2>
+  <ol class="list-decimal pl-6 space-y-2">
+    <li>Navigate to <strong>Dependencies</strong> (DAG) in the sidebar</li>
+    <li>Click <strong>Add Dependency</strong></li>
+    <li>Select the <strong>Upstream type</strong> (upload, transformation, or pipeline) and name</li>
+    <li>Select the <strong>Downstream type</strong> and name</li>
+    <li>Optionally set a <strong>Check Timeframe</strong> — how recent the upstream run must be (e.g., "2 hours")</li>
+    <li>Click <strong>Add</strong> — the dependency graph updates automatically</li>
+  </ol>
+  <p>When a scheduled downstream node triggers, Datanika checks that all upstream dependencies have completed successfully within the configured timeframe before proceeding.</p>
+
   <h2>Dependencies</h2>
   <p>A <strong>dependency</strong> defines the execution order between two nodes. When a downstream node is triggered, Datanika checks that the upstream node has completed successfully within the specified timeframe.</p>
 

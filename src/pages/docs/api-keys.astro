@@ -29,6 +29,18 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
     <li>Revoke keys instantly from the settings page.</li>
   </ul>
 
+  <h2>How to create an API key</h2>
+  <ol class="list-decimal pl-6 space-y-2">
+    <li>Navigate to <strong>Settings</strong> in the sidebar</li>
+    <li>Scroll to the <strong>API Keys</strong> section</li>
+    <li>Click <strong>Create API Key</strong></li>
+    <li>Enter a descriptive name (e.g., "CI/CD pipeline key")</li>
+    <li>Select the permission <strong>scopes</strong> the key should have</li>
+    <li>Optionally set an <strong>expiration date</strong></li>
+    <li>Click <strong>Create</strong> — the key is displayed <strong>only once</strong>, so copy and store it securely</li>
+  </ol>
+  <p>To revoke a key, click <strong>Delete</strong> next to it in the API Keys table. Revocation is immediate.</p>
+
   <h2>Usage</h2>
   <p>Include the API key in the <code>Authorization</code> header:</p>
   <pre><code>curl -H "Authorization: Bearer dnk_your_api_key_here" \
