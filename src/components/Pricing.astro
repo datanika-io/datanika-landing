@@ -34,9 +34,9 @@ const tiers = [
   },
   {
     name: "Enterprise",
-    price: "Custom",
-    period: "",
-    description: "For organizations with advanced needs.",
+    price: "From $299",
+    period: "/month",
+    description: "For organizations with advanced needs. Custom pricing based on team size and usage.",
     features: [
       "Unlimited team members",
       "Unlimited connections",
@@ -46,6 +46,7 @@ const tiers = [
       "Dedicated support",
     ],
     cta: "Contact Us",
+    ctaHref: "mailto:info@datanika.io",
     highlighted: false,
   },
 ];
@@ -98,7 +99,7 @@ const tiers = [
           </ul>
 
           <a
-            href="https://app.datanika.io"
+            href={tier.ctaHref || "https://app.datanika.io"}
             class:list={[
               "mt-8 block w-full rounded-lg py-3 text-center text-sm font-semibold transition-colors",
               tier.highlighted
