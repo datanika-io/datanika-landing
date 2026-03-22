@@ -32,7 +32,8 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
       <tr><td><code>mssql</code></td><td>Source & Destination</td><td>SQL Server 2016+</td></tr>
       <tr><td><code>sqlite</code></td><td>Source</td><td>Local SQLite files</td></tr>
       <tr><td><code>mongodb</code></td><td>Source</td><td>MongoDB 4.0+</td></tr>
-      <tr><td><code>clickhouse</code></td><td>Destination</td><td>ClickHouse 21+</td></tr>
+      <tr><td><code>clickhouse</code></td><td>Source & Destination</td><td>ClickHouse 21+ (supports clustered ReplicatedMergeTree)</td></tr>
+      <tr><td><code>duckdb</code></td><td>Source & Destination</td><td>DuckDB (embedded analytics)</td></tr>
     </tbody>
   </table>
 
@@ -43,10 +44,34 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
       <tr><td><code>bigquery</code></td><td>Destination</td><td>Google BigQuery (service account JSON)</td></tr>
       <tr><td><code>snowflake</code></td><td>Destination</td><td>Snowflake (account, warehouse, database)</td></tr>
       <tr><td><code>redshift</code></td><td>Destination</td><td>Amazon Redshift</td></tr>
+      <tr><td><code>databricks</code></td><td>Destination</td><td>Databricks Lakehouse</td></tr>
+      <tr><td><code>synapse</code></td><td>Destination</td><td>Azure Synapse Analytics</td></tr>
     </tbody>
   </table>
 
-  <h3>Files & APIs</h3>
+  <h3>SaaS & APIs</h3>
+  <table>
+    <thead><tr><th>Type</th><th>Direction</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><code>stripe</code></td><td>Source</td><td>Customers, invoices, subscriptions, products, charges</td></tr>
+      <tr><td><code>github</code></td><td>Source</td><td>Issues, PRs, commits, stargazers (per repo)</td></tr>
+      <tr><td><code>hubspot</code></td><td>Source</td><td>Contacts, companies, deals, tickets, quotes</td></tr>
+      <tr><td><code>salesforce</code></td><td>Source</td><td>Accounts, contacts, opportunities, leads, campaigns</td></tr>
+      <tr><td><code>shopify</code></td><td>Source</td><td>Orders, products, customers</td></tr>
+      <tr><td><code>jira</code></td><td>Source</td><td>Issues, users, workflows, projects</td></tr>
+      <tr><td><code>slack</code></td><td>Source</td><td>Channels, messages, users, threads</td></tr>
+      <tr><td><code>google_analytics</code></td><td>Source</td><td>GA4 reports (property ID + service account)</td></tr>
+      <tr><td><code>google_ads</code></td><td>Source</td><td>Customers, campaigns, ad groups, ads</td></tr>
+      <tr><td><code>facebook_ads</code></td><td>Source</td><td>Campaigns, ad sets, ads, leads, creatives</td></tr>
+      <tr><td><code>zendesk</code></td><td>Source</td><td>Tickets, users, organizations, groups</td></tr>
+      <tr><td><code>airtable</code></td><td>Source</td><td>Tables from a base (API key + base ID)</td></tr>
+      <tr><td><code>notion</code></td><td>Source</td><td>Databases and pages</td></tr>
+      <tr><td><code>kafka</code></td><td>Source</td><td>Streaming consumer (bootstrap servers + topics)</td></tr>
+      <tr><td><code>rest_api</code></td><td>Source</td><td>Any REST API with configurable endpoints</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Files</h3>
   <table>
     <thead><tr><th>Type</th><th>Direction</th><th>Notes</th></tr></thead>
     <tbody>
