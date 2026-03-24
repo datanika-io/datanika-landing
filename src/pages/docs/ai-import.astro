@@ -1,0 +1,56 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+---
+
+<DocsLayout title="AI-Powered Import">
+  <h1>AI-Powered Import</h1>
+  <p class="text-lg text-slate-400">Describe your data pipelines in plain English and let AI generate the configuration for you.</p>
+
+  <h2>How It Works</h2>
+  <ol>
+    <li>Give the <a href="https://github.com/datanika-io/datanika-core/blob/master/AI_IMPORT_GUIDE.md">AI Import Guide</a> to any AI assistant (ChatGPT, Claude, Gemini, etc.)</li>
+    <li>Describe what you want: <em>"I have a MySQL database with orders and customers. Load them into Postgres, create staging models, and build a customer orders summary."</em></li>
+    <li>The AI generates a JSON file with all your connections, uploads, pipelines, and transformations</li>
+    <li>Upload the JSON in Datanika via <strong>Settings &rarr; Restore from Backup</strong></li>
+    <li>Enter your real passwords (the AI sets them to <code>CHANGE_ME</code> for security)</li>
+    <li>Run your pipelines</li>
+  </ol>
+
+  <h2>What AI Can Configure</h2>
+  <table>
+    <thead><tr><th>Component</th><th>What AI generates</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Connections</strong></td><td>Source and destination databases, APIs, files (32 types supported)</td></tr>
+      <tr><td><strong>Uploads</strong></td><td>dlt Extract + Load jobs with table selection, write modes, incremental keys, filters</td></tr>
+      <tr><td><strong>Pipelines</strong></td><td>dbt orchestration with model selectors and commands (run, build, test, seed)</td></tr>
+      <tr><td><strong>Transformations</strong></td><td>dbt SQL models with materialization, tests, tags, and incremental config</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Example Prompt</h2>
+  <div class="code-block">
+    <p><em>"I have three data sources:</em></p>
+    <ul>
+      <li><em>A PostgreSQL database (orders, products, inventory)</em></li>
+      <li><em>Stripe (customers, invoices, subscriptions)</em></li>
+      <li><em>Google Sheets (marketing spend by channel)</em></li>
+    </ul>
+    <p><em>Load everything into BigQuery. Create staging models for each source, then build a mart that shows revenue by product and channel."</em></p>
+  </div>
+
+  <p>The AI will generate a complete JSON with 4 connections, 5 uploads, 1 pipeline, and 6+ transformations &mdash; ready to import.</p>
+
+  <h2>Import is Non-Destructive</h2>
+  <p>Importing never deletes existing data. If an item with the same name already exists, you choose:</p>
+  <ul>
+    <li><strong>Skip</strong> &mdash; keep your existing configuration</li>
+    <li><strong>Overwrite</strong> &mdash; replace with the imported version</li>
+    <li><strong>Rename</strong> &mdash; import as a copy (appends "Copy" to the name)</li>
+  </ul>
+
+  <h2>Security</h2>
+  <p>The AI never sees your real passwords. All sensitive fields (<code>password</code>, <code>api_key</code>, <code>aws_secret_access_key</code>, <code>service_account_json</code>) are set to <code>CHANGE_ME</code>. You enter real credentials in Datanika after import.</p>
+
+  <h2>JSON Format Reference</h2>
+  <p>See the full specification: <a href="https://github.com/datanika-io/datanika-core/blob/master/AI_IMPORT_GUIDE.md">AI Import Guide on GitHub</a></p>
+</DocsLayout>
