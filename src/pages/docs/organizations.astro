@@ -21,12 +21,26 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
 
   <h3>Example</h3>
   <p>When you sign up, you create your first organization. You can then invite team members and assign roles.</p>
-  <pre><code>Organization: "My Data Team"
+  <pre><code set:html={`Organization: "My Data Team"
 Slug: my-data-team
-Default dbt schema: analytics</code></pre>
+Default dbt schema: analytics`} /></pre>
 
-  <h2>Members</h2>
+  <h2>Members & Invitations</h2>
   <p>Each user can belong to multiple organizations. A <strong>membership</strong> defines the relationship between a user and an organization, including their role.</p>
+
+  <h3>How to invite members</h3>
+  <p>You can invite anyone by email — they don't need an existing account.</p>
+  <ol class="list-decimal pl-6 space-y-2">
+    <li>Go to <strong>Settings</strong> in the sidebar</li>
+    <li>In the <strong>Invitations</strong> section, enter the person's email and select a role</li>
+    <li>Click <strong>Send Invitation</strong></li>
+    <li>The person receives an email with a link to accept the invitation</li>
+    <li>If they already have an account, they are added immediately. If not, the link takes them to sign up and auto-joins the organization after registration.</li>
+  </ol>
+  <p>Pending invitations can be cancelled before they are accepted.</p>
+
+  <h3>Managing members</h3>
+  <p>To change a member's role, use the role dropdown next to their name in the members table. To remove a member, click the <strong>Remove</strong> button.</p>
 
   <h2>Roles</h2>
   <p>Datanika uses four roles with hierarchical permissions:</p>
@@ -41,32 +55,23 @@ Default dbt schema: analytics</code></pre>
     </tbody>
   </table>
 
-  <h3>Example</h3>
-  <pre><code>Organization: "Acme Corp"
-Members:
-  - alice@acme.com    → Owner
-  - bob@acme.com      → Admin
-  - carol@acme.com    → Editor
-  - dave@acme.com     → Viewer</code></pre>
-
-  <h2>How to add users to an organization</h2>
-  <p><strong>Important:</strong> The person you want to add must first create an account at <a href="https://app.datanika.io">app.datanika.io</a> (via email registration, Google, or GitHub sign-in). You cannot invite users who have not signed up yet.</p>
-  <ol class="list-decimal pl-6 space-y-2">
-    <li>Ask the new team member to <strong>sign up</strong> at <a href="https://app.datanika.io">app.datanika.io</a> if they haven't already</li>
-    <li>Navigate to <strong>Settings</strong> in the sidebar</li>
-    <li>Scroll to the <strong>Members</strong> section</li>
-    <li>Enter the user's <strong>exact registration email</strong> in the Email field</li>
-    <li>Select a role from the dropdown: <code>owner</code>, <code>admin</code>, <code>editor</code>, or <code>viewer</code></li>
-    <li>Click <strong>Add</strong> — the user will immediately appear in your organization's member list</li>
-  </ol>
-  <p>To change a member's role, use the role dropdown next to their name in the members table. To remove a member, click the <strong>Remove</strong> button.</p>
-
   <h2>Authentication</h2>
   <p>Users can sign in with:</p>
   <ul>
-    <li><strong>Email & password</strong> — standard registration with bcrypt-hashed passwords</li>
+    <li><strong>Email & password</strong> — standard registration with email verification</li>
     <li><strong>Google OAuth</strong> — sign in with your Google account</li>
     <li><strong>GitHub OAuth</strong> — sign in with your GitHub account</li>
+    <li><strong>SSO (SAML / OIDC)</strong> — Enterprise plan only. Configured per organization.</li>
   </ul>
-  <p>OAuth users are automatically created on first sign-in. No separate registration step is needed.</p>
+  <p>OAuth and SSO users are automatically created on first sign-in. No separate registration step is needed.</p>
+
+  <h3>Email Verification</h3>
+  <p>On the cloud edition, new accounts registered via email must verify their email address before accessing the platform. A verification link is sent automatically after registration. OAuth and SSO users are auto-verified (the provider already confirmed their email).</p>
+
+  <h3>SSO (Enterprise)</h3>
+  <p>Organizations on the Enterprise plan can configure SAML or OIDC single sign-on. This allows team members to authenticate via your company's identity provider (Okta, Azure AD, Google Workspace, etc.).</p>
+  <p>SSO is configured in <strong>Settings</strong> by an organization owner or admin. Each organization can have one active SSO configuration.</p>
+
+  <h3>Bot Protection</h3>
+  <p>Login and signup forms are protected by reCAPTCHA v3 (invisible, score-based) when configured. This prevents brute-force attacks and automated abuse without adding friction for real users.</p>
 </DocsLayout>
