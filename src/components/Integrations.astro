@@ -1,36 +1,51 @@
 ---
-const integrations = [
-  "PostgreSQL",
-  "MySQL",
-  "MSSQL",
-  "SQLite",
-  "BigQuery",
-  "Snowflake",
-  "Redshift",
-  "ClickHouse",
-  "DuckDB",
-  "Databricks",
-  "Azure Synapse",
-  "MongoDB",
-  "S3",
-  "REST API",
-  "CSV / JSON / Parquet",
-  "Google Sheets",
-  "Stripe",
-  "GitHub",
-  "HubSpot",
-  "Salesforce",
-  "Shopify",
-  "Jira",
-  "Slack",
-  "Google Analytics",
-  "Google Ads",
-  "Facebook Ads",
-  "Zendesk",
-  "Airtable",
-  "Notion",
-  "Kafka",
+const categories = [
+  {
+    title: "OLTP Databases",
+    color: "violet",
+    icon: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />`,
+    items: ["PostgreSQL", "MySQL", "MSSQL", "SQLite", "MongoDB"],
+  },
+  {
+    title: "OLAP & Warehouses",
+    color: "cyan",
+    icon: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />`,
+    items: ["BigQuery", "Snowflake", "Redshift", "ClickHouse", "DuckDB", "Databricks", "Azure Synapse"],
+  },
+  {
+    title: "CRM & Sales",
+    color: "emerald",
+    icon: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />`,
+    items: ["HubSpot", "Salesforce", "Shopify", "Stripe", "Zendesk"],
+  },
+  {
+    title: "Productivity & Dev",
+    color: "amber",
+    icon: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 010 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 010-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />`,
+    items: ["Jira", "Slack", "GitHub", "Airtable", "Notion", "Google Sheets"],
+  },
+  {
+    title: "Marketing & Analytics",
+    color: "rose",
+    icon: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />`,
+    items: ["Google Analytics", "Google Ads", "Facebook Ads"],
+  },
+  {
+    title: "Files & Streaming",
+    color: "sky",
+    icon: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />`,
+    items: ["S3", "CSV / JSON / Parquet", "REST API", "Kafka"],
+  },
 ];
+
+const colorMap: Record<string, { border: string; bg: string; text: string; dot: string }> = {
+  violet: { border: "border-violet-500/30", bg: "bg-violet-500/10", text: "text-violet-400", dot: "bg-violet-400" },
+  cyan: { border: "border-cyan-500/30", bg: "bg-cyan-500/10", text: "text-cyan-400", dot: "bg-cyan-400" },
+  emerald: { border: "border-emerald-500/30", bg: "bg-emerald-500/10", text: "text-emerald-400", dot: "bg-emerald-400" },
+  amber: { border: "border-amber-500/30", bg: "bg-amber-500/10", text: "text-amber-400", dot: "bg-amber-400" },
+  rose: { border: "border-rose-500/30", bg: "bg-rose-500/10", text: "text-rose-400", dot: "bg-rose-400" },
+  sky: { border: "border-sky-500/30", bg: "bg-sky-500/10", text: "text-sky-400", dot: "bg-sky-400" },
+};
 ---
 
 <section id="integrations" class="relative py-24">
@@ -40,21 +55,34 @@ const integrations = [
         Connect to <span class="gradient-text">anything</span>
       </h2>
       <p class="mx-auto mt-4 max-w-2xl text-lg text-slate-400">
-        Datanika supports a wide range of sources and destinations out of the box.
+        32 connectors across databases, warehouses, SaaS APIs, files, and streams.
       </p>
     </div>
 
-    <div class="mt-16 flex flex-wrap items-center justify-center gap-4">
-      {integrations.map((name) => (
-        <div class="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-900/50 px-5 py-3 transition-colors hover:border-slate-700">
-          <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/10">
-            <svg class="h-4 w-4 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
-            </svg>
+    <div class="mt-16 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      {categories.map((cat) => {
+        const c = colorMap[cat.color];
+        return (
+          <div class={`rounded-xl border ${c.border} bg-slate-900/50 p-6`}>
+            <div class="mb-4 flex items-center gap-3">
+              <div class={`inline-flex rounded-lg ${c.bg} p-2.5`}>
+                <svg class={`h-5 w-5 ${c.text}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <Fragment set:html={cat.icon} />
+                </svg>
+              </div>
+              <h3 class="text-base font-semibold text-white">{cat.title}</h3>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              {cat.items.map((item) => (
+                <span class={`inline-flex items-center gap-1.5 rounded-md ${c.bg} px-2.5 py-1 text-xs font-medium ${c.text}`}>
+                  <span class={`h-1 w-1 rounded-full ${c.dot}`} />
+                  {item}
+                </span>
+              ))}
+            </div>
           </div>
-          <span class="text-sm font-medium text-slate-300">{name}</span>
-        </div>
-      ))}
+        );
+      })}
     </div>
   </div>
 </section>
