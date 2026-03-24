@@ -63,13 +63,13 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
 
   <h2>JSON Format</h2>
   <p>The import file is a JSON object with these top-level fields:</p>
-  <pre><code>{
+  <pre><code set:html={`{
   "version": 2,
   "connections": [...],
   "uploads": [...],
   "pipelines": [...],
   "transformations": [...]
-}</code></pre>
+}`} /></pre>
   <p>All sections are optional. Include only what you need.</p>
   <p>Full field reference: <a href="https://github.com/datanika-io/datanika-core/blob/master/AI_IMPORT_GUIDE.md">AI_IMPORT_GUIDE.md on GitHub</a></p>
 </DocsLayout>
