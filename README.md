@@ -19,7 +19,7 @@ datanika-landing/
 │   │   ├── Features.astro        # 6 feature cards grid
 │   │   ├── HowItWorks.astro      # 3-step workflow (Connect → Build → Run)
 │   │   ├── Integrations.astro    # 13 integration logos
-│   │   ├── Pricing.astro         # 4-tier pricing table
+│   │   ├── Pricing.astro         # 3-tier pricing table
 │   │   ├── CtaBanner.astro       # Final call-to-action section
 │   │   └── Footer.astro          # Links and copyright
 │   ├── layouts/
@@ -48,14 +48,13 @@ datanika-landing/
 
 PostgreSQL, MySQL, MSSQL, SQLite, BigQuery, Snowflake, Redshift, ClickHouse, MongoDB, S3, REST API, CSV/JSON/Parquet, Google Sheets
 
-### Pricing Tiers (4)
+### Pricing Tiers (3)
 
 | Tier | Price | Highlights |
 |------|-------|------------|
-| **Free** | $0/forever | 3 pipelines, 1 member, core integrations |
-| **Pro** | $49/month | Unlimited pipelines, 3 members, SQL editor, catalog |
-| **Team** | $99/month | 20 members, RBAC, dependency graph |
-| **Self-Hosted** | $1,999/year | Unlimited members, on-premise, SSO, dedicated support |
+| **Free** | $0/forever | 1 member, 5 connections, 2 schedules, 500 runs/mo |
+| **Pro** | $79/month | 5 members, 25 connections, unlimited schedules, 15,000 runs/mo |
+| **Enterprise** | From $399/month | 10 members (+$25/extra), 50 connections, unlimited schedules, 50,000 runs/mo, SSO, priority support with SLA |
 
 ## Commands
 
