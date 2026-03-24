@@ -1,0 +1,169 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+---
+
+<DocsLayout title="API Reference">
+  <h1>API Reference</h1>
+  <p class="text-lg text-slate-400">Programmatic access to Datanika via REST API.</p>
+
+  <h2>Authentication</h2>
+  <p>API requests are authenticated using API keys. Include the key in the <code>Authorization</code> header:</p>
+  <pre><code set:html={`curl -H "Authorization: Bearer etf_your_api_key_here" \\
+     https://app.datanika.io/api/...`} /></pre>
+  <p>API keys use the <code>etf_</code> prefix and are created in <strong>Settings &rarr; API Keys</strong>. See <a href="/docs/api-keys">API Keys</a> for details.</p>
+
+  <h2>Endpoints</h2>
+
+  <h3>OAuth</h3>
+  <table>
+    <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>GET</code></td><td><code>/api/auth/login/google</code></td><td>Initiate Google OAuth login</td></tr>
+      <tr><td><code>GET</code></td><td><code>/api/auth/callback/google</code></td><td>Google OAuth callback (handled by Datanika)</td></tr>
+      <tr><td><code>GET</code></td><td><code>/api/auth/login/github</code></td><td>Initiate GitHub OAuth login</td></tr>
+      <tr><td><code>GET</code></td><td><code>/api/auth/callback/github</code></td><td>GitHub OAuth callback (handled by Datanika)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>SSO (Enterprise)</h3>
+  <table>
+    <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>GET</code></td><td><code set:html={`/api/auth/sso/login/{org_slug}`} /></td><td>Initiate SSO login for an organization (OIDC or SAML)</td></tr>
+      <tr><td><code>GET/POST</code></td><td><code>/api/auth/sso/callback</code></td><td>SSO callback (OIDC code exchange or SAML response)</td></tr>
+      <tr><td><code>GET</code></td><td><code set:html={`/api/auth/sso/metadata/{org_slug}`} /></td><td>SAML Service Provider metadata XML</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Email Verification & Invitations</h3>
+  <table>
+    <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>GET</code></td><td><code>/api/verify-email?token=...</code></td><td>Verify email address (link sent to user)</td></tr>
+      <tr><td><code>GET</code></td><td><code>/api/accept-invite?token=...</code></td><td>Accept organization invitation (link sent via email)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Webhooks</h3>
+  <table>
+    <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>POST</code></td><td><code>/api/webhooks/paddle</code></td><td>Paddle billing webhook (HMAC-verified, cloud edition only)</td></tr>
+    </tbody>
+  </table>
+  <p>The Paddle webhook handles subscription lifecycle events: <code>subscription.created</code>, <code>subscription.updated</code>, <code>subscription.canceled</code>, <code>subscription.past_due</code>, and <code>transaction.completed</code>.</p>
+
+  <h2>Examples</h2>
+
+  <h3>Trigger a pipeline run</h3>
+  <pre><code set:html={`# Trigger a run for upload ID 5
+curl -X POST \\
+  -H "Authorization: Bearer etf_AbCdEfGh..." \\
+  -H "Content-Type: application/json" \\
+  -d '{"target_type": "upload", "target_id": 5}' \\
+  https://app.datanika.io/api/v1/runs
+
+# Response
+{
+  "id": 42,
+  "status": "pending",
+  "target_type": "upload",
+  "target_id": 5,
+  "created_at": "2026-03-25T12:00:00Z"
+}`} /></pre>
+
+  <h3>List connections</h3>
+  <pre><code set:html={`curl -H "Authorization: Bearer etf_AbCdEfGh..." \\
+  https://app.datanika.io/api/v1/connections
+
+# Response
+{
+  "items": [
+    {
+      "id": 1,
+      "name": "Production Postgres",
+      "connection_type": "postgres",
+      "created_at": "2026-03-01T10:00:00Z"
+    },
+    {
+      "id": 2,
+      "name": "BigQuery Warehouse",
+      "connection_type": "bigquery",
+      "created_at": "2026-03-02T14:30:00Z"
+    }
+  ]
+}`} /></pre>
+
+  <h3>Get run status</h3>
+  <pre><code set:html={`curl -H "Authorization: Bearer etf_AbCdEfGh..." \\
+  https://app.datanika.io/api/v1/runs/42
+
+# Response
+{
+  "id": 42,
+  "status": "success",
+  "target_type": "upload",
+  "target_id": 5,
+  "rows_loaded": 15420,
+  "started_at": "2026-03-25T12:00:01Z",
+  "finished_at": "2026-03-25T12:02:34Z"
+}`} /></pre>
+
+  <h3>Import configuration</h3>
+  <pre><code set:html={`# Import connections, uploads, pipelines, and transformations from JSON
+curl -X POST \\
+  -H "Authorization: Bearer etf_AbCdEfGh..." \\
+  -H "Content-Type: application/json" \\
+  -d @backup.json \\
+  https://app.datanika.io/api/v1/import
+
+# Response
+{
+  "connections_imported": 2,
+  "uploads_imported": 3,
+  "pipelines_imported": 1,
+  "transformations_imported": 4,
+  "skipped": 0
+}`} /></pre>
+
+  <h2>Error Responses</h2>
+  <p>All errors return JSON with an <code>error</code> field:</p>
+  <pre><code set:html={`{
+  "error": "Unauthorized",
+  "detail": "Invalid or expired API key"
+}`} /></pre>
+
+  <table>
+    <thead><tr><th>Status</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><code>200</code></td><td>Success</td></tr>
+      <tr><td><code>400</code></td><td>Invalid request (validation errors)</td></tr>
+      <tr><td><code>401</code></td><td>Missing or invalid API key</td></tr>
+      <tr><td><code>403</code></td><td>Insufficient permissions (scope mismatch)</td></tr>
+      <tr><td><code>404</code></td><td>Resource not found</td></tr>
+      <tr><td><code>500</code></td><td>Server error</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Rate Limits</h2>
+  <p>The API currently has no rate limits. This may change in future versions.</p>
+
+  <h2>Scopes</h2>
+  <p>API keys can be scoped to limit access. Keys with no scopes have full access.</p>
+  <table>
+    <thead><tr><th>Scope</th><th>Allows</th></tr></thead>
+    <tbody>
+      <tr><td><code>connection:read</code></td><td>List and view connections</td></tr>
+      <tr><td><code>connection:write</code></td><td>Create, update, delete connections</td></tr>
+      <tr><td><code>upload:read</code></td><td>List and view uploads</td></tr>
+      <tr><td><code>upload:write</code></td><td>Create, update, delete uploads</td></tr>
+      <tr><td><code>pipeline:read</code></td><td>List and view pipelines</td></tr>
+      <tr><td><code>pipeline:write</code></td><td>Create, update, delete pipelines</td></tr>
+      <tr><td><code>transformation:read</code></td><td>List and view transformations</td></tr>
+      <tr><td><code>transformation:write</code></td><td>Create, update, delete transformations</td></tr>
+      <tr><td><code>run:read</code></td><td>List and view runs</td></tr>
+      <tr><td><code>run:execute</code></td><td>Trigger new runs</td></tr>
+      <tr><td><code>import</code></td><td>Import configurations from JSON</td></tr>
+    </tbody>
+  </table>
+</DocsLayout>

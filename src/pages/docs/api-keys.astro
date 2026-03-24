@@ -7,14 +7,15 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
   <p class="text-lg text-slate-400">Programmatic access for automation and integrations.</p>
 
   <h2>Overview</h2>
-  <p><strong>API keys</strong> provide programmatic access to Datanika's API. Use them to trigger runs, query status, or integrate with CI/CD pipelines and external tools.</p>
+  <p><strong>API keys</strong> provide programmatic access to Datanika's API. Use them to trigger runs, query status, import configurations, or integrate with CI/CD pipelines and external tools.</p>
+  <p>For the full list of endpoints, see the <a href="/docs/api">API Reference</a>.</p>
 
   <h3>Properties</h3>
   <table>
     <thead><tr><th>Field</th><th>Description</th></tr></thead>
     <tbody>
       <tr><td><code>name</code></td><td>Descriptive name (e.g., "CI/CD pipeline key")</td></tr>
-      <tr><td><code>scopes</code></td><td>Permission scopes limiting what the key can access</td></tr>
+      <tr><td><code>scopes</code></td><td>Permission scopes limiting what the key can access (empty = full access)</td></tr>
       <tr><td><code>expires_at</code></td><td>Optional expiration date</td></tr>
       <tr><td><code>last_used_at</code></td><td>Timestamp of last usage (tracked automatically)</td></tr>
     </tbody>
@@ -22,33 +23,27 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
 
   <h2>Security</h2>
   <ul>
-    <li>API keys are displayed <strong>only once</strong> at creation. Store them securely.</li>
-    <li>Keys are hashed with bcrypt before storage — we cannot recover a lost key.</li>
+    <li>API keys use the <code>etf_</code> prefix and are displayed <strong>only once</strong> at creation. Store them securely.</li>
+    <li>Keys are hashed with SHA-256 before storage — we cannot recover a lost key.</li>
     <li>Each key is tied to a specific user and organization.</li>
     <li>Set an expiration date for keys used in temporary workflows.</li>
-    <li>Revoke keys instantly from the settings page.</li>
+    <li>Revoke keys instantly from the Settings page.</li>
   </ul>
 
   <h2>How to create an API key</h2>
   <ol class="list-decimal pl-6 space-y-2">
     <li>Navigate to <strong>Settings</strong> in the sidebar</li>
     <li>Scroll to the <strong>API Keys</strong> section</li>
-    <li>Click <strong>Create API Key</strong></li>
+    <li>Click <strong>New API Key</strong></li>
     <li>Enter a descriptive name (e.g., "CI/CD pipeline key")</li>
-    <li>Select the permission <strong>scopes</strong> the key should have</li>
-    <li>Optionally set an <strong>expiration date</strong></li>
     <li>Click <strong>Create</strong> — the key is displayed <strong>only once</strong>, so copy and store it securely</li>
   </ol>
-  <p>To revoke a key, click <strong>Delete</strong> next to it in the API Keys table. Revocation is immediate.</p>
+  <p>To revoke a key, click <strong>Revoke</strong> next to it in the API Keys table. Revocation is immediate.</p>
 
   <h2>Usage</h2>
-  <p>Include the API key in the <code>Authorization</code> header:</p>
-  <pre><code>curl -H "Authorization: Bearer dnk_your_api_key_here" \
-     https://app.datanika.io/api/v1/runs</code></pre>
+  <p>Include the API key in the <code>Authorization</code> header of your HTTP requests:</p>
+  <pre><code set:html={`curl -H "Authorization: Bearer etf_your_api_key_here" \\
+     https://app.datanika.io/api/v1/runs`} /></pre>
 
-  <h3>Example</h3>
-  <pre><code>API Key: "GitHub Actions deploy key"
-Scopes: [runs.create, runs.read]
-Expires: 2027-01-01
-Created by: alice@acme.com</code></pre>
+  <p>See the <a href="/docs/api">API Reference</a> for all available endpoints with examples.</p>
 </DocsLayout>
