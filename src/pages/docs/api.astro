@@ -4,77 +4,18 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
 
 <DocsLayout title="API Reference">
   <h1>API Reference</h1>
-  <p class="text-lg text-slate-400">Programmatic access to Datanika via REST API.</p>
+  <p class="text-lg text-slate-400">Automate your data pipelines with the Datanika REST API.</p>
 
   <h2>Authentication</h2>
-  <p>API requests are authenticated using API keys. Include the key in the <code>Authorization</code> header:</p>
+  <p>All API requests require an API key in the <code>Authorization</code> header:</p>
   <pre><code set:html={`curl -H "Authorization: Bearer etf_your_api_key_here" \\
-     https://app.datanika.io/api/...`} /></pre>
-  <p>API keys use the <code>etf_</code> prefix and are created in <strong>Settings &rarr; API Keys</strong>. See <a href="/docs/api-keys">API Keys</a> for details.</p>
+     https://app.datanika.io/api/v1/...`} /></pre>
+  <p>Create API keys in <strong>Settings &rarr; API Keys</strong>. See <a href="/docs/api-keys">API Keys</a> for details.</p>
 
-  <h2>Endpoints</h2>
-
-  <h3>OAuth</h3>
-  <table>
-    <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
-    <tbody>
-      <tr><td><code>GET</code></td><td><code>/api/auth/login/google</code></td><td>Initiate Google OAuth login</td></tr>
-      <tr><td><code>GET</code></td><td><code>/api/auth/callback/google</code></td><td>Google OAuth callback (handled by Datanika)</td></tr>
-      <tr><td><code>GET</code></td><td><code>/api/auth/login/github</code></td><td>Initiate GitHub OAuth login</td></tr>
-      <tr><td><code>GET</code></td><td><code>/api/auth/callback/github</code></td><td>GitHub OAuth callback (handled by Datanika)</td></tr>
-    </tbody>
-  </table>
-
-  <h3>SSO (Enterprise)</h3>
-  <table>
-    <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
-    <tbody>
-      <tr><td><code>GET</code></td><td><code set:html={`/api/auth/sso/login/{org_slug}`} /></td><td>Initiate SSO login for an organization (OIDC or SAML)</td></tr>
-      <tr><td><code>GET/POST</code></td><td><code>/api/auth/sso/callback</code></td><td>SSO callback (OIDC code exchange or SAML response)</td></tr>
-      <tr><td><code>GET</code></td><td><code set:html={`/api/auth/sso/metadata/{org_slug}`} /></td><td>SAML Service Provider metadata XML</td></tr>
-    </tbody>
-  </table>
-
-  <h3>Email Verification & Invitations</h3>
-  <table>
-    <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
-    <tbody>
-      <tr><td><code>GET</code></td><td><code>/api/verify-email?token=...</code></td><td>Verify email address (link sent to user)</td></tr>
-      <tr><td><code>GET</code></td><td><code>/api/accept-invite?token=...</code></td><td>Accept organization invitation (link sent via email)</td></tr>
-    </tbody>
-  </table>
-
-  <h3>Webhooks</h3>
-  <table>
-    <thead><tr><th>Method</th><th>Path</th><th>Description</th></tr></thead>
-    <tbody>
-      <tr><td><code>POST</code></td><td><code>/api/webhooks/paddle</code></td><td>Paddle billing webhook (HMAC-verified, cloud edition only)</td></tr>
-    </tbody>
-  </table>
-  <p>The Paddle webhook handles subscription lifecycle events: <code>subscription.created</code>, <code>subscription.updated</code>, <code>subscription.canceled</code>, <code>subscription.past_due</code>, and <code>transaction.completed</code>.</p>
-
-  <h2>Examples</h2>
-
-  <h3>Trigger a pipeline run</h3>
-  <pre><code set:html={`# Trigger a run for upload ID 5
-curl -X POST \\
-  -H "Authorization: Bearer etf_AbCdEfGh..." \\
-  -H "Content-Type: application/json" \\
-  -d '{"target_type": "upload", "target_id": 5}' \\
-  https://app.datanika.io/api/v1/runs
-
-# Response
-{
-  "id": 42,
-  "status": "pending",
-  "target_type": "upload",
-  "target_id": 5,
-  "created_at": "2026-03-25T12:00:00Z"
-}`} /></pre>
+  <h2>Connections</h2>
 
   <h3>List connections</h3>
-  <pre><code set:html={`curl -H "Authorization: Bearer etf_AbCdEfGh..." \\
-  https://app.datanika.io/api/v1/connections
+  <pre><code set:html={`GET /api/v1/connections
 
 # Response
 {
@@ -94,28 +35,243 @@ curl -X POST \\
   ]
 }`} /></pre>
 
-  <h3>Get run status</h3>
-  <pre><code set:html={`curl -H "Authorization: Bearer etf_AbCdEfGh..." \\
-  https://app.datanika.io/api/v1/runs/42
+  <h3>Get connection</h3>
+  <pre><code set:html={`GET /api/v1/connections/1
+
+# Response
+{
+  "id": 1,
+  "name": "Production Postgres",
+  "connection_type": "postgres",
+  "created_at": "2026-03-01T10:00:00Z"
+}`} /></pre>
+  <p>Connection credentials are never returned in API responses.</p>
+
+  <h3>Create connection</h3>
+  <pre><code set:html={`POST /api/v1/connections
+Content-Type: application/json
+
+{
+  "name": "Staging MySQL",
+  "connection_type": "mysql",
+  "config": {
+    "host": "mysql.staging.internal",
+    "port": 3306,
+    "database": "app",
+    "user": "readonly",
+    "password": "secret"
+  }
+}
+
+# Response: 201 Created
+{
+  "id": 3,
+  "name": "Staging MySQL",
+  "connection_type": "mysql",
+  "created_at": "2026-03-25T12:00:00Z"
+}`} /></pre>
+
+  <h3>Delete connection</h3>
+  <pre><code set:html={`DELETE /api/v1/connections/3
+
+# Response: 204 No Content`} /></pre>
+
+  <h2>Uploads (Extract + Load)</h2>
+
+  <h3>List uploads</h3>
+  <pre><code set:html={`GET /api/v1/uploads
+
+# Response
+{
+  "items": [
+    {
+      "id": 1,
+      "name": "Load orders",
+      "source_connection_id": 1,
+      "destination_connection_id": 2,
+      "status": "active",
+      "created_at": "2026-03-10T08:00:00Z"
+    }
+  ]
+}`} /></pre>
+
+  <h3>Create upload</h3>
+  <pre><code set:html={`POST /api/v1/uploads
+Content-Type: application/json
+
+{
+  "name": "Load customers",
+  "source_connection_id": 1,
+  "destination_connection_id": 2,
+  "dlt_config": {
+    "load_mode": "single_table",
+    "table_name": "customers",
+    "write_disposition": "replace",
+    "schema_name": "raw"
+  }
+}
+
+# Response: 201 Created
+{
+  "id": 2,
+  "name": "Load customers",
+  "status": "draft",
+  "created_at": "2026-03-25T12:00:00Z"
+}`} /></pre>
+
+  <h2>Pipelines (dbt Orchestration)</h2>
+
+  <h3>List pipelines</h3>
+  <pre><code set:html={`GET /api/v1/pipelines
+
+# Response
+{
+  "items": [
+    {
+      "id": 1,
+      "name": "Build analytics",
+      "command": "build",
+      "destination_connection_id": 2,
+      "status": "active",
+      "created_at": "2026-03-15T09:00:00Z"
+    }
+  ]
+}`} /></pre>
+
+  <h3>Create pipeline</h3>
+  <pre><code set:html={`POST /api/v1/pipelines
+Content-Type: application/json
+
+{
+  "name": "Run staging models",
+  "destination_connection_id": 2,
+  "command": "run",
+  "models": [{"name": "staging"}]
+}
+
+# Response: 201 Created
+{
+  "id": 2,
+  "name": "Run staging models",
+  "command": "run",
+  "status": "draft",
+  "created_at": "2026-03-25T12:00:00Z"
+}`} /></pre>
+
+  <h2>Transformations (dbt SQL Models)</h2>
+
+  <h3>List transformations</h3>
+  <pre><code set:html={`GET /api/v1/transformations
+
+# Response
+{
+  "items": [
+    {
+      "id": 1,
+      "name": "stg_orders",
+      "materialization": "view",
+      "schema_name": "staging",
+      "created_at": "2026-03-12T11:00:00Z"
+    }
+  ]
+}`} /></pre>
+
+  <h3>Create transformation</h3>
+  <pre><code set:html={`POST /api/v1/transformations
+Content-Type: application/json
+
+{
+  "name": "mart_revenue",
+  "sql_body": "SELECT date_trunc('month', order_date) AS month, SUM(amount) AS revenue FROM {{ ref('stg_orders') }} GROUP BY 1",
+  "materialization": "table",
+  "schema_name": "marts"
+}
+
+# Response: 201 Created
+{
+  "id": 5,
+  "name": "mart_revenue",
+  "materialization": "table",
+  "schema_name": "marts",
+  "created_at": "2026-03-25T12:00:00Z"
+}`} /></pre>
+
+  <h2>Runs</h2>
+
+  <h3>List runs</h3>
+  <pre><code set:html={`GET /api/v1/runs
+
+# Filter by status
+GET /api/v1/runs?status=running
+
+# Filter by target
+GET /api/v1/runs?target_type=upload&target_id=1
+
+# Response
+{
+  "items": [
+    {
+      "id": 42,
+      "target_type": "upload",
+      "target_id": 1,
+      "status": "success",
+      "rows_loaded": 15420,
+      "started_at": "2026-03-25T12:00:01Z",
+      "finished_at": "2026-03-25T12:02:34Z"
+    }
+  ]
+}`} /></pre>
+
+  <h3>Get run details</h3>
+  <pre><code set:html={`GET /api/v1/runs/42
 
 # Response
 {
   "id": 42,
-  "status": "success",
   "target_type": "upload",
-  "target_id": 5,
+  "target_id": 1,
+  "status": "success",
   "rows_loaded": 15420,
   "started_at": "2026-03-25T12:00:01Z",
-  "finished_at": "2026-03-25T12:02:34Z"
+  "finished_at": "2026-03-25T12:02:34Z",
+  "logs": "Loading table orders...\\nLoaded 15420 rows in 2m 33s"
 }`} /></pre>
 
-  <h3>Import configuration</h3>
-  <pre><code set:html={`# Import connections, uploads, pipelines, and transformations from JSON
-curl -X POST \\
-  -H "Authorization: Bearer etf_AbCdEfGh..." \\
-  -H "Content-Type: application/json" \\
-  -d @backup.json \\
-  https://app.datanika.io/api/v1/import
+  <h3>Trigger a run</h3>
+  <pre><code set:html={`POST /api/v1/runs
+Content-Type: application/json
+
+# Run an upload
+{"target_type": "upload", "target_id": 1}
+
+# Run a pipeline
+{"target_type": "pipeline", "target_id": 1}
+
+# Run a transformation
+{"target_type": "transformation", "target_id": 5}
+
+# Response: 201 Created
+{
+  "id": 43,
+  "target_type": "upload",
+  "target_id": 1,
+  "status": "pending",
+  "created_at": "2026-03-25T14:00:00Z"
+}`} /></pre>
+
+  <h2>Import Configuration</h2>
+  <p>Bulk-create connections, uploads, pipelines, and transformations from a JSON file. See <a href="/docs/ai-import">Backup & Import</a> for the full format specification.</p>
+  <pre><code set:html={`POST /api/v1/import
+Content-Type: application/json
+
+# Body: same JSON format as the import file
+{
+  "version": 2,
+  "connections": [...],
+  "uploads": [...],
+  "pipelines": [...],
+  "transformations": [...]
+}
 
 # Response
 {
@@ -127,16 +283,16 @@ curl -X POST \\
 }`} /></pre>
 
   <h2>Error Responses</h2>
-  <p>All errors return JSON with an <code>error</code> field:</p>
   <pre><code set:html={`{
   "error": "Unauthorized",
   "detail": "Invalid or expired API key"
 }`} /></pre>
-
   <table>
     <thead><tr><th>Status</th><th>Meaning</th></tr></thead>
     <tbody>
       <tr><td><code>200</code></td><td>Success</td></tr>
+      <tr><td><code>201</code></td><td>Created</td></tr>
+      <tr><td><code>204</code></td><td>Deleted (no content)</td></tr>
       <tr><td><code>400</code></td><td>Invalid request (validation errors)</td></tr>
       <tr><td><code>401</code></td><td>Missing or invalid API key</td></tr>
       <tr><td><code>403</code></td><td>Insufficient permissions (scope mismatch)</td></tr>
@@ -144,9 +300,6 @@ curl -X POST \\
       <tr><td><code>500</code></td><td>Server error</td></tr>
     </tbody>
   </table>
-
-  <h2>Rate Limits</h2>
-  <p>The API currently has no rate limits. This may change in future versions.</p>
 
   <h2>Scopes</h2>
   <p>API keys can be scoped to limit access. Keys with no scopes have full access.</p>
