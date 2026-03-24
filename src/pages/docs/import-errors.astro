@@ -20,7 +20,7 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
   <table>
     <thead><tr><th>Entity</th><th>Required fields</th></tr></thead>
     <tbody>
-      <tr><td>Connection</td><td><code>name</code>, <code>connection_type</code>, <code>direction</code>, <code>config</code></td></tr>
+      <tr><td>Connection</td><td><code>name</code>, <code>connection_type</code>, <code>config</code></td></tr>
       <tr><td>Upload</td><td><code>name</code>, <code>source_connection_name</code>, <code>destination_connection_name</code></td></tr>
       <tr><td>Pipeline</td><td><code>name</code>, <code>destination_connection_name</code></td></tr>
       <tr><td>Transformation</td><td><code>name</code>, <code>sql_body</code></td></tr>
@@ -39,7 +39,6 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
   <table>
     <thead><tr><th>Field</th><th>Valid values</th></tr></thead>
     <tbody>
-      <tr><td><code>direction</code></td><td><code>source</code>, <code>destination</code>, <code>both</code></td></tr>
       <tr><td><code>status</code> (upload/pipeline)</td><td><code>draft</code>, <code>active</code>, <code>paused</code>, <code>error</code></td></tr>
       <tr><td><code>command</code> (pipeline)</td><td><code>run</code>, <code>build</code>, <code>test</code>, <code>seed</code>, <code>snapshot</code>, <code>compile</code></td></tr>
       <tr><td><code>materialization</code> (transformation)</td><td><code>view</code>, <code>table</code>, <code>incremental</code>, <code>ephemeral</code>, <code>snapshot</code></td></tr>
@@ -71,14 +70,6 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
     <li>The referenced connection was removed from the file but uploads still reference it</li>
     <li>The referenced connection exists in a different organization</li>
   </ul>
-
-  <h3>DIRECTION_MISMATCH</h3>
-  <p>A connection is used in the wrong role:</p>
-  <ul>
-    <li>A <code>destination</code>-only connection is referenced as an upload source</li>
-    <li>A <code>source</code>-only connection is referenced as an upload/pipeline destination</li>
-  </ul>
-  <p>Fix: change the connection's <code>direction</code> to <code>both</code>, or use a different connection.</p>
 
   <h2>Error Response Format</h2>
   <p>Each error contains:</p>

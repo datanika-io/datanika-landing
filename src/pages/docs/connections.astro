@@ -8,6 +8,7 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
 
   <h2>Overview</h2>
   <p>A <strong>connection</strong> represents a data source or destination. Connections store encrypted credentials and configuration needed to access external systems. They are reusable across multiple uploads and pipelines.</p>
+  <p>Direction (source, destination, or both) is <strong>automatically determined</strong> from the connection type. Databases and warehouses can be used as both source and destination. APIs and files are source-only.</p>
 
   <h3>Properties</h3>
   <table>
@@ -15,7 +16,6 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
     <tbody>
       <tr><td><code>name</code></td><td>Display name (e.g., "Production Postgres")</td></tr>
       <tr><td><code>connection_type</code></td><td>Type of system (see supported types below)</td></tr>
-      <tr><td><code>direction</code></td><td><code>source</code>, <code>destination</code>, or <code>both</code></td></tr>
       <tr><td><code>config</code></td><td>Connection credentials (encrypted at rest with Fernet)</td></tr>
       <tr><td><code>freshness_config</code></td><td>Optional source freshness checks (warn/error thresholds)</td></tr>
     </tbody>
@@ -23,64 +23,70 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
 
   <h2>Supported Types</h2>
 
-  <h3>Databases</h3>
+  <h3>Databases (source & destination)</h3>
   <table>
-    <thead><tr><th>Type</th><th>Direction</th><th>Notes</th></tr></thead>
+    <thead><tr><th>Type</th><th>Notes</th></tr></thead>
     <tbody>
-      <tr><td><code>postgres</code></td><td>Source & Destination</td><td>PostgreSQL 12+</td></tr>
-      <tr><td><code>mysql</code></td><td>Source & Destination</td><td>MySQL 5.7+</td></tr>
-      <tr><td><code>mssql</code></td><td>Source & Destination</td><td>SQL Server 2016+</td></tr>
-      <tr><td><code>sqlite</code></td><td>Source</td><td>Local SQLite files</td></tr>
-      <tr><td><code>mongodb</code></td><td>Source</td><td>MongoDB 4.0+</td></tr>
-      <tr><td><code>clickhouse</code></td><td>Source & Destination</td><td>ClickHouse 21+ (supports clustered ReplicatedMergeTree)</td></tr>
-      <tr><td><code>duckdb</code></td><td>Source & Destination</td><td>DuckDB (embedded analytics)</td></tr>
+      <tr><td><code>postgres</code></td><td>PostgreSQL 12+</td></tr>
+      <tr><td><code>mysql</code></td><td>MySQL 5.7+</td></tr>
+      <tr><td><code>mssql</code></td><td>SQL Server 2016+</td></tr>
+      <tr><td><code>sqlite</code></td><td>Local SQLite files</td></tr>
+      <tr><td><code>clickhouse</code></td><td>ClickHouse 21+ (supports clustered ReplicatedMergeTree)</td></tr>
+      <tr><td><code>duckdb</code></td><td>DuckDB (embedded analytics)</td></tr>
     </tbody>
   </table>
 
-  <h3>Cloud Warehouses</h3>
+  <h3>Cloud Warehouses (source & destination)</h3>
   <table>
-    <thead><tr><th>Type</th><th>Direction</th><th>Notes</th></tr></thead>
+    <thead><tr><th>Type</th><th>Notes</th></tr></thead>
     <tbody>
-      <tr><td><code>bigquery</code></td><td>Destination</td><td>Google BigQuery (service account JSON)</td></tr>
-      <tr><td><code>snowflake</code></td><td>Destination</td><td>Snowflake (account, warehouse, database)</td></tr>
-      <tr><td><code>redshift</code></td><td>Destination</td><td>Amazon Redshift</td></tr>
-      <tr><td><code>databricks</code></td><td>Destination</td><td>Databricks Lakehouse</td></tr>
-      <tr><td><code>synapse</code></td><td>Destination</td><td>Azure Synapse Analytics</td></tr>
+      <tr><td><code>bigquery</code></td><td>Google BigQuery (service account JSON)</td></tr>
+      <tr><td><code>snowflake</code></td><td>Snowflake (account, warehouse, database)</td></tr>
+      <tr><td><code>redshift</code></td><td>Amazon Redshift</td></tr>
+      <tr><td><code>databricks</code></td><td>Databricks Lakehouse</td></tr>
+      <tr><td><code>synapse</code></td><td>Azure Synapse Analytics</td></tr>
     </tbody>
   </table>
 
-  <h3>SaaS & APIs</h3>
+  <h3>NoSQL (source only)</h3>
   <table>
-    <thead><tr><th>Type</th><th>Direction</th><th>Notes</th></tr></thead>
+    <thead><tr><th>Type</th><th>Notes</th></tr></thead>
     <tbody>
-      <tr><td><code>stripe</code></td><td>Source</td><td>Customers, invoices, subscriptions, products, charges</td></tr>
-      <tr><td><code>github</code></td><td>Source</td><td>Issues, PRs, commits, stargazers (per repo)</td></tr>
-      <tr><td><code>hubspot</code></td><td>Source</td><td>Contacts, companies, deals, tickets, quotes</td></tr>
-      <tr><td><code>salesforce</code></td><td>Source</td><td>Accounts, contacts, opportunities, leads, campaigns</td></tr>
-      <tr><td><code>shopify</code></td><td>Source</td><td>Orders, products, customers</td></tr>
-      <tr><td><code>jira</code></td><td>Source</td><td>Issues, users, workflows, projects</td></tr>
-      <tr><td><code>slack</code></td><td>Source</td><td>Channels, messages, users, threads</td></tr>
-      <tr><td><code>google_analytics</code></td><td>Source</td><td>GA4 reports (property ID + service account)</td></tr>
-      <tr><td><code>google_ads</code></td><td>Source</td><td>Customers, campaigns, ad groups, ads</td></tr>
-      <tr><td><code>facebook_ads</code></td><td>Source</td><td>Campaigns, ad sets, ads, leads, creatives</td></tr>
-      <tr><td><code>zendesk</code></td><td>Source</td><td>Tickets, users, organizations, groups</td></tr>
-      <tr><td><code>airtable</code></td><td>Source</td><td>Tables from a base (API key + base ID)</td></tr>
-      <tr><td><code>notion</code></td><td>Source</td><td>Databases and pages</td></tr>
-      <tr><td><code>kafka</code></td><td>Source</td><td>Streaming consumer (bootstrap servers + topics)</td></tr>
-      <tr><td><code>rest_api</code></td><td>Source</td><td>Any REST API with configurable endpoints</td></tr>
+      <tr><td><code>mongodb</code></td><td>MongoDB 4.0+</td></tr>
     </tbody>
   </table>
 
-  <h3>Files</h3>
+  <h3>SaaS & APIs (source only)</h3>
   <table>
-    <thead><tr><th>Type</th><th>Direction</th><th>Notes</th></tr></thead>
+    <thead><tr><th>Type</th><th>Notes</th></tr></thead>
     <tbody>
-      <tr><td><code>csv</code></td><td>Source</td><td>CSV files (local or uploaded)</td></tr>
-      <tr><td><code>json</code></td><td>Source</td><td>JSON files (local or uploaded)</td></tr>
-      <tr><td><code>parquet</code></td><td>Source</td><td>Parquet files (local or uploaded)</td></tr>
-      <tr><td><code>s3</code></td><td>Source</td><td>Amazon S3 bucket (CSV/JSON/Parquet)</td></tr>
-      <tr><td><code>google_sheets</code></td><td>Source</td><td>Google Sheets (service account)</td></tr>
-      <tr><td><code>rest_api</code></td><td>Source</td><td>Any REST API with configurable endpoints</td></tr>
+      <tr><td><code>stripe</code></td><td>Customers, invoices, subscriptions, products, charges</td></tr>
+      <tr><td><code>github</code></td><td>Issues, PRs, commits, stargazers (per repo)</td></tr>
+      <tr><td><code>hubspot</code></td><td>Contacts, companies, deals, tickets, quotes</td></tr>
+      <tr><td><code>salesforce</code></td><td>Accounts, contacts, opportunities, leads, campaigns</td></tr>
+      <tr><td><code>shopify</code></td><td>Orders, products, customers</td></tr>
+      <tr><td><code>jira</code></td><td>Issues, users, workflows, projects</td></tr>
+      <tr><td><code>slack</code></td><td>Channels, messages, users, threads</td></tr>
+      <tr><td><code>google_analytics</code></td><td>GA4 reports (property ID + service account)</td></tr>
+      <tr><td><code>google_ads</code></td><td>Customers, campaigns, ad groups, ads</td></tr>
+      <tr><td><code>facebook_ads</code></td><td>Campaigns, ad sets, ads, leads, creatives</td></tr>
+      <tr><td><code>zendesk</code></td><td>Tickets, users, organizations, groups</td></tr>
+      <tr><td><code>airtable</code></td><td>Tables from a base (API key + base ID)</td></tr>
+      <tr><td><code>notion</code></td><td>Databases and pages</td></tr>
+      <tr><td><code>rest_api</code></td><td>Any REST API with configurable endpoints</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Files & Streaming (source only)</h3>
+  <table>
+    <thead><tr><th>Type</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><code>csv</code></td><td>CSV files (local or uploaded)</td></tr>
+      <tr><td><code>json</code></td><td>JSON files (local or uploaded)</td></tr>
+      <tr><td><code>parquet</code></td><td>Parquet files (local or uploaded)</td></tr>
+      <tr><td><code>s3</code></td><td>Amazon S3 bucket (CSV/JSON/Parquet)</td></tr>
+      <tr><td><code>google_sheets</code></td><td>Google Sheets (service account)</td></tr>
+      <tr><td><code>kafka</code></td><td>Streaming consumer (bootstrap servers + topics)</td></tr>
     </tbody>
   </table>
 
@@ -88,15 +94,14 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
   <p>All connection credentials are <strong>encrypted at rest</strong> using Fernet symmetric encryption before being stored in the database. Credentials are only decrypted in memory when a run is executed.</p>
 
   <h3>Example</h3>
-  <pre><code>Connection: "Production Postgres"
+  <pre><code set:html={`Connection: "Production Postgres"
 Type: postgres
-Direction: source
 Config:
   host: db.example.com
   port: 5432
   database: production
   username: readonly_user
-  password: ••••••••</code></pre>
+  password: ••••••••`} /></pre>
 
   <h2>How to add a connection</h2>
   <ol class="list-decimal pl-6 space-y-2">
@@ -112,8 +117,8 @@ Config:
 
   <h2>Source Freshness</h2>
   <p>You can configure freshness checks on source connections to monitor whether data is arriving on time. This uses dbt's source freshness feature.</p>
-  <pre><code>Freshness Config:
+  <pre><code set:html={`Freshness Config:
   loaded_at_field: updated_at
   warn_after: 12 hours
-  error_after: 24 hours</code></pre>
+  error_after: 24 hours`} /></pre>
 </DocsLayout>
