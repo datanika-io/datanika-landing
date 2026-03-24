@@ -18,15 +18,15 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
   <h2>Export a Backup</h2>
   <ol>
     <li>Go to <strong>Settings</strong> in the sidebar</li>
-    <li>In the <strong>Backup & Restore</strong> section, click <strong>Export Backup</strong></li>
+    <li>In the <strong>Backup & Import</strong> section, click <strong>Export Backup</strong></li>
     <li>A <code>backup.json</code> file is downloaded with all your connections, uploads, pipelines, and transformations</li>
   </ol>
   <p>Sensitive credentials (passwords, API keys) are automatically replaced with <code>CHANGE_ME</code> in the export. You'll re-enter them after importing.</p>
 
-  <h2>Restore from Backup</h2>
+  <h2>Import File</h2>
   <ol>
-    <li>Go to <strong>Settings</strong> &rarr; <strong>Backup & Restore</strong></li>
-    <li>Click <strong>Restore from Backup</strong> and upload a JSON file</li>
+    <li>Go to <strong>Settings</strong> &rarr; <strong>Backup & Import</strong></li>
+    <li>Click <strong>Import File</strong> and upload a JSON file</li>
     <li>If any items already exist with the same name, you'll be asked to resolve each conflict:
       <ul>
         <li><strong>Skip</strong> &mdash; keep your existing configuration, don't import</li>
@@ -56,7 +56,7 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
     <li>Give the AI the <a href="https://github.com/datanika-io/datanika-core/blob/master/AI_IMPORT_GUIDE.md">Import Format Guide</a></li>
     <li>Describe what you want: <em>"I have a MySQL database with orders and customers. Load them into BigQuery, create staging models, and build a revenue summary."</em></li>
     <li>The AI generates a JSON file with connections, uploads, pipelines, and transformations</li>
-    <li>Import the JSON via <strong>Settings &rarr; Restore from Backup</strong></li>
+    <li>Import the JSON via <strong>Settings &rarr; Import File</strong></li>
     <li>Enter your real passwords and run</li>
   </ol>
   <p>The AI never sees your real credentials &mdash; all sensitive fields are set to <code>CHANGE_ME</code>.</p>
