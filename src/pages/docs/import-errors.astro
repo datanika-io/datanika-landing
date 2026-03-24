@@ -1,0 +1,95 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+---
+
+<DocsLayout title="Import Validation & Error Codes">
+  <h1>Import Validation & Error Codes</h1>
+  <p class="text-lg text-slate-400">When importing a JSON file, Datanika validates the entire file before making any changes. If errors are found, nothing is imported.</p>
+
+  <h2>How Validation Works</h2>
+  <ul>
+    <li>All errors are collected in a single pass &mdash; you see every problem at once, not one at a time</li>
+    <li>No partial imports &mdash; if validation fails, the database is unchanged</li>
+    <li>Connection references are checked against both the import file and existing connections in your organization</li>
+  </ul>
+
+  <h2>Error Codes</h2>
+
+  <h3>MISSING_FIELD</h3>
+  <p>A required field is not present in the JSON object.</p>
+  <table>
+    <thead><tr><th>Entity</th><th>Required fields</th></tr></thead>
+    <tbody>
+      <tr><td>Connection</td><td><code>name</code>, <code>connection_type</code>, <code>direction</code>, <code>config</code></td></tr>
+      <tr><td>Upload</td><td><code>name</code>, <code>source_connection_name</code>, <code>destination_connection_name</code></td></tr>
+      <tr><td>Pipeline</td><td><code>name</code>, <code>destination_connection_name</code></td></tr>
+      <tr><td>Transformation</td><td><code>name</code>, <code>sql_body</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>EMPTY_FIELD</h3>
+  <p>A required field is present but empty or whitespace-only. Applies to <code>name</code>, <code>sql_body</code>, and other string fields that cannot be blank.</p>
+
+  <h3>INVALID_CONNECTION_TYPE</h3>
+  <p>The <code>connection_type</code> field doesn't match any supported type. Valid values:</p>
+  <p><code>postgres</code>, <code>mysql</code>, <code>mssql</code>, <code>sqlite</code>, <code>clickhouse</code>, <code>duckdb</code>, <code>bigquery</code>, <code>snowflake</code>, <code>redshift</code>, <code>databricks</code>, <code>synapse</code>, <code>s3</code>, <code>csv</code>, <code>json</code>, <code>parquet</code>, <code>rest_api</code>, <code>google_sheets</code>, <code>mongodb</code>, <code>stripe</code>, <code>github</code>, <code>hubspot</code>, <code>salesforce</code>, <code>shopify</code>, <code>jira</code>, <code>slack</code>, <code>google_analytics</code>, <code>google_ads</code>, <code>facebook_ads</code>, <code>zendesk</code>, <code>airtable</code>, <code>notion</code>, <code>kafka</code></p>
+
+  <h3>INVALID_ENUM_VALUE</h3>
+  <p>An enum field has a value that isn't recognized.</p>
+  <table>
+    <thead><tr><th>Field</th><th>Valid values</th></tr></thead>
+    <tbody>
+      <tr><td><code>direction</code></td><td><code>source</code>, <code>destination</code>, <code>both</code></td></tr>
+      <tr><td><code>status</code> (upload/pipeline)</td><td><code>draft</code>, <code>active</code>, <code>paused</code>, <code>error</code></td></tr>
+      <tr><td><code>command</code> (pipeline)</td><td><code>run</code>, <code>build</code>, <code>test</code>, <code>seed</code>, <code>snapshot</code>, <code>compile</code></td></tr>
+      <tr><td><code>materialization</code> (transformation)</td><td><code>view</code>, <code>table</code>, <code>incremental</code>, <code>ephemeral</code>, <code>snapshot</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>INVALID_NAME_FORMAT</h3>
+  <p>Transformation names must follow dbt model naming rules: start with a letter or underscore, followed by letters, digits, underscores, or hyphens.</p>
+  <p>Pattern: <code>^[a-zA-Z_][a-zA-Z0-9_-]*$</code></p>
+  <table>
+    <thead><tr><th>Valid</th><th>Invalid</th></tr></thead>
+    <tbody>
+      <tr><td><code>stg_orders</code></td><td><code>123_orders</code> (starts with digit)</td></tr>
+      <tr><td><code>_temp_model</code></td><td><code>my model</code> (contains space)</td></tr>
+      <tr><td><code>mart-revenue</code></td><td><code>stg.orders</code> (contains dot)</td></tr>
+    </tbody>
+  </table>
+  <p>This rule applies only to transformations. Connection, upload, and pipeline names can contain any characters.</p>
+
+  <h3>DUPLICATE_NAME</h3>
+  <p>Two items of the same type have the same name within the import file. Names are case-sensitive &mdash; <code>PG</code> and <code>pg</code> are considered different.</p>
+  <p>This checks for duplicates <strong>within the file only</strong>. Conflicts with existing items in the database are handled separately via the conflict resolution UI (skip / overwrite / rename).</p>
+
+  <h3>UNKNOWN_CONNECTION_REF</h3>
+  <p>An upload, pipeline, or transformation references a connection by name, but that connection doesn't exist in the import file or in the organization's existing connections.</p>
+  <p>Common causes:</p>
+  <ul>
+    <li>Typo in <code>source_connection_name</code> or <code>destination_connection_name</code></li>
+    <li>The referenced connection was removed from the file but uploads still reference it</li>
+    <li>The referenced connection exists in a different organization</li>
+  </ul>
+
+  <h3>DIRECTION_MISMATCH</h3>
+  <p>A connection is used in the wrong role:</p>
+  <ul>
+    <li>A <code>destination</code>-only connection is referenced as an upload source</li>
+    <li>A <code>source</code>-only connection is referenced as an upload/pipeline destination</li>
+  </ul>
+  <p>Fix: change the connection's <code>direction</code> to <code>both</code>, or use a different connection.</p>
+
+  <h2>Error Response Format</h2>
+  <p>Each error contains:</p>
+  <table>
+    <thead><tr><th>Field</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>code</code></td><td>Error code (e.g. <code>MISSING_FIELD</code>)</td></tr>
+      <tr><td><code>entity_type</code></td><td><code>connection</code>, <code>upload</code>, <code>pipeline</code>, or <code>transformation</code></td></tr>
+      <tr><td><code>index</code></td><td>Position in the array (0-based) &mdash; identifies which item has the error</td></tr>
+      <tr><td><code>field</code></td><td>Which field has the problem (e.g. <code>name</code>, <code>connection_type</code>)</td></tr>
+      <tr><td><code>message</code></td><td>Human-readable description of the error</td></tr>
+    </tbody>
+  </table>
+</DocsLayout>
