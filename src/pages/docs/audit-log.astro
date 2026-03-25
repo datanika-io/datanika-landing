@@ -37,6 +37,26 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
     </tbody>
   </table>
 
+  <h3>Tracked Resources</h3>
+  <p>The following resources are tracked with old/new values for every change:</p>
+  <table>
+    <thead><tr><th>Resource</th><th>Tracked Fields</th></tr></thead>
+    <tbody>
+      <tr><td><code>connection</code></td><td>name, connection_type</td></tr>
+      <tr><td><code>upload</code></td><td>name, source, destination</td></tr>
+      <tr><td><code>pipeline</code></td><td>name, command</td></tr>
+      <tr><td><code>transformation</code></td><td>name, materialization</td></tr>
+      <tr><td><code>schedule</code></td><td>name, is_active</td></tr>
+      <tr><td><code>run</code></td><td>target_type, target_id</td></tr>
+      <tr><td><code>member</code></td><td>email, role</td></tr>
+      <tr><td><code>invitation</code></td><td>email, role</td></tr>
+      <tr><td><code>api_key</code></td><td>name</td></tr>
+      <tr><td><code>org</code></td><td>name, slug</td></tr>
+      <tr><td><code>import</code></td><td>connections/uploads/pipelines/transformations imported counts</td></tr>
+      <tr><td><code>user</code></td><td>email (login/logout events)</td></tr>
+    </tbody>
+  </table>
+
   <h3>Example</h3>
   <pre><code set:text={`Audit Log Entry:
   User: alice@acme.com
