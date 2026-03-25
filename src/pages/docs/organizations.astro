@@ -43,15 +43,33 @@ Default dbt schema: analytics`} /></pre>
   <p>To change a member's role, use the role dropdown next to their name in the members table. To remove a member, click the <strong>Remove</strong> button.</p>
 
   <h2>Roles</h2>
-  <p>Datanika uses four roles with hierarchical permissions:</p>
+  <p>Datanika uses four roles with hierarchical permissions. Roles are enforced on every action — attempting a restricted action shows "Permission denied."</p>
 
   <table>
     <thead><tr><th>Role</th><th>Permissions</th></tr></thead>
     <tbody>
-      <tr><td><code>Owner</code></td><td>Full access. Can delete the organization, manage billing, and transfer ownership.</td></tr>
-      <tr><td><code>Admin</code></td><td>Manage members, connections, and all resources. Cannot delete the organization.</td></tr>
-      <tr><td><code>Editor</code></td><td>Create and modify uploads, transformations, pipelines, and schedules.</td></tr>
-      <tr><td><code>Viewer</code></td><td>Read-only access to all resources, runs, and logs.</td></tr>
+      <tr><td><code>Owner</code></td><td>Full access including org settings, billing, and member management.</td></tr>
+      <tr><td><code>Admin</code></td><td>Everything except org settings and billing. Can manage members, delete resources, import configs, and manage API keys.</td></tr>
+      <tr><td><code>Editor</code></td><td>Create and edit connections, uploads, pipelines, transformations, schedules. Trigger runs. Cannot delete or manage members.</td></tr>
+      <tr><td><code>Viewer</code></td><td>Read-only. Can view all resources, runs, logs, and the data catalog. Cannot create, edit, or delete anything.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Detailed Permission Matrix</h3>
+  <table>
+    <thead><tr><th>Action</th><th>Owner</th><th>Admin</th><th>Editor</th><th>Viewer</th></tr></thead>
+    <tbody>
+      <tr><td>View all resources</td><td>Yes</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
+      <tr><td>Create/edit connections</td><td>Yes</td><td>Yes</td><td>Yes</td><td>No</td></tr>
+      <tr><td>Create/edit uploads, pipelines, transformations</td><td>Yes</td><td>Yes</td><td>Yes</td><td>No</td></tr>
+      <tr><td>Create/edit schedules</td><td>Yes</td><td>Yes</td><td>Yes</td><td>No</td></tr>
+      <tr><td>Trigger runs</td><td>Yes</td><td>Yes</td><td>Yes</td><td>No</td></tr>
+      <tr><td>Delete resources</td><td>Yes</td><td>Yes</td><td>No</td><td>No</td></tr>
+      <tr><td>Manage members &amp; invitations</td><td>Yes</td><td>Yes</td><td>No</td><td>No</td></tr>
+      <tr><td>Import configurations</td><td>Yes</td><td>Yes</td><td>No</td><td>No</td></tr>
+      <tr><td>Manage API keys</td><td>Yes</td><td>Yes</td><td>No</td><td>No</td></tr>
+      <tr><td>Organization settings</td><td>Yes</td><td>No</td><td>No</td><td>No</td></tr>
+      <tr><td>Billing &amp; subscriptions</td><td>Yes</td><td>No</td><td>No</td><td>No</td></tr>
     </tbody>
   </table>
 
