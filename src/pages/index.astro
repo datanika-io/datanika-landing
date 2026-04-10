@@ -8,9 +8,10 @@ import Integrations from "../components/Integrations.astro";
 import Pricing from "../components/Pricing.astro";
 import CtaBanner from "../components/CtaBanner.astro";
 import Footer from "../components/Footer.astro";
+import { softwareApplicationJsonLd } from "../data/software-application";
 ---
 
-<Layout>
+<Layout extraJsonLd={[softwareApplicationJsonLd]}>
   <Navbar />
   <main>
     <Hero />
