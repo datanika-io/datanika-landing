@@ -10,21 +10,43 @@ interface Props {
 
 const { title, description = "Datanika documentation" } = Astro.props;
 
+const fullTitle = `${title} — Datanika Docs`;
+const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+const ogImage = new URL("/logo.png", Astro.site);
+
+const articleLD = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": title,
+  "description": description,
+  "url": canonicalURL.href,
+  "publisher": {
+    "@type": "Organization",
+    "name": "Datanika",
+    "logo": { "@type": "ImageObject", "url": ogImage.href },
+  },
+});
+
 const sections = [
   { label: "Overview", href: "/docs" },
+  { label: "Getting Started", href: "/docs/getting-started" },
   { label: "Organizations & Members", href: "/docs/organizations" },
   { label: "Connections", href: "/docs/connections" },
   { label: "Uploads", href: "/docs/uploads" },
   { label: "Transformations", href: "/docs/transformations" },
+  { label: "Transformation Guide", href: "/docs/transformations-guide" },
   { label: "Pipelines", href: "/docs/pipelines" },
   { label: "Scheduling & Dependencies", href: "/docs/scheduling" },
+  { label: "Scheduling Guide", href: "/docs/scheduling-guide" },
   { label: "Runs & Monitoring", href: "/docs/runs" },
   { label: "Data Catalog", href: "/docs/catalog" },
   { label: "File Uploads", href: "/docs/file-uploads" },
   { label: "API Keys", href: "/docs/api-keys" },
   { label: "API Reference", href: "/docs/api" },
   { label: "Audit Log", href: "/docs/audit-log" },
+  { label: "Self-Hosting", href: "/docs/self-hosting" },
   { label: "Backup & Import", href: "/docs/ai-import" },
+  { label: "Architecture", href: "/docs/architecture" },
 ];
 
 const currentPath = Astro.url.pathname.replace(/\/$/, "") || "/docs";
@@ -37,13 +59,32 @@ const currentPath = Astro.url.pathname.replace(/\/$/, "") || "/docs";
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalURL.href} />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content={canonicalURL.href} />
+    <meta property="og:site_name" content="Datanika" />
+    <meta property="og:image" content={ogImage.href} />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage.href} />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <title>{title} — Datanika Docs</title>
+    <title>{fullTitle}</title>
+
+    <!-- Structured Data -->
+    <script type="application/ld+json" set:html={articleLD} />
   </head>
   <body class="min-h-screen antialiased">
     <Navbar />

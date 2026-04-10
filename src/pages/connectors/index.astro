@@ -1,0 +1,84 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Navbar from "../../components/Navbar.astro";
+import Footer from "../../components/Footer.astro";
+import { connectors } from "../../data/connectors";
+
+const categories = [
+  { label: "Databases", filter: "Database" },
+  { label: "Cloud Warehouses", filter: "Cloud Warehouse" },
+  { label: "NoSQL", filter: "NoSQL" },
+  { label: "SaaS & APIs", filter: "SaaS & API" },
+  { label: "Files", filter: "File" },
+  { label: "Streaming", filter: "Streaming" },
+];
+---
+
+<Layout
+  title="Connectors — Datanika"
+  description="32 connectors for databases, cloud warehouses, SaaS APIs, and files. Extract and load data with Datanika's open-source pipeline platform."
+>
+  <Navbar />
+
+  <section class="relative pt-32 pb-20 overflow-hidden">
+    <div class="glow bg-violet-600 -top-40 -left-40"></div>
+    <div class="glow bg-cyan-600 -bottom-40 -right-40"></div>
+    <div class="relative max-w-5xl mx-auto px-6 text-center">
+      <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-6">
+        <span class="gradient-text">32 Connectors</span>
+      </h1>
+      <p class="text-lg sm:text-xl text-slate-400 max-w-3xl mx-auto leading-relaxed">
+        Databases, cloud warehouses, SaaS APIs, files, and streaming — connect to your data wherever it lives.
+      </p>
+    </div>
+  </section>
+
+  {categories.map(({ label, filter }) => {
+    const items = connectors.filter((c) => c.category === filter);
+    if (items.length === 0) return null;
+    return (
+      <section class="py-10">
+        <div class="max-w-5xl mx-auto px-6">
+          <h2 class="text-2xl font-bold mb-6 text-white">{label}</h2>
+          <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {items.map((c) => (
+              <a
+                href={`/connectors/${c.slug}`}
+                class="rounded-xl border border-slate-800 bg-slate-900/50 backdrop-blur p-5 transition-colors hover:border-violet-500/50"
+              >
+                <div class="flex items-center justify-between mb-2">
+                  <h3 class="font-semibold text-white">{c.name}</h3>
+                  <span class={`text-xs px-2 py-0.5 rounded-full ${
+                    c.direction === "both"
+                      ? "bg-violet-500/20 text-violet-300"
+                      : "bg-slate-800 text-slate-400"
+                  }`}>
+                    {c.direction === "both" ? "Source & Destination" : "Source"}
+                  </span>
+                </div>
+                <p class="text-sm text-slate-400 line-clamp-2">{c.description}</p>
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  })}
+
+  <section class="py-20">
+    <div class="max-w-3xl mx-auto px-6 text-center">
+      <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur p-12">
+        <h2 class="text-3xl font-bold mb-4">Start building pipelines</h2>
+        <p class="text-slate-400 mb-8 text-lg">
+          Connect your data sources and destinations in minutes — no code, no Kubernetes, no complexity.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <a href="https://app.datanika.io" class="btn-primary">Start Free</a>
+          <a href="https://github.com/datanika-io/datanika-core" class="btn-secondary">View on GitHub</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <Footer />
+</Layout>

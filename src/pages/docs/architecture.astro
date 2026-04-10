@@ -1,0 +1,135 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+---
+
+<DocsLayout title="Architecture" description="Technical overview of Datanika's architecture, tech stack, data flow, and security model.">
+  <h1>Architecture</h1>
+  <p class="text-lg text-slate-400">How Datanika works under the hood — for technical evaluators and self-hosting users.</p>
+
+  <h2>System Overview</h2>
+  <p>Datanika is a multi-tenant data pipeline platform built with:</p>
+  <ul>
+    <li><strong>dlt</strong> (data load tool) — Extract + Load from 27 sources to 11 destinations</li>
+    <li><strong>dbt-core</strong> — Transform (SQL models, tests, snapshots, packages)</li>
+    <li><strong>Reflex</strong> — Full-stack Python UI (compiles to React, no separate JS codebase)</li>
+    <li><strong>PostgreSQL</strong> — Application database + pipeline metadata</li>
+    <li><strong>Redis</strong> — Celery broker + APScheduler job store + session cache</li>
+    <li><strong>Celery</strong> — Async task execution for pipeline and transformation runs</li>
+    <li><strong>APScheduler</strong> — Cron-based scheduling with PostgreSQL persistence</li>
+  </ul>
+
+  <h2>Architecture Diagram</h2>
+  <pre><code set:html={`┌─────────────────────────────────────────────────────────────┐
+│                    Reflex Frontend (React)                    │
+│  Sources  │  Pipelines  │  Transforms  │  Scheduling  │  Runs│
+├─────────────────────────────────────────────────────────────┤
+│                  Reflex Backend (Starlette)                   │
+│  Auth & RBAC  │  REST API v1  │  Pipeline Engine  │ Scheduler│
+├─────────────────────────────────────────────────────────────┤
+│  PostgreSQL            │  Redis             │  Celery Workers │
+│  • App metadata        │  • Task broker     │  • dlt extract  │
+│  • Pipeline data       │  • Job store       │  • dlt load     │
+│  • Tenant isolation    │  • Session cache   │  • dbt transform│
+│  • Audit logs          │  • Rate limiting   │  • dbt test     │
+└─────────────────────────────────────────────────────────────┘`} /></pre>
+
+  <h2>Data Flow</h2>
+  <h3>1. Extract + Load</h3>
+  <p>User configures a source connection and a destination connection, then creates an upload. When triggered (manually or by schedule), a Celery task runs dlt to extract data from the source and load it into the destination schema. dlt handles schema mapping, type conversion, and incremental loading automatically.</p>
+
+  <h3>2. Transform</h3>
+  <p>User writes SQL models in Datanika's built-in editor. Models are stored as <code>.sql</code> files in per-tenant dbt projects at <code>dbt_projects/tenant_{'{org_id}'}/</code>. When a pipeline runs, dbt-core compiles and executes the models against the destination warehouse.</p>
+
+  <h3>3. Orchestrate</h3>
+  <p>Schedules are managed by APScheduler with a PostgreSQL job store (persistent across restarts). Each schedule triggers an upload, transformation, or pipeline on a cron expression. Dependencies form a DAG — downstream tasks wait for upstream completion before executing.</p>
+
+  <h2>Multi-Tenancy</h2>
+  <ul>
+    <li>All tables in the <code>public</code> schema with <code>org_id</code> column filtering (no schema-per-tenant)</li>
+    <li><code>TenantMixin</code> base class ensures every query is scoped to the current organization</li>
+    <li>Per-tenant dbt projects at <code>dbt_projects/tenant_{'{org_id}'}/</code> — fully isolated</li>
+    <li>Data destination schemas are user-configured per pipeline (not hardcoded)</li>
+    <li>5 tenant isolation security tests verify cross-tenant access is impossible</li>
+  </ul>
+
+  <h2>Authentication &amp; Authorization</h2>
+  <table>
+    <thead><tr><th>Layer</th><th>Technology</th><th>Details</th></tr></thead>
+    <tbody>
+      <tr><td>Password auth</td><td>bcrypt</td><td>Direct hashing, no passlib dependency</td></tr>
+      <tr><td>Tokens</td><td>JWT (python-jose)</td><td>Stateless auth with configurable expiry</td></tr>
+      <tr><td>Social login</td><td>OAuth2</td><td>Google + GitHub via Starlette routes</td></tr>
+      <tr><td>SSO</td><td>SAML + OIDC</td><td>Enterprise plan — per-org configuration</td></tr>
+      <tr><td>API auth</td><td>Bearer tokens</td><td>API keys with scopes, rate limiting per plan</td></tr>
+      <tr><td>RBAC</td><td>4 roles</td><td>Owner, Admin, Editor, Viewer — enforced in UI state layer</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Plugin Architecture</h2>
+  <p>Datanika uses a hooks-based plugin system to keep the open-source core clean while supporting commercial features:</p>
+  <ul>
+    <li><strong>Core</strong> (<code>datanika/</code>) — Open-source under AGPL-3.0. Contains all features except billing.</li>
+    <li><strong>Cloud plugin</strong> (<code>datanika-cloud/</code>) — Adds subscription billing (Paddle), quota enforcement, and usage metering.</li>
+    <li><strong>Hooks system</strong> (<code>hooks.py</code>) — Core emits events (e.g., <code>connection.before_create</code>, <code>run.upload_completed</code>), plugins subscribe with handlers.</li>
+    <li>Activated by setting <code>DATANIKA_EDITION=cloud</code>. Without it, the core runs with no limits.</li>
+  </ul>
+
+  <h2>REST API</h2>
+  <p>Full programmatic access via REST API v1:</p>
+  <ul>
+    <li>CRUD for connections, uploads, pipelines, transformations, schedules, notification channels</li>
+    <li>Trigger endpoints for running uploads, pipelines, and transformations</li>
+    <li>OpenAPI 3.0 spec at <code>/api/v1/openapi.json</code></li>
+    <li>Interactive Swagger UI at <code>/api/v1/docs</code></li>
+    <li>Rate limiting: Free 30rpm, Pro 120rpm, Enterprise 300rpm</li>
+  </ul>
+  <p>See <a href="/docs/api">API Reference</a> for full endpoint documentation.</p>
+
+  <h2>Security Model</h2>
+  <ul>
+    <li><strong>Encryption at rest</strong> — All connection credentials encrypted with Fernet symmetric encryption</li>
+    <li><strong>Webhook verification</strong> — HMAC-verified Paddle webhooks</li>
+    <li><strong>CAPTCHA</strong> — reCAPTCHA v3 on login/signup (configurable, disabled when keys empty)</li>
+    <li><strong>Audit logging</strong> — All mutating actions logged with user, timestamp, resource type, and action</li>
+    <li><strong>Input validation</strong> — 24 input validation security tests</li>
+    <li><strong>Injection protection</strong> — 11 injection security tests (SQL, XSS, command)</li>
+    <li><strong>Auth attack protection</strong> — 19 auth attack security tests</li>
+    <li><strong>Path traversal protection</strong> — 8 path traversal security tests</li>
+    <li><strong>73 security tests total</strong> covering OWASP top 10 categories</li>
+  </ul>
+
+  <h2>Technology Stack</h2>
+  <table>
+    <thead><tr><th>Component</th><th>Technology</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td>Frontend</td><td>Reflex (→ React)</td><td>Pure Python, no separate JS codebase</td></tr>
+      <tr><td>Backend</td><td>Starlette (via Reflex)</td><td>Lightweight async Python framework</td></tr>
+      <tr><td>Extract + Load</td><td>dlt</td><td>Modern Python-first EL tool</td></tr>
+      <tr><td>Transform</td><td>dbt-core</td><td>Industry standard SQL transformations</td></tr>
+      <tr><td>Task queue</td><td>Celery + Redis</td><td>Battle-tested async execution</td></tr>
+      <tr><td>Scheduling</td><td>APScheduler + PostgreSQL</td><td>Persistent cron jobs across restarts</td></tr>
+      <tr><td>Database</td><td>PostgreSQL 16</td><td>ACID, JSONB, IDENTITY columns</td></tr>
+      <tr><td>Cache / broker</td><td>Redis 7</td><td>Fast, simple, well-supported</td></tr>
+      <tr><td>Auth</td><td>bcrypt + python-jose</td><td>No passlib dependency issues</td></tr>
+      <tr><td>Encryption</td><td>cryptography (Fernet)</td><td>Symmetric encryption for credentials</td></tr>
+      <tr><td>i18n</td><td>Custom JSON-based</td><td>9 locales, compile-time key validation</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Deployment Options</h2>
+  <table>
+    <thead><tr><th>Option</th><th>Best For</th><th>Details</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Docker Compose</strong></td><td>Self-hosting</td><td>Single <code>docker compose up -d</code> — app, celery, postgres, redis. See <a href="/docs/self-hosting">Self-Hosting Guide</a>.</td></tr>
+      <tr><td><strong>SaaS</strong></td><td>Managed</td><td>Sign up at <a href="https://app.datanika.io">app.datanika.io</a> — zero infrastructure to manage.</td></tr>
+      <tr><td><strong>Kubernetes</strong></td><td>Scale</td><td>Helm chart for horizontal scaling — coming soon.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Related Docs</h2>
+  <ul>
+    <li><a href="/docs/self-hosting">Self-Hosting Guide</a> — Docker Compose setup instructions</li>
+    <li><a href="/docs/api">API Reference</a> — Full REST API v1 documentation</li>
+    <li><a href="/docs/connections">Connections</a> — Supported connectors and configuration</li>
+  </ul>
+</DocsLayout>

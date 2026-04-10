@@ -2,8 +2,10 @@
 const tiers = [
   {
     name: "Free",
-    price: "$0",
+    monthlyPrice: "$0",
+    annualPrice: "$0",
     period: "forever",
+    annualPeriod: "forever",
     description: "For individuals exploring data pipelines.",
     features: [
       "1 team member",
@@ -19,8 +21,11 @@ const tiers = [
   },
   {
     name: "Pro",
-    price: "$79",
+    monthlyPrice: "$79",
+    annualPrice: "$66",
     period: "/month",
+    annualPeriod: "/month, billed annually",
+    annualTotal: "$790/year",
     description: "For teams that need power and scale.",
     features: [
       "5 team members",
@@ -36,8 +41,11 @@ const tiers = [
   },
   {
     name: "Enterprise",
-    price: "From $399",
+    monthlyPrice: "From $399",
+    annualPrice: "From $333",
     period: "/month",
+    annualPeriod: "/month, billed annually",
+    annualTotal: "From $3,990/year",
     description: "For organizations with advanced needs. Extra seats at $25/mo each.",
     features: [
       "10 team members included",
@@ -64,6 +72,24 @@ const tiers = [
       <p class="mx-auto mt-4 max-w-2xl text-lg text-slate-400">
         Start free and scale as your data needs grow. No per-row fees, no surprise bills.
       </p>
+
+      <!-- Monthly / Annual Toggle -->
+      <div class="mt-8 inline-flex items-center gap-3 rounded-full border border-slate-800 bg-slate-900/80 p-1">
+        <button
+          id="toggle-monthly"
+          class="rounded-full px-5 py-2 text-sm font-medium transition-colors bg-violet-500/20 text-violet-300"
+          data-billing="monthly"
+        >
+          Monthly
+        </button>
+        <button
+          id="toggle-annual"
+          class="rounded-full px-5 py-2 text-sm font-medium transition-colors text-slate-400 hover:text-white"
+          data-billing="annual"
+        >
+          Annual <span class="ml-1 text-xs text-emerald-400">Save 17%</span>
+        </button>
+      </div>
     </div>
 
     <div class="mt-16 grid gap-6 lg:grid-cols-3 max-w-5xl mx-auto">
@@ -85,9 +111,15 @@ const tiers = [
           <h3 class="text-xl font-semibold text-white">{tier.name}</h3>
           <p class="mt-2 text-sm text-slate-400">{tier.description}</p>
 
-          <div class="mt-6 flex items-baseline gap-1">
-            <span class="text-4xl font-bold text-white">{tier.price}</span>
-            {tier.period && <span class="text-slate-400">{tier.period}</span>}
+          <div class="mt-6">
+            <div class="flex items-baseline gap-1" data-price="monthly">
+              <span class="text-4xl font-bold text-white">{tier.monthlyPrice}</span>
+              {tier.period && <span class="text-slate-400">{tier.period}</span>}
+            </div>
+            <div class="hidden items-baseline gap-1" data-price="annual">
+              <span class="text-4xl font-bold text-white">{tier.annualPrice}</span>
+              {tier.annualPeriod && <span class="text-slate-400">{tier.annualPeriod}</span>}
+            </div>
           </div>
 
           <ul class="mt-8 space-y-3">
@@ -117,3 +149,38 @@ const tiers = [
     </div>
   </div>
 </section>
+
+<script>
+  function initPricingToggle() {
+    const monthlyBtn = document.getElementById("toggle-monthly");
+    const annualBtn = document.getElementById("toggle-annual");
+    const monthlyPrices = document.querySelectorAll('[data-price="monthly"]');
+    const annualPrices = document.querySelectorAll('[data-price="annual"]');
+
+    if (!monthlyBtn || !annualBtn) return;
+
+    function showMonthly() {
+      monthlyBtn!.classList.add("bg-violet-500/20", "text-violet-300");
+      monthlyBtn!.classList.remove("text-slate-400", "hover:text-white");
+      annualBtn!.classList.remove("bg-violet-500/20", "text-violet-300");
+      annualBtn!.classList.add("text-slate-400", "hover:text-white");
+      monthlyPrices.forEach((el) => { el.classList.remove("hidden"); el.classList.add("flex"); });
+      annualPrices.forEach((el) => { el.classList.add("hidden"); el.classList.remove("flex"); });
+    }
+
+    function showAnnual() {
+      annualBtn!.classList.add("bg-violet-500/20", "text-violet-300");
+      annualBtn!.classList.remove("text-slate-400", "hover:text-white");
+      monthlyBtn!.classList.remove("bg-violet-500/20", "text-violet-300");
+      monthlyBtn!.classList.add("text-slate-400", "hover:text-white");
+      annualPrices.forEach((el) => { el.classList.remove("hidden"); el.classList.add("flex"); });
+      monthlyPrices.forEach((el) => { el.classList.add("hidden"); el.classList.remove("flex"); });
+    }
+
+    monthlyBtn.addEventListener("click", showMonthly);
+    annualBtn.addEventListener("click", showAnnual);
+  }
+
+  initPricingToggle();
+  document.addEventListener("astro:page-load", initPricingToggle);
+</script>
