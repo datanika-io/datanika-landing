@@ -39,6 +39,14 @@ interface Props {
    * JSON-LD block is emitted. Pass site-relative URLs (e.g. `/docs`).
    */
   breadcrumbs?: Breadcrumb[];
+  /**
+   * Additional Schema.org JSON-LD objects to emit in the `<head>`.
+   * Each entry becomes its own `<script type="application/ld+json">`
+   * block. Use this for page-specific schemas like `FAQPage`,
+   * `SoftwareApplication`, or `Product` that don't fit the built-in
+   * Organization / WebSite / Article / BreadcrumbList set.
+   */
+  extraJsonLd?: object[];
 }
 
 const {
@@ -48,6 +56,7 @@ const {
   ogType = "website",
   articleMeta,
   breadcrumbs,
+  extraJsonLd,
 } = Astro.props;
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
@@ -190,6 +199,9 @@ const breadcrumbLD =
     <script type="application/ld+json" set:html={webSiteLD} />
     {articleLD && <script type="application/ld+json" set:html={articleLD} />}
     {breadcrumbLD && <script type="application/ld+json" set:html={breadcrumbLD} />}
+    {extraJsonLd?.map((obj) => (
+      <script type="application/ld+json" set:html={JSON.stringify(obj)} />
+    ))}
   </head>
   <body class="min-h-screen antialiased">
     <slot />
