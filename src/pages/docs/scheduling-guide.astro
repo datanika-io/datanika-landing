@@ -1,0 +1,105 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+---
+
+<DocsLayout title="Scheduling Guide" description="Learn how to automate data pipelines with cron schedules, dependencies, and DAG execution in Datanika.">
+  <h1>Scheduling Guide</h1>
+  <p class="text-lg text-slate-400">Automate your data pipelines with cron schedules, dependency chains, and DAG-based execution.</p>
+
+  <h2>How Scheduling Works</h2>
+  <p>Datanika uses APScheduler with a PostgreSQL job store for scheduling. Schedules persist across restarts and are managed per-organization. Each schedule triggers an upload, transformation, or pipeline at a configurable interval.</p>
+
+  <h2>Creating a Schedule</h2>
+  <ol>
+    <li>Navigate to <strong>Scheduling</strong> in the sidebar</li>
+    <li>Click <strong>"New Schedule"</strong></li>
+    <li>Select what to schedule: an upload, transformation, or pipeline</li>
+    <li>Set the cron expression (e.g., <code>0 6 * * *</code> for daily at 6 AM UTC)</li>
+    <li>Optionally set dependencies (other schedules that must complete first)</li>
+    <li>Enable the schedule &mdash; it starts running immediately on the next cron tick</li>
+  </ol>
+
+  <h2>Cron Expression Reference</h2>
+  <table>
+    <thead><tr><th>Field</th><th>Values</th><th>Example</th></tr></thead>
+    <tbody>
+      <tr><td>Minute</td><td>0-59</td><td><code>0</code> (top of hour)</td></tr>
+      <tr><td>Hour</td><td>0-23</td><td><code>6</code> (6 AM UTC)</td></tr>
+      <tr><td>Day of month</td><td>1-31</td><td><code>*</code> (every day)</td></tr>
+      <tr><td>Month</td><td>1-12</td><td><code>*</code> (every month)</td></tr>
+      <tr><td>Day of week</td><td>0-6 (Sun-Sat)</td><td><code>1-5</code> (weekdays)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Common Patterns</h3>
+  <table>
+    <thead><tr><th>Pattern</th><th>Cron</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td>Every hour</td><td><code>0 * * * *</code></td><td>Top of every hour</td></tr>
+      <tr><td>Daily at 6 AM</td><td><code>0 6 * * *</code></td><td>Once daily at 6 AM UTC</td></tr>
+      <tr><td>Every 15 minutes</td><td><code>*/15 * * * *</code></td><td>Four times per hour</td></tr>
+      <tr><td>Weekdays at 8 AM</td><td><code>0 8 * * 1-5</code></td><td>Monday through Friday</td></tr>
+      <tr><td>Weekly on Monday</td><td><code>0 9 * * 1</code></td><td>Every Monday at 9 AM</td></tr>
+      <tr><td>Monthly on the 1st</td><td><code>0 0 1 * *</code></td><td>First day of each month</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Dependencies & DAG</h2>
+  <ul>
+    <li>Schedules can depend on other schedules</li>
+    <li>A schedule won't run until all its dependencies have completed successfully</li>
+    <li>This creates a Directed Acyclic Graph (DAG) of execution</li>
+    <li>Example: "Transform" schedule depends on "Load Raw Data" schedule</li>
+    <li>Dependency chains ensure data is loaded before transformations run</li>
+    <li>The DAG is visualized in the Scheduling page &mdash; you can see the execution order</li>
+    <li>Circular dependencies are automatically detected and prevented</li>
+  </ul>
+
+  <h2>Execution Flow</h2>
+  <ol>
+    <li>APScheduler fires the cron trigger</li>
+    <li>Datanika checks if all dependencies completed successfully</li>
+    <li>If yes: creates a Celery task and dispatches to the worker</li>
+    <li>The worker executes the upload/transformation/pipeline</li>
+    <li>Run results (success/failure, logs, duration) appear in the Runs page</li>
+    <li>Dependent schedules are triggered once this one completes</li>
+  </ol>
+
+  <h2>Toggling & Managing</h2>
+  <ul>
+    <li><strong>Enable/Disable</strong>: Toggle a schedule on or off without deleting it</li>
+    <li><strong>Edit</strong>: Change cron expression, dependencies, or target resource</li>
+    <li><strong>Delete</strong>: Remove a schedule (doesn't affect the underlying resource)</li>
+    <li><strong>Manual trigger</strong>: Run a schedule immediately without waiting for the next cron tick</li>
+  </ul>
+
+  <h2>Monitoring Scheduled Runs</h2>
+  <ul>
+    <li>All scheduled runs appear in the <a href="/docs/runs">Runs page</a> with the "scheduled" trigger type</li>
+    <li>Filter by resource, status, or date range</li>
+    <li>View streaming logs for in-progress runs</li>
+    <li>Failed runs show error details and stack traces</li>
+    <li>See the <a href="/docs/runs">Runs & Monitoring</a> documentation for full details</li>
+  </ul>
+
+  <h2>Best Practices</h2>
+  <ul>
+    <li><strong>Stagger schedules</strong>: Don't run everything at midnight &mdash; spread across hours to avoid resource contention</li>
+    <li><strong>Use dependencies</strong>: Always chain transforms after loads instead of guessing timing</li>
+    <li><strong>Monitor failures</strong>: Check the Runs page regularly or set up notification integrations</li>
+    <li><strong>Start conservative</strong>: Begin with daily schedules, increase frequency as needed</li>
+    <li><strong>Test manually first</strong>: Run uploads and transforms manually before scheduling them</li>
+    <li><strong>UTC times</strong>: All cron expressions use UTC &mdash; account for your timezone</li>
+  </ul>
+
+  <h2>Plan Limits</h2>
+  <table>
+    <thead><tr><th>Plan</th><th>Schedules</th></tr></thead>
+    <tbody>
+      <tr><td>Free</td><td>2</td></tr>
+      <tr><td>Pro</td><td>Unlimited</td></tr>
+      <tr><td>Enterprise</td><td>Unlimited</td></tr>
+    </tbody>
+  </table>
+  <p>Upgrade at any time from Settings &rarr; Billing. See <a href="/pricing">pricing</a> for details.</p>
+</DocsLayout>
