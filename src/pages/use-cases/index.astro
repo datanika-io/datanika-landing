@@ -1,0 +1,64 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Navbar from "../../components/Navbar.astro";
+import Footer from "../../components/Footer.astro";
+import { useCases } from "../../data/use-cases";
+---
+
+<Layout
+  title="Use Cases — Datanika"
+  description="Common data pipeline patterns: PostgreSQL to BigQuery, Stripe analytics, MongoDB to Snowflake, and more. See how Datanika handles your data stack."
+>
+  <Navbar />
+
+  <section class="relative pt-32 pb-20 overflow-hidden">
+    <div class="glow bg-violet-600 -top-40 -left-40"></div>
+    <div class="glow bg-cyan-600 -bottom-40 -right-40"></div>
+    <div class="relative max-w-5xl mx-auto px-6 text-center">
+      <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-6">
+        <span class="gradient-text">Use Cases</span>
+      </h1>
+      <p class="text-lg sm:text-xl text-slate-400 max-w-3xl mx-auto leading-relaxed">
+        Common data pipeline patterns — from source to destination, with dbt transformations in between.
+      </p>
+    </div>
+  </section>
+
+  <section class="py-10 pb-20">
+    <div class="max-w-5xl mx-auto px-6">
+      <div class="grid sm:grid-cols-2 gap-6">
+        {useCases.map((uc) => (
+          <a
+            href={`/use-cases/${uc.slug}`}
+            class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur p-6 transition-colors hover:border-violet-500/50"
+          >
+            <div class="flex items-center gap-2 text-sm text-slate-500 mb-3">
+              <span class="px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">{uc.source}</span>
+              <span class="text-slate-600">→</span>
+              <span class="px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300">{uc.destination}</span>
+            </div>
+            <h2 class="text-lg font-bold text-white mb-2">{uc.title}</h2>
+            <p class="text-sm text-slate-400 line-clamp-2">{uc.description}</p>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="py-20">
+    <div class="max-w-3xl mx-auto px-6 text-center">
+      <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur p-12">
+        <h2 class="text-3xl font-bold mb-4">Don't see your use case?</h2>
+        <p class="text-slate-400 mb-8 text-lg">
+          Datanika supports 32 connectors — mix and match any source with any destination.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <a href="https://app.datanika.io" class="btn-primary">Start Free</a>
+          <a href="/connectors" class="btn-secondary">View all connectors</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <Footer />
+</Layout>
