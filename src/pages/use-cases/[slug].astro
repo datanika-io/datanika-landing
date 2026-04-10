@@ -1,0 +1,132 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Navbar from "../../components/Navbar.astro";
+import Footer from "../../components/Footer.astro";
+import { useCases } from "../../data/use-cases";
+import type { UseCase } from "../../data/use-cases";
+
+export function getStaticPaths() {
+  return useCases.map((uc) => ({
+    params: { slug: uc.slug },
+    props: { useCase: uc },
+  }));
+}
+
+interface Props {
+  useCase: UseCase;
+}
+
+const { useCase } = Astro.props;
+---
+
+<Layout
+  title={`${useCase.title} Pipeline — Datanika`}
+  description={useCase.description}
+>
+  <Navbar />
+
+  <!-- Hero -->
+  <section class="relative pt-32 pb-16 overflow-hidden">
+    <div class="glow bg-violet-600 -top-40 -left-40"></div>
+    <div class="glow bg-cyan-600 -bottom-40 -right-40"></div>
+    <div class="relative max-w-4xl mx-auto px-6">
+      <div class="flex items-center gap-2 text-sm text-slate-500 mb-4">
+        <a href={`/connectors/${useCase.sourceSlug}`} class="px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 hover:text-white transition-colors">{useCase.source}</a>
+        <span class="text-slate-600">→</span>
+        <a href={`/connectors/${useCase.destinationSlug}`} class="px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300 hover:text-white transition-colors">{useCase.destination}</a>
+      </div>
+      <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight mb-4">
+        <span class="gradient-text">{useCase.title}</span>
+      </h1>
+      <p class="text-lg text-slate-400 leading-relaxed max-w-3xl">
+        {useCase.description}
+      </p>
+      <div class="flex flex-col sm:flex-row gap-4 mt-8">
+        <a href="https://app.datanika.io" class="btn-primary">Start Free</a>
+        <a href="/use-cases" class="btn-secondary">View all use cases</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Why -->
+  <section class="py-16">
+    <div class="max-w-4xl mx-auto px-6">
+      <h2 class="text-2xl font-bold mb-4">Why {useCase.source} to {useCase.destination}?</h2>
+      <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur p-6">
+        <p class="text-slate-300 leading-relaxed">{useCase.why}</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Steps -->
+  <section class="py-16">
+    <div class="max-w-4xl mx-auto px-6">
+      <h2 class="text-2xl font-bold mb-6">How to Set Up This Pipeline</h2>
+      <ol class="space-y-4">
+        {useCase.steps.map((step, i) => (
+          <li class="flex gap-4">
+            <span class="flex items-center justify-center w-8 h-8 rounded-full bg-violet-500/20 text-violet-300 font-bold text-sm shrink-0">{i + 1}</span>
+            <div class="pt-1">
+              <p class="text-slate-300">{step}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <!-- Transform Examples -->
+  <section class="py-16">
+    <div class="max-w-4xl mx-auto px-6">
+      <h2 class="text-2xl font-bold mb-6">Transform Ideas with dbt</h2>
+      <p class="text-slate-400 mb-6">Once your data is loaded, use Datanika's built-in dbt transformations to create analytics-ready models:</p>
+      <div class="grid sm:grid-cols-2 gap-4">
+        {useCase.transformExamples.map((ex) => (
+          <div class="rounded-xl border border-slate-800 bg-slate-900/50 p-5 flex items-start gap-3">
+            <span class="text-emerald-400 mt-0.5 shrink-0">&#10003;</span>
+            <p class="text-slate-300">{ex}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Connector Links -->
+  <section class="py-16">
+    <div class="max-w-4xl mx-auto px-6">
+      <h2 class="text-2xl font-bold mb-6">Connector Details</h2>
+      <div class="grid sm:grid-cols-2 gap-4">
+        <a href={`/connectors/${useCase.sourceSlug}`} class="rounded-xl border border-slate-800 bg-slate-900/50 p-5 transition-colors hover:border-violet-500/50">
+          <p class="text-sm text-slate-500 mb-1">Source</p>
+          <p class="font-semibold text-white">{useCase.source} Connector</p>
+          <p class="text-sm text-slate-400 mt-1">Setup guide, config fields, and more use cases →</p>
+        </a>
+        <a href={`/connectors/${useCase.destinationSlug}`} class="rounded-xl border border-slate-800 bg-slate-900/50 p-5 transition-colors hover:border-violet-500/50">
+          <p class="text-sm text-slate-500 mb-1">Destination</p>
+          <p class="font-semibold text-white">{useCase.destination} Connector</p>
+          <p class="text-sm text-slate-400 mt-1">Setup guide, config fields, and more use cases →</p>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="py-20">
+    <div class="max-w-3xl mx-auto px-6 text-center">
+      <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur p-12">
+        <h2 class="text-3xl font-bold mb-4">
+          Ready to build your {useCase.source} to {useCase.destination} pipeline?
+        </h2>
+        <p class="text-slate-400 mb-8 text-lg">
+          Free to start — connect {useCase.source} and {useCase.destination} in minutes.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <a href="https://app.datanika.io" class="btn-primary">Start Free</a>
+          <a href="https://github.com/datanika-io/datanika-core" class="btn-secondary">View on GitHub</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <Footer />
+</Layout>
