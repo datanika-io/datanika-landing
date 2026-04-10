@@ -66,3 +66,54 @@ describe("navbar has blog link", () => {
     expect(html).toContain('href="/blog"');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Article schema + breadcrumbs wired via Layout props (#43)
+// ---------------------------------------------------------------------------
+
+describe("blog post Article schema + breadcrumbs", () => {
+  let html: string;
+  beforeAll(() => {
+    html = readHtml("blog/introducing-datanika/index.html");
+  });
+
+  it("sets og:type to article", () => {
+    expect(html).toMatch(/<meta\s+property="og:type"\s+content="article"/);
+  });
+
+  it("emits article:published_time meta", () => {
+    expect(html).toMatch(/<meta\s+property="article:published_time"\s+content="2026-04-10/);
+  });
+
+  it("emits article:author meta", () => {
+    expect(html).toMatch(/<meta\s+property="article:author"\s+content="Datanika Team"/);
+  });
+
+  it("emits article:tag meta for each tag", () => {
+    expect(html).toMatch(/<meta\s+property="article:tag"\s+content="announcement"/);
+    expect(html).toMatch(/<meta\s+property="article:tag"\s+content="open-source"/);
+  });
+
+  it("emits Article JSON-LD with headline and author", () => {
+    expect(html).toContain('"@type":"Article"');
+    expect(html).toContain('"headline":"Introducing Datanika');
+    expect(html).toContain('"Datanika Team"');
+    expect(html).toContain('"datePublished":"2026-04-10');
+    expect(html).toContain('"dateModified":"2026-04-10');
+    expect(html).toContain('"publisher"');
+  });
+
+  it("emits BreadcrumbList JSON-LD with Home → Blog → post", () => {
+    expect(html).toContain('"@type":"BreadcrumbList"');
+    expect(html).toContain('"item":"https://datanika.io/"');
+    expect(html).toContain('"item":"https://datanika.io/blog"');
+    expect(html).toContain('"position":3');
+  });
+
+  it("includes heroImage (or default logo) in og:image", () => {
+    // Default heroImage is /logo.png per content.config.ts.
+    expect(html).toMatch(
+      /<meta\s+property="og:image"\s+content="https:\/\/datanika\.io\/logo\.png"/
+    );
+  });
+});
