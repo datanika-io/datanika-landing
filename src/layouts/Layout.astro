@@ -19,10 +19,26 @@ interface Props {
   description?: string;
   /**
    * Optional Open Graph image. Pass an absolute URL or a site-relative path
-   * (e.g. `/og/my-post.png`). Defaults to `/logo.png` so existing pages
-   * keep working with no change.
+   * (e.g. `/og/my-post.png`).
+   *
+   * Resolution order:
+   *   1. explicit `ogImage` prop
+   *   2. auto-derived from `ogCollection` + `ogSlug` (→ `/og/<col>/<slug>.png`)
+   *   3. site-wide `/logo.png` fallback
+   *
+   * Templates should prefer passing `ogCollection` + `ogSlug` rather than
+   * hard-coding the path, so a rename of the OG output structure only
+   * touches this file.
    */
   ogImage?: string;
+  /**
+   * Collection name for auto-derived OG image path (e.g. `"blog"`,
+   * `"connectors"`, `"use-cases"`, `"compare"`). Paired with `ogSlug`.
+   * Ignored if `ogImage` is set explicitly.
+   */
+  ogCollection?: string;
+  /** Slug for auto-derived OG image path. Paired with `ogCollection`. */
+  ogSlug?: string;
   /**
    * Open Graph type. Use `"article"` for blog posts and docs to enable
    * Article JSON-LD and the article-specific meta tags. Defaults to
@@ -52,7 +68,9 @@ interface Props {
 const {
   title = "Datanika — Your Data Pipeline Platform",
   description = "Build, orchestrate, and monitor data pipelines with dlt and dbt. Multi-tenant, multi-language, open-source.",
-  ogImage = "/logo.png",
+  ogImage,
+  ogCollection,
+  ogSlug,
   ogType = "website",
   articleMeta,
   breadcrumbs,
@@ -61,11 +79,21 @@ const {
 
 const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 
-// Resolve ogImage to an absolute URL. Accept both absolute URLs and
-// site-relative paths so callers can pass either form.
-const ogImageURL = ogImage.startsWith("http")
-  ? ogImage
-  : new URL(ogImage, Astro.site).href;
+// Resolution order: explicit ogImage > auto-derived > /logo.png fallback.
+// Auto-derivation kicks in when the page passes `ogCollection` + `ogSlug`,
+// matching the build-time generation route in `src/pages/og/[...route].ts`.
+let resolvedOgImage: string;
+if (ogImage) {
+  resolvedOgImage = ogImage;
+} else if (ogCollection && ogSlug) {
+  resolvedOgImage = `/og/${ogCollection}/${ogSlug}.png`;
+} else {
+  resolvedOgImage = "/logo.png";
+}
+
+const ogImageURL = resolvedOgImage.startsWith("http")
+  ? resolvedOgImage
+  : new URL(resolvedOgImage, Astro.site).href;
 
 const logoURL = new URL("/logo.png", Astro.site).href;
 

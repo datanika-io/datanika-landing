@@ -110,10 +110,13 @@ describe("blog post Article schema + breadcrumbs", () => {
     expect(html).toContain('"position":3');
   });
 
-  it("includes heroImage (or default logo) in og:image", () => {
-    // Default heroImage is /logo.png per content.config.ts.
+  it("og:image is auto-derived from build-time OG generator (#55)", () => {
+    // Posts without a custom heroImage get /og/blog/<slug>.png from the
+    // build-time OG image generator. Posts with a custom heroImage
+    // (set in frontmatter by Growth) would override this — none of the
+    // current posts do, so every post resolves to the auto-derived URL.
     expect(html).toMatch(
-      /<meta\s+property="og:image"\s+content="https:\/\/datanika\.io\/logo\.png"/
+      /<meta\s+property="og:image"\s+content="https:\/\/datanika\.io\/og\/blog\/introducing-datanika\.png"/
     );
   });
 });
