@@ -17,11 +17,18 @@ interface Props {
 }
 
 const { useCase } = Astro.props;
+
+const breadcrumbs = [
+  { name: "Home", url: "/" },
+  { name: "Use Cases", url: "/use-cases" },
+  { name: useCase.title, url: `/use-cases/${useCase.slug}` },
+];
 ---
 
 <Layout
   title={`${useCase.title} Pipeline — Datanika`}
   description={useCase.description}
+  breadcrumbs={breadcrumbs}
 >
   <Navbar />
 

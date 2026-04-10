@@ -27,11 +27,18 @@ const directionColor =
 const relatedConnectors = connector.related
   .map((slug) => connectors.find((c) => c.slug === slug))
   .filter(Boolean) as Connector[];
+
+const breadcrumbs = [
+  { name: "Home", url: "/" },
+  { name: "Connectors", url: "/connectors" },
+  { name: connector.name, url: `/connectors/${connector.slug}` },
+];
 ---
 
 <Layout
   title={`${connector.name} Connector — Datanika`}
   description={connector.description}
+  breadcrumbs={breadcrumbs}
 >
   <Navbar />
 
