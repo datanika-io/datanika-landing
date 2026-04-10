@@ -1,0 +1,90 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+---
+
+<DocsLayout title="Getting Started" description="Step-by-step guide to setting up your first data pipeline with Datanika.">
+  <h1>Getting Started</h1>
+  <p class="text-lg text-slate-400">Go from zero to a running data pipeline in minutes.</p>
+
+  <p class="mt-4">
+    <a href="https://app.datanika.io" class="inline-block rounded-lg bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-violet-500 no-underline">Start Free at app.datanika.io &rarr;</a>
+  </p>
+
+  <h2>1. Sign Up</h2>
+  <p>Head to <a href="https://app.datanika.io">app.datanika.io</a> and create your account. You can sign up with an email and password or use Google or GitHub social login. After signing up, verify your email address to activate your account.</p>
+
+  <h2>2. Create Your Organization</h2>
+  <p>First-time users are prompted to create an <strong>organization</strong>. An organization is your workspace — all connections, pipelines, and data live inside it. You can invite team members and assign roles later.</p>
+  <p>See <a href="/docs/organizations">Organizations &amp; Members</a> for details on roles and permissions.</p>
+
+  <h2>3. Add Your First Connection</h2>
+  <p>Connections represent data sources and destinations. To add one:</p>
+  <ul>
+    <li>Navigate to <strong>Connections</strong> in the sidebar</li>
+    <li>Click <strong>New Connection</strong></li>
+    <li>Choose a source type (e.g., PostgreSQL, MySQL, Stripe, Google Sheets)</li>
+    <li>Enter credentials — they are encrypted at rest</li>
+    <li>Add a destination connection as well (e.g., BigQuery, Snowflake, or another PostgreSQL)</li>
+  </ul>
+  <p>Datanika supports <strong>32 connectors</strong> (27 sources and 11 destinations). See the full list at <a href="/docs/connections">Connections</a>.</p>
+
+  <h2>4. Load Your Data</h2>
+  <p>With a source and destination connected, you can start moving data:</p>
+  <ul>
+    <li>Navigate to <strong>Uploads</strong> and click <strong>New Upload</strong></li>
+    <li>Select your source connection and destination connection</li>
+    <li>Choose a load mode — single table or full database</li>
+    <li>Click <strong>Run</strong> to start extracting and loading</li>
+  </ul>
+  <p>Alternatively, drag and drop a CSV, JSON, or Parquet file via <a href="/docs/file-uploads">File Uploads</a> to load data directly.</p>
+  <p>See <a href="/docs/uploads">Uploads</a> for more on load modes, incremental loading, and schema management.</p>
+
+  <h2>5. Transform Your Data (Optional)</h2>
+  <p>Once your raw data is loaded, you can clean and reshape it with SQL:</p>
+  <ul>
+    <li>Navigate to <strong>Transformations</strong></li>
+    <li>Write SQL models powered by <strong>dbt</strong></li>
+    <li>Preview results before running</li>
+  </ul>
+  <p>See <a href="/docs/transformations">Transformations</a> for details on SQL models, materialization options, and the built-in editor.</p>
+
+  <h2>6. Build a Pipeline</h2>
+  <p>Pipelines group multiple transformations into a single executable unit:</p>
+  <ul>
+    <li>Navigate to <strong>Pipelines</strong> and click <strong>New Pipeline</strong></li>
+    <li>Select which transformations to include</li>
+    <li>The visual DAG shows the execution order based on model dependencies</li>
+    <li>Run the pipeline to execute all models in the correct order</li>
+  </ul>
+  <p>See <a href="/docs/pipelines">Pipelines</a> for more on DAG visualization and pipeline management.</p>
+
+  <h2>7. Schedule Automated Runs</h2>
+  <p>Automate your data workflows so they run without manual intervention:</p>
+  <ul>
+    <li>Navigate to <strong>Scheduling</strong></li>
+    <li>Create a schedule using a cron expression (e.g., every hour, daily at midnight)</li>
+    <li>Set dependencies between uploads and pipelines so they run in order</li>
+    <li>Monitor execution in the <strong>Runs</strong> page</li>
+  </ul>
+  <p>See <a href="/docs/scheduling">Scheduling &amp; Dependencies</a> and <a href="/docs/runs">Runs &amp; Monitoring</a> for details.</p>
+
+  <h2>8. What's Next?</h2>
+  <div class="mt-4 grid gap-4 sm:grid-cols-2">
+    <a href="/docs/organizations" class="block rounded-xl border border-slate-800 p-5 transition-colors hover:border-violet-500/50">
+      <h3 class="!mt-0 text-white">Invite Team Members</h3>
+      <p class="text-sm text-slate-400 !mb-0">Add colleagues to your organization and assign roles.</p>
+    </a>
+    <a href="/docs/catalog" class="block rounded-xl border border-slate-800 p-5 transition-colors hover:border-violet-500/50">
+      <h3 class="!mt-0 text-white">Explore the Data Catalog</h3>
+      <p class="text-sm text-slate-400 !mb-0">Browse all tables and models discovered across your pipelines.</p>
+    </a>
+    <a href="/docs/api-keys" class="block rounded-xl border border-slate-800 p-5 transition-colors hover:border-violet-500/50">
+      <h3 class="!mt-0 text-white">Set Up API Keys</h3>
+      <p class="text-sm text-slate-400 !mb-0">Programmatic access for automation and integrations.</p>
+    </a>
+    <a href="https://github.com/datanika-io/datanika-core" class="block rounded-xl border border-slate-800 p-5 transition-colors hover:border-violet-500/50">
+      <h3 class="!mt-0 text-white">Self-Host with Docker</h3>
+      <p class="text-sm text-slate-400 !mb-0">Deploy the open-source core on your own infrastructure.</p>
+    </a>
+  </div>
+</DocsLayout>
