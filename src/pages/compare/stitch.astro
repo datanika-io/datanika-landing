@@ -1,0 +1,175 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Navbar from "../../components/Navbar.astro";
+import Footer from "../../components/Footer.astro";
+
+const features = [
+  { name: "Data extraction & loading", datanika: true, stitch: true },
+  { name: "dbt transformations built-in", datanika: true, stitch: false },
+  { name: "Built-in scheduling", datanika: true, stitch: true },
+  { name: "Visual pipeline DAG", datanika: true, stitch: false },
+  { name: "SQL Editor", datanika: true, stitch: false },
+  { name: "File uploads (CSV/JSON/Parquet)", datanika: true, stitch: false },
+  { name: "Data Catalog", datanika: true, stitch: false },
+  { name: "Open-source", datanika: true, stitch: false },
+  { name: "Self-hostable", datanika: true, stitch: false },
+  { name: "Active development", datanika: true, stitch: false },
+  { name: "Multi-language UI", datanika: true, stitch: false },
+];
+
+const chooseDatanika = [
+  "You want an actively developed, open-source platform",
+  "You need transforms + scheduling alongside data loading",
+  "You want to self-host and own your infrastructure",
+  "You're looking for a modern alternative to a stagnant product",
+  "You need more than just EL — you need the full data pipeline",
+];
+
+const chooseStitch = [
+  "You're already embedded in the Talend/Qlik ecosystem",
+  "You only need basic EL with simple connectors",
+  "You want a tool with a long track record (since 2016)",
+];
+---
+
+<Layout
+  title="Datanika vs Stitch — Modern Open-Source ELT Alternative"
+  description="Compare Datanika and Stitch (Talend/Qlik) side-by-side. Datanika is the actively developed, open-source alternative with built-in transforms and self-hosting."
+>
+  <Navbar />
+
+  <!-- Hero -->
+  <section class="relative pt-32 pb-20 overflow-hidden">
+    <div class="glow bg-violet-600 -top-40 -left-40"></div>
+    <div class="glow bg-cyan-600 -bottom-40 -right-40"></div>
+    <div class="relative max-w-5xl mx-auto px-6 text-center">
+      <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-6">
+        <span class="gradient-text">Datanika vs Stitch</span>
+      </h1>
+      <p class="text-lg sm:text-xl text-slate-400 max-w-3xl mx-auto leading-relaxed">
+        Stitch (by Talend, now Qlik) pioneered simple cloud EL — but development has stagnated since the 2023 acquisition. Datanika is the actively maintained, open-source alternative with built-in transforms, scheduling, and self-hosting.
+      </p>
+    </div>
+  </section>
+
+  <!-- Feature Table -->
+  <section class="py-20">
+    <div class="max-w-5xl mx-auto px-6">
+      <h2 class="text-3xl font-bold text-center mb-12">Feature Comparison</h2>
+      <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur overflow-hidden">
+        <table class="w-full text-left">
+          <thead>
+            <tr class="border-b border-slate-800">
+              <th class="px-6 py-4 text-sm font-semibold text-slate-400">Feature</th>
+              <th class="px-6 py-4 text-sm font-semibold text-violet-400 text-center">Datanika</th>
+              <th class="px-6 py-4 text-sm font-semibold text-slate-400 text-center">Stitch</th>
+            </tr>
+          </thead>
+          <tbody>
+            {features.map((f, i) => (
+              <tr class={i % 2 === 0 ? "bg-slate-900/30" : ""}>
+                <td class="px-6 py-4 text-sm text-slate-300">{f.name}</td>
+                <td class="px-6 py-4 text-center">
+                  {f.datanika ? (
+                    <span class="text-emerald-400">&#10003;</span>
+                  ) : (
+                    <span class="text-red-400/60">&#10007;</span>
+                  )}
+                </td>
+                <td class="px-6 py-4 text-center">
+                  {f.stitch ? (
+                    <span class="text-emerald-400">&#10003;</span>
+                  ) : (
+                    <span class="text-red-400/60">&#10007;</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- When to Choose -->
+  <section class="py-20">
+    <div class="max-w-5xl mx-auto px-6">
+      <h2 class="text-3xl font-bold text-center mb-12">When to Choose Each Tool</h2>
+      <div class="grid md:grid-cols-2 gap-8">
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur p-8">
+          <h3 class="text-xl font-bold text-violet-400 mb-4">When to Choose Datanika</h3>
+          <ul class="space-y-3">
+            {chooseDatanika.map((item) => (
+              <li class="flex items-start gap-3 text-slate-300">
+                <span class="text-emerald-400 mt-0.5">&#10003;</span>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur p-8">
+          <h3 class="text-xl font-bold text-slate-400 mb-4">When to Choose Stitch</h3>
+          <ul class="space-y-3">
+            {chooseStitch.map((item) => (
+              <li class="flex items-start gap-3 text-slate-300">
+                <span class="text-slate-500 mt-0.5">&#10003;</span>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- At a Glance -->
+  <section class="py-20">
+    <div class="max-w-5xl mx-auto px-6">
+      <h2 class="text-3xl font-bold text-center mb-12">At a Glance</h2>
+      <div class="grid md:grid-cols-2 gap-8">
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur p-8">
+          <h3 class="text-xl font-bold text-violet-400 mb-6">Datanika</h3>
+          <ul class="space-y-3 text-slate-300 text-sm">
+            <li class="flex justify-between"><span class="text-slate-400">Type</span><span>All-in-one EL+T+Scheduling</span></li>
+            <li class="flex justify-between"><span class="text-slate-400">Transforms</span><span>dbt built-in</span></li>
+            <li class="flex justify-between"><span class="text-slate-400">Connectors</span><span>32+</span></li>
+            <li class="flex justify-between"><span class="text-slate-400">Deployment</span><span>Docker self-host</span></li>
+            <li class="flex justify-between"><span class="text-slate-400">License</span><span>AGPL-3.0</span></li>
+            <li class="flex justify-between"><span class="text-slate-400">Development</span><span>Active</span></li>
+            <li class="flex justify-between"><span class="text-slate-400">Pricing</span><span>Free / Pro $79 / Enterprise $399</span></li>
+          </ul>
+        </div>
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur p-8">
+          <h3 class="text-xl font-bold text-slate-400 mb-6">Stitch</h3>
+          <ul class="space-y-3 text-slate-300 text-sm">
+            <li class="flex justify-between"><span class="text-slate-400">Type</span><span>EL only</span></li>
+            <li class="flex justify-between"><span class="text-slate-400">Transforms</span><span>None</span></li>
+            <li class="flex justify-between"><span class="text-slate-400">Connectors</span><span>~130</span></li>
+            <li class="flex justify-between"><span class="text-slate-400">Deployment</span><span>SaaS only</span></li>
+            <li class="flex justify-between"><span class="text-slate-400">License</span><span>Closed source (Talend/Qlik)</span></li>
+            <li class="flex justify-between"><span class="text-slate-400">Development</span><span>Limited updates since 2023</span></li>
+            <li class="flex justify-between"><span class="text-slate-400">Pricing</span><span>Starts ~$100/mo</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="py-20">
+    <div class="max-w-5xl mx-auto px-6">
+      <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur p-12 text-center">
+        <h2 class="text-3xl font-bold mb-4">Ready to move beyond Stitch?</h2>
+        <p class="text-slate-400 mb-8 max-w-2xl mx-auto">
+          Datanika gives you everything Stitch does — plus built-in dbt transforms, visual DAGs, a data catalog, and full self-hosting. Open-source and actively developed.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <a href="https://app.datanika.io/signup" class="btn-primary">Start Free</a>
+          <a href="https://github.com/datanika-io/datanika-core" class="btn-secondary">View on GitHub</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <Footer />
+</Layout>
