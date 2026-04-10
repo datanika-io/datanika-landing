@@ -28,12 +28,20 @@ const breadcrumbs = [
   { name: "Blog", url: "/blog" },
   { name: post.data.title, url: Astro.url.pathname },
 ];
+
+// OG image resolution: if frontmatter specifies a non-default `heroImage`
+// (i.e. Growth uploaded custom art), use it. Otherwise let Layout
+// auto-derive from the build-time OG generator at `/og/blog/<slug>.png`.
+const hasCustomHero =
+  post.data.heroImage && post.data.heroImage !== "/logo.png";
 ---
 
 <Layout
   title={`${post.data.title} — Datanika Blog`}
   description={post.data.description}
-  ogImage={post.data.heroImage}
+  ogImage={hasCustomHero ? post.data.heroImage : undefined}
+  ogCollection="blog"
+  ogSlug={post.id}
   ogType="article"
   articleMeta={articleMeta}
   breadcrumbs={breadcrumbs}
