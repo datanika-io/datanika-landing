@@ -282,6 +282,50 @@ Content-Type: application/json
   "skipped": 0
 }`} /></pre>
 
+  <h2 id="rate-limits">Rate Limits</h2>
+  <p>API requests are rate-limited per API key using a sliding window. Limits depend on your plan:</p>
+  <table>
+    <thead><tr><th>Plan</th><th>Requests / minute</th><th>Burst (per second)</th></tr></thead>
+    <tbody>
+      <tr><td>Free</td><td>30</td><td>5</td></tr>
+      <tr><td>Pro</td><td>120</td><td>15</td></tr>
+      <tr><td>Enterprise</td><td>300</td><td>30</td></tr>
+    </tbody>
+  </table>
+  <p>Self-hosted (core edition) defaults to 60 requests/minute, configurable via <code>API_RATE_LIMIT_RPM</code> and <code>API_RATE_LIMIT_BURST</code> environment variables.</p>
+
+  <h3>Rate limit headers</h3>
+  <p>Every API response includes rate limit headers:</p>
+  <table>
+    <thead><tr><th>Header</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>X-RateLimit-Limit</code></td><td>Maximum requests allowed per minute</td></tr>
+      <tr><td><code>X-RateLimit-Remaining</code></td><td>Requests remaining in current window</td></tr>
+      <tr><td><code>X-RateLimit-Reset</code></td><td>Unix timestamp when the window resets</td></tr>
+      <tr><td><code>Retry-After</code></td><td>Seconds to wait before retrying (only on <code>429</code> responses)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>When rate limited</h3>
+  <p>If you exceed the limit, you will receive a <code>429 Too Many Requests</code> response:</p>
+  <pre><code set:html={`HTTP/1.1 429 Too Many Requests
+Retry-After: 45
+X-RateLimit-Limit: 60
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 1711929600
+
+{
+  "error": "Rate limit exceeded (60 requests/minute). Retry after 45 seconds."
+}`} /></pre>
+
+  <h3>Best practices</h3>
+  <ul>
+    <li>Cache responses when possible to reduce API calls</li>
+    <li>Use exponential backoff when receiving <code>429</code> responses</li>
+    <li>Respect the <code>Retry-After</code> header before retrying</li>
+    <li>Use separate API keys for different integrations to get independent rate limits</li>
+  </ul>
+
   <h2>Error Responses</h2>
   <pre><code set:html={`{
   "error": "Unauthorized",
@@ -297,6 +341,7 @@ Content-Type: application/json
       <tr><td><code>401</code></td><td>Missing or invalid API key</td></tr>
       <tr><td><code>403</code></td><td>Insufficient permissions (scope mismatch)</td></tr>
       <tr><td><code>404</code></td><td>Resource not found</td></tr>
+      <tr><td><code>429</code></td><td>Rate limit exceeded (see <a href="#rate-limits">Rate Limits</a>)</td></tr>
       <tr><td><code>500</code></td><td>Server error</td></tr>
     </tbody>
   </table>

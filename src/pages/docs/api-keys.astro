@@ -45,5 +45,17 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
   <pre><code set:html={`curl -H "Authorization: Bearer etf_your_api_key_here" \\
      https://app.datanika.io/api/v1/runs`} /></pre>
 
+  <h2>Rate Limits</h2>
+  <p>Each API key has independent rate limits based on your plan. Exceeding the limit returns a <code>429 Too Many Requests</code> response with a <code>Retry-After</code> header.</p>
+  <table>
+    <thead><tr><th>Plan</th><th>Requests / minute</th></tr></thead>
+    <tbody>
+      <tr><td>Free</td><td>30</td></tr>
+      <tr><td>Pro</td><td>120</td></tr>
+      <tr><td>Enterprise</td><td>300</td></tr>
+    </tbody>
+  </table>
+  <p>For full details on rate limit headers and best practices, see <a href="/docs/api#rate-limits">API Reference &rarr; Rate Limits</a>.</p>
+
   <p>See the <a href="/docs/api">API Reference</a> for all available endpoints with examples.</p>
 </DocsLayout>
