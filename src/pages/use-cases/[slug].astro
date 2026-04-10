@@ -23,11 +23,17 @@ const breadcrumbs = [
   { name: "Use Cases", url: "/use-cases" },
   { name: useCase.title, url: `/use-cases/${useCase.slug}` },
 ];
+
+// SEO overrides from plans/SEO_KEYWORDS.md Tier 1 rewrite pass.
+// Falls back to default pattern when not set.
+const pageTitle = useCase.seoTitle ?? `${useCase.title} Pipeline — Datanika`;
+const pageDescription = useCase.seoDescription ?? useCase.description;
+const pageH1 = useCase.seoH1 ?? useCase.title;
 ---
 
 <Layout
-  title={`${useCase.title} Pipeline — Datanika`}
-  description={useCase.description}
+  title={pageTitle}
+  description={pageDescription}
   breadcrumbs={breadcrumbs}
   ogCollection="use-cases"
   ogSlug={useCase.slug}
@@ -45,7 +51,7 @@ const breadcrumbs = [
         <a href={`/connectors/${useCase.destinationSlug}`} class="px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300 hover:text-white transition-colors">{useCase.destination}</a>
       </div>
       <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight mb-4">
-        <span class="gradient-text">{useCase.title}</span>
+        <span class="gradient-text">{pageH1}</span>
       </h1>
       <p class="text-lg text-slate-400 leading-relaxed max-w-3xl">
         {useCase.description}

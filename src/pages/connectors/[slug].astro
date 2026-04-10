@@ -33,11 +33,17 @@ const breadcrumbs = [
   { name: "Connectors", url: "/connectors" },
   { name: connector.name, url: `/connectors/${connector.slug}` },
 ];
+
+// SEO overrides from plans/SEO_KEYWORDS.md Tier 1 rewrite pass.
+// Falls back to default pattern when not set.
+const pageTitle = connector.seoTitle ?? `${connector.name} Connector — Datanika`;
+const pageDescription = connector.seoDescription ?? connector.description;
+const pageH1 = connector.seoH1 ?? connector.name;
 ---
 
 <Layout
-  title={`${connector.name} Connector — Datanika`}
-  description={connector.description}
+  title={pageTitle}
+  description={pageDescription}
   breadcrumbs={breadcrumbs}
   ogCollection="connectors"
   ogSlug={connector.slug}
@@ -56,7 +62,7 @@ const breadcrumbs = [
         </span>
       </div>
       <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight mb-4">
-        <span class="gradient-text">{connector.name}</span>
+        <span class="gradient-text">{pageH1}</span>
       </h1>
       <p class="text-lg text-slate-400 leading-relaxed max-w-3xl">
         {connector.description}

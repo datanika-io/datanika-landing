@@ -20,8 +20,8 @@ describe("Datanika vs Hevo Data comparison page", () => {
     expect(html).toBeTruthy();
   });
 
-  it("has comparison title", () => {
-    expect(html).toContain("Datanika vs Hevo");
+  it("has comparison title (Hevo Data Alternative after Tier 1 rewrite)", () => {
+    expect(html).toContain("Hevo Data Alternative");
   });
 
   it("mentions open-source advantage", () => {
