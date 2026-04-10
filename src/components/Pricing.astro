@@ -2,8 +2,10 @@
 const tiers = [
   {
     name: "Free",
-    price: "$0",
-    period: "forever",
+    monthlyPrice: "$0",
+    annualPrice: "$0",
+    monthlyPeriod: "forever",
+    annualPeriod: "forever",
     description: "For individuals exploring data pipelines.",
     features: [
       "1 team member",
@@ -19,8 +21,10 @@ const tiers = [
   },
   {
     name: "Pro",
-    price: "$79",
-    period: "/month",
+    monthlyPrice: "$79",
+    annualPrice: "$790",
+    monthlyPeriod: "/month",
+    annualPeriod: "/year",
     description: "For teams that need power and scale.",
     features: [
       "5 team members",
@@ -36,8 +40,10 @@ const tiers = [
   },
   {
     name: "Enterprise",
-    price: "From $399",
-    period: "/month",
+    monthlyPrice: "From $399",
+    annualPrice: "From $3,990",
+    monthlyPeriod: "/month",
+    annualPeriod: "/year",
     description: "For organizations with advanced needs. Extra seats at $25/mo each.",
     features: [
       "10 team members included",
@@ -64,10 +70,31 @@ const tiers = [
       <p class="mx-auto mt-4 max-w-2xl text-lg text-slate-400">
         Start free and scale as your data needs grow. No per-row fees, no surprise bills.
       </p>
+
+      <!-- Monthly / Annual Toggle -->
+      <div class="mt-8 inline-flex items-center gap-3 rounded-full border border-slate-700 bg-slate-900/80 p-1.5">
+        <button
+          id="btn-monthly"
+          class="rounded-full px-5 py-2 text-sm font-semibold transition-all bg-violet-600 text-white"
+          onclick="setInterval('monthly')"
+        >
+          Monthly
+        </button>
+        <button
+          id="btn-annual"
+          class="rounded-full px-5 py-2 text-sm font-semibold transition-all text-slate-400 hover:text-white"
+          onclick="setInterval('annual')"
+        >
+          Annual
+          <span class="ml-1.5 inline-block rounded-full bg-green-500/20 px-2 py-0.5 text-xs font-bold text-green-400">
+            Save 17%
+          </span>
+        </button>
+      </div>
     </div>
 
     <div class="mt-16 grid gap-6 lg:grid-cols-3 max-w-5xl mx-auto">
-      {tiers.map((tier) => (
+      {tiers.map((tier, i) => (
         <div
           class:list={[
             "relative rounded-xl border p-8 transition-colors",
@@ -86,8 +113,22 @@ const tiers = [
           <p class="mt-2 text-sm text-slate-400">{tier.description}</p>
 
           <div class="mt-6 flex items-baseline gap-1">
-            <span class="text-4xl font-bold text-white">{tier.price}</span>
-            {tier.period && <span class="text-slate-400">{tier.period}</span>}
+            <span
+              class="text-4xl font-bold text-white"
+              data-monthly-price={tier.monthlyPrice}
+              data-annual-price={tier.annualPrice}
+              id={`price-${i}`}
+            >
+              {tier.monthlyPrice}
+            </span>
+            <span
+              class="text-slate-400"
+              data-monthly-period={tier.monthlyPeriod}
+              data-annual-period={tier.annualPeriod}
+              id={`period-${i}`}
+            >
+              {tier.monthlyPeriod}
+            </span>
           </div>
 
           <ul class="mt-8 space-y-3">
@@ -117,3 +158,31 @@ const tiers = [
     </div>
   </div>
 </section>
+
+<script is:inline>
+  function setInterval(interval) {
+    const btnMonthly = document.getElementById('btn-monthly');
+    const btnAnnual = document.getElementById('btn-annual');
+
+    if (interval === 'monthly') {
+      btnMonthly.className = 'rounded-full px-5 py-2 text-sm font-semibold transition-all bg-violet-600 text-white';
+      btnAnnual.className = 'rounded-full px-5 py-2 text-sm font-semibold transition-all text-slate-400 hover:text-white';
+    } else {
+      btnAnnual.className = 'rounded-full px-5 py-2 text-sm font-semibold transition-all bg-violet-600 text-white';
+      btnMonthly.className = 'rounded-full px-5 py-2 text-sm font-semibold transition-all text-slate-400 hover:text-white';
+    }
+
+    for (let i = 0; i < 3; i++) {
+      const priceEl = document.getElementById(`price-${i}`);
+      const periodEl = document.getElementById(`period-${i}`);
+      if (priceEl && periodEl) {
+        priceEl.textContent = interval === 'monthly'
+          ? priceEl.dataset.monthlyPrice
+          : priceEl.dataset.annualPrice;
+        periodEl.textContent = interval === 'monthly'
+          ? periodEl.dataset.monthlyPeriod
+          : periodEl.dataset.annualPeriod;
+      }
+    }
+  }
+</script>
