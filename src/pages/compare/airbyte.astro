@@ -1,0 +1,181 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Navbar from "../../components/Navbar.astro";
+import Footer from "../../components/Footer.astro";
+
+const features = [
+  { name: "Data extraction & loading", datanika: true, airbyte: true },
+  { name: "dbt transformations", datanika: true, airbyte: false },
+  { name: "Built-in scheduling", datanika: true, airbyte: true },
+  { name: "Visual pipeline DAG", datanika: true, airbyte: false },
+  { name: "SQL Editor", datanika: true, airbyte: false },
+  { name: "File uploads (CSV/JSON/Parquet)", datanika: true, airbyte: false },
+  { name: "Data Catalog", datanika: true, airbyte: false },
+  { name: "400+ connectors", datanika: false, airbyte: true },
+  { name: "Self-host without Kubernetes", datanika: true, airbyte: false },
+  { name: "Open-source license (AGPL)", datanika: true, airbyte: false },
+  { name: "Multi-language UI (9 languages)", datanika: true, airbyte: false },
+];
+
+const chooseDatanika = [
+  "You want ELT + transforms + scheduling in one tool",
+  "You don't want to manage Kubernetes",
+  "You need dbt transformations alongside your EL pipelines",
+  "You want a truly open-source platform (AGPL vs ELv2)",
+  "You're a small-to-mid team that values simplicity",
+];
+
+const chooseAirbyte = [
+  "You need 400+ connectors for niche data sources",
+  "You already have a separate transformation tool (dbt Cloud, etc.)",
+  "You need a mature ecosystem with a large community",
+];
+---
+
+<Layout
+  title="Datanika vs Airbyte — Open-Source ELT Alternative"
+  description="Compare Datanika and Airbyte side-by-side. Datanika offers built-in dbt transforms, scheduling, and a visual pipeline builder — all without Kubernetes."
+>
+  <Navbar />
+
+  <!-- Hero -->
+  <section class="relative pt-32 pb-20 overflow-hidden">
+    <div class="glow bg-violet-600 -top-40 -left-40"></div>
+    <div class="glow bg-cyan-600 -bottom-40 -right-40"></div>
+    <div class="relative max-w-5xl mx-auto px-6 text-center">
+      <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-6">
+        <span class="gradient-text">Datanika vs Airbyte</span>
+      </h1>
+      <p class="text-lg sm:text-xl text-slate-400 max-w-3xl mx-auto leading-relaxed">
+        The all-in-one open-source alternative to Airbyte — with built-in
+        transforms, scheduling, and a visual pipeline builder.
+      </p>
+    </div>
+  </section>
+
+  <!-- Feature Comparison Table -->
+  <section class="py-20">
+    <div class="max-w-5xl mx-auto px-6">
+      <h2 class="text-3xl font-bold text-center mb-12">Feature Comparison</h2>
+      <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur overflow-hidden">
+        <table class="w-full text-left">
+          <thead>
+            <tr class="border-b border-slate-800">
+              <th class="px-6 py-4 text-sm font-semibold text-slate-300 uppercase tracking-wider">Feature</th>
+              <th class="px-6 py-4 text-sm font-semibold text-center text-violet-400 uppercase tracking-wider">Datanika</th>
+              <th class="px-6 py-4 text-sm font-semibold text-center text-slate-400 uppercase tracking-wider">Airbyte</th>
+            </tr>
+          </thead>
+          <tbody>
+            {features.map((f, i) => (
+              <tr class={`border-b border-slate-800/50 ${i % 2 === 0 ? "bg-slate-900/30" : ""}`}>
+                <td class="px-6 py-4 text-slate-200">{f.name}</td>
+                <td class="px-6 py-4 text-center text-lg">
+                  {f.datanika ? (
+                    <span class="text-emerald-400">&#10003;</span>
+                  ) : (
+                    <span class="text-red-400/60">&#10007;</span>
+                  )}
+                </td>
+                <td class="px-6 py-4 text-center text-lg">
+                  {f.airbyte ? (
+                    <span class="text-emerald-400">&#10003;</span>
+                  ) : (
+                    <span class="text-red-400/60">&#10007;</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- When to Choose -->
+  <section class="py-20">
+    <div class="max-w-5xl mx-auto px-6 grid md:grid-cols-2 gap-8">
+      <!-- Choose Datanika -->
+      <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur p-8">
+        <h3 class="text-2xl font-bold mb-6">
+          When to choose <span class="gradient-text">Datanika</span>
+        </h3>
+        <ul class="space-y-4">
+          {chooseDatanika.map((item) => (
+            <li class="flex items-start gap-3">
+              <span class="text-emerald-400 mt-0.5 shrink-0">&#10003;</span>
+              <span class="text-slate-300">{item}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <!-- Choose Airbyte -->
+      <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur p-8">
+        <h3 class="text-2xl font-bold mb-6">
+          When to choose <span class="text-slate-400">Airbyte</span>
+        </h3>
+        <ul class="space-y-4">
+          {chooseAirbyte.map((item) => (
+            <li class="flex items-start gap-3">
+              <span class="text-emerald-400 mt-0.5 shrink-0">&#10003;</span>
+              <span class="text-slate-300">{item}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- At a Glance -->
+  <section class="py-20">
+    <div class="max-w-5xl mx-auto px-6">
+      <h2 class="text-3xl font-bold text-center mb-12">At a Glance</h2>
+      <div class="grid md:grid-cols-2 gap-8">
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur p-8">
+          <h3 class="text-xl font-bold mb-4 gradient-text">Datanika</h3>
+          <ul class="space-y-3 text-slate-300 text-sm">
+            <li><span class="text-slate-500 font-medium">Scope:</span> All-in-one EL + Transform + Scheduling</li>
+            <li><span class="text-slate-500 font-medium">Transforms:</span> dbt built-in (SQL editor, tests, snapshots)</li>
+            <li><span class="text-slate-500 font-medium">Connectors:</span> 32 (focused, curated)</li>
+            <li><span class="text-slate-500 font-medium">Self-hosting:</span> Single Docker Compose</li>
+            <li><span class="text-slate-500 font-medium">License:</span> AGPL-3.0 (truly open source)</li>
+            <li><span class="text-slate-500 font-medium">Stack:</span> Python (Reflex), dlt, dbt-core</li>
+            <li><span class="text-slate-500 font-medium">Pricing:</span> Free $0 / Pro $79/mo / Enterprise from $399/mo</li>
+          </ul>
+        </div>
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur p-8">
+          <h3 class="text-xl font-bold mb-4 text-slate-400">Airbyte</h3>
+          <ul class="space-y-3 text-slate-300 text-sm">
+            <li><span class="text-slate-500 font-medium">Scope:</span> EL only (no transforms, no scheduling)</li>
+            <li><span class="text-slate-500 font-medium">Transforms:</span> None — need separate dbt Cloud/Core</li>
+            <li><span class="text-slate-500 font-medium">Connectors:</span> 400+ (community-maintained, variable quality)</li>
+            <li><span class="text-slate-500 font-medium">Self-hosting:</span> Requires Kubernetes for production</li>
+            <li><span class="text-slate-500 font-medium">License:</span> ELv2 (not truly open source)</li>
+            <li><span class="text-slate-500 font-medium">Stack:</span> Java + Python, Airbyte protocol</li>
+            <li><span class="text-slate-500 font-medium">Pricing:</span> Free tier limited, Cloud starts ~$400/mo</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="py-20">
+    <div class="max-w-3xl mx-auto px-6 text-center">
+      <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur p-12">
+        <h2 class="text-3xl font-bold mb-4">Ready to try Datanika?</h2>
+        <p class="text-slate-400 mb-8 text-lg">
+          Start building data pipelines in minutes — no Kubernetes, no separate
+          transform tool, no complexity.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <a href="https://app.datanika.io" class="btn-primary">Start Free</a>
+          <a href="https://github.com/datanika-io/datanika-core" class="btn-secondary">View on GitHub</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <Footer />
+</Layout>
