@@ -2,7 +2,9 @@
 title: "I Designed Multi-Tenancy Wrong. Then I Fixed It Before It Mattered."
 description: "Why I scrapped schema-per-tenant for a shared public schema with org_id filtering — and the architecture lesson about picking isolation models that match your query patterns."
 date: 2026-04-10
+updatedDate: 2026-04-10
 author: "Datanika Team"
+category: "engineering"
 tags: ["architecture", "postgresql", "multi-tenancy", "engineering"]
 heroImage: "/logo.png"
 ---

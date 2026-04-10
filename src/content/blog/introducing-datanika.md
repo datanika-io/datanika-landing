@@ -2,8 +2,11 @@
 title: "Introducing Datanika: Open-Source Data Pipelines for Everyone"
 description: "Datanika combines dlt, dbt, and visual pipeline management into a single open-source platform. Here's why we built it."
 date: 2026-04-10
+updatedDate: 2026-04-10
 author: "Datanika Team"
+category: "announcement"
 tags: ["announcement", "open-source", "data-pipelines"]
+heroImage: "/logo.png"
 ---
 
 ## Why We Built Datanika

@@ -2,7 +2,9 @@
 title: "I Added 32 Connectors to My Data Platform. Most Took Less Than a Day Each."
 description: "How dlt's plugin architecture made adding 32 data connectors mostly a config exercise — and why picking extensible tools matters more than writing extraction code."
 date: 2026-04-10
+updatedDate: 2026-04-10
 author: "Datanika Team"
+category: "engineering"
 tags: ["engineering", "connectors", "dlt", "open-source"]
 heroImage: "/logo.png"
 ---

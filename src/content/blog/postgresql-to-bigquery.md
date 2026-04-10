@@ -2,8 +2,11 @@
 title: "PostgreSQL to BigQuery in 5 Minutes with Datanika"
 description: "Step-by-step guide to replicating your PostgreSQL database to Google BigQuery for analytics — no code, no Kubernetes, no YAML."
 date: 2026-04-10
+updatedDate: 2026-04-10
 author: "Datanika Team"
+category: "tutorial"
 tags: ["tutorial", "postgresql", "bigquery", "getting-started"]
+heroImage: "/logo.png"
 ---
 
 ## The Problem

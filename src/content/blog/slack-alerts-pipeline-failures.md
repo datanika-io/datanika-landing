@@ -2,8 +2,11 @@
 title: "Set Up Slack Alerts for Pipeline Failures in 2 Minutes"
 description: "Get notified in Slack when your data pipelines fail — with Datanika's built-in notification channels. No third-party tools required."
 date: 2026-04-10
+updatedDate: 2026-04-10
 author: "Datanika Team"
+category: "tutorial"
 tags: ["tutorial", "notifications", "slack", "monitoring"]
+heroImage: "/logo.png"
 ---
 
 ## The Problem
