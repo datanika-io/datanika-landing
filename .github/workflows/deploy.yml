@@ -1,0 +1,113 @@
+name: Deploy Landing
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy-landing
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # need previous commit to diff changed files for IndexNow
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Deploy to Aweb
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.AWEB_HOST }}
+          username: root
+          key: ${{ secrets.AWEB_SSH_KEY }}
+          script: |
+            set -e
+            cd /opt/datanika/datanika-landing
+            git pull origin main
+            npm ci
+            npm run build
+            cp -r dist/* /var/www/datanika.io/
+            echo "Landing deploy complete"
+
+      # IndexNow: tell Bing/Yandex/Seznam/DuckDuckGo about changed URLs so they
+      # recrawl in minutes instead of days. Non-blocking — failures are logged
+      # but don't fail the deploy.
+      #
+      # Requires the key file at public/${INDEXNOW_KEY}.txt (committed in this
+      # repo). Google does NOT participate in IndexNow but gets the same URLs
+      # via sitemap + GSC ping.
+      - name: Diff changed URLs
+        id: diff
+        run: |
+          # Find added/modified .astro and .md files under src/pages, map to URLs
+          CHANGED=$(git diff --name-only --diff-filter=AMR HEAD~1 HEAD -- \
+            'src/pages/**/*.astro' 'src/pages/**/*.md' 'src/pages/**/*.mdx' \
+            'src/content/**/*.md' 'src/content/**/*.mdx' 2>/dev/null || true)
+
+          if [ -z "$CHANGED" ]; then
+            echo "No content changes — skipping IndexNow ping"
+            echo "urls=" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Convert file paths to public URLs
+          URLS=""
+          while IFS= read -r file; do
+            [ -z "$file" ] && continue
+            # Skip test fixtures
+            case "$file" in
+              *test-fixtures*) continue ;;
+            esac
+            # Strip prefix and extension, normalize index.* to directory
+            url=$(echo "$file" \
+              | sed -E 's|^src/pages/||; s|^src/content/([^/]+)/|\1/|' \
+              | sed -E 's|\.(astro|md|mdx)$||' \
+              | sed -E 's|/index$|/|' \
+              | sed -E 's|^index$|/|')
+            # Ensure leading slash and trailing slash for non-root
+            case "$url" in
+              /) ;;
+              */) ;;
+              *) url="/$url/" ;;
+            esac
+            URLS="${URLS}https://datanika.io${url}\n"
+          done <<< "$CHANGED"
+
+          printf "Changed URLs:\n$URLS"
+          # Pack into JSON array for the output (comma-separated)
+          JSON_URLS=$(printf "$URLS" | awk 'NF' | awk '{printf "\"%s\",", $0}' | sed 's/,$//')
+          echo "urls=[$JSON_URLS]" >> $GITHUB_OUTPUT
+
+      - name: Ping IndexNow
+        if: steps.diff.outputs.urls != '' && steps.diff.outputs.urls != '[]'
+        continue-on-error: true
+        run: |
+          PAYLOAD=$(cat <<EOF
+          {
+            "host": "datanika.io",
+            "key": "ada326ab97368636daf05cf876c0daed",
+            "keyLocation": "https://datanika.io/ada326ab97368636daf05cf876c0daed.txt",
+            "urlList": ${{ steps.diff.outputs.urls }}
+          }
+          EOF
+          )
+          echo "POSTing to IndexNow:"
+          echo "$PAYLOAD"
+          curl -sS -X POST "https://api.indexnow.org/indexnow" \
+            -H "Content-Type: application/json; charset=utf-8" \
+            -d "$PAYLOAD" \
+            -w "\nHTTP %{http_code}\n" || echo "IndexNow ping failed (non-fatal)"
