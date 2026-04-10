@@ -1,0 +1,174 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+---
+<DocsLayout title="Self-Hosting" description="Deploy Datanika on your own infrastructure with Docker Compose.">
+  <h1>Self-Hosting</h1>
+  <p class="text-lg text-slate-400">Deploy Datanika on your own infrastructure — full control, no vendor lock-in.</p>
+
+  <h2>Prerequisites</h2>
+  <ul>
+    <li>Docker Engine 24+ and Docker Compose v2</li>
+    <li>4 GB RAM minimum (8 GB recommended)</li>
+    <li>PostgreSQL 14+ (included in Docker Compose, or bring your own)</li>
+    <li>Redis 7+ (included in Docker Compose, or bring your own)</li>
+  </ul>
+
+  <h2>Quick Start</h2>
+  <pre><code>git clone https://github.com/datanika-io/datanika-core.git
+cd datanika-core
+cp .env.example .env
+# Edit .env with your settings (see Configuration below)
+docker compose up -d</code></pre>
+  <p>App available at <code>http://localhost:3000</code> (frontend) and <code>http://localhost:8000</code> (API).</p>
+
+  <h2>Docker Compose Services</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Service</th>
+        <th>Image</th>
+        <th>Port</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>app</code></td>
+        <td>datanika</td>
+        <td>3000, 8000</td>
+        <td>Reflex app (frontend + backend)</td>
+      </tr>
+      <tr>
+        <td><code>celery</code></td>
+        <td>datanika</td>
+        <td>—</td>
+        <td>Background task worker</td>
+      </tr>
+      <tr>
+        <td><code>postgres</code></td>
+        <td>postgres:16</td>
+        <td>5432</td>
+        <td>Application database</td>
+      </tr>
+      <tr>
+        <td><code>redis</code></td>
+        <td>redis:7</td>
+        <td>6379</td>
+        <td>Task broker + cache</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Configuration</h2>
+  <p>Key environment variables (in <code>.env</code>):</p>
+  <table>
+    <thead>
+      <tr>
+        <th>Variable</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>SECRET_KEY</code></td>
+        <td>JWT signing key (generate a random 64-char string)</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td><code>DATABASE_URL</code></td>
+        <td>PostgreSQL connection string</td>
+        <td><code>postgresql+asyncpg://datanika:datanika@postgres:5432/datanika</code></td>
+      </tr>
+      <tr>
+        <td><code>REDIS_URL</code></td>
+        <td>Redis connection string</td>
+        <td><code>redis://redis:6379/0</code></td>
+      </tr>
+      <tr>
+        <td><code>ENCRYPTION_KEY</code></td>
+        <td>Fernet key for credential encryption (generate with <code>python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"</code>)</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td><code>SMTP_HOST</code></td>
+        <td>SMTP server for email notifications</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td><code>SMTP_PORT</code></td>
+        <td>SMTP port</td>
+        <td><code>587</code></td>
+      </tr>
+      <tr>
+        <td><code>SMTP_USER</code></td>
+        <td>SMTP username</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td><code>SMTP_PASSWORD</code></td>
+        <td>SMTP password</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td><code>EMAIL_FROM</code></td>
+        <td>Sender email address</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td><code>RECAPTCHA_SITE_KEY</code></td>
+        <td>reCAPTCHA v3 site key (leave empty to disable)</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td><code>RECAPTCHA_SECRET_KEY</code></td>
+        <td>reCAPTCHA v3 secret key</td>
+        <td>—</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Database Migrations</h2>
+  <pre><code>docker compose exec app alembic upgrade head</code></pre>
+  <p>Migrations run automatically on first start. For upgrades, pull the latest image and restart.</p>
+
+  <h2>Upgrading</h2>
+  <pre><code>cd datanika-core
+git pull origin master
+docker compose up -d --build</code></pre>
+  <p>The app container runs migrations automatically on startup.</p>
+
+  <h2>Production Recommendations</h2>
+  <ul>
+    <li><strong>Reverse proxy</strong>: Use Nginx or Caddy in front for SSL termination</li>
+    <li><strong>Backups</strong>: Schedule regular PostgreSQL backups (<code>pg_dump</code>)</li>
+    <li><strong>Monitoring</strong>: Mount Grafana + Prometheus (docker-compose has optional profiles)</li>
+    <li><strong>Security</strong>: Change all default passwords, restrict ports to localhost, use firewall</li>
+    <li><strong>Resources</strong>: 8 GB RAM, 4 vCPUs recommended for production workloads</li>
+  </ul>
+
+  <h2>What's Included</h2>
+  <ul>
+    <li>All 32 connectors (27 sources, 11 destinations)</li>
+    <li>dbt transformations, pipeline builder, scheduling</li>
+    <li>Multi-org with RBAC</li>
+    <li>9 languages</li>
+    <li>Everything in the Free plan — no artificial limits on self-hosted</li>
+  </ul>
+
+  <h2>What's NOT Included (Cloud-only)</h2>
+  <ul>
+    <li>Paddle billing integration</li>
+    <li>Managed infrastructure</li>
+    <li>Automatic updates</li>
+    <li>Priority support with SLA</li>
+    <li>SSO (SAML/OIDC) — requires Enterprise plan on cloud, but SSO code is in the open-source core</li>
+  </ul>
+
+  <h2>Getting Help</h2>
+  <ul>
+    <li>GitHub Issues: <a href="https://github.com/datanika-io/datanika-core/issues">github.com/datanika-io/datanika-core/issues</a></li>
+    <li>Documentation: <a href="https://datanika.io/docs">datanika.io/docs</a></li>
+    <li>Cloud alternative: <a href="https://app.datanika.io">app.datanika.io</a> (managed, free tier available)</li>
+  </ul>
+</DocsLayout>
