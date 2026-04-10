@@ -1,0 +1,40 @@
+name: Deploy Landing
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy-landing
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Deploy to Aweb
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.AWEB_HOST }}
+          username: root
+          key: ${{ secrets.AWEB_SSH_KEY }}
+          script: |
+            cd /opt/datanika/datanika-landing
+            git pull origin main
+            npm run build
+            cp -r dist/* /var/www/datanika.io/
+            echo "Landing deploy complete"
