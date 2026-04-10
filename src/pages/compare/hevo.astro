@@ -1,0 +1,173 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Navbar from "../../components/Navbar.astro";
+import Footer from "../../components/Footer.astro";
+
+const features = [
+  { name: "Data extraction & loading", datanika: true, hevo: true },
+  { name: "dbt transformations", datanika: true, hevo: false },
+  { name: "Built-in scheduling", datanika: true, hevo: true },
+  { name: "Visual pipeline DAG", datanika: true, hevo: false },
+  { name: "SQL Editor", datanika: true, hevo: false },
+  { name: "File uploads (CSV/JSON/Parquet)", datanika: true, hevo: true },
+  { name: "150+ connectors", datanika: false, hevo: true },
+  { name: "Data Catalog", datanika: true, hevo: false },
+  { name: "Open-source", datanika: true, hevo: false },
+  { name: "Self-hostable", datanika: true, hevo: false },
+  { name: "Multi-language UI", datanika: true, hevo: false },
+];
+
+const chooseDatanika = [
+  "You want an open-source platform you can self-host",
+  "You need real dbt transformations (not drag-and-drop)",
+  "You want transparent, predictable pricing (not event-based)",
+  "You need a visual pipeline DAG and SQL editor",
+  "You prefer owning your infrastructure (no vendor lock-in)",
+];
+
+const chooseHevo = [
+  "You want a fully managed, no-code experience",
+  "You need 150+ pre-built connectors",
+  "You prefer event-based pricing for high-volume, low-table workloads",
+  "You want dedicated support with SLA",
+];
+---
+
+<Layout
+  title="Datanika vs Hevo Data — Open-Source ELT Alternative"
+  description="Compare Datanika and Hevo Data side-by-side. Datanika is the open-source alternative with real dbt transforms, self-hosting, and transparent pricing."
+>
+  <Navbar />
+
+  <!-- Hero -->
+  <section class="relative pt-32 pb-20 overflow-hidden">
+    <div class="glow bg-violet-600 -top-40 -left-40"></div>
+    <div class="glow bg-cyan-600 -bottom-40 -right-40"></div>
+
+    <div class="relative max-w-5xl mx-auto px-6 text-center">
+      <h1 class="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight mb-6">
+        <span class="gradient-text">Datanika vs Hevo Data</span>
+      </h1>
+      <p class="text-lg sm:text-xl text-slate-400 max-w-3xl mx-auto">
+        Hevo Data is a no-code data pipeline platform known for ease of use and 150+ connectors.
+        Datanika is the open-source alternative with real dbt transforms, self-hosting, and transparent pricing.
+      </p>
+    </div>
+  </section>
+
+  <!-- Feature Table -->
+  <section class="py-20">
+    <div class="max-w-5xl mx-auto px-6">
+      <h2 class="text-3xl font-bold text-center mb-12">Feature Comparison</h2>
+      <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur overflow-hidden">
+        <table class="w-full text-left">
+          <thead>
+            <tr class="border-b border-slate-800">
+              <th class="px-6 py-4 text-sm font-semibold text-slate-300">Feature</th>
+              <th class="px-6 py-4 text-sm font-semibold text-violet-400 text-center">Datanika</th>
+              <th class="px-6 py-4 text-sm font-semibold text-slate-400 text-center">Hevo Data</th>
+            </tr>
+          </thead>
+          <tbody>
+            {features.map((f, i) => (
+              <tr class={i % 2 === 0 ? "bg-slate-900/30" : ""}>
+                <td class="px-6 py-4 text-sm text-slate-300">{f.name}</td>
+                <td class="px-6 py-4 text-center text-lg">
+                  {f.datanika
+                    ? <span class="text-emerald-400">&#10003;</span>
+                    : <span class="text-red-400/60">&#10007;</span>
+                  }
+                </td>
+                <td class="px-6 py-4 text-center text-lg">
+                  {f.hevo
+                    ? <span class="text-emerald-400">&#10003;</span>
+                    : <span class="text-red-400/60">&#10007;</span>
+                  }
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- When to Choose -->
+  <section class="py-20">
+    <div class="max-w-5xl mx-auto px-6">
+      <h2 class="text-3xl font-bold text-center mb-12">When to Choose</h2>
+      <div class="grid md:grid-cols-2 gap-8">
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur p-8">
+          <h3 class="text-xl font-bold text-violet-400 mb-4">Choose Datanika when...</h3>
+          <ul class="space-y-3">
+            {chooseDatanika.map((item) => (
+              <li class="flex items-start gap-3 text-slate-300">
+                <span class="text-emerald-400 mt-0.5">&#10003;</span>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur p-8">
+          <h3 class="text-xl font-bold text-slate-400 mb-4">Choose Hevo Data when...</h3>
+          <ul class="space-y-3">
+            {chooseHevo.map((item) => (
+              <li class="flex items-start gap-3 text-slate-300">
+                <span class="text-emerald-400 mt-0.5">&#10003;</span>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- At a Glance -->
+  <section class="py-20">
+    <div class="max-w-5xl mx-auto px-6">
+      <h2 class="text-3xl font-bold text-center mb-12">At a Glance</h2>
+      <div class="grid md:grid-cols-2 gap-8">
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur p-8">
+          <h3 class="text-xl font-bold text-violet-400 mb-4">Datanika</h3>
+          <ul class="space-y-2 text-slate-300 text-sm">
+            <li><span class="text-slate-500">Type:</span> All-in-one EL+T+Scheduling</li>
+            <li><span class="text-slate-500">Transforms:</span> dbt built-in</li>
+            <li><span class="text-slate-500">Connectors:</span> 32</li>
+            <li><span class="text-slate-500">Deployment:</span> Docker self-host</li>
+            <li><span class="text-slate-500">License:</span> AGPL-3.0</li>
+            <li><span class="text-slate-500">Pricing:</span> Free / Pro $79 / Enterprise $399</li>
+          </ul>
+        </div>
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur p-8">
+          <h3 class="text-xl font-bold text-slate-400 mb-4">Hevo Data</h3>
+          <ul class="space-y-2 text-slate-300 text-sm">
+            <li><span class="text-slate-500">Type:</span> EL + basic transforms</li>
+            <li><span class="text-slate-500">Connectors:</span> 150+</li>
+            <li><span class="text-slate-500">Deployment:</span> SaaS only</li>
+            <li><span class="text-slate-500">License:</span> Closed source</li>
+            <li><span class="text-slate-500">Pricing:</span> Event-based (from $239/mo for 1M events)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="py-20">
+    <div class="max-w-3xl mx-auto px-6">
+      <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur p-12 text-center">
+        <h2 class="text-3xl font-bold mb-4">Ready to try the open-source alternative?</h2>
+        <p class="text-slate-400 mb-8">
+          Start building data pipelines with Datanika — free forever for individual use.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <a href="https://app.datanika.io" class="btn-primary text-lg">Get Started Free</a>
+          <a href="https://github.com/datanika-io/datanika-core" class="btn-secondary text-lg">View on GitHub</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <Footer />
+</Layout>
