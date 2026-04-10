@@ -10,6 +10,7 @@ const blog = defineCollection({
     author: z.string().default("Datanika Team"),
     tags: z.array(z.string()).default([]),
     draft: z.boolean().default(false),
+    heroImage: z.string().default("/logo.png"),
   }),
 });
 
