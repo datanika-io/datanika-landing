@@ -1,0 +1,164 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+---
+
+<DocsLayout title="Transformation Guide" description="Learn how to write dbt models, tests, snapshots, and packages in Datanika.">
+  <h1>Transformation Guide</h1>
+  <p class="text-lg text-slate-400">Write SQL transformations powered by dbt — models, tests, snapshots, and packages.</p>
+
+  <h2>What Are Transformations?</h2>
+  <p>Datanika uses <strong>dbt-core</strong> under the hood for data transformations. You write SQL models that transform raw data loaded by dlt into clean, analytics-ready tables. Transformations are managed per-organization in isolated dbt projects.</p>
+  <p>Each transformation is a SQL <code>SELECT</code> statement that defines a new table or view in your warehouse. dbt handles dependencies, materializations, and testing automatically.</p>
+
+  <h2>Writing Models</h2>
+  <ol class="list-decimal pl-6 space-y-2">
+    <li>Navigate to <strong>Transformations</strong> in the sidebar</li>
+    <li>Click <strong>New Transformation</strong></li>
+    <li>Write a SQL <code>SELECT</code> statement — this becomes a dbt model</li>
+    <li>Choose a <strong>materialization</strong> (see below)</li>
+    <li>Click <strong>Preview</strong> to see the compiled SQL without running it</li>
+    <li>Click <strong>Run</strong> to execute and create the table/view</li>
+  </ol>
+
+  <h3>Referencing Other Models</h3>
+  <p>Use dbt's <code>ref()</code> function to reference other transformations:</p>
+  <pre><code set:html={`SELECT
+  customer_id,
+  COUNT(*) as total_orders,
+  SUM(amount) as lifetime_value
+FROM {{ ref('stg_orders') }}
+GROUP BY customer_id`} /></pre>
+  <p>Use <code>source()</code> to reference raw tables loaded by dlt:</p>
+  <pre><code set:html={`SELECT * FROM {{ source('raw', 'customers') }}`} /></pre>
+
+  <h2>Materializations</h2>
+  <p>Materializations control how dbt builds your model in the warehouse:</p>
+  <table>
+    <thead><tr><th>Type</th><th>Description</th><th>When to Use</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>view</code></td>
+        <td>SQL view, always reflects latest data</td>
+        <td>Small datasets, frequently changing logic</td>
+      </tr>
+      <tr>
+        <td><code>table</code></td>
+        <td>Full table rebuild on each run</td>
+        <td>Medium datasets, stable transformation logic</td>
+      </tr>
+      <tr>
+        <td><code>incremental</code></td>
+        <td>Appends or merges only new/changed rows</td>
+        <td>Large datasets, append-only or slowly changing data</td>
+      </tr>
+      <tr>
+        <td><code>ephemeral</code></td>
+        <td>CTE injected into downstream models, not materialized</td>
+        <td>Helper logic, DRY intermediate steps</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Incremental Models</h3>
+  <p>Incremental models only process new rows, making them efficient for large tables:</p>
+  <pre><code set:html={`{{ config(materialized='incremental') }}
+
+SELECT *
+FROM {{ source('raw', 'events') }}
+
+{% if is_incremental() %}
+WHERE event_timestamp > (SELECT MAX(event_timestamp) FROM {{ this }})
+{% endif %}`} /></pre>
+
+  <h2>Preview &amp; Compile</h2>
+  <p>Click <strong>Preview</strong> to see the compiled SQL with all <code>ref()</code> and <code>source()</code> calls resolved into actual table names. This runs <code>dbt compile</code> — no data is modified. Use this to verify your SQL before running it.</p>
+
+  <h2>Writing Tests</h2>
+  <p>Datanika supports dbt's generic tests to validate data quality. Configure tests per-column through the transformation settings:</p>
+  <table>
+    <thead><tr><th>Test</th><th>Description</th><th>Example</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>unique</code></td>
+        <td>No duplicate values in the column</td>
+        <td>Primary keys, email addresses</td>
+      </tr>
+      <tr>
+        <td><code>not_null</code></td>
+        <td>No NULL values in the column</td>
+        <td>Required fields, foreign keys</td>
+      </tr>
+      <tr>
+        <td><code>accepted_values</code></td>
+        <td>Values must be in a defined list</td>
+        <td>Status columns (active, inactive, pending)</td>
+      </tr>
+      <tr>
+        <td><code>relationships</code></td>
+        <td>Foreign key references exist in another table</td>
+        <td>order.customer_id → customer.id</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>Tests run as part of pipeline execution. Results (pass/fail) appear in the <a href="/docs/runs">Runs</a> page.</p>
+
+  <h2>Snapshots (SCD Type 2)</h2>
+  <p>Snapshots track how rows change over time using Slowly Changing Dimensions (Type 2). This is useful for tracking historical changes to dimension tables like customers, products, or pricing.</p>
+  <h3>How It Works</h3>
+  <ol class="list-decimal pl-6 space-y-2">
+    <li>Configure a snapshot: source table, unique key, strategy, and (for timestamp strategy) the <code>updated_at</code> column</li>
+    <li>Datanika creates a snapshot table with <code>dbt_valid_from</code> and <code>dbt_valid_to</code> columns</li>
+    <li>On each run, dbt compares current rows to the snapshot and inserts new versions for changed rows</li>
+    <li>Query the snapshot table to see the full history of any row</li>
+  </ol>
+  <h3>Strategies</h3>
+  <table>
+    <thead><tr><th>Strategy</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>timestamp</code></td>
+        <td>Uses an <code>updated_at</code> column to detect changes — faster, requires a reliable timestamp</td>
+      </tr>
+      <tr>
+        <td><code>check</code></td>
+        <td>Compares all columns to detect changes — works without timestamps but slower</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>Snapshots are run separately from regular models — use the <strong>Run Snapshot</strong> action in the UI.</p>
+
+  <h2>Packages</h2>
+  <p>dbt packages extend your project with community-built macros and models. Manage packages through the Transformation settings in Datanika.</p>
+  <h3>Popular Packages</h3>
+  <table>
+    <thead><tr><th>Package</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>dbt_utils</code></td><td>Essential macros: surrogate keys, pivot, unpivot, date spine, and more</td></tr>
+      <tr><td><code>dbt_date</code></td><td>Date dimension table and date utility macros</td></tr>
+      <tr><td><code>dbt_expectations</code></td><td>Great Expectations-style data quality tests</td></tr>
+      <tr><td><code>codegen</code></td><td>Generate model and source YAML from your database schema</td></tr>
+    </tbody>
+  </table>
+  <p>Datanika runs <code>dbt deps</code> to install packages before each pipeline run.</p>
+
+  <h2>Source Freshness</h2>
+  <p>Monitor whether raw data is arriving on time by configuring freshness checks on your source <a href="/docs/connections">connections</a>. Set <code>warn_after</code> and <code>error_after</code> thresholds, then run freshness checks — results appear in the <a href="/docs/runs">Runs</a> page.</p>
+
+  <h2>Best Practices</h2>
+  <ul class="list-disc pl-6 space-y-2">
+    <li><strong>Name models clearly</strong>: <code>stg_</code> for staging, <code>int_</code> for intermediate, <code>fct_</code> for facts, <code>dim_</code> for dimensions</li>
+    <li><strong>One model per transformation</strong>: each transformation = one SQL SELECT</li>
+    <li><strong>Use refs</strong>: always reference other models with <code>ref()</code>, not hardcoded table names</li>
+    <li><strong>Test everything</strong>: at minimum, test primary keys with <code>unique</code> + <code>not_null</code></li>
+    <li><strong>Incremental for scale</strong>: use incremental materialization for tables over 1M rows</li>
+    <li><strong>Preview before running</strong>: always compile and review SQL before executing</li>
+  </ul>
+
+  <h2>Related Docs</h2>
+  <ul class="list-disc pl-6 space-y-1">
+    <li><a href="/docs/transformations">Transformations</a> — UI reference for creating and managing transformations</li>
+    <li><a href="/docs/pipelines">Pipelines</a> — orchestrate multiple transformations as a pipeline</li>
+    <li><a href="/docs/scheduling">Scheduling &amp; Dependencies</a> — automate transformation runs</li>
+    <li><a href="/docs/runs">Runs &amp; Monitoring</a> — track execution results and logs</li>
+  </ul>
+</DocsLayout>
