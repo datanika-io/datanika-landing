@@ -5,6 +5,7 @@ import Pricing from "../components/Pricing.astro";
 import FAQ from "../components/FAQ.astro";
 import Footer from "../components/Footer.astro";
 import { pricingFaq, buildFaqPageJsonLd } from "../data/pricing-faq";
+import { softwareApplicationJsonLd } from "../data/software-application";
 
 // Single source of truth: the visible <FAQ> and the FAQPage JSON-LD
 // both read from `pricingFaq`. Editing one updates the other.
@@ -14,7 +15,7 @@ const faqJsonLd = buildFaqPageJsonLd(pricingFaq);
 <Layout
   title="Pricing — Datanika"
   description="Simple, transparent pricing for Datanika data pipeline platform."
-  extraJsonLd={[faqJsonLd]}
+  extraJsonLd={[softwareApplicationJsonLd, faqJsonLd]}
 >
   <Navbar />
   <Pricing />
