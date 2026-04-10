@@ -2,8 +2,11 @@
 title: "Introducing the Datanika REST API v1"
 description: "Programmatic access to your data pipelines — 36 endpoints, OpenAPI docs, scoped API keys, and plan-based rate limiting."
 date: 2026-04-10
+updatedDate: 2026-04-10
 author: "Datanika Team"
+category: "announcement"
 tags: ["announcement", "api", "developer-experience"]
+heroImage: "/logo.png"
 ---
 
 ## Your Pipelines, Programmable

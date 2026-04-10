@@ -2,7 +2,9 @@
 title: "I Built an ETL Platform Solo. 18 Phases, 1,400+ Tests, One Month."
 description: "How strict TDD, layered architecture, and a 45-step plan with hard scope boundaries let one person ship a multi-tenant ETL platform from scratch in a month."
 date: 2026-04-10
+updatedDate: 2026-04-10
 author: "Datanika Team"
+category: "engineering"
 tags: ["engineering", "tdd", "open-source", "build-in-public"]
 heroImage: "/logo.png"
 ---
