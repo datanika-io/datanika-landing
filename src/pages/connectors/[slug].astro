@@ -1,0 +1,192 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Navbar from "../../components/Navbar.astro";
+import Footer from "../../components/Footer.astro";
+import { connectors } from "../../data/connectors";
+import type { Connector } from "../../data/connectors";
+
+export function getStaticPaths() {
+  return connectors.map((c) => ({
+    params: { slug: c.slug },
+    props: { connector: c },
+  }));
+}
+
+interface Props {
+  connector: Connector;
+}
+
+const { connector } = Astro.props;
+const directionLabel =
+  connector.direction === "both" ? "Source & Destination" : "Source";
+const directionColor =
+  connector.direction === "both"
+    ? "bg-violet-500/20 text-violet-300"
+    : "bg-slate-800 text-slate-400";
+
+const relatedConnectors = connector.related
+  .map((slug) => connectors.find((c) => c.slug === slug))
+  .filter(Boolean) as Connector[];
+---
+
+<Layout
+  title={`${connector.name} Connector — Datanika`}
+  description={connector.description}
+>
+  <Navbar />
+
+  <!-- Hero -->
+  <section class="relative pt-32 pb-16 overflow-hidden">
+    <div class="glow bg-violet-600 -top-40 -left-40"></div>
+    <div class="glow bg-cyan-600 -bottom-40 -right-40"></div>
+    <div class="relative max-w-4xl mx-auto px-6">
+      <div class="flex items-center gap-3 mb-4">
+        <span class="text-sm text-slate-500">{connector.category}</span>
+        <span class={`text-xs px-2 py-0.5 rounded-full ${directionColor}`}>
+          {directionLabel}
+        </span>
+      </div>
+      <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight mb-4">
+        <span class="gradient-text">{connector.name}</span>
+      </h1>
+      <p class="text-lg text-slate-400 leading-relaxed max-w-3xl">
+        {connector.description}
+      </p>
+      <div class="flex flex-col sm:flex-row gap-4 mt-8">
+        <a href="https://app.datanika.io" class="btn-primary">
+          Connect {connector.name}
+        </a>
+        <a href="/docs/connections" class="btn-secondary">View docs</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Use Cases -->
+  <section class="py-16">
+    <div class="max-w-4xl mx-auto px-6">
+      <h2 class="text-2xl font-bold mb-6">Use Cases</h2>
+      <div class="grid sm:grid-cols-2 gap-4">
+        {connector.useCases.map((uc) => (
+          <div class="rounded-xl border border-slate-800 bg-slate-900/50 p-5">
+            <p class="text-slate-300">{uc}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Configuration -->
+  <section class="py-16">
+    <div class="max-w-4xl mx-auto px-6">
+      <h2 class="text-2xl font-bold mb-6">Configuration</h2>
+      <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur overflow-hidden">
+        <table class="w-full text-left">
+          <thead>
+            <tr class="border-b border-slate-800">
+              <th class="px-6 py-4 text-sm font-semibold text-slate-300 uppercase tracking-wider">Field</th>
+              <th class="px-6 py-4 text-sm font-semibold text-slate-300 uppercase tracking-wider">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            {connector.configFields.map((f, i) => (
+              <tr class={`border-b border-slate-800/50 ${i % 2 === 0 ? "bg-slate-900/30" : ""}`}>
+                <td class="px-6 py-3 text-violet-300 font-mono text-sm">{f.name}</td>
+                <td class="px-6 py-3 text-slate-300 text-sm">{f.description}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p class="text-sm text-slate-500 mt-4">
+        All credentials are <strong class="text-slate-400">encrypted at rest</strong> with Fernet before being stored in the database.
+      </p>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section class="py-16">
+    <div class="max-w-4xl mx-auto px-6">
+      <h2 class="text-2xl font-bold mb-6">How It Works</h2>
+      <ol class="space-y-4">
+        <li class="flex gap-4">
+          <span class="flex items-center justify-center w-8 h-8 rounded-full bg-violet-500/20 text-violet-300 font-bold text-sm shrink-0">1</span>
+          <div>
+            <p class="text-white font-medium">Add a {connector.name} connection</p>
+            <p class="text-sm text-slate-400">Navigate to Connections, click New, select {connector.name}, and enter your credentials.</p>
+          </div>
+        </li>
+        {connector.direction === "both" ? (
+          <li class="flex gap-4">
+            <span class="flex items-center justify-center w-8 h-8 rounded-full bg-violet-500/20 text-violet-300 font-bold text-sm shrink-0">2</span>
+            <div>
+              <p class="text-white font-medium">Use as source, destination, or both</p>
+              <p class="text-sm text-slate-400">Extract data from {connector.name} into another destination, or load data from other sources into {connector.name}.</p>
+            </div>
+          </li>
+        ) : (
+          <li class="flex gap-4">
+            <span class="flex items-center justify-center w-8 h-8 rounded-full bg-violet-500/20 text-violet-300 font-bold text-sm shrink-0">2</span>
+            <div>
+              <p class="text-white font-medium">Choose a destination</p>
+              <p class="text-sm text-slate-400">Select where to load your {connector.name} data — BigQuery, Snowflake, PostgreSQL, or any other supported destination.</p>
+            </div>
+          </li>
+        )}
+        <li class="flex gap-4">
+          <span class="flex items-center justify-center w-8 h-8 rounded-full bg-violet-500/20 text-violet-300 font-bold text-sm shrink-0">3</span>
+          <div>
+            <p class="text-white font-medium">Create an upload and run it</p>
+            <p class="text-sm text-slate-400">Set up an upload with your source and destination, choose a load mode, and click Run. Datanika handles extraction, schema mapping, and loading automatically via dlt.</p>
+          </div>
+        </li>
+        <li class="flex gap-4">
+          <span class="flex items-center justify-center w-8 h-8 rounded-full bg-violet-500/20 text-violet-300 font-bold text-sm shrink-0">4</span>
+          <div>
+            <p class="text-white font-medium">Transform and schedule</p>
+            <p class="text-sm text-slate-400">Write dbt models to transform the loaded data, build pipelines, and set up automated schedules.</p>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- Related Connectors -->
+  {relatedConnectors.length > 0 && (
+    <section class="py-16">
+      <div class="max-w-4xl mx-auto px-6">
+        <h2 class="text-2xl font-bold mb-6">Related Connectors</h2>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {relatedConnectors.map((rc) => (
+            <a
+              href={`/connectors/${rc.slug}`}
+              class="rounded-xl border border-slate-800 bg-slate-900/50 p-4 transition-colors hover:border-violet-500/50 text-center"
+            >
+              <p class="font-semibold text-white">{rc.name}</p>
+              <p class="text-xs text-slate-500 mt-1">{rc.category}</p>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- CTA -->
+  <section class="py-20">
+    <div class="max-w-3xl mx-auto px-6 text-center">
+      <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur p-12">
+        <h2 class="text-3xl font-bold mb-4">
+          Start using {connector.name} with Datanika
+        </h2>
+        <p class="text-slate-400 mb-8 text-lg">
+          Free to start — no credit card required. Connect {connector.name} in minutes.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <a href="https://app.datanika.io" class="btn-primary">Start Free</a>
+          <a href="/connectors" class="btn-secondary">View all connectors</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <Footer />
+</Layout>
