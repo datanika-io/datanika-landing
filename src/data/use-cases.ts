@@ -9,6 +9,12 @@ export interface UseCase {
   why: string;
   steps: string[];
   transformExamples: string[];
+  // Optional SEO overrides. When set, the [slug].astro template uses these
+  // instead of the default `${title} Pipeline — Datanika` / description /
+  // title-as-H1 pattern. Populated per plans/SEO_KEYWORDS.md rewrite rules.
+  seoTitle?: string;
+  seoDescription?: string;
+  seoH1?: string;
 }
 
 export const useCases: UseCase[] = [
@@ -35,6 +41,9 @@ export const useCases: UseCase[] = [
       "Create a star schema with fact and dimension tables",
       "Join user events with CRM data for cohort analysis",
     ],
+    seoTitle: "PostgreSQL to BigQuery Pipeline | Datanika",
+    seoDescription: "Replicate PostgreSQL to BigQuery with automatic schema mapping, incremental loading, and built-in dbt transforms. No Kubernetes, no YAML. Start free today.",
+    seoH1: "PostgreSQL to BigQuery",
   },
   {
     slug: "postgresql-to-snowflake",
@@ -59,6 +68,9 @@ export const useCases: UseCase[] = [
       "Aggregate metrics for executive dashboards",
       "Prepare data for Snowflake data shares",
     ],
+    seoTitle: "PostgreSQL to Snowflake Pipeline | Datanika",
+    seoDescription: "Replicate PostgreSQL to Snowflake with automatic schema mapping, incremental sync, and dbt transforms. Run heavy analytics without touching prod. Start free.",
+    seoH1: "PostgreSQL to Snowflake",
   },
   {
     slug: "mysql-to-bigquery",
@@ -131,6 +143,9 @@ export const useCases: UseCase[] = [
       "Compute customer Lifetime Value (LTV)",
       "Track churn rate and expansion revenue",
     ],
+    seoTitle: "Stripe to BigQuery — Revenue Analytics | Datanika",
+    seoDescription: "Load Stripe customers, invoices, and subscriptions into BigQuery. Build MRR, churn, and LTV dashboards with dbt transforms. Start free on Datanika today.",
+    seoH1: "Stripe to BigQuery",
   },
   {
     slug: "hubspot-to-snowflake",

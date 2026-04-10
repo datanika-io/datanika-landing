@@ -20,8 +20,8 @@ describe("Datanika vs Airbyte comparison page", () => {
     expect(html).toBeTruthy();
   });
 
-  it("has comparison title", () => {
-    expect(html).toContain("Datanika vs Airbyte");
+  it("has comparison title (Airbyte Alternative after Tier 1 rewrite)", () => {
+    expect(html).toContain("Airbyte Alternative");
   });
 
   it("mentions dbt transformations advantage", () => {

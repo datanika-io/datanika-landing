@@ -7,6 +7,13 @@ export interface Connector {
   useCases: string[];
   configFields: { name: string; description: string }[];
   related: string[]; // slugs of related connectors
+  // Optional SEO overrides. When set, the [slug].astro template uses these
+  // instead of the default `${name} Connector — Datanika` / description /
+  // name-as-H1 pattern. Populated per plans/SEO_KEYWORDS.md rewrite rules
+  // (title ≤60 chars, meta 150–160 chars, primary keyword first).
+  seoTitle?: string;
+  seoDescription?: string;
+  seoH1?: string;
 }
 
 export const connectors: Connector[] = [
@@ -148,6 +155,9 @@ export const connectors: Connector[] = [
       { name: "location", description: "Dataset location (e.g., US, EU)" },
     ],
     related: ["snowflake", "redshift", "postgresql", "stripe"],
+    seoTitle: "BigQuery ETL Tool — Load Data Fast | Datanika",
+    seoDescription: "BigQuery ETL tool to load PostgreSQL, MySQL, Stripe, and 30+ sources. Built-in dbt transforms, scheduling, and monitoring. Start free on Datanika today.",
+    seoH1: "BigQuery ETL Tool",
   },
   {
     slug: "snowflake",
@@ -170,6 +180,9 @@ export const connectors: Connector[] = [
       { name: "role", description: "User role (optional)" },
     ],
     related: ["bigquery", "redshift", "databricks", "postgresql"],
+    seoTitle: "Snowflake Data Pipeline | Datanika",
+    seoDescription: "Snowflake data pipeline for loading PostgreSQL, Stripe, Salesforce, and 30+ sources. dbt transforms and scheduling built in — no separate tools. Start free.",
+    seoH1: "Snowflake Data Pipeline",
   },
   {
     slug: "redshift",
@@ -272,6 +285,9 @@ export const connectors: Connector[] = [
       { name: "api_key", description: "Stripe secret API key (encrypted at rest)" },
     ],
     related: ["bigquery", "snowflake", "hubspot", "salesforce"],
+    seoTitle: "Stripe Data Pipeline for Analytics | Datanika",
+    seoDescription: "Stripe data pipeline to load customers, invoices, subscriptions, and charges into BigQuery or Snowflake. Build MRR, churn, and LTV dashboards. Start free.",
+    seoH1: "Stripe Data Pipeline",
   },
   {
     slug: "github",
@@ -328,6 +344,9 @@ export const connectors: Connector[] = [
       { name: "domain", description: "Instance domain (e.g., login.salesforce.com)" },
     ],
     related: ["hubspot", "stripe", "bigquery", "snowflake"],
+    seoTitle: "Salesforce ETL — CRM to Warehouse | Datanika",
+    seoDescription: "Salesforce ETL to replicate accounts, contacts, opportunities, and leads into BigQuery or Snowflake. Build pipeline velocity and forecast analytics. Start free.",
+    seoH1: "Salesforce ETL",
   },
   {
     slug: "shopify",

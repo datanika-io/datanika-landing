@@ -20,8 +20,8 @@ describe("Datanika vs Fivetran comparison page", () => {
     expect(html).toBeTruthy();
   });
 
-  it("has comparison title", () => {
-    expect(html).toContain("Datanika vs Fivetran");
+  it("has comparison title (Fivetran Alternative after Tier 1 rewrite)", () => {
+    expect(html).toContain("Fivetran Alternative");
   });
 
   it("mentions open-source advantage", () => {
