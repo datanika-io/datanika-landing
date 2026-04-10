@@ -1,0 +1,179 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Navbar from "../../components/Navbar.astro";
+import Footer from "../../components/Footer.astro";
+
+const features = [
+  { name: "Data extraction & loading", datanika: true, fivetran: true },
+  { name: "500+ connectors", datanika: false, fivetran: true },
+  { name: "dbt transformations built-in", datanika: true, fivetran: false },
+  { name: "Visual pipeline DAG", datanika: true, fivetran: false },
+  { name: "SQL Editor", datanika: true, fivetran: false },
+  { name: "File uploads (CSV/JSON/Parquet)", datanika: true, fivetran: false },
+  { name: "Data Catalog", datanika: true, fivetran: false },
+  { name: "Open-source", datanika: true, fivetran: false },
+  { name: "Self-hostable", datanika: true, fivetran: false },
+  { name: "No vendor lock-in", datanika: true, fivetran: false },
+  { name: "Multi-language UI", datanika: true, fivetran: false },
+];
+
+const chooseDatanika = [
+  "You want an open-source platform you can self-host",
+  "You need ELT + transforms + scheduling in one tool",
+  "You're cost-conscious (10x cheaper than Fivetran for small teams)",
+  "You want to avoid vendor lock-in",
+  "You need dbt transformations built into the same UI",
+];
+
+const chooseFivetran = [
+  "You need 500+ managed connectors",
+  "You want zero-maintenance SaaS with enterprise support",
+  "You need the most battle-tested reliability at scale",
+];
+---
+
+<Layout
+  title="Datanika vs Fivetran — Open-Source ELT Alternative"
+  description="Compare Datanika and Fivetran side-by-side. Datanika is the open-source, self-hostable alternative with built-in dbt transforms — at a fraction of the cost."
+>
+  <Navbar />
+
+  <!-- Hero -->
+  <section class="relative pt-32 pb-20 overflow-hidden">
+    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-violet-600/15 rounded-full blur-[120px] pointer-events-none"></div>
+    <div class="absolute bottom-0 right-0 w-[300px] h-[300px] bg-fuchsia-600/10 rounded-full blur-[100px] pointer-events-none"></div>
+    <div class="relative max-w-4xl mx-auto px-6 text-center">
+      <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight mb-6">
+        <span class="gradient-text">Datanika</span> vs Fivetran
+      </h1>
+      <p class="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-8">
+        The open-source, self-hostable ELT platform with built-in dbt transforms — at a fraction of Fivetran's cost.
+      </p>
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <a href="https://app.datanika.io" class="btn-primary">Try Datanika Free</a>
+        <a href="https://github.com/datanika-io/datanika-core" class="btn-secondary">View on GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Feature Comparison Table -->
+  <section class="py-20">
+    <div class="max-w-5xl mx-auto px-6">
+      <h2 class="text-3xl font-bold text-center mb-12">Feature Comparison</h2>
+      <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur p-8 overflow-x-auto">
+        <table class="w-full text-left">
+          <thead>
+            <tr class="border-b border-slate-700">
+              <th class="pb-4 pr-4 text-sm font-medium text-slate-400">Feature</th>
+              <th class="pb-4 px-4 text-sm font-medium text-violet-400 text-center">Datanika</th>
+              <th class="pb-4 pl-4 text-sm font-medium text-slate-400 text-center">Fivetran</th>
+            </tr>
+          </thead>
+          <tbody>
+            {features.map((f) => (
+              <tr class="border-b border-slate-800/60">
+                <td class="py-4 pr-4 text-sm text-slate-300">{f.name}</td>
+                <td class="py-4 px-4 text-center">
+                  {f.datanika ? (
+                    <span class="text-emerald-400">&#10003;</span>
+                  ) : (
+                    <span class="text-red-400/60">&#10007;</span>
+                  )}
+                </td>
+                <td class="py-4 pl-4 text-center">
+                  {f.fivetran ? (
+                    <span class="text-emerald-400">&#10003;</span>
+                  ) : (
+                    <span class="text-red-400/60">&#10007;</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- When to Choose -->
+  <section class="py-20">
+    <div class="max-w-5xl mx-auto px-6">
+      <h2 class="text-3xl font-bold text-center mb-12">When to Choose</h2>
+      <div class="grid md:grid-cols-2 gap-8">
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur p-8">
+          <h3 class="text-xl font-semibold mb-6">
+            Choose <span class="text-violet-400">Datanika</span> if&hellip;
+          </h3>
+          <ul class="space-y-3">
+            {chooseDatanika.map((reason) => (
+              <li class="flex items-start gap-3 text-sm text-slate-300">
+                <span class="text-emerald-400 mt-0.5">&#10003;</span>
+                {reason}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur p-8">
+          <h3 class="text-xl font-semibold mb-6">
+            Choose <span class="text-slate-400">Fivetran</span> if&hellip;
+          </h3>
+          <ul class="space-y-3">
+            {chooseFivetran.map((reason) => (
+              <li class="flex items-start gap-3 text-sm text-slate-300">
+                <span class="text-emerald-400 mt-0.5">&#10003;</span>
+                {reason}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- At a Glance -->
+  <section class="py-20">
+    <div class="max-w-5xl mx-auto px-6">
+      <h2 class="text-3xl font-bold text-center mb-12">At a Glance</h2>
+      <div class="grid md:grid-cols-2 gap-8">
+        <div class="rounded-2xl border border-violet-800/60 bg-slate-900/50 backdrop-blur p-8">
+          <h3 class="text-xl font-semibold text-violet-400 mb-4">Datanika</h3>
+          <ul class="space-y-2 text-sm text-slate-300">
+            <li>All-in-one EL + T + Scheduling</li>
+            <li>dbt transforms built-in</li>
+            <li>32 curated connectors</li>
+            <li>Self-host via Docker Compose</li>
+            <li>AGPL-3.0 open-source</li>
+            <li>Python stack (dlt + dbt-core)</li>
+            <li>Free $0 / Pro $79/mo / Enterprise from $399/mo</li>
+          </ul>
+        </div>
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur p-8">
+          <h3 class="text-xl font-semibold text-slate-400 mb-4">Fivetran</h3>
+          <ul class="space-y-2 text-sm text-slate-300">
+            <li>EL only (transforms are a separate add-on)</li>
+            <li>500+ managed connectors</li>
+            <li>SaaS only (no self-host option)</li>
+            <li>Closed source, proprietary</li>
+            <li>Pricing starts ~$1/credit (~$250+/mo)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="py-20">
+    <div class="max-w-3xl mx-auto px-6 text-center">
+      <h2 class="text-3xl font-bold mb-4">Ready to try Datanika?</h2>
+      <p class="text-slate-400 mb-8">
+        Start for free with the open-source ELT platform that gives you full control over your data pipelines.
+      </p>
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <a href="https://app.datanika.io" class="btn-primary">Get Started Free</a>
+        <a href="https://github.com/datanika-io/datanika-core" class="btn-secondary">Star on GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <Footer />
+</Layout>
