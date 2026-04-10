@@ -5,6 +5,7 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
 <DocsLayout title="API Reference">
   <h1>API Reference</h1>
   <p class="text-lg text-slate-400">Automate your data pipelines with the Datanika REST API.</p>
+  <p>Interactive API explorer available at <a href="https://app.datanika.io/api/v1/docs">Swagger UI</a> (requires authentication).</p>
 
   <h2>Authentication</h2>
   <p>All API requests require an API key in the <code>Authorization</code> header:</p>
@@ -258,6 +259,63 @@ Content-Type: application/json
   "status": "pending",
   "created_at": "2026-03-25T14:00:00Z"
 }`} /></pre>
+
+  <h2>Schedules</h2>
+
+  <h3>List schedules</h3>
+  <pre><code set:html={`GET /api/v1/schedules`} /></pre>
+
+  <h3>Get schedule</h3>
+  <pre><code set:html={`GET /api/v1/schedules/{id}`} /></pre>
+
+  <h3>Create schedule</h3>
+  <pre><code set:html={`POST /api/v1/schedules
+Content-Type: application/json
+
+{
+  "name": "Daily orders sync",
+  "target_type": "upload",
+  "target_id": 1,
+  "cron_expression": "0 6 * * *",
+  "is_active": true,
+  "dependencies": [2]
+}`} /></pre>
+
+  <h3>Update schedule</h3>
+  <pre><code set:html={`PUT /api/v1/schedules/{id}`} /></pre>
+
+  <h3>Delete schedule</h3>
+  <pre><code set:html={`DELETE /api/v1/schedules/{id}`} /></pre>
+
+  <h2>Notification Channels</h2>
+
+  <h3>List channels</h3>
+  <pre><code set:html={`GET /api/v1/notifications/channels`} /></pre>
+
+  <h3>Get channel</h3>
+  <pre><code set:html={`GET /api/v1/notifications/channels/{id}`} /></pre>
+
+  <h3>Create channel</h3>
+  <pre><code set:html={`POST /api/v1/notifications/channels
+Content-Type: application/json
+
+{
+  "name": "Slack alerts",
+  "channel_type": "slack",
+  "config": {
+    "webhook_url": "https://hooks.slack.com/services/..."
+  },
+  "events": ["run.failed"],
+  "is_active": true
+}`} /></pre>
+  <p>Channel types: <code>email</code>, <code>slack</code>, <code>telegram</code>, <code>webhook</code></p>
+  <p>Events: <code>run.failed</code>, <code>run.success</code>, <code>quota.warning</code></p>
+
+  <h3>Update channel</h3>
+  <pre><code set:html={`PUT /api/v1/notifications/channels/{id}`} /></pre>
+
+  <h3>Delete channel</h3>
+  <pre><code set:html={`DELETE /api/v1/notifications/channels/{id}`} /></pre>
 
   <h2>Import Configuration</h2>
   <p>Bulk-create connections, uploads, pipelines, and transformations from a JSON file. See <a href="/docs/ai-import">Backup & Import</a> for the full format specification.</p>
