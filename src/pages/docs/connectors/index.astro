@@ -1,0 +1,35 @@
+---
+import DocsLayout from "../../../layouts/DocsLayout.astro";
+import { getCollection } from "astro:content";
+
+const entries = await getCollection("connectors", ({ data }) => !data.draft);
+entries.sort((a, b) => a.data.source_name.localeCompare(b.data.source_name));
+---
+
+<DocsLayout
+  title="Connectors"
+  description="Per-connector setup guides for every source Datanika supports."
+>
+  <h1>Connectors</h1>
+  <p class="text-lg text-slate-400">
+    Step-by-step setup guides for every source Datanika supports — credentials,
+    connection, tables, first run, scheduling, and troubleshooting.
+  </p>
+
+  <h2>Available guides</h2>
+  <ul>
+    {entries.map((entry) => (
+      <li>
+        <a href={`/docs/connectors/${entry.id}`}>{entry.data.source_name}</a>
+        {" — "}
+        <span class="text-slate-400">{entry.data.description}</span>
+      </li>
+    ))}
+  </ul>
+
+  <p class="text-sm text-slate-500 mt-8">
+    More connectors are being rolled out in order of search demand. If the source
+    you need isn't listed yet, the connector itself is still supported — this
+    page only tracks the <em>written setup guide</em>.
+  </p>
+</DocsLayout>

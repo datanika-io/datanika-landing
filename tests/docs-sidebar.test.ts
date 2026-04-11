@@ -15,6 +15,7 @@ const EXPECTED_SIDEBAR = [
   { label: "Getting Started", href: "/docs/getting-started" },
   { label: "Organizations & Members", href: "/docs/organizations" },
   { label: "Connections", href: "/docs/connections" },
+  { label: "Connectors", href: "/docs/connectors" },
   { label: "Uploads", href: "/docs/uploads" },
   { label: "Transformations", href: "/docs/transformations" },
   { label: "Transformation Guide", href: "/docs/transformations-guide" },
@@ -86,7 +87,38 @@ describe("docs sidebar consistency", () => {
 
   it("has all expected sidebar entries in DocsLayout source", () => {
     // Verify the source of truth has the right count
-    expect(EXPECTED_SIDEBAR.length).toBe(19);
+    expect(EXPECTED_SIDEBAR.length).toBe(20);
+  });
+
+  it("includes the Connectors group between Connections and Uploads", () => {
+    // Guardrail for the per-connector setup guide IA (PLAN_PRODUCT P0).
+    // Mental model: connect (Connections) → configure (Connectors) → load (Uploads).
+    const labels = EXPECTED_SIDEBAR.map((s) => s.label);
+    const connectionsIdx = labels.indexOf("Connections");
+    const connectorsIdx = labels.indexOf("Connectors");
+    const uploadsIdx = labels.indexOf("Uploads");
+    expect(connectorsIdx, "Connectors sidebar group is missing").toBeGreaterThan(-1);
+    expect(connectorsIdx).toBe(connectionsIdx + 1);
+    expect(uploadsIdx).toBe(connectorsIdx + 1);
+    expect(EXPECTED_SIDEBAR[connectorsIdx].href).toBe("/docs/connectors");
+  });
+
+  it("every built docs page links to the Connectors group", () => {
+    // Independent check so this fails loudly even if someone trims EXPECTED_SIDEBAR.
+    const pages = getDocPages();
+    expect(pages.length).toBeGreaterThan(0);
+    for (const page of pages) {
+      const filePath =
+        page === "index"
+          ? join(DIST, "index.html")
+          : join(DIST, page, "index.html");
+      const html = readFileSync(filePath, "utf-8");
+      const links = extractSidebarLinks(html);
+      expect(
+        links,
+        `Page "/docs/${page}" is missing the Connectors sidebar link`
+      ).toContain("/docs/connectors");
+    }
   });
 
   for (const page of getDocPages()) {
