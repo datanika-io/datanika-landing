@@ -37,4 +37,22 @@ describe("API docs page", () => {
   it("documents cron_expression", () => {
     expect(html).toContain("cron_expression");
   });
+
+  it("documents the compile endpoint (#52)", () => {
+    expect(html).toContain("/api/v1/transformations/5/compile");
+    expect(html).toContain("compiled_sql");
+    expect(html).toContain("compilation_error");
+  });
+
+  it("documents the preview endpoint (#52)", () => {
+    expect(html).toContain("/api/v1/transformations/5/preview");
+    expect(html).toContain("row_count");
+    expect(html).toContain("truncated");
+    expect(html).toContain("missing_destination");
+    expect(html).toContain("execution_error");
+  });
+
+  it("explains the agent loop", () => {
+    expect(html).toContain("agent loop");
+  });
 });

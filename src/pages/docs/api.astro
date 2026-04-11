@@ -197,6 +197,91 @@ Content-Type: application/json
   "created_at": "2026-03-25T12:00:00Z"
 }`} /></pre>
 
+  <h3>Compile transformation (agent-friendly)</h3>
+  <p>
+    Runs <code>dbt compile</code> for the transformation and returns the rendered SQL.
+    No warehouse execution, no side effects. Use this from an AI agent or CI pipeline
+    to catch Jinja errors and broken <code>&#123;&#123; ref() &#125;&#125;</code> references
+    before committing to a long-running pipeline run.
+  </p>
+  <pre><code set:html={`POST /api/v1/transformations/5/compile
+
+# Success — 200 OK
+{
+  "compiled_sql": "SELECT date_trunc('month', order_date) AS month, SUM(amount) AS revenue FROM \\"marts\\".\\"stg_orders\\" GROUP BY 1",
+  "node": "model.tenant_10.mart_revenue"
+}
+
+# Compilation error — 400 Bad Request
+{
+  "error": {
+    "code": "compilation_error",
+    "message": "Compilation Error in model mart_revenue ...",
+    "line": 3,
+    "column": 14
+  }
+}`} /></pre>
+  <p>
+    The <code>node</code> field is the dbt fully-qualified node name — tenant projects are
+    namespaced as <code>tenant_&lt;org_id&gt;</code>.
+  </p>
+
+  <h3>Preview transformation output</h3>
+  <p>
+    Compiles the transformation, wraps the resulting SQL in
+    <code>SELECT * FROM (...) LIMIT N</code>, and runs it against the destination
+    warehouse. Returns the first <code>N</code> rows. Default limit is 100, maximum is 1000.
+    The wrapping query is re-validated by the read-only SQL guard even after <code>dbt</code>
+    compile, so the endpoint cannot execute arbitrary DDL or DML no matter what the
+    transformation contains.
+  </p>
+  <pre><code set:html={`POST /api/v1/transformations/5/preview
+Content-Type: application/json
+
+{ "limit": 50 }
+
+# Success — 200 OK
+{
+  "columns": [
+    {"name": "month", "type": ""},
+    {"name": "revenue", "type": ""}
+  ],
+  "rows": [
+    ["2026-01-01", 12450.75],
+    ["2026-02-01", 13980.20]
+  ],
+  "row_count": 2,
+  "truncated": false
+}
+
+# Compilation error — 400 Bad Request
+{
+  "error": {
+    "code": "compilation_error",
+    "message": "..."
+  }
+}
+
+# Missing destination — 400 Bad Request
+{
+  "error": {
+    "code": "missing_destination",
+    "message": "Transformation has no destination connection set"
+  }
+}
+
+# Warehouse error — 400 Bad Request
+{
+  "error": {
+    "code": "execution_error",
+    "message": "relation \\"stg_orders\\" does not exist"
+  }
+}`} /></pre>
+  <p>
+    <strong>Typical agent loop:</strong> <code>POST /compile</code> → fix Jinja errors →
+    <code>POST /preview</code> → inspect rows → <code>POST /run</code> when satisfied.
+  </p>
+
   <h2>Runs</h2>
 
   <h3>List runs</h3>
