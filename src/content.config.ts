@@ -18,4 +18,20 @@ const blog = defineCollection({
   }),
 });
 
-export const collections = { blog };
+const connectors = defineCollection({
+  loader: glob({ pattern: "**/*.md", base: "./src/content/connectors" }),
+  schema: z.object({
+    title: z.string(),
+    description: z.string(),
+    source: z.string(),
+    source_name: z.string(),
+    category: z.enum(["database", "saas", "file", "api"]),
+    verified_by: z.string().default("draft-pending-verification"),
+    verified_date: z.string().nullable().default(null),
+    related_use_cases: z.array(z.string()).default([]),
+    related_comparisons: z.array(z.string()).default([]),
+    draft: z.boolean().default(false),
+  }),
+});
+
+export const collections = { blog, connectors };
