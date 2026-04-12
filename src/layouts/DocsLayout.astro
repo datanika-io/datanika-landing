@@ -113,7 +113,7 @@ const breadcrumbLD = JSON.stringify({
       <div class="flex gap-10">
         <!-- Sidebar -->
         <aside class="hidden w-56 shrink-0 md:block">
-          <nav class="sticky top-24 space-y-1">
+          <nav class="sticky top-24 max-h-[calc(100vh-7rem)] space-y-1 overflow-y-auto pr-2">
             {sections.map((s) => (
               <a
                 href={s.href}
