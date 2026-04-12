@@ -1,0 +1,41 @@
+---
+import ApiLayout from "../../layouts/ApiLayout.astro";
+---
+
+<ApiLayout
+  title="API Overview"
+  description="Datanika REST API — automate connections, pipelines, transformations, runs, and schedules from any language."
+>
+  <h1>Datanika API</h1>
+  <p class="text-lg text-slate-400">Programmatic access to every Datanika resource — built for automation, CI/CD, and AI agents.</p>
+
+  <p>The Datanika REST API lets you script the same operations available in the UI: create connections, configure uploads, define dbt transformations, trigger runs, and manage schedules. Every endpoint is authenticated with an API key and rate-limited per key.</p>
+
+  <h2>Where to start</h2>
+  <ul>
+    <li><a href="/api/keys">API Keys</a> — create your first key in the Datanika UI, then use it as a bearer token in every request.</li>
+    <li><a href="/api/reference">API Reference</a> — full endpoint catalog with curl examples for connections, uploads, pipelines, transformations, runs, schedules, and notification channels.</li>
+    <li><a href="https://app.datanika.io/api/v1/docs">Interactive Swagger UI</a> — try endpoints live against your own organization (requires login).</li>
+  </ul>
+
+  <h2>Base URL</h2>
+  <p>All API requests target the cloud app:</p>
+  <pre><code set:html={`https://app.datanika.io/api/v1`} /></pre>
+  <p>Self-hosted deployments use the same path under their own host. See <a href="/docs/self-hosting">Self-Hosting</a>.</p>
+
+  <h2>Authentication</h2>
+  <p>Every request requires an API key in the <code>Authorization</code> header:</p>
+  <pre><code set:html={`curl -H "Authorization: Bearer etf_your_api_key_here" \\
+     https://app.datanika.io/api/v1/connections`} /></pre>
+
+  <h2>What the API is good for</h2>
+  <ul>
+    <li><strong>CI/CD pipelines</strong> — promote a tested set of transformations from staging to prod by triggering runs from a GitHub Actions workflow.</li>
+    <li><strong>Bulk configuration</strong> — import an entire org's connections, uploads, and transformations from a single JSON file (see <a href="/docs/ai-import">Backup &amp; Import</a>).</li>
+    <li><strong>AI agents</strong> — let an LLM compile a transformation, preview the rendered SQL, and only trigger a run when it's satisfied. The compile and preview endpoints are read-only and side-effect-free.</li>
+    <li><strong>Custom dashboards</strong> — query run history and pipeline status from your own ops tooling.</li>
+  </ul>
+
+  <h2>Looking for platform docs?</h2>
+  <p>UI walkthroughs, concept guides, and admin topics live under <a href="/docs">Docs</a>. This section is the API reference only.</p>
+</ApiLayout>

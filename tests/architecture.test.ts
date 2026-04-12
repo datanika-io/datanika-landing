@@ -48,6 +48,7 @@ describe("architecture overview page", () => {
 
   it("links to related docs", () => {
     expect(html).toContain("/docs/self-hosting");
-    expect(html).toContain("/docs/api");
+    // Issue #105: API docs moved from /docs/api to /api/reference.
+    expect(html).toContain("/api/reference");
   });
 });

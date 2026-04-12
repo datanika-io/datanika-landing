@@ -1,8 +1,8 @@
 ---
-import DocsLayout from "../../layouts/DocsLayout.astro";
+import ApiLayout from "../../layouts/ApiLayout.astro";
 ---
 
-<DocsLayout title="API Reference">
+<ApiLayout title="API Reference">
   <h1>API Reference</h1>
   <p class="text-lg text-slate-400">Automate your data pipelines with the Datanika REST API.</p>
   <p>Interactive API explorer available at <a href="https://app.datanika.io/api/v1/docs">Swagger UI</a> (requires authentication).</p>
@@ -11,7 +11,7 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
   <p>All API requests require an API key in the <code>Authorization</code> header:</p>
   <pre><code set:html={`curl -H "Authorization: Bearer etf_your_api_key_here" \\
      https://app.datanika.io/api/v1/...`} /></pre>
-  <p>Create API keys in <strong>Settings &rarr; API Keys</strong>. See <a href="/docs/api-keys">API Keys</a> for details.</p>
+  <p>Create API keys in <strong>Settings &rarr; API Keys</strong>. See <a href="/api/keys">API Keys</a> for details.</p>
 
   <h2>Connections</h2>
 
@@ -507,4 +507,4 @@ X-RateLimit-Reset: 1711929600
       <tr><td><code>import</code></td><td>Import configurations from JSON</td></tr>
     </tbody>
   </table>
-</DocsLayout>
+</ApiLayout>

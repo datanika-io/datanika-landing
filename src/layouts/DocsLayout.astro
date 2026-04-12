@@ -60,6 +60,7 @@ const groups = [
       { label: "Transformations", href: "/docs/transformations" },
       { label: "Transformation Guide", href: "/docs/transformations-guide" },
       { label: "Data Catalog", href: "/docs/catalog" },
+      { label: "AI Agents", href: "/docs/ai-agents" },
     ],
   },
   {
@@ -75,19 +76,17 @@ const groups = [
     label: "Operate",
     items: [
       { label: "Organizations & Members", href: "/docs/organizations" },
-      { label: "API Keys", href: "/docs/api-keys" },
       { label: "Audit Log", href: "/docs/audit-log" },
       { label: "Self-Hosting", href: "/docs/self-hosting" },
       { label: "Backup & Import", href: "/docs/ai-import" },
     ],
   },
-  {
-    label: "API & Reference",
-    items: [
-      { label: "API Reference", href: "/docs/api" },
-      { label: "AI Agents", href: "/docs/ai-agents" },
-    ],
-  },
+  // The API & Reference group used to live here. After issue #105 the API
+  // docs moved to their own /api/* section with ApiLayout — see Navbar's
+  // top-level "API" link. If you're looking for /docs/api or /docs/api-keys,
+  // they redirect via astro.config.mjs. AI Agents stays in /docs/ (under
+  // Build) because it's a how-to for building agent-driven automations,
+  // not a reference document.
 ];
 
 // Flat view kept for code that just needs "every page" — breadcrumb lookup, mobile <select>, tests.

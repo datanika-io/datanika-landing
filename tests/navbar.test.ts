@@ -32,6 +32,12 @@ describe("navbar links", () => {
     expect(html).toContain('href="/docs"');
   });
 
+  it("has API link", () => {
+    // Issue #105 — Approach B from SPEC_DOCS_IA_REDESIGN.md.
+    // The API section is its own top-level entry between Docs and Blog.
+    expect(html).toContain('href="/api"');
+  });
+
   it("has Blog link", () => {
     expect(html).toContain('href="/blog"');
   });
