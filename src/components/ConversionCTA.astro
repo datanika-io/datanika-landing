@@ -1,0 +1,34 @@
+---
+// Drop-in replacement for `<a>` that fires the Google Ads conversion
+// event on click. Renders a plain anchor when PUBLIC_GOOGLE_ADS_CONVERSION_LABEL
+// is unset (so local builds without the secret still work).
+//
+// Usage:
+//   <ConversionCTA href="https://app.datanika.io" class="btn-primary">
+//     Get Started Free
+//   </ConversionCTA>
+//
+// All other props (id, target, rel, aria-*, data-*, etc.) pass through.
+//
+// Why a component instead of a global click listener: a CTA-specific
+// gtag fires only on the conversion-eligible CTAs we care about, not
+// on every link in the site. Body-text mentions of /signup don't get
+// counted as conversions.
+//
+// Account ID `AW-18081528527` is hardcoded — it's already public in
+// `src/layouts/Layout.astro`'s gtag config block, so this isn't a
+// secret. Only the per-conversion label is sensitive enough to keep
+// in env vars.
+
+const conversionLabel = import.meta.env.PUBLIC_GOOGLE_ADS_CONVERSION_LABEL;
+const sendTo = conversionLabel ? `AW-18081528527/${conversionLabel}` : null;
+const onClick = sendTo
+  ? `gtag('event', 'conversion', {'send_to': '${sendTo}', 'value': 1.0, 'currency': 'EUR'});`
+  : undefined;
+
+const { href, class: className, ...rest } = Astro.props;
+---
+
+<a href={href} class={className} onclick={onClick} {...rest}>
+  <slot />
+</a>
