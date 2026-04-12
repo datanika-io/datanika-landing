@@ -1,0 +1,151 @@
+---
+import "../styles/global.css";
+import Navbar from "../components/Navbar.astro";
+import Footer from "../components/Footer.astro";
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = "Datanika API documentation" } = Astro.props;
+
+const fullTitle = `${title} — Datanika API`;
+const canonicalURL = new URL(Astro.url.pathname, Astro.site);
+const ogImage = new URL("/logo.png", Astro.site);
+
+const articleLD = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": title,
+  "description": description,
+  "url": canonicalURL.href,
+  "publisher": {
+    "@type": "Organization",
+    "name": "Datanika",
+    "logo": { "@type": "ImageObject", "url": ogImage.href },
+  },
+});
+
+// API sidebar — kept intentionally small. This is the structural seed for
+// future API content (OpenAPI explorer, webhooks, agent docs); add new
+// entries here when we have them, not before. See plans/product/SPEC_DOCS_IA_REDESIGN.md.
+const sections = [
+  { label: "Overview", href: "/api" },
+  { label: "API Reference", href: "/api/reference" },
+  { label: "API Keys", href: "/api/keys" },
+];
+
+const currentPath = Astro.url.pathname.replace(/\/$/, "") || "/api";
+
+// Breadcrumbs: Home → API → current page (if not the index)
+const currentSection = sections.find(
+  (s) => s.href.replace(/\/$/, "") === currentPath
+);
+const breadcrumbItems = [
+  { name: "Home", url: "https://datanika.io/" },
+  { name: "API", url: "https://datanika.io/api" },
+];
+if (currentSection && currentPath !== "/api") {
+  breadcrumbItems.push({
+    name: currentSection.label,
+    url: new URL(currentPath, Astro.site).href,
+  });
+}
+const breadcrumbLD = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: breadcrumbItems.map((b, i) => ({
+    "@type": "ListItem",
+    position: i + 1,
+    name: b.name,
+    item: b.url,
+  })),
+});
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalURL.href} />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content={canonicalURL.href} />
+    <meta property="og:site_name" content="Datanika" />
+    <meta property="og:image" content={ogImage.href} />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage.href} />
+
+    <title>{fullTitle}</title>
+
+    <!-- Structured Data -->
+    <script type="application/ld+json" set:html={articleLD} />
+    <script type="application/ld+json" set:html={breadcrumbLD} />
+  </head>
+  <body class="min-h-screen antialiased">
+    <Navbar />
+    <div class="mx-auto max-w-7xl px-6 pt-24 pb-16">
+      <div class="flex gap-10">
+        <!-- Sidebar -->
+        <aside class="hidden w-56 shrink-0 md:block">
+          <nav class="sticky top-24 max-h-[calc(100vh-7rem)] space-y-1 overflow-y-auto pr-2">
+            <div class="mb-2 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-slate-500">
+              API
+            </div>
+            {sections.map((s) => (
+              <a
+                href={s.href}
+                class:list={[
+                  "block rounded-lg px-3 py-2 text-sm transition-colors",
+                  currentPath === s.href.replace(/\/$/, "")
+                    ? "bg-violet-500/10 text-violet-400 font-medium"
+                    : "text-slate-400 hover:text-white hover:bg-slate-800/50",
+                ]}
+              >
+                {s.label}
+              </a>
+            ))}
+          </nav>
+        </aside>
+
+        <!-- Mobile nav -->
+        <div class="mb-6 md:hidden">
+          <select
+            id="api-mobile-nav"
+            class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-300"
+          >
+            {sections.map((s) => (
+              <option value={s.href} selected={currentPath === s.href.replace(/\/$/, "")}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <!-- Content -->
+        <main class="min-w-0 flex-1">
+          <div class="prose-docs space-y-6 text-slate-300 leading-relaxed [&_h1]:text-3xl [&_h1]:font-bold [&_h1]:text-white [&_h1]:mb-2 [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:text-white [&_h2]:mt-10 [&_h2]:mb-3 [&_h3]:text-lg [&_h3]:font-medium [&_h3]:text-slate-200 [&_h3]:mt-6 [&_h3]:mb-2 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:space-y-1 [&_code]:bg-slate-800 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-violet-300 [&_code]:text-sm [&_pre]:bg-slate-900 [&_pre]:border [&_pre]:border-slate-800 [&_pre]:rounded-lg [&_pre]:p-4 [&_pre]:overflow-x-auto [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_table]:w-full [&_table]:text-sm [&_th]:text-left [&_th]:py-2 [&_th]:px-3 [&_th]:text-slate-400 [&_th]:border-b [&_th]:border-slate-800 [&_td]:py-2 [&_td]:px-3 [&_td]:border-b [&_td]:border-slate-800/50 [&_a]:text-violet-400 [&_a:hover]:underline">
+            <slot />
+          </div>
+        </main>
+      </div>
+    </div>
+    <Footer />
+
+    <script>
+      const sel = document.getElementById("api-mobile-nav") as HTMLSelectElement;
+      sel?.addEventListener("change", () => { window.location.href = sel.value; });
+    </script>
+  </body>
+</html>

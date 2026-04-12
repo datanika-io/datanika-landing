@@ -112,7 +112,7 @@ curl -X POST https://app.datanika.io/api/v1/notifications/channels \
   }'
 ```
 
-See the [API Reference](/docs/api) for the full notification channels API.
+See the [API Reference](/api/reference) for the full notification channels API.
 
 ## Best Practices
 
@@ -128,4 +128,4 @@ Notification channels are available on all plans, including Free. [Set up your f
 Related:
 - [Scheduling Guide](/docs/scheduling-guide) — automate pipeline runs
 - [Runs & Monitoring](/docs/runs) — track execution history
-- [API Reference](/docs/api) — manage channels programmatically
+- [API Reference](/api/reference) — manage channels programmatically

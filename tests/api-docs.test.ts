@@ -13,7 +13,10 @@ function readHtml(path: string): string {
 describe("API docs page", () => {
   let html: string;
   beforeAll(() => {
-    html = readHtml("docs/api/index.html");
+    // Issue #105 — API docs moved from /docs/api to /api/reference. The
+    // /docs/api URL still works as a 301 redirect; this test now reads the
+    // canonical location to verify content.
+    html = readHtml("api/reference/index.html");
   });
 
   it("has schedules section", () => {
