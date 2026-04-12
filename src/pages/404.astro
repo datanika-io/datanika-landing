@@ -1,0 +1,87 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Navbar from "../components/Navbar.astro";
+import Footer from "../components/Footer.astro";
+
+const helpfulLinks = [
+  { label: "Homepage", href: "/", description: "Back to the main page" },
+  { label: "Connectors", href: "/connectors", description: "Browse 30+ data sources and destinations" },
+  { label: "Documentation", href: "/docs", description: "Guides, API reference, and tutorials" },
+  { label: "Blog", href: "/blog", description: "Engineering insights and product updates" },
+  { label: "Pricing", href: "/pricing", description: "Free, Pro, and Enterprise plans" },
+];
+
+const popularPages = [
+  { label: "Getting Started Guide", href: "/docs/getting-started" },
+  { label: "Self-Hosting Guide", href: "/docs/self-hosting" },
+  { label: "API Documentation", href: "/docs/api" },
+  { label: "PostgreSQL Connector", href: "/connectors/postgresql" },
+  { label: "MySQL Connector", href: "/connectors/mysql" },
+  { label: "Compare with Fivetran", href: "/compare/fivetran" },
+];
+---
+
+<Layout
+  title="Page Not Found — Datanika"
+  description="The page you're looking for doesn't exist or has been moved."
+>
+  <Navbar />
+  <main class="relative overflow-hidden pt-32 pb-20 md:pt-44 md:pb-32">
+    <!-- Background glows -->
+    <div class="glow -top-40 -left-40 bg-violet-600"></div>
+    <div class="glow -right-40 top-20 bg-cyan-500"></div>
+
+    <div class="relative mx-auto max-w-7xl px-6">
+      <div class="mx-auto max-w-3xl text-center">
+        <p class="text-7xl font-extrabold gradient-text sm:text-8xl md:text-9xl">404</p>
+        <h1 class="mt-4 text-3xl font-bold tracking-tight text-white sm:text-4xl">
+          Page not found
+        </h1>
+        <p class="mt-4 text-lg text-slate-400">
+          The page you're looking for doesn't exist or has been moved.
+        </p>
+        <div class="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
+          <a href="/" class="btn-primary">Go to Homepage</a>
+          <a href="/docs" class="btn-secondary">Browse Docs</a>
+        </div>
+      </div>
+
+      <!-- Helpful links -->
+      <div class="mx-auto mt-20 max-w-4xl">
+        <h2 class="text-center text-lg font-semibold text-white">Helpful Links</h2>
+        <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {helpfulLinks.map((link) => (
+            <a
+              href={link.href}
+              class="rounded-lg border border-slate-800 bg-slate-900/50 p-4 transition-colors hover:border-violet-500/50 hover:bg-slate-800/50"
+            >
+              <span class="font-medium text-white">{link.label}</span>
+              <p class="mt-1 text-sm text-slate-400">{link.description}</p>
+            </a>
+          ))}
+        </div>
+      </div>
+
+      <!-- Popular pages -->
+      <div class="mx-auto mt-16 max-w-2xl">
+        <h2 class="text-center text-lg font-semibold text-white">Popular Pages</h2>
+        <ul class="mt-6 grid gap-2 sm:grid-cols-2">
+          {popularPages.map((page) => (
+            <li>
+              <a
+                href={page.href}
+                class="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-slate-400 transition-colors hover:bg-slate-800/50 hover:text-white"
+              >
+                <svg class="h-4 w-4 shrink-0 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+                {page.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  </main>
+  <Footer />
+</Layout>
