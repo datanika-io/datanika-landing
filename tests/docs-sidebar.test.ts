@@ -9,29 +9,61 @@ import { resolve, join } from "path";
 
 const DIST = resolve(__dirname, "../dist/docs");
 
-// All expected sidebar entries in order
-const EXPECTED_SIDEBAR = [
-  { label: "Overview", href: "/docs" },
-  { label: "Getting Started", href: "/docs/getting-started" },
-  { label: "Organizations & Members", href: "/docs/organizations" },
-  { label: "Connections", href: "/docs/connections" },
-  { label: "Connectors", href: "/docs/connectors" },
-  { label: "Uploads", href: "/docs/uploads" },
-  { label: "Transformations", href: "/docs/transformations" },
-  { label: "Transformation Guide", href: "/docs/transformations-guide" },
-  { label: "Pipelines", href: "/docs/pipelines" },
-  { label: "Scheduling & Dependencies", href: "/docs/scheduling" },
-  { label: "Scheduling Guide", href: "/docs/scheduling-guide" },
-  { label: "Runs & Monitoring", href: "/docs/runs" },
-  { label: "Data Catalog", href: "/docs/catalog" },
-  { label: "File Uploads", href: "/docs/file-uploads" },
-  { label: "API Keys", href: "/docs/api-keys" },
-  { label: "API Reference", href: "/docs/api" },
-  { label: "Audit Log", href: "/docs/audit-log" },
-  { label: "Self-Hosting", href: "/docs/self-hosting" },
-  { label: "Backup & Import", href: "/docs/ai-import" },
-  { label: "Architecture", href: "/docs/architecture" },
+// Sidebar IA — must mirror DocsLayout.astro `groups`. Issue #103.
+// If you add a doc page, append it to the right group here AND in DocsLayout.
+const EXPECTED_GROUPS = [
+  {
+    label: "Getting Started",
+    items: [
+      { label: "Overview", href: "/docs" },
+      { label: "Getting Started", href: "/docs/getting-started" },
+      { label: "Architecture", href: "/docs/architecture" },
+    ],
+  },
+  {
+    label: "Connect",
+    items: [
+      { label: "Connections", href: "/docs/connections" },
+      { label: "Connectors", href: "/docs/connectors" },
+      { label: "Uploads", href: "/docs/uploads" },
+      { label: "File Uploads", href: "/docs/file-uploads" },
+    ],
+  },
+  {
+    label: "Build",
+    items: [
+      { label: "Transformations", href: "/docs/transformations" },
+      { label: "Transformation Guide", href: "/docs/transformations-guide" },
+      { label: "Data Catalog", href: "/docs/catalog" },
+    ],
+  },
+  {
+    label: "Run & Schedule",
+    items: [
+      { label: "Pipelines", href: "/docs/pipelines" },
+      { label: "Scheduling & Dependencies", href: "/docs/scheduling" },
+      { label: "Scheduling Guide", href: "/docs/scheduling-guide" },
+      { label: "Runs & Monitoring", href: "/docs/runs" },
+    ],
+  },
+  {
+    label: "Operate",
+    items: [
+      { label: "Organizations & Members", href: "/docs/organizations" },
+      { label: "API Keys", href: "/docs/api-keys" },
+      { label: "Audit Log", href: "/docs/audit-log" },
+      { label: "Self-Hosting", href: "/docs/self-hosting" },
+      { label: "Backup & Import", href: "/docs/ai-import" },
+    ],
+  },
+  {
+    label: "API & Reference",
+    items: [{ label: "API Reference", href: "/docs/api" }],
+  },
 ];
+
+// Flat view kept for assertions that don't care about grouping.
+const EXPECTED_SIDEBAR = EXPECTED_GROUPS.flatMap((g) => g.items);
 
 function getDocPages(): string[] {
   if (!existsSync(DIST)) return [];
@@ -88,6 +120,117 @@ describe("docs sidebar consistency", () => {
   it("has all expected sidebar entries in DocsLayout source", () => {
     // Verify the source of truth has the right count
     expect(EXPECTED_SIDEBAR.length).toBe(20);
+  });
+
+  it("groups sidebar entries into 6 named groups", () => {
+    // Issue #103 — IA Approach A. If you change this, also update
+    // plans/product/SPEC_DOCS_IA_REDESIGN.md and DocsLayout.astro `groups`.
+    expect(EXPECTED_GROUPS).toHaveLength(6);
+    const labels = EXPECTED_GROUPS.map((g) => g.label);
+    expect(labels).toEqual([
+      "Getting Started",
+      "Connect",
+      "Build",
+      "Run & Schedule",
+      "Operate",
+      "API & Reference",
+    ]);
+  });
+
+  it("every doc entry belongs to exactly one group", () => {
+    // Catches typos and accidental duplicates between groups.
+    const counts = new Map<string, number>();
+    for (const group of EXPECTED_GROUPS) {
+      for (const item of group.items) {
+        counts.set(item.href, (counts.get(item.href) ?? 0) + 1);
+      }
+    }
+    for (const [href, n] of counts) {
+      expect(n, `${href} appears in ${n} groups, expected 1`).toBe(1);
+    }
+    expect(counts.size).toBe(EXPECTED_SIDEBAR.length);
+  });
+
+  it("every built doc page renders all 6 group <summary> elements", () => {
+    // Issue #103. If a refactor accidentally drops one group from the layout,
+    // this fails on every page instead of silently leaving entries unreachable.
+    const pages = getDocPages();
+    expect(pages.length).toBeGreaterThan(0);
+    for (const page of pages) {
+      const filePath =
+        page === "index"
+          ? join(DIST, "index.html")
+          : join(DIST, page, "index.html");
+      const html = readFileSync(filePath, "utf-8");
+      for (const group of EXPECTED_GROUPS) {
+        // Astro encodes `&` differently in attributes (`&#38;`) vs text
+        // content (`&amp;`). Encode both ways and check they're present.
+        const attrLabel = group.label.replace(/&/g, "&#38;");
+        const textLabel = group.label.replace(/&/g, "&amp;");
+        expect(
+          html.includes(`data-sidebar-group="${attrLabel}"`),
+          `Page "/docs/${page}" missing data-sidebar-group="${group.label}"`
+        ).toBe(true);
+        expect(
+          html.includes(`<span>${textLabel}</span>`),
+          `Page "/docs/${page}" missing <summary> text "${group.label}"`
+        ).toBe(true);
+      }
+    }
+  });
+
+  it("active page's group renders with `open` attribute (no JS flash)", () => {
+    // The Astro side renders the group containing the current page as
+    // `<details ... open>` so the user lands on a useful sidebar even with
+    // empty localStorage. Pick one page from each group and verify.
+    const samples = [
+      { page: "architecture", expectedGroup: "Getting Started" },
+      { page: "connections", expectedGroup: "Connect" },
+      { page: "transformations", expectedGroup: "Build" },
+      { page: "pipelines", expectedGroup: "Run & Schedule" },
+      { page: "self-hosting", expectedGroup: "Operate" },
+      { page: "api", expectedGroup: "API & Reference" },
+    ];
+    for (const { page, expectedGroup } of samples) {
+      const filePath = join(DIST, page, "index.html");
+      if (!existsSync(filePath)) continue; // page may not exist in dev builds
+      const html = readFileSync(filePath, "utf-8");
+      const attrLabel = expectedGroup.replace(/&/g, "&#38;");
+      // Astro emits attributes in source order: class, data-sidebar-group, open.
+      // Match the full opening tag for the active group and assert it contains
+      // a bare `open` attribute. Order-independent within the tag.
+      const tagRe = new RegExp(
+        `<details\\b[^>]*\\bdata-sidebar-group="${attrLabel}"[^>]*>`
+      );
+      const tagMatch = html.match(tagRe);
+      expect(
+        tagMatch,
+        `Page "/docs/${page}" missing <details> tag for group "${expectedGroup}"`
+      ).not.toBeNull();
+      expect(
+        tagMatch![0],
+        `Page "/docs/${page}" should render group "${expectedGroup}" with open attribute by default`
+      ).toMatch(/\bopen\b/);
+    }
+  });
+
+  it("mobile <select> uses <optgroup> for each sidebar group", () => {
+    // Mobile users should see the same IA as desktop. <optgroup> is the
+    // semantic equivalent of <details>/<summary> in a native <select>.
+    const pages = getDocPages();
+    expect(pages.length).toBeGreaterThan(0);
+    const filePath =
+      pages[0] === "index"
+        ? join(DIST, "index.html")
+        : join(DIST, pages[0], "index.html");
+    const html = readFileSync(filePath, "utf-8");
+    for (const group of EXPECTED_GROUPS) {
+      const attrLabel = group.label.replace(/&/g, "&#38;");
+      expect(
+        html.includes(`<optgroup label="${attrLabel}">`),
+        `Mobile <select> missing <optgroup label="${group.label}">`
+      ).toBe(true);
+    }
   });
 
   it("sidebar nav is sticky and independently scrollable", () => {
