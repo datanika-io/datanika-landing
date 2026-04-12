@@ -2,6 +2,7 @@
 import Layout from "../../layouts/Layout.astro";
 import Navbar from "../../components/Navbar.astro";
 import Footer from "../../components/Footer.astro";
+import ConversionCTA from "../../components/ConversionCTA.astro";
 import { useCases } from "../../data/use-cases";
 import type { UseCase } from "../../data/use-cases";
 
@@ -57,7 +58,7 @@ const pageH1 = useCase.seoH1 ?? useCase.title;
         {useCase.description}
       </p>
       <div class="flex flex-col sm:flex-row gap-4 mt-8">
-        <a href="https://app.datanika.io" class="btn-primary">Start Free</a>
+        <ConversionCTA href="https://app.datanika.io" class="btn-primary">Start Free</ConversionCTA>
         <a href="/use-cases" class="btn-secondary">View all use cases</a>
       </div>
     </div>
@@ -149,7 +150,7 @@ const pageH1 = useCase.seoH1 ?? useCase.title;
           Free to start — connect {useCase.source} and {useCase.destination} in minutes.
         </p>
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
-          <a href="https://app.datanika.io" class="btn-primary">Start Free</a>
+          <ConversionCTA href="https://app.datanika.io" class="btn-primary">Start Free</ConversionCTA>
           <a href="https://github.com/datanika-io/datanika-core" class="btn-secondary">View on GitHub</a>
         </div>
       </div>

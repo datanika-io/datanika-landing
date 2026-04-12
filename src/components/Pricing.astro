@@ -1,4 +1,6 @@
 ---
+import ConversionCTA from "./ConversionCTA.astro";
+
 const tiers = [
   {
     name: "Free",
@@ -133,20 +135,29 @@ const tiers = [
             ))}
           </ul>
 
-          <a
-            href={tier.ctaHref || "https://app.datanika.io"}
-            class:list={[
-              "mt-8 block w-full rounded-lg py-3 text-center text-sm font-semibold transition-colors",
-              tier.highlighted
-                ? "btn-primary"
-                : "btn-secondary",
-              tier.ctaHref
-                ? "plausible-event-name=Pricing:+Contact+sales"
-                : "plausible-event-name=Pricing:+Start+free",
-            ]}
-          >
-            {tier.cta}
-          </a>
+          {tier.ctaHref ? (
+            <a
+              href={tier.ctaHref}
+              class:list={[
+                "mt-8 block w-full rounded-lg py-3 text-center text-sm font-semibold transition-colors",
+                tier.highlighted ? "btn-primary" : "btn-secondary",
+                "plausible-event-name=Pricing:+Contact+sales",
+              ]}
+            >
+              {tier.cta}
+            </a>
+          ) : (
+            <ConversionCTA
+              href="https://app.datanika.io"
+              class:list={[
+                "mt-8 block w-full rounded-lg py-3 text-center text-sm font-semibold transition-colors",
+                tier.highlighted ? "btn-primary" : "btn-secondary",
+                "plausible-event-name=Pricing:+Start+free",
+              ]}
+            >
+              {tier.cta}
+            </ConversionCTA>
+          )}
         </div>
       ))}
     </div>
