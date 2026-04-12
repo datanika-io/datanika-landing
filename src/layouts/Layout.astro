@@ -231,6 +231,13 @@ const breadcrumbLD =
       <script type="application/ld+json" set:html={JSON.stringify(obj)} />
     ))}
     <script defer data-domain="datanika.io" src="https://plausible.datanika.io/js/script.tagged-events.js"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=AW-18081528527"></script>
+    <script is:inline>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'AW-18081528527');
+    </script>
   </head>
   <body class="min-h-screen antialiased">
     <slot />
