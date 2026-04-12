@@ -123,6 +123,31 @@ describe("docs page meta tags", () => {
   it("has twitter:card", () => {
     expect(html).toMatch(/<meta\s+name="twitter:card"/);
   });
+
+  it("has BreadcrumbList JSON-LD with Home → Docs → Connections", () => {
+    expect(html).toContain('"@type":"BreadcrumbList"');
+    expect(html).toContain('"item":"https://datanika.io/"');
+    expect(html).toContain('"item":"https://datanika.io/docs"');
+    expect(html).toContain('"name":"Connections"');
+    expect(html).toContain('"position":3');
+  });
+});
+
+// --- Docs index has 2-level breadcrumb ---
+
+describe("docs index page breadcrumbs", () => {
+  let html: string;
+  beforeAll(() => {
+    html = readHtml("docs/index.html");
+  });
+
+  it("has BreadcrumbList with only Home → Docs (no leaf)", () => {
+    expect(html).toContain('"@type":"BreadcrumbList"');
+    expect(html).toContain('"item":"https://datanika.io/"');
+    expect(html).toContain('"item":"https://datanika.io/docs"');
+    // Position 3 should NOT exist — the index IS the docs page
+    expect(html).not.toContain('"position":3');
+  });
 });
 
 // --- Pricing page meta tags ---

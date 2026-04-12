@@ -51,6 +51,31 @@ const sections = [
 ];
 
 const currentPath = Astro.url.pathname.replace(/\/$/, "") || "/docs";
+
+// Breadcrumbs: Home → Docs → current page (if not the index)
+const currentSection = sections.find(
+  (s) => s.href.replace(/\/$/, "") === currentPath
+);
+const breadcrumbItems = [
+  { name: "Home", url: "https://datanika.io/" },
+  { name: "Docs", url: "https://datanika.io/docs" },
+];
+if (currentSection && currentPath !== "/docs") {
+  breadcrumbItems.push({
+    name: currentSection.label,
+    url: new URL(currentPath, Astro.site).href,
+  });
+}
+const breadcrumbLD = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: breadcrumbItems.map((b, i) => ({
+    "@type": "ListItem",
+    position: i + 1,
+    name: b.name,
+    item: b.url,
+  })),
+});
 ---
 
 <!doctype html>
@@ -86,6 +111,7 @@ const currentPath = Astro.url.pathname.replace(/\/$/, "") || "/docs";
 
     <!-- Structured Data -->
     <script type="application/ld+json" set:html={articleLD} />
+    <script type="application/ld+json" set:html={breadcrumbLD} />
   </head>
   <body class="min-h-screen antialiased">
     <Navbar />
