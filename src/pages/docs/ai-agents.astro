@@ -1,0 +1,241 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+---
+
+<DocsLayout
+  title="AI Agents"
+  description="How to build data pipelines with AI agents using the Datanika API. Discovery documents, golden-path loop, error handling, and common patterns."
+>
+  <h1 class="gradient-text">AI Agents</h1>
+  <p class="text-lg text-slate-400 mb-8">
+    Build complete data pipelines with Claude, GPT, or any LLM agent using the Datanika API.
+  </p>
+
+  <h2>Overview</h2>
+  <p>
+    Datanika's API is designed for autonomous AI agents. Two unauthenticated discovery documents
+    tell the agent everything it needs to know, and a 5-tier capability stack lets it build,
+    validate, and run pipelines without human intervention.
+  </p>
+
+  <h2>Discovery Documents</h2>
+  <p>These require no authentication. Point your agent here first.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Document</th>
+        <th>URL</th>
+        <th>Purpose</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>/llms.txt</code></td>
+        <td><a href="https://app.datanika.io/llms.txt" target="_blank" rel="noopener">app.datanika.io/llms.txt</a></td>
+        <td>Plain-text API discovery: base URL, auth format, rate limits, capability tiers</td>
+      </tr>
+      <tr>
+        <td><code>/api/v1/agent-guide.md</code></td>
+        <td><a href="https://app.datanika.io/api/v1/agent-guide.md" target="_blank" rel="noopener">app.datanika.io/api/v1/agent-guide.md</a></td>
+        <td>Strategy guide: 17-step golden-path loop, error codes, patterns</td>
+      </tr>
+      <tr>
+        <td><code>/api/v1/openapi.json</code></td>
+        <td><a href="https://app.datanika.io/api/v1/openapi.json" target="_blank" rel="noopener">app.datanika.io/api/v1/openapi.json</a></td>
+        <td>Full OpenAPI 3.0 spec with typed schemas and examples</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Capability Tiers</h2>
+  <p>The API is organized into 6 tiers that give an agent progressively deeper control:</p>
+
+  <h3>Tier 1 — Discover</h3>
+  <p>Meta endpoints return full JSON Schema for every resource type. The agent reads the schema and builds valid configs instead of guessing.</p>
+  <ul>
+    <li><code>GET /api/v1/meta/connection-types</code> — 32 connection types with per-type config schemas</li>
+    <li><code>GET /api/v1/meta/dlt-config-schema</code> — upload config schema (single_table / full_database modes)</li>
+    <li><code>GET /api/v1/meta/dbt-tests</code> — available test types with parameter schemas</li>
+    <li><code>GET /api/v1/meta/materializations</code> — dbt materialization strategies</li>
+  </ul>
+
+  <h3>Tier 2 — Introspect</h3>
+  <p>Understand the source data before building anything.</p>
+  <ul>
+    <li><code>POST /api/v1/connections/{'{'}id{'}'}/introspect</code> — list schemas and tables</li>
+    <li><code>POST /api/v1/connections/{'{'}id{'}'}/columns</code> — column names, types, and metadata</li>
+    <li><code>POST /api/v1/connections/{'{'}id{'}'}/preview</code> — sample N rows</li>
+    <li><code>POST /api/v1/connections/{'{'}id{'}'}/query</code> — execute read-only SQL</li>
+  </ul>
+
+  <h3>Tier 3 — Build</h3>
+  <p>Full CRUD for every resource:</p>
+  <ul>
+    <li>Connections (source + destination)</li>
+    <li>Uploads (extract + load jobs)</li>
+    <li>Pipelines (orchestrated dbt runs)</li>
+    <li>Transformations (SQL models)</li>
+    <li>Schedules (cron-based automation)</li>
+    <li>Notification channels (Slack, email, webhook)</li>
+  </ul>
+
+  <h3>Tier 4 — Validate</h3>
+  <p>Check your work before executing. This is the key differentiator — most competitor APIs skip this step entirely.</p>
+  <ul>
+    <li><code>POST /api/v1/transformations/{'{'}id{'}'}/compile</code> — validate SQL, Jinja, and refs without touching the warehouse</li>
+    <li><code>POST /api/v1/transformations/{'{'}id{'}'}/preview</code> — compile + run <code>SELECT * FROM (...) LIMIT N</code> to see sample output</li>
+  </ul>
+
+  <h3>Tier 5 — Execute</h3>
+  <ul>
+    <li><code>POST /api/v1/uploads/{'{'}id{'}'}/run?wait=true</code> — trigger and wait for completion (default 120s, max 300s)</li>
+    <li><code>POST /api/v1/pipelines/{'{'}id{'}'}/run?wait=true</code> — same for pipeline runs</li>
+    <li><code>POST /api/v1/transformations/{'{'}id{'}'}/run?wait=true</code> — same for transformation runs</li>
+    <li><code>POST /api/v1/runs/{'{'}id{'}'}/cancel</code> — cancel pending or running runs</li>
+  </ul>
+
+  <h3>Tier 6 — Control</h3>
+  <ul>
+    <li><code>GET /api/v1/runs</code> — run history with filtering</li>
+    <li><code>GET /api/v1/runs/{'{'}id{'}'}/logs</code> — streaming execution logs</li>
+    <li><code>GET /api/v1/catalog</code> — browse all tables discovered across pipelines</li>
+  </ul>
+
+  <h2>Golden-Path Loop</h2>
+  <p>The recommended sequence for an agent building a pipeline from scratch:</p>
+
+  <ol>
+    <li><code>GET /api/v1/meta/connection-types</code> — discover available source and destination types</li>
+    <li><code>POST /api/v1/connections</code> — create a source connection (e.g. Stripe)</li>
+    <li><code>POST /api/v1/connections</code> — create a destination connection (e.g. BigQuery)</li>
+    <li><code>POST /api/v1/connections/{'{'}id{'}'}/test</code> — verify both connections work</li>
+    <li><code>POST /api/v1/connections/{'{'}id{'}'}/introspect</code> — list source tables</li>
+    <li><code>POST /api/v1/connections/{'{'}id{'}'}/columns</code> — inspect column types</li>
+    <li><code>GET /api/v1/meta/dlt-config-schema</code> — learn dlt_config options</li>
+    <li><code>POST /api/v1/uploads</code> — create an extract+load job</li>
+    <li><code>POST /api/v1/uploads/{'{'}id{'}'}/run?wait=true</code> — trigger and wait</li>
+    <li><code>GET /api/v1/catalog</code> — discover loaded tables in the destination</li>
+    <li><code>GET /api/v1/meta/materializations</code> — learn dbt materialization types</li>
+    <li><code>GET /api/v1/meta/dbt-tests</code> — learn available test types</li>
+    <li><code>POST /api/v1/transformations</code> — create a dbt SQL model</li>
+    <li><code>POST /api/v1/transformations/{'{'}id{'}'}/compile</code> — validate Jinja + refs</li>
+    <li><code>POST /api/v1/transformations/{'{'}id{'}'}/preview</code> — see sample output rows</li>
+    <li><code>POST /api/v1/schedules</code> — schedule the pipeline on a cron</li>
+    <li><code>GET /api/v1/runs</code> — monitor run history</li>
+  </ol>
+
+  <h2>Error Handling</h2>
+  <p>Tier 2+ endpoints return typed string error codes so the agent can branch on failures without regex-matching messages:</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Code</th>
+        <th>Meaning</th>
+        <th>Recovery Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>compilation_error</code></td>
+        <td>Jinja or ref error in dbt compile</td>
+        <td>Fix the SQL and re-compile</td>
+      </tr>
+      <tr>
+        <td><code>execution_error</code></td>
+        <td>Warehouse query failed</td>
+        <td>Check table names and SQL syntax</td>
+      </tr>
+      <tr>
+        <td><code>missing_destination</code></td>
+        <td>Transformation has no destination set</td>
+        <td>Set <code>destination_connection_id</code></td>
+      </tr>
+      <tr>
+        <td><code>unsafe_sql</code></td>
+        <td>Compiled SQL failed read-only check</td>
+        <td>Review the transformation SQL</td>
+      </tr>
+      <tr>
+        <td><code>invalid_request</code></td>
+        <td>Malformed request body</td>
+        <td>Check field types and required fields</td>
+      </tr>
+      <tr>
+        <td><code>not_cancellable</code></td>
+        <td>Run already completed</td>
+        <td>No action needed</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Idempotency</h2>
+  <p>
+    Add an <code>Idempotency-Key</code> header to POST requests. If a request with the same key was already
+    processed within 24 hours, the original response is returned instead of creating a duplicate.
+  </p>
+  <pre><code>POST /api/v1/connections
+Authorization: Bearer etf_...
+Idempotency-Key: my-unique-key-123
+Content-Type: application/json
+
+{'{'}  "name": "Prod PG", "connection_type": "postgres", "config": {'{'} ... {'}'} {'}'}</code></pre>
+
+  <h2>Common Patterns</h2>
+  <ul>
+    <li><strong>Compile before preview</strong> — <code>POST /compile</code> is cheap (no warehouse call). Always compile first to catch Jinja errors.</li>
+    <li><strong>Use <code>?wait=true</code></strong> on run triggers instead of polling <code>GET /runs/{'{'}id{'}'}</code> in a loop. Default timeout 120s, max 300s.</li>
+    <li><strong>Cancel + retry</strong> if a run appears stuck — <code>POST /runs/{'{'}id{'}'}/cancel</code> then re-trigger.</li>
+    <li><strong>Introspect before building</strong> — list source tables and columns before writing the upload config. Don't guess table names.</li>
+  </ul>
+
+  <h2>What the API Cannot Do</h2>
+  <p>These operations are only available in the Datanika UI:</p>
+  <ul>
+    <li><strong>User management</strong> — create/invite users, assign roles</li>
+    <li><strong>Billing</strong> — change plans, view invoices</li>
+    <li><strong>SSO configuration</strong> — SAML/OIDC setup</li>
+    <li><strong>File uploads</strong> — CSV/JSON/Parquet drag-and-drop (UI only)</li>
+    <li><strong>OAuth connections</strong> — Google/GitHub login setup</li>
+    <li><strong>Organization creation</strong> — orgs are created via the signup flow</li>
+  </ul>
+  <p>Do not attempt these via the API — there are no endpoints for them. Documenting this explicitly prevents agents from entering hallucination loops trying to find non-existent endpoints.</p>
+
+  <h2>Rate Limits</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Plan</th>
+        <th>Requests/min</th>
+        <th>Burst/sec</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Free</td><td>30</td><td>5</td></tr>
+      <tr><td>Pro</td><td>120</td><td>15</td></tr>
+      <tr><td>Enterprise</td><td>300</td><td>30</td></tr>
+    </tbody>
+  </table>
+  <p>Rate limit headers (<code>X-RateLimit-Remaining</code>, <code>Retry-After</code>) are included in every response.</p>
+
+  <h2>Next Steps</h2>
+  <div class="mt-4 grid gap-4 sm:grid-cols-2">
+    <a href="/docs/api" class="block rounded-xl border border-slate-800 p-5 transition-colors hover:border-violet-500/50">
+      <h3 class="!mt-0 text-white">API Reference</h3>
+      <p class="text-sm text-slate-400 !mb-0">Full endpoint documentation with request/response examples.</p>
+    </a>
+    <a href="/docs/api-keys" class="block rounded-xl border border-slate-800 p-5 transition-colors hover:border-violet-500/50">
+      <h3 class="!mt-0 text-white">API Keys</h3>
+      <p class="text-sm text-slate-400 !mb-0">Create and manage API keys for agent access.</p>
+    </a>
+    <a href="/ai-agents" class="block rounded-xl border border-slate-800 p-5 transition-colors hover:border-violet-500/50">
+      <h3 class="!mt-0 text-white">AI Agents Landing Page</h3>
+      <p class="text-sm text-slate-400 !mb-0">Overview with code examples and competitor comparison.</p>
+    </a>
+    <a href="/blog/ai-agent-native" class="block rounded-xl border border-slate-800 p-5 transition-colors hover:border-violet-500/50">
+      <h3 class="!mt-0 text-white">Announcement Post</h3>
+      <p class="text-sm text-slate-400 !mb-0">Read the full announcement blog post.</p>
+    </a>
+  </div>
+</DocsLayout>
