@@ -2,6 +2,7 @@
 import Layout from "../../layouts/Layout.astro";
 import Navbar from "../../components/Navbar.astro";
 import Footer from "../../components/Footer.astro";
+import ConversionCTA from "../../components/ConversionCTA.astro";
 import { connectors } from "../../data/connectors";
 import type { Connector } from "../../data/connectors";
 import { useCases } from "../../data/use-cases";
@@ -82,9 +83,9 @@ const comparisonSlugs = ["airbyte", "fivetran", "stitch", "hevo"];
         {connector.description}
       </p>
       <div class="flex flex-col sm:flex-row gap-4 mt-8">
-        <a href="https://app.datanika.io" class="btn-primary">
+        <ConversionCTA href="https://app.datanika.io" class="btn-primary">
           Connect {connector.name}
-        </a>
+        </ConversionCTA>
         <a href="/docs/connections" class="btn-secondary">View docs</a>
       </div>
     </div>
@@ -262,7 +263,7 @@ const comparisonSlugs = ["airbyte", "fivetran", "stitch", "hevo"];
           Free to start — no credit card required. Connect {connector.name} in minutes.
         </p>
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
-          <a href="https://app.datanika.io" class="btn-primary">Start Free</a>
+          <ConversionCTA href="https://app.datanika.io" class="btn-primary">Start Free</ConversionCTA>
           <a href="/connectors" class="btn-secondary">View all connectors</a>
         </div>
       </div>

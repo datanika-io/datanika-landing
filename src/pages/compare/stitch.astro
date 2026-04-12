@@ -2,6 +2,7 @@
 import Layout from "../../layouts/Layout.astro";
 import Navbar from "../../components/Navbar.astro";
 import Footer from "../../components/Footer.astro";
+import ConversionCTA from "../../components/ConversionCTA.astro";
 
 const features = [
   { name: "Data extraction & loading", datanika: true, stitch: true },
@@ -192,7 +193,7 @@ const chooseStitch = [
           Datanika gives you everything Stitch does — plus built-in dbt transforms, visual DAGs, a data catalog, and full self-hosting. Open-source and actively developed.
         </p>
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
-          <a href="https://app.datanika.io/signup" class="btn-primary">Start Free</a>
+          <ConversionCTA href="https://app.datanika.io/signup" class="btn-primary">Start Free</ConversionCTA>
           <a href="https://github.com/datanika-io/datanika-core" class="btn-secondary">View on GitHub</a>
         </div>
       </div>

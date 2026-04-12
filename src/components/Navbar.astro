@@ -1,4 +1,6 @@
 ---
+import ConversionCTA from "./ConversionCTA.astro";
+
 const links = [
   { label: "Connectors", href: "/connectors" },
   { label: "Use Cases", href: "/use-cases" },
@@ -29,9 +31,9 @@ const links = [
       ))}
     </div>
 
-    <a href="https://app.datanika.io" class="btn-primary hidden text-sm md:inline-block">
+    <ConversionCTA href="https://app.datanika.io" class="btn-primary hidden text-sm md:inline-block">
       Get Started
-    </a>
+    </ConversionCTA>
 
     <!-- Mobile menu button -->
     <button
@@ -55,9 +57,9 @@ const links = [
         {link.label}
       </a>
     ))}
-    <a href="https://app.datanika.io" class="btn-primary mt-2 block text-center text-sm">
+    <ConversionCTA href="https://app.datanika.io" class="btn-primary mt-2 block text-center text-sm">
       Get Started
-    </a>
+    </ConversionCTA>
   </div>
 </nav>
 
