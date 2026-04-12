@@ -38,6 +38,9 @@ export const connectors: Connector[] = [
       { name: "password", description: "Database password (encrypted at rest)" },
     ],
     related: ["mysql", "bigquery", "snowflake", "redshift"],
+    seoTitle: "PostgreSQL Data Pipeline | Datanika",
+    seoDescription: "PostgreSQL data pipeline to replicate tables to BigQuery, Snowflake, or any warehouse. Incremental sync, dbt transforms, and scheduling built in. Start free.",
+    seoH1: "PostgreSQL Data Pipeline",
   },
   {
     slug: "mysql",
@@ -102,6 +105,9 @@ export const connectors: Connector[] = [
       { name: "path", description: "Path to the SQLite database file" },
     ],
     related: ["postgresql", "duckdb", "mysql"],
+    seoTitle: "SQLite Data Export & Pipeline | Datanika",
+    seoDescription: "Export SQLite data to PostgreSQL, BigQuery, or Snowflake. Lightweight connector for embedded databases and local analytics. Open source. Start free today.",
+    seoH1: "SQLite Data Export",
   },
   {
     slug: "clickhouse",
@@ -142,6 +148,9 @@ export const connectors: Connector[] = [
       { name: "path", description: "Path to the DuckDB database file" },
     ],
     related: ["sqlite", "postgresql", "parquet", "csv"],
+    seoTitle: "DuckDB Data Pipeline | Datanika",
+    seoDescription: "DuckDB data pipeline for embedded analytics. Use as a fast local destination or extract DuckDB data to cloud warehouses. Open source. Start free on Datanika.",
+    seoH1: "DuckDB Data Pipeline",
   },
 
   // --- Cloud Warehouses (source & destination) ---
@@ -237,6 +246,9 @@ export const connectors: Connector[] = [
       { name: "schema", description: "Default schema" },
     ],
     related: ["snowflake", "bigquery", "s3", "redshift"],
+    seoTitle: "Databricks Data Ingestion | Datanika",
+    seoDescription: "Load data into Databricks Delta Lake from PostgreSQL, Stripe, S3, and 30+ sources. Built-in dbt transforms and scheduling. Self-hostable. Start free today.",
+    seoH1: "Databricks Data Ingestion",
   },
   {
     slug: "synapse",
@@ -281,6 +293,9 @@ export const connectors: Connector[] = [
       { name: "database", description: "Database name" },
     ],
     related: ["postgresql", "bigquery", "snowflake", "mysql"],
+    seoTitle: "MongoDB to Warehouse Pipeline | Datanika",
+    seoDescription: "Flatten MongoDB documents into structured warehouse tables. Automatic nested-to-relational mapping with dlt. dbt transforms built in. Start free on Datanika.",
+    seoH1: "MongoDB to Warehouse",
   },
 
   // --- SaaS & APIs ---
@@ -322,6 +337,9 @@ export const connectors: Connector[] = [
       { name: "repo", description: "Repository name" },
     ],
     related: ["jira", "slack", "bigquery", "postgresql"],
+    seoTitle: "GitHub Data Export & Analytics | Datanika",
+    seoDescription: "Export GitHub issues, PRs, commits, and stargazers to your data warehouse. Build engineering velocity dashboards with dbt. Open source. Start free today.",
+    seoH1: "GitHub Data Export",
   },
   {
     slug: "hubspot",
@@ -383,6 +401,9 @@ export const connectors: Connector[] = [
       { name: "access_token", description: "Admin API access token (encrypted at rest)" },
     ],
     related: ["stripe", "google_analytics", "facebook_ads", "bigquery"],
+    seoTitle: "Shopify Data Pipeline | Datanika",
+    seoDescription: "Shopify data pipeline to load orders, customers, and products into BigQuery or Snowflake. Build e-commerce analytics with dbt transforms. Start free today.",
+    seoH1: "Shopify Data Pipeline",
   },
   {
     slug: "jira",
@@ -402,6 +423,9 @@ export const connectors: Connector[] = [
       { name: "api_token", description: "Jira API token (encrypted at rest)" },
     ],
     related: ["github", "slack", "bigquery", "postgresql"],
+    seoTitle: "Jira Data Export & Analytics | Datanika",
+    seoDescription: "Export Jira issues, sprints, and workflows to your data warehouse. Track engineering velocity and project health with dbt transforms. Start free on Datanika.",
+    seoH1: "Jira Data Export",
   },
   {
     slug: "slack",
@@ -419,6 +443,9 @@ export const connectors: Connector[] = [
       { name: "bot_token", description: "Slack bot OAuth token (encrypted at rest)" },
     ],
     related: ["jira", "github", "bigquery", "postgresql"],
+    seoTitle: "Slack Data Export & Archive | Datanika",
+    seoDescription: "Export Slack channels, messages, and users to your data warehouse. Analyze communication patterns and archive for compliance. Open source. Start free today.",
+    seoH1: "Slack Data Export",
   },
   {
     slug: "google-analytics",
@@ -437,6 +464,9 @@ export const connectors: Connector[] = [
       { name: "property_id", description: "GA4 property ID" },
     ],
     related: ["google-ads", "facebook-ads", "bigquery", "snowflake"],
+    seoTitle: "GA4 to BigQuery Pipeline | Datanika",
+    seoDescription: "Load GA4 report data into BigQuery or Snowflake via service account. Build custom attribution models with dbt transforms. Open source. Start free on Datanika.",
+    seoH1: "GA4 to BigQuery",
   },
   {
     slug: "google-ads",
@@ -456,6 +486,9 @@ export const connectors: Connector[] = [
       { name: "developer_token", description: "Google Ads developer token (encrypted at rest)" },
     ],
     related: ["google-analytics", "facebook-ads", "bigquery", "snowflake"],
+    seoTitle: "Google Ads Data Pipeline | Datanika",
+    seoDescription: "Google Ads data pipeline to load campaigns, ad groups, and performance metrics into BigQuery or Snowflake. dbt transforms built in. Start free on Datanika.",
+    seoH1: "Google Ads Data Pipeline",
   },
   {
     slug: "facebook-ads",
@@ -474,6 +507,9 @@ export const connectors: Connector[] = [
       { name: "account_id", description: "Ad account ID" },
     ],
     related: ["google-ads", "google-analytics", "bigquery", "shopify"],
+    seoTitle: "Facebook Ads ETL — Meta Ads Pipeline | Datanika",
+    seoDescription: "Load Facebook and Meta ad campaigns, leads, and creatives into your data warehouse. Build cross-channel marketing analytics with dbt. Start free on Datanika.",
+    seoH1: "Facebook Ads ETL",
   },
   {
     slug: "zendesk",
@@ -493,6 +529,9 @@ export const connectors: Connector[] = [
       { name: "api_token", description: "Zendesk API token (encrypted at rest)" },
     ],
     related: ["hubspot", "salesforce", "slack", "bigquery"],
+    seoTitle: "Zendesk Data Export & Analytics | Datanika",
+    seoDescription: "Export Zendesk tickets, users, and organizations to your data warehouse. Track resolution times and SLA compliance with dbt transforms. Start free today.",
+    seoH1: "Zendesk Data Export",
   },
   {
     slug: "airtable",
@@ -511,6 +550,9 @@ export const connectors: Connector[] = [
       { name: "base_id", description: "Airtable base ID" },
     ],
     related: ["notion", "google-sheets", "bigquery", "postgresql"],
+    seoTitle: "Airtable to Warehouse Pipeline | Datanika",
+    seoDescription: "Sync Airtable bases to BigQuery, Snowflake, or PostgreSQL. Combine spreadsheet data with other sources using dbt transforms. Open source. Start free today.",
+    seoH1: "Airtable to Warehouse",
   },
   {
     slug: "notion",
@@ -528,6 +570,9 @@ export const connectors: Connector[] = [
       { name: "api_token", description: "Notion integration token (encrypted at rest)" },
     ],
     related: ["airtable", "google-sheets", "jira", "bigquery"],
+    seoTitle: "Notion Data Export & Pipeline | Datanika",
+    seoDescription: "Export Notion databases and pages to your data warehouse. Build structured analytics from Notion workspace data with dbt transforms. Start free on Datanika.",
+    seoH1: "Notion Data Export",
   },
   {
     slug: "rest-api",
@@ -548,6 +593,9 @@ export const connectors: Connector[] = [
       { name: "endpoints", description: "JSON array of endpoint configurations" },
     ],
     related: ["postgresql", "bigquery", "snowflake", "csv"],
+    seoTitle: "REST API to Warehouse Connector | Datanika",
+    seoDescription: "Connect any REST API to your data warehouse with configurable endpoints, auth, and pagination. The universal connector for custom data sources. Start free.",
+    seoH1: "REST API Connector",
   },
 
   // --- Files & Streaming ---
@@ -566,6 +614,9 @@ export const connectors: Connector[] = [
       { name: "file_path", description: "Path to the CSV file or upload via drag-and-drop" },
     ],
     related: ["json", "parquet", "google-sheets", "s3"],
+    seoTitle: "CSV to Database — Import CSV Files | Datanika",
+    seoDescription: "Import CSV files into PostgreSQL, BigQuery, Snowflake, or any supported database. Auto-detect schemas, drag-and-drop upload. Open source. Start free today.",
+    seoH1: "CSV to Database",
   },
   {
     slug: "json",
@@ -582,6 +633,9 @@ export const connectors: Connector[] = [
       { name: "file_path", description: "Path to the JSON file or upload via drag-and-drop" },
     ],
     related: ["csv", "parquet", "rest-api", "s3"],
+    seoTitle: "JSON to Database — Import JSON Files | Datanika",
+    seoDescription: "Import and flatten JSON files into your data warehouse. Automatic schema detection and nested-to-tabular mapping. Open source. Start free on Datanika today.",
+    seoH1: "JSON to Database",
   },
   {
     slug: "parquet",
@@ -598,6 +652,9 @@ export const connectors: Connector[] = [
       { name: "file_path", description: "Path to the Parquet file or upload via drag-and-drop" },
     ],
     related: ["csv", "json", "s3", "duckdb"],
+    seoTitle: "Parquet to Warehouse — Load Parquet Files | Datanika",
+    seoDescription: "Load Apache Parquet files into BigQuery, Snowflake, or PostgreSQL. Columnar format with efficient compression for large datasets. Start free on Datanika.",
+    seoH1: "Parquet to Warehouse",
   },
   {
     slug: "s3",
@@ -619,6 +676,9 @@ export const connectors: Connector[] = [
       { name: "region", description: "AWS region (e.g., us-east-1)" },
     ],
     related: ["csv", "json", "parquet", "redshift"],
+    seoTitle: "S3 to Warehouse — Load S3 Data | Datanika",
+    seoDescription: "Load CSV, JSON, and Parquet files from Amazon S3 into Snowflake, BigQuery, or PostgreSQL. Incremental file discovery and scheduling. Start free on Datanika.",
+    seoH1: "S3 to Warehouse",
   },
   {
     slug: "google-sheets",
@@ -637,6 +697,9 @@ export const connectors: Connector[] = [
       { name: "spreadsheet_id", description: "Google Sheets spreadsheet ID (from URL)" },
     ],
     related: ["csv", "airtable", "notion", "bigquery"],
+    seoTitle: "Google Sheets to BigQuery Pipeline | Datanika",
+    seoDescription: "Sync Google Sheets to BigQuery, Snowflake, or PostgreSQL automatically. Combine spreadsheet data with SaaS and database sources. Start free on Datanika.",
+    seoH1: "Google Sheets to BigQuery",
   },
   {
     slug: "kafka",
@@ -657,5 +720,8 @@ export const connectors: Connector[] = [
       { name: "security_protocol", description: "Security protocol (PLAINTEXT, SSL, SASL_SSL)" },
     ],
     related: ["clickhouse", "bigquery", "postgresql", "s3"],
+    seoTitle: "Kafka to Warehouse — Streaming Ingestion | Datanika",
+    seoDescription: "Ingest Kafka topics into ClickHouse, BigQuery, or Snowflake for analytics. Process clickstreams and IoT data with dbt transforms. Start free on Datanika.",
+    seoH1: "Kafka to Warehouse",
   },
 ];

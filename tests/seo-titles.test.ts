@@ -72,6 +72,34 @@ const tier2: TierSpec[] = [
   { path: "compare/stitch/index.html", primaryKeyword: "stitch data alternative", titleMustContain: "Stitch Data Alternative" },
 ];
 
+// --- Tier 3: remaining 24 pages ---
+const tier3: TierSpec[] = [
+  { path: "connectors/postgresql/index.html", primaryKeyword: "postgresql data pipeline", titleMustContain: "PostgreSQL" },
+  { path: "connectors/sqlite/index.html", primaryKeyword: "sqlite data export", titleMustContain: "SQLite" },
+  { path: "connectors/duckdb/index.html", primaryKeyword: "duckdb data pipeline", titleMustContain: "DuckDB" },
+  { path: "connectors/databricks/index.html", primaryKeyword: "databricks data ingestion", titleMustContain: "Databricks" },
+  { path: "connectors/mongodb/index.html", primaryKeyword: "mongodb to warehouse", titleMustContain: "MongoDB" },
+  { path: "connectors/github/index.html", primaryKeyword: "github data export", titleMustContain: "GitHub" },
+  { path: "connectors/shopify/index.html", primaryKeyword: "shopify data pipeline", titleMustContain: "Shopify" },
+  { path: "connectors/jira/index.html", primaryKeyword: "jira data export", titleMustContain: "Jira" },
+  { path: "connectors/slack/index.html", primaryKeyword: "slack data export", titleMustContain: "Slack" },
+  { path: "connectors/google-analytics/index.html", primaryKeyword: "ga4 to bigquery", titleMustContain: "GA4" },
+  { path: "connectors/google-ads/index.html", primaryKeyword: "google ads data pipeline", titleMustContain: "Google Ads" },
+  { path: "connectors/facebook-ads/index.html", primaryKeyword: "facebook ads etl", titleMustContain: "Facebook Ads" },
+  { path: "connectors/zendesk/index.html", primaryKeyword: "zendesk data export", titleMustContain: "Zendesk" },
+  { path: "connectors/airtable/index.html", primaryKeyword: "airtable to warehouse", titleMustContain: "Airtable" },
+  { path: "connectors/notion/index.html", primaryKeyword: "notion data export", titleMustContain: "Notion" },
+  { path: "connectors/rest-api/index.html", primaryKeyword: "rest api to warehouse", titleMustContain: "REST API" },
+  { path: "connectors/csv/index.html", primaryKeyword: "csv to database", titleMustContain: "CSV" },
+  { path: "connectors/json/index.html", primaryKeyword: "json to database", titleMustContain: "JSON" },
+  { path: "connectors/parquet/index.html", primaryKeyword: "parquet to warehouse", titleMustContain: "Parquet" },
+  { path: "connectors/s3/index.html", primaryKeyword: "s3 to warehouse", titleMustContain: "S3" },
+  { path: "connectors/google-sheets/index.html", primaryKeyword: "google sheets to bigquery", titleMustContain: "Google Sheets" },
+  { path: "connectors/kafka/index.html", primaryKeyword: "kafka to warehouse", titleMustContain: "Kafka" },
+  { path: "use-cases/salesforce-to-bigquery/index.html", primaryKeyword: "salesforce to bigquery", titleMustContain: "Salesforce to BigQuery" },
+  { path: "use-cases/s3-to-snowflake/index.html", primaryKeyword: "s3 to snowflake", titleMustContain: "S3 to Snowflake" },
+];
+
 describe("Tier 1 SEO title/meta compliance", () => {
   for (const spec of tier1) {
     describe(spec.path, () => {
@@ -144,6 +172,37 @@ describe("Tier 2 SEO title/meta compliance", () => {
         expect(h1Match, "no <h1> found").not.toBeNull();
         const h1Text = h1Match![1].replace(/<[^>]*>/g, "").trim();
         expect(h1Text.length).toBeGreaterThan(0);
+      });
+    });
+  }
+});
+
+describe("Tier 3 SEO title/meta compliance", () => {
+  for (const spec of tier3) {
+    describe(spec.path, () => {
+      const html = readHtml(spec.path);
+      const title = extractTitle(html);
+      const meta = extractMeta(html);
+
+      it("title is not the Layout default", () => {
+        expect(title).not.toBe(LAYOUT_DEFAULT_TITLE);
+      });
+
+      it("title is ≤ 60 characters", () => {
+        expect(title.length, `title is ${title.length} chars: "${title}"`).toBeLessThanOrEqual(60);
+      });
+
+      it("title contains primary keyword", () => {
+        expect(title.toLowerCase()).toContain(spec.titleMustContain.toLowerCase());
+      });
+
+      it("title ends with | Datanika", () => {
+        expect(title).toMatch(/\|\s*Datanika\s*$/);
+      });
+
+      it("meta description is 150–160 characters", () => {
+        expect(meta.length, `meta is ${meta.length} chars: "${meta}"`).toBeGreaterThanOrEqual(150);
+        expect(meta.length, `meta is ${meta.length} chars: "${meta}"`).toBeLessThanOrEqual(160);
       });
     });
   }

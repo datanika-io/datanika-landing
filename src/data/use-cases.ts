@@ -203,6 +203,9 @@ export const useCases: UseCase[] = [
       "Create account health scores from activity and opportunity data",
       "Join Salesforce opportunities with Stripe revenue for true attribution",
     ],
+    seoTitle: "Salesforce to BigQuery Pipeline | Datanika",
+    seoDescription: "Replicate Salesforce accounts, contacts, and opportunities to BigQuery. Build pipeline velocity and forecast analytics with dbt. Start free on Datanika.",
+    seoH1: "Salesforce to BigQuery",
   },
   {
     slug: "shopify-to-bigquery",
@@ -281,5 +284,8 @@ export const useCases: UseCase[] = [
       "Build incremental models from daily file drops",
       "Validate and deduplicate file-based data loads",
     ],
+    seoTitle: "S3 to Snowflake Pipeline | Datanika",
+    seoDescription: "Load CSV, JSON, and Parquet files from Amazon S3 into Snowflake. Incremental file discovery, dbt transforms, and scheduling built in. Start free today.",
+    seoH1: "S3 to Snowflake",
   },
 ];
