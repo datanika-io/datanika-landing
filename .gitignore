@@ -22,3 +22,6 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# Monorepo-wide secrets directory (defense in depth — actual secrets live at D:/Projects/Datanika/secrets/)
+secrets/
