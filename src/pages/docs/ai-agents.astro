@@ -48,10 +48,10 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
     </tbody>
   </table>
 
-  <h2>Capability Tiers</h2>
-  <p>The API is organized into 6 tiers that give an agent progressively deeper control:</p>
+  <h2>6-Step Golden-Path Loop</h2>
+  <p>An agent building a pipeline walks through six progressively-deeper steps. These golden-path steps are distinct from the <a href="#capability-tiers-reference">five capability tiers</a> published in <code>/llms.txt</code>; the steps are <em>how</em> an agent uses the API, the tiers are <em>what</em> the API exposes.</p>
 
-  <h3>Tier 1 — Discover</h3>
+  <h3>Step 1 — Discover</h3>
   <p>Meta endpoints return full JSON Schema for every resource type. The agent reads the schema and builds valid configs instead of guessing.</p>
   <ul>
     <li><code>GET /api/v1/meta/connection-types</code> — 32 connection types with per-type config schemas</li>
@@ -60,7 +60,7 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
     <li><code>GET /api/v1/meta/materializations</code> — dbt materialization strategies</li>
   </ul>
 
-  <h3>Tier 2 — Introspect</h3>
+  <h3>Step 2 — Introspect</h3>
   <p>Understand the source data before building anything.</p>
   <ul>
     <li><code>POST /api/v1/connections/{'{'}id{'}'}/introspect</code> — list schemas and tables</li>
@@ -69,7 +69,7 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
     <li><code>POST /api/v1/connections/{'{'}id{'}'}/query</code> — execute read-only SQL</li>
   </ul>
 
-  <h3>Tier 3 — Build</h3>
+  <h3>Step 3 — Build</h3>
   <p>Full CRUD for every resource:</p>
   <ul>
     <li>Connections (source + destination)</li>
@@ -80,14 +80,14 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
     <li>Notification channels (Slack, email, webhook)</li>
   </ul>
 
-  <h3>Tier 4 — Validate</h3>
+  <h3>Step 4 — Validate</h3>
   <p>Check your work before executing. This is the key differentiator — most competitor APIs skip this step entirely.</p>
   <ul>
     <li><code>POST /api/v1/transformations/{'{'}id{'}'}/compile</code> — validate SQL, Jinja, and refs without touching the warehouse</li>
     <li><code>POST /api/v1/transformations/{'{'}id{'}'}/preview</code> — compile + run <code>SELECT * FROM (...) LIMIT N</code> to see sample output</li>
   </ul>
 
-  <h3>Tier 5 — Execute</h3>
+  <h3>Step 5 — Execute</h3>
   <ul>
     <li><code>POST /api/v1/uploads/{'{'}id{'}'}/run?wait=true</code> — trigger and wait for completion (default 120s, max 300s)</li>
     <li><code>POST /api/v1/pipelines/{'{'}id{'}'}/run?wait=true</code> — same for pipeline runs</li>
@@ -95,15 +95,28 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
     <li><code>POST /api/v1/runs/{'{'}id{'}'}/cancel</code> — cancel pending or running runs</li>
   </ul>
 
-  <h3>Tier 6 — Control</h3>
+  <h3>Step 6 — Control</h3>
   <ul>
     <li><code>GET /api/v1/runs</code> — run history with filtering</li>
     <li><code>GET /api/v1/runs/{'{'}id{'}'}/logs</code> — streaming execution logs</li>
     <li><code>GET /api/v1/catalog</code> — browse all tables discovered across pipelines</li>
   </ul>
 
-  <h2>Golden-Path Loop</h2>
-  <p>The recommended sequence for an agent building a pipeline from scratch:</p>
+  <h2 id="capability-tiers-reference">Five Capability Tiers (reference)</h2>
+  <p>
+    The underlying API surface is published in <code>/llms.txt</code> as five capability tiers, reflecting how the
+    endpoints were shipped in core (PRs #42, #55, #58, #62, #65):
+  </p>
+  <ol>
+    <li><strong>Tier 1 — Discovery &amp; introspection</strong>: meta endpoints, source introspection, data catalog.</li>
+    <li><strong>Tier 2 — Transformation validation</strong>: compile + preview on <code>/transformations</code>.</li>
+    <li><strong>Tier 3 — Typed config schemas</strong>: inline per-type OpenAPI schemas via discriminator.</li>
+    <li><strong>Tier 4 — Run control</strong>: <code>?wait=true</code>, <code>/cancel</code>, <code>Idempotency-Key</code>.</li>
+    <li><strong>Tier 5 — Machine-readable discovery</strong>: <code>/llms.txt</code> and <code>/api/v1/agent-guide.md</code>.</li>
+  </ol>
+
+  <h2>Full Endpoint Sequence (17 steps)</h2>
+  <p>The recommended endpoint-by-endpoint sequence for an agent building a pipeline from scratch — the detailed expansion of the 6-step golden-path loop above:</p>
 
   <ol>
     <li><code>GET /api/v1/meta/connection-types</code> — discover available source and destination types</li>
@@ -126,7 +139,7 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
   </ol>
 
   <h2>Error Handling</h2>
-  <p>Tier 2+ endpoints return typed string error codes so the agent can branch on failures without regex-matching messages:</p>
+  <p>API endpoints return typed string error codes so the agent can branch on failures without regex-matching messages:</p>
 
   <table>
     <thead>
