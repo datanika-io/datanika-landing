@@ -6,6 +6,15 @@ import tailwindcss from '@tailwindcss/vite';
 // https://astro.build/config
 export default defineConfig({
   site: 'https://datanika.io',
+  // Permanent redirects for content moved during the docs IA redesign
+  // (issue #105). The old /docs/api and /docs/api-keys pages now live under
+  // /api/, with their own ApiLayout, separate from platform docs.
+  // Astro emits these as static stubs at the source paths that 301 to the
+  // target. Cloudflare honors the meta refresh / canonical at the edge.
+  redirects: {
+    "/docs/api": "/api/reference",
+    "/docs/api-keys": "/api/keys",
+  },
   integrations: [
     sitemap({
       // Exclude internal test fixtures from the sitemap.

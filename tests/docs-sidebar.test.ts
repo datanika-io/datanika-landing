@@ -35,6 +35,7 @@ const EXPECTED_GROUPS = [
       { label: "Transformations", href: "/docs/transformations" },
       { label: "Transformation Guide", href: "/docs/transformations-guide" },
       { label: "Data Catalog", href: "/docs/catalog" },
+      { label: "AI Agents", href: "/docs/ai-agents" },
     ],
   },
   {
@@ -50,20 +51,24 @@ const EXPECTED_GROUPS = [
     label: "Operate",
     items: [
       { label: "Organizations & Members", href: "/docs/organizations" },
-      { label: "API Keys", href: "/docs/api-keys" },
       { label: "Audit Log", href: "/docs/audit-log" },
       { label: "Self-Hosting", href: "/docs/self-hosting" },
       { label: "Backup & Import", href: "/docs/ai-import" },
     ],
   },
-  {
-    label: "API & Reference",
-    items: [{ label: "API Reference", href: "/docs/api" }],
-  },
+  // The API & Reference group used to live here. Issue #105 moved API docs
+  // out of /docs/ entirely into a top-level /api/ section. See
+  // tests/api-sidebar.test.ts for that section's consistency tests.
 ];
 
 // Flat view kept for assertions that don't care about grouping.
 const EXPECTED_SIDEBAR = EXPECTED_GROUPS.flatMap((g) => g.items);
+
+// Pages that look like docs pages (have a /docs/<slug>/index.html) but are
+// actually static redirect stubs emitted by astro.config.mjs `redirects`.
+// They don't have a sidebar — they're just a meta refresh — so iterating
+// them in sidebar consistency tests would fail spuriously.
+const REDIRECT_STUBS = new Set(["api", "api-keys"]);
 
 function getDocPages(): string[] {
   if (!existsSync(DIST)) return [];
@@ -77,7 +82,7 @@ function getDocPages(): string[] {
 
   // docs/*/index.html
   for (const entry of entries) {
-    if (entry.isDirectory()) {
+    if (entry.isDirectory() && !REDIRECT_STUBS.has(entry.name)) {
       const file = join(DIST, entry.name, "index.html");
       if (existsSync(file)) {
         pages.push(entry.name);
@@ -118,14 +123,17 @@ describe("docs sidebar consistency", () => {
   });
 
   it("has all expected sidebar entries in DocsLayout source", () => {
-    // Verify the source of truth has the right count
-    expect(EXPECTED_SIDEBAR.length).toBe(20);
+    // 19 = 20 original entries minus API Reference and API Keys (moved to
+    // /api/* in issue #105) plus AI Agents (added in issue #96, lives under
+    // Build because it's a how-to for building agent-driven automations).
+    expect(EXPECTED_SIDEBAR.length).toBe(19);
   });
 
-  it("groups sidebar entries into 6 named groups", () => {
-    // Issue #103 — IA Approach A. If you change this, also update
+  it("groups sidebar entries into 5 named groups", () => {
+    // Issue #105 dropped the API & Reference group when API docs moved to
+    // their own top-level section. If you change this, also update
     // plans/product/SPEC_DOCS_IA_REDESIGN.md and DocsLayout.astro `groups`.
-    expect(EXPECTED_GROUPS).toHaveLength(6);
+    expect(EXPECTED_GROUPS).toHaveLength(5);
     const labels = EXPECTED_GROUPS.map((g) => g.label);
     expect(labels).toEqual([
       "Getting Started",
@@ -133,8 +141,16 @@ describe("docs sidebar consistency", () => {
       "Build",
       "Run & Schedule",
       "Operate",
-      "API & Reference",
     ]);
+  });
+
+  it("docs sidebar no longer references the moved /api/* paths", () => {
+    // Regression guard for issue #105: a copy-paste accident that
+    // re-introduced /docs/api or /docs/api-keys in the sidebar would silently
+    // break the redirects (the old URL would become a real page again).
+    const hrefs = EXPECTED_SIDEBAR.map((s) => s.href);
+    expect(hrefs).not.toContain("/docs/api");
+    expect(hrefs).not.toContain("/docs/api-keys");
   });
 
   it("every doc entry belongs to exactly one group", () => {
@@ -189,7 +205,8 @@ describe("docs sidebar consistency", () => {
       { page: "transformations", expectedGroup: "Build" },
       { page: "pipelines", expectedGroup: "Run & Schedule" },
       { page: "self-hosting", expectedGroup: "Operate" },
-      { page: "api", expectedGroup: "API & Reference" },
+      // No "api" sample anymore — moved to /api/* in issue #105 with its
+      // own ApiLayout and tests/api-sidebar.test.ts.
     ];
     for (const { page, expectedGroup } of samples) {
       const filePath = join(DIST, page, "index.html");

@@ -52,7 +52,8 @@ describe("404 page", () => {
   it("has popular pages section", () => {
     expect(html).toContain("Popular Pages");
     expect(html).toContain("/docs/getting-started");
-    expect(html).toContain("/docs/api");
+    // Issue #105: API docs moved from /docs/api to /api/reference.
+    expect(html).toContain("/api/reference");
   });
 
   it("does not emit JSON-LD (Google ignores it on 404)", () => {
