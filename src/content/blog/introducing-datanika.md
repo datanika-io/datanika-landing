@@ -24,8 +24,13 @@ Datanika takes a different approach: **one platform for the entire pipeline**.
 
 ## Open Source First
 
-Datanika's core is open source under AGPL-3.0. You can [self-host it with Docker Compose](https://github.com/datanika-io/datanika-core) or use our managed platform at [app.datanika.io](https://app.datanika.io).
+Datanika's core is open source under AGPL-3.0. You can [self-host it with Docker Compose](/docs/self-hosting) or use our managed platform at [app.datanika.io](https://app.datanika.io).
 
 ## Get Started
 
 Sign up for free at [app.datanika.io](https://app.datanika.io) — no credit card required. Your first 500 model runs per month are free, forever.
+
+- [Getting Started Guide](/docs/getting-started) — first pipeline in 5 minutes
+- [32 Connectors](/connectors) — databases, SaaS APIs, files, and streaming
+- [Pricing](/pricing) — Free / Pro / Enterprise tiers
+- [Architecture Overview](/docs/architecture) — how the pieces fit together

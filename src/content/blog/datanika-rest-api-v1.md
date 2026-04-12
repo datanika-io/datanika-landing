@@ -95,3 +95,7 @@ We're working on webhook triggers (run your pipeline when an external event fire
 The API is available now on all plans, including Free. [Create an API key](https://app.datanika.io) and start automating.
 
 Full documentation: [datanika.io/docs/api](/docs/api)
+
+- [API Keys](/docs/api-keys) — create and manage API keys
+- [Self-Hosting Guide](/docs/self-hosting) — the API works on self-hosted deployments too
+- [32 Connectors](/connectors) — everything you can manage via the API
