@@ -4,6 +4,9 @@ import Navbar from "../../components/Navbar.astro";
 import Footer from "../../components/Footer.astro";
 import { connectors } from "../../data/connectors";
 import type { Connector } from "../../data/connectors";
+import { useCases } from "../../data/use-cases";
+import { existsSync } from "fs";
+import { resolve } from "path";
 
 export function getStaticPaths() {
   return connectors.map((c) => ({
@@ -39,6 +42,17 @@ const breadcrumbs = [
 const pageTitle = connector.seoTitle ?? `${connector.name} Connector — Datanika`;
 const pageDescription = connector.seoDescription ?? connector.description;
 const pageH1 = connector.seoH1 ?? connector.name;
+
+// Auto-compute cross-type internal links
+const matchingUseCases = useCases.filter(
+  (uc) => uc.sourceSlug === connector.slug || uc.destinationSlug === connector.slug
+);
+
+const setupGuideExists = existsSync(
+  resolve(process.cwd(), `src/content/connectors/${connector.slug}.md`)
+);
+
+const comparisonSlugs = ["airbyte", "fivetran", "stitch", "hevo"];
 ---
 
 <Layout
@@ -162,6 +176,58 @@ const pageH1 = connector.seoH1 ?? connector.name;
           </div>
         </li>
       </ol>
+    </div>
+  </section>
+
+  <!-- Setup Guide CTA -->
+  {setupGuideExists && (
+    <section class="py-8">
+      <div class="max-w-4xl mx-auto px-6">
+        <a href={`/docs/connectors/${connector.slug}`} class="block rounded-2xl border border-violet-500/30 bg-violet-500/5 p-6 transition-colors hover:border-violet-500/50">
+          <div class="flex items-center gap-3">
+            <span class="text-violet-400 text-xl">📖</span>
+            <div>
+              <p class="font-semibold text-white">{connector.name} Setup Guide</p>
+              <p class="text-sm text-slate-400">Step-by-step configuration, credentials, and verified connection walkthrough →</p>
+            </div>
+          </div>
+        </a>
+      </div>
+    </section>
+  )}
+
+  <!-- Matching Use Cases -->
+  {matchingUseCases.length > 0 && (
+    <section class="py-16">
+      <div class="max-w-4xl mx-auto px-6">
+        <h2 class="text-2xl font-bold mb-6">Use Cases with {connector.name}</h2>
+        <div class="grid sm:grid-cols-2 gap-4">
+          {matchingUseCases.map((uc) => (
+            <a
+              href={`/use-cases/${uc.slug}`}
+              class="rounded-xl border border-slate-800 bg-slate-900/50 p-5 transition-colors hover:border-violet-500/50"
+            >
+              <div class="flex items-center gap-2 text-sm text-slate-500 mb-2">
+                <span class="px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">{uc.source}</span>
+                <span class="text-slate-600">→</span>
+                <span class="px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300">{uc.destination}</span>
+              </div>
+              <p class="font-semibold text-white">{uc.title}</p>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- Compare Alternatives -->
+  <section class="py-8">
+    <div class="max-w-4xl mx-auto px-6">
+      <p class="text-sm text-slate-500">Evaluating alternatives? Compare Datanika with{" "}
+        {comparisonSlugs.map((slug, i) => (
+          <>{i > 0 && ", "}<a href={`/compare/${slug}`} class="text-violet-400 hover:underline">{slug.charAt(0).toUpperCase() + slug.slice(1)}</a></>
+        ))}.
+      </p>
     </div>
   </section>
 
