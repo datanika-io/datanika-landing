@@ -59,6 +59,9 @@ export const connectors: Connector[] = [
       { name: "password", description: "Database password (encrypted at rest)" },
     ],
     related: ["postgresql", "bigquery", "snowflake", "mssql"],
+    seoTitle: "MySQL ETL Tool — Database Pipeline | Datanika",
+    seoDescription: "MySQL ETL tool to replicate databases to BigQuery, Snowflake, or PostgreSQL. Incremental sync, dbt transforms, and scheduling built in. Start free today.",
+    seoH1: "MySQL ETL Tool",
   },
   {
     slug: "mssql",
@@ -80,6 +83,9 @@ export const connectors: Connector[] = [
       { name: "password", description: "Password (encrypted at rest)" },
     ],
     related: ["postgresql", "mysql", "synapse", "bigquery"],
+    seoTitle: "SQL Server ETL Tool — MSSQL Pipeline | Datanika",
+    seoDescription: "SQL Server ETL tool to replicate MSSQL databases to BigQuery, Snowflake, or Redshift. Built-in dbt transforms and scheduling. Self-hostable. Start free.",
+    seoH1: "SQL Server ETL Tool",
   },
   {
     slug: "sqlite",
@@ -117,6 +123,9 @@ export const connectors: Connector[] = [
       { name: "password", description: "Password (encrypted at rest)" },
     ],
     related: ["postgresql", "bigquery", "kafka", "snowflake"],
+    seoTitle: "ClickHouse ETL — Analytics Ingestion | Datanika",
+    seoDescription: "ClickHouse ETL tool to load data from PostgreSQL, Kafka, S3, and 30+ sources. Supports clustered ReplicatedMergeTree. dbt transforms built in. Start free.",
+    seoH1: "ClickHouse ETL",
   },
   {
     slug: "duckdb",
@@ -204,6 +213,9 @@ export const connectors: Connector[] = [
       { name: "password", description: "Password (encrypted at rest)" },
     ],
     related: ["bigquery", "snowflake", "s3", "postgresql"],
+    seoTitle: "Redshift ETL Tool — AWS Data Pipeline | Datanika",
+    seoDescription: "Redshift ETL tool to load data from PostgreSQL, S3, Stripe, and 30+ other sources into Amazon Redshift. dbt transforms and scheduling built in. Start free.",
+    seoH1: "Redshift ETL Tool",
   },
   {
     slug: "databricks",
@@ -246,6 +258,9 @@ export const connectors: Connector[] = [
       { name: "password", description: "Password (encrypted at rest)" },
     ],
     related: ["mssql", "bigquery", "snowflake", "redshift"],
+    seoTitle: "Azure Synapse ETL — Data Pipeline | Datanika",
+    seoDescription: "Azure Synapse ETL tool to load data from SQL Server, PostgreSQL, and 30+ other sources. Built-in dbt transforms and scheduling. Self-hostable. Start free.",
+    seoH1: "Azure Synapse ETL",
   },
 
   // --- NoSQL ---
@@ -324,6 +339,9 @@ export const connectors: Connector[] = [
       { name: "api_key", description: "HubSpot private app access token (encrypted at rest)" },
     ],
     related: ["salesforce", "stripe", "bigquery", "snowflake"],
+    seoTitle: "HubSpot ETL — CRM Data Pipeline | Datanika",
+    seoDescription: "HubSpot ETL to sync contacts, deals, and companies to BigQuery or Snowflake. Build sales funnel analytics with dbt. Open source, self-hostable. Start free.",
+    seoH1: "HubSpot ETL",
   },
   {
     slug: "salesforce",
