@@ -90,6 +90,29 @@ describe("docs sidebar consistency", () => {
     expect(EXPECTED_SIDEBAR.length).toBe(20);
   });
 
+  it("sidebar nav is sticky and independently scrollable", () => {
+    // Regression guard for issue #100: pages below "Audit Log" used to be
+    // unreachable without scrolling the entire page because the sticky nav
+    // had no max-height + overflow. If you remove either of these classes,
+    // the sidebar grows past the viewport and lower entries become invisible.
+    const pages = getDocPages();
+    expect(pages.length).toBeGreaterThan(0);
+    // Check the longest page so we know the fix holds even when content is huge.
+    const filePath = existsSync(join(DIST, "architecture", "index.html"))
+      ? join(DIST, "architecture", "index.html")
+      : join(DIST, pages[0] === "index" ? "index.html" : `${pages[0]}/index.html`);
+    const html = readFileSync(filePath, "utf-8");
+    const navMatch = html.match(/<nav class="(sticky[^"]*)">/);
+    expect(navMatch, "sidebar <nav class=\"sticky ...\"> not found").not.toBeNull();
+    const navClasses = navMatch![1];
+    expect(navClasses, "sidebar nav must have a viewport-bounded max-height").toMatch(
+      /max-h-\[calc\(100vh-/
+    );
+    expect(navClasses, "sidebar nav must scroll independently when entries overflow").toContain(
+      "overflow-y-auto"
+    );
+  });
+
   it("includes the Connectors group between Connections and Uploads", () => {
     // Guardrail for the per-connector setup guide IA (PLAN_PRODUCT P0).
     // Mental model: connect (Connections) → configure (Connectors) → load (Uploads).
