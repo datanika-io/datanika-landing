@@ -76,6 +76,13 @@ async function buildPageMap(): Promise<Record<string, PageData>> {
     };
   }
 
+  // Standalone pages
+  pages["pages/ai-agents"] = {
+    category: "AI AGENTS",
+    title: "AI Data Pipeline — Agent-Native ETL",
+    description: "Build data pipelines with Claude, GPT, or any LLM agent",
+  };
+
   // Compare pages — static list matching src/pages/compare/*.astro
   const competitors: Array<{ slug: string; name: string }> = [
     { slug: "airbyte", name: "Airbyte" },

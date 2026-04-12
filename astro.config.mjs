@@ -22,6 +22,9 @@ export default defineConfig({
         } else if (path.startsWith("/blog/")) {
           item.changefreq = "weekly";
           item.priority = 0.8;
+        } else if (path === "/ai-agents/" || path === "/ai-agents") {
+          item.changefreq = "monthly";
+          item.priority = 0.8;
         } else if (path.startsWith("/connectors/") || path.startsWith("/use-cases/") || path.startsWith("/compare/")) {
           item.changefreq = "monthly";
           item.priority = 0.7;

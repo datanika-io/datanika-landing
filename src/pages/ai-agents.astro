@@ -1,0 +1,265 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Navbar from "../components/Navbar.astro";
+import Footer from "../components/Footer.astro";
+
+const tiers = [
+  {
+    number: "1",
+    name: "Discover",
+    description: "Meta endpoints return full JSON Schema for every connection type, dlt config, dbt test, and materialization. The agent reads the schema — it never guesses.",
+    endpoints: "GET /meta/connection-types, /meta/dlt-config-schema, /meta/dbt-tests, /meta/materializations",
+  },
+  {
+    number: "2",
+    name: "Introspect",
+    description: "List source tables, inspect column types, preview sample rows, and execute read-only SQL. The agent understands the data before building anything.",
+    endpoints: "POST /connections/{id}/introspect, /columns, /preview, /query",
+  },
+  {
+    number: "3",
+    name: "Build",
+    description: "Full CRUD for every resource: connections, uploads, pipelines, transformations, schedules, and notification channels.",
+    endpoints: "POST /connections, /uploads, /pipelines, /transformations, /schedules",
+  },
+  {
+    number: "4",
+    name: "Validate",
+    description: "Compile dbt transformations to catch Jinja and ref errors. Preview output rows without touching production. Typed error codes let the agent branch on failures.",
+    endpoints: "POST /transformations/{id}/compile, /preview",
+  },
+  {
+    number: "5",
+    name: "Execute",
+    description: "Trigger runs with ?wait=true for synchronous completion. Cancel stuck runs. Retry safely with Idempotency-Key headers — no duplicate resources.",
+    endpoints: "POST /uploads/{id}/run?wait=true, /runs/{id}/cancel",
+  },
+  {
+    number: "6",
+    name: "Control",
+    description: "Monitor run history, stream logs, and browse the auto-generated data catalog to discover loaded tables and schemas.",
+    endpoints: "GET /runs, /runs/{id}/logs, /catalog",
+  },
+];
+
+const competitors = [
+  { feature: "/llms.txt discovery", datanika: true, fivetran: false, airbyte: false, stitch: false, hevo: false },
+  { feature: "Agent strategy guide", datanika: true, fivetran: false, airbyte: false, stitch: false, hevo: false },
+  { feature: "Typed config schemas in API", datanika: true, fivetran: false, airbyte: false, stitch: false, hevo: false },
+  { feature: "Source introspection via API", datanika: true, fivetran: false, airbyte: true, stitch: false, hevo: false },
+  { feature: "Compile-before-run validation", datanika: true, fivetran: false, airbyte: false, stitch: false, hevo: false },
+  { feature: "Typed error codes for agents", datanika: true, fivetran: false, airbyte: false, stitch: false, hevo: false },
+  { feature: "Idempotent retries", datanika: true, fivetran: true, airbyte: false, stitch: false, hevo: false },
+  { feature: "Wait mode on run triggers", datanika: true, fivetran: false, airbyte: false, stitch: false, hevo: false },
+];
+---
+
+<Layout
+  title="AI Data Pipeline — Agent-Native ETL Tool | Datanika"
+  description="Build data pipelines with AI agents. Agent API with /llms.txt discovery, typed config schemas, compile-before-run validation, and idempotent retries. Works with Claude, GPT, or any LLM. Start free."
+  breadcrumbs={[
+    { name: "Home", url: "/" },
+    { name: "AI Agents", url: "/ai-agents" },
+  ]}
+  ogCollection="pages"
+  ogSlug="ai-agents"
+>
+  <Navbar />
+
+  <!-- Hero -->
+  <section class="relative pt-32 pb-20 overflow-hidden">
+    <div class="glow bg-violet-600 -top-40 -left-40"></div>
+    <div class="glow bg-cyan-600 -bottom-40 -right-40"></div>
+    <div class="relative max-w-5xl mx-auto px-6 text-center">
+      <div class="inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-4 py-1.5 text-sm text-violet-300 mb-6">
+        <span>New</span>
+        <span class="text-violet-500">|</span>
+        <span>5-Tier Agent API</span>
+      </div>
+      <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-6">
+        <span class="gradient-text">AI Data Pipeline</span><br />
+        Built for Autonomous Agents
+      </h1>
+      <p class="text-lg sm:text-xl text-slate-400 max-w-3xl mx-auto leading-relaxed mb-8">
+        The first data pipeline platform designed for autonomous agents. Full OpenAPI spec, typed config schemas,
+        compile-before-run validation, and machine-readable discovery. Point your agent at
+        <code class="text-violet-300 bg-slate-800 px-1.5 py-0.5 rounded text-base">/llms.txt</code> and go.
+      </p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <a href="https://app.datanika.io" class="btn-primary">Get Your API Key</a>
+        <a href="https://app.datanika.io/llms.txt" class="btn-secondary" target="_blank" rel="noopener">
+          View /llms.txt
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5-Tier Visual -->
+  <section class="py-20">
+    <div class="max-w-5xl mx-auto px-6">
+      <h2 class="text-3xl font-bold text-center mb-4">6-Tier Agent Capability Stack</h2>
+      <p class="text-slate-400 text-center max-w-2xl mx-auto mb-12">
+        Everything an autonomous agent needs to build a complete data pipeline — from discovering connection types to monitoring scheduled runs.
+      </p>
+      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {tiers.map((tier) => (
+          <div class="rounded-xl border border-slate-800 bg-slate-900/50 backdrop-blur p-6 transition-colors hover:border-violet-500/30">
+            <div class="flex items-center gap-3 mb-3">
+              <span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/10 text-sm font-bold text-violet-400">
+                {tier.number}
+              </span>
+              <h3 class="text-lg font-semibold text-white">{tier.name}</h3>
+            </div>
+            <p class="text-sm text-slate-400 mb-3">{tier.description}</p>
+            <code class="block text-xs text-slate-500 bg-slate-900 rounded px-2 py-1.5 break-all">{tier.endpoints}</code>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Code Example -->
+  <section class="py-20">
+    <div class="max-w-4xl mx-auto px-6">
+      <h2 class="text-3xl font-bold text-center mb-4">Build a Pipeline in 10 Lines</h2>
+      <p class="text-slate-400 text-center max-w-2xl mx-auto mb-10">
+        Tell your AI agent to read <code class="text-violet-300 bg-slate-800 px-1.5 py-0.5 rounded text-sm">/llms.txt</code>, or use the API directly with any HTTP client.
+      </p>
+      <div class="rounded-2xl border border-slate-800 bg-slate-900/80 backdrop-blur overflow-hidden">
+        <div class="flex items-center gap-2 px-4 py-3 border-b border-slate-800 text-sm text-slate-500">
+          <span class="h-3 w-3 rounded-full bg-red-500/60"></span>
+          <span class="h-3 w-3 rounded-full bg-yellow-500/60"></span>
+          <span class="h-3 w-3 rounded-full bg-green-500/60"></span>
+          <span class="ml-2">agent_pipeline.py</span>
+        </div>
+        <pre class="p-6 text-sm leading-relaxed overflow-x-auto"><code class="text-slate-300">import httpx
+
+BASE = "https://app.datanika.io/api/v1"
+H = {"{"}\"Authorization\": \"Bearer etf_your_key\"{"}"}
+
+<span class="text-slate-500"># 1. Discover available connection types (full JSON Schema)</span>
+types = httpx.get(f"{"{"}BASE{"}"}/meta/connection-types", headers=H).json()
+
+<span class="text-slate-500"># 2. Create source + destination</span>
+src = httpx.post(f"{"{"}BASE{"}"}/connections", headers=H, json={"{"}
+    "name": "Stripe", "connection_type": "stripe",
+    "config": {"{"}\"api_key\": \"sk_live_...\"{"}"}
+{"}"}).json()
+
+dst = httpx.post(f"{"{"}BASE{"}"}/connections", headers=H, json={"{"}
+    "name": "BigQuery", "connection_type": "bigquery",
+    "config": {"{"}\"project_id\": \"analytics\", \"dataset\": \"raw\"{"}"}
+{"}"}).json()
+
+<span class="text-slate-500"># 3. Introspect source, build upload, run with wait mode</span>
+tables = httpx.post(f"{"{"}BASE{"}"}/connections/{"{"}src['id']{"}"}/introspect", headers=H).json()
+upload = httpx.post(f"{"{"}BASE{"}"}/uploads", headers=H, json={"{"}
+    "name": "Stripe Charges", "source_connection_id": src["id"],
+    "destination_connection_id": dst["id"],
+    "dlt_config": {"{"}\"mode\": \"single_table\", \"table_name\": \"charges\"{"}"}
+{"}"}).json()
+run = httpx.post(f"{"{"}BASE{"}"}/uploads/{"{"}upload['id']{"}"}/run?wait=true", headers=H).json()
+
+<span class="text-slate-500"># 4. Write + validate a transformation</span>
+model = httpx.post(f"{"{"}BASE{"}"}/transformations", headers=H, json={"{"}
+    "name": "monthly_revenue", "destination_connection_id": dst["id"],
+    "sql": "SELECT date_trunc('month', created) as month, sum(amount)/100 as revenue FROM {"{"}{"{"} source('raw', 'charges') {"}"}{"}"} GROUP BY 1"
+{"}"}).json()
+httpx.post(f"{"{"}BASE{"}"}/transformations/{"{"}model['id']{"}"}/compile", headers=H)  <span class="text-slate-500"># validate first!</span>
+httpx.post(f"{"{"}BASE{"}"}/transformations/{"{"}model['id']{"}"}/preview", headers=H)  <span class="text-slate-500"># preview output</span></code></pre>
+      </div>
+      <p class="text-center text-slate-500 text-sm mt-4">
+        Or just tell your agent: <em>"Read https://app.datanika.io/llms.txt and build me a Stripe-to-BigQuery pipeline."</em>
+      </p>
+    </div>
+  </section>
+
+  <!-- Discovery Documents -->
+  <section class="py-20">
+    <div class="max-w-5xl mx-auto px-6">
+      <h2 class="text-3xl font-bold text-center mb-12">Machine-Readable Discovery</h2>
+      <div class="grid md:grid-cols-2 gap-8">
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur p-8">
+          <div class="flex items-center gap-3 mb-4">
+            <code class="text-violet-400 font-semibold text-lg">/llms.txt</code>
+            <span class="rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-400">No auth required</span>
+          </div>
+          <p class="text-slate-400 text-sm mb-4">
+            Plain-text discovery document at the site root. Contains the API summary, base URL, authentication format, rate limits by plan, and the complete 6-tier capability list.
+          </p>
+          <p class="text-slate-400 text-sm mb-4">Point any LLM here first.</p>
+          <a href="https://app.datanika.io/llms.txt" class="text-violet-400 text-sm hover:underline" target="_blank" rel="noopener">
+            View /llms.txt &rarr;
+          </a>
+        </div>
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur p-8">
+          <div class="flex items-center gap-3 mb-4">
+            <code class="text-violet-400 font-semibold text-lg">/api/v1/agent-guide.md</code>
+            <span class="rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-400">No auth required</span>
+          </div>
+          <p class="text-slate-400 text-sm mb-4">
+            Markdown strategy guide for LLM agents. A 17-step golden-path loop from discovery to monitoring, typed error codes with recovery actions, idempotency patterns, and explicit "what the API cannot do" to prevent hallucination loops.
+          </p>
+          <a href="https://app.datanika.io/api/v1/agent-guide.md" class="text-violet-400 text-sm hover:underline" target="_blank" rel="noopener">
+            View Agent Guide &rarr;
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Competitor Comparison -->
+  <section class="py-20">
+    <div class="max-w-5xl mx-auto px-6">
+      <h2 class="text-3xl font-bold text-center mb-4">How Competitors Compare</h2>
+      <p class="text-slate-400 text-center max-w-2xl mx-auto mb-12">
+        Fivetran has no agent API. Airbyte has no <code class="text-violet-300 bg-slate-800 px-1.5 py-0.5 rounded text-sm">/llms.txt</code>. dbt Cloud has no compile-before-run via API.
+      </p>
+      <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur overflow-hidden overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead>
+            <tr class="border-b border-slate-800">
+              <th class="px-4 py-3 text-slate-400 font-semibold">Capability</th>
+              <th class="px-4 py-3 text-center text-violet-400 font-semibold">Datanika</th>
+              <th class="px-4 py-3 text-center text-slate-500 font-semibold">Fivetran</th>
+              <th class="px-4 py-3 text-center text-slate-500 font-semibold">Airbyte</th>
+              <th class="px-4 py-3 text-center text-slate-500 font-semibold">Stitch</th>
+              <th class="px-4 py-3 text-center text-slate-500 font-semibold">Hevo</th>
+            </tr>
+          </thead>
+          <tbody>
+            {competitors.map((row, i) => (
+              <tr class={`border-b border-slate-800/50 ${i % 2 === 0 ? "bg-slate-900/30" : ""}`}>
+                <td class="px-4 py-3 text-slate-300">{row.feature}</td>
+                <td class="px-4 py-3 text-center">{row.datanika ? <span class="text-emerald-400">&#10003;</span> : <span class="text-red-400/60">&#10007;</span>}</td>
+                <td class="px-4 py-3 text-center">{row.fivetran ? <span class="text-emerald-400">&#10003;</span> : <span class="text-red-400/60">&#10007;</span>}</td>
+                <td class="px-4 py-3 text-center">{row.airbyte ? <span class="text-emerald-400">&#10003;</span> : <span class="text-red-400/60">&#10007;</span>}</td>
+                <td class="px-4 py-3 text-center">{row.stitch ? <span class="text-emerald-400">&#10003;</span> : <span class="text-red-400/60">&#10007;</span>}</td>
+                <td class="px-4 py-3 text-center">{row.hevo ? <span class="text-emerald-400">&#10003;</span> : <span class="text-red-400/60">&#10007;</span>}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="py-20">
+    <div class="max-w-3xl mx-auto px-6 text-center">
+      <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur p-12">
+        <h2 class="text-3xl font-bold mb-4">Ship Your First Agent-Built Pipeline</h2>
+        <p class="text-slate-400 mb-8 text-lg">
+          Free tier includes 500 model runs/month. Create an API key, point your agent at
+          <code class="text-violet-300 bg-slate-800 px-1.5 py-0.5 rounded text-sm">/llms.txt</code>, and watch it build.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <a href="https://app.datanika.io" class="btn-primary">Start Free</a>
+          <a href="/docs/ai-agents" class="btn-secondary">Read the Docs</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <Footer />
+</Layout>
