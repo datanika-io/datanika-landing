@@ -230,6 +230,7 @@ const breadcrumbLD =
     {extraJsonLd?.map((obj) => (
       <script type="application/ld+json" set:html={JSON.stringify(obj)} />
     ))}
+    <script defer data-domain="datanika.io" src="https://plausible.datanika.io/js/script.tagged-events.js"></script>
   </head>
   <body class="min-h-screen antialiased">
     <slot />
