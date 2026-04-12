@@ -94,12 +94,12 @@ const competitors = [
     </div>
   </section>
 
-  <!-- 5-Tier Visual -->
+  <!-- 6-Step Golden-Path Loop -->
   <section class="py-20">
     <div class="max-w-5xl mx-auto px-6">
-      <h2 class="text-3xl font-bold text-center mb-4">6-Tier Agent Capability Stack</h2>
+      <h2 class="text-3xl font-bold text-center mb-4">6-Step Golden-Path Loop</h2>
       <p class="text-slate-400 text-center max-w-2xl mx-auto mb-12">
-        Everything an autonomous agent needs to build a complete data pipeline — from discovering connection types to monitoring scheduled runs.
+        The sequence an autonomous agent walks through to build a complete data pipeline — from discovering connection types to monitoring scheduled runs. These are golden-path steps, not to be confused with the five capability tiers exposed by the underlying API.
       </p>
       <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {tiers.map((tier) => (
@@ -148,7 +148,7 @@ src = httpx.post(f"{"{"}BASE{"}"}/connections", headers=H, json={"{"}
 
 dst = httpx.post(f"{"{"}BASE{"}"}/connections", headers=H, json={"{"}
     "name": "BigQuery", "connection_type": "bigquery",
-    "config": {"{"}\"project_id\": \"analytics\", \"dataset\": \"raw\"{"}"}
+    "config": {"{"}\"project\": \"analytics\", \"dataset\": \"raw\", \"service_account_json\": \"{"{"}...{"}"}\"{"}"}
 {"}"}).json()
 
 <span class="text-slate-500"># 3. Introspect source, build upload, run with wait mode</span>
@@ -156,7 +156,7 @@ tables = httpx.post(f"{"{"}BASE{"}"}/connections/{"{"}src['id']{"}"}/introspect"
 upload = httpx.post(f"{"{"}BASE{"}"}/uploads", headers=H, json={"{"}
     "name": "Stripe Charges", "source_connection_id": src["id"],
     "destination_connection_id": dst["id"],
-    "dlt_config": {"{"}\"mode\": \"single_table\", \"table_name\": \"charges\"{"}"}
+    "dlt_config": {"{"}\"mode\": \"single_table\", \"table\": \"charges\"{"}"}
 {"}"}).json()
 run = httpx.post(f"{"{"}BASE{"}"}/uploads/{"{"}upload['id']{"}"}/run?wait=true", headers=H).json()
 
@@ -185,7 +185,7 @@ httpx.post(f"{"{"}BASE{"}"}/transformations/{"{"}model['id']{"}"}/preview", head
             <span class="rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-400">No auth required</span>
           </div>
           <p class="text-slate-400 text-sm mb-4">
-            Plain-text discovery document at the site root. Contains the API summary, base URL, authentication format, rate limits by plan, and the complete 6-tier capability list.
+            Plain-text discovery document at the site root. Contains the API summary, base URL, authentication format, rate limits by plan, and the complete 5-tier capability list.
           </p>
           <p class="text-slate-400 text-sm mb-4">Point any LLM here first.</p>
           <a href="https://app.datanika.io/llms.txt" class="text-violet-400 text-sm hover:underline" target="_blank" rel="noopener">
@@ -213,7 +213,7 @@ httpx.post(f"{"{"}BASE{"}"}/transformations/{"{"}model['id']{"}"}/preview", head
     <div class="max-w-5xl mx-auto px-6">
       <h2 class="text-3xl font-bold text-center mb-4">How Competitors Compare</h2>
       <p class="text-slate-400 text-center max-w-2xl mx-auto mb-12">
-        Fivetran has no agent API. Airbyte has no <code class="text-violet-300 bg-slate-800 px-1.5 py-0.5 rounded text-sm">/llms.txt</code>. dbt Cloud has no compile-before-run via API.
+        As of April 2026: Fivetran has no agent API. Airbyte has no <code class="text-violet-300 bg-slate-800 px-1.5 py-0.5 rounded text-sm">/llms.txt</code>. dbt Cloud has no compile-before-run via API.
       </p>
       <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur overflow-hidden overflow-x-auto">
         <table class="w-full text-left text-sm">
@@ -241,6 +241,9 @@ httpx.post(f"{"{"}BASE{"}"}/transformations/{"{"}model['id']{"}"}/preview", head
           </tbody>
         </table>
       </div>
+      <p class="text-xs text-slate-500 mt-4 text-center max-w-3xl mx-auto">
+        Comparison current as of 2026-04-13. Sources: <a href="https://www.fivetran.com/docs/rest-api" class="underline hover:text-slate-400" target="_blank" rel="noopener">Fivetran REST API docs</a>, <a href="https://reference.airbyte.com/reference/start" class="underline hover:text-slate-400" target="_blank" rel="noopener">Airbyte API reference</a>, <a href="https://www.stitchdata.com/docs/developers/stitch-connect/api" class="underline hover:text-slate-400" target="_blank" rel="noopener">Stitch Connect API</a>, <a href="https://hevodata.com/learn/rest-api" class="underline hover:text-slate-400" target="_blank" rel="noopener">Hevo REST API</a>, <a href="https://docs.getdbt.com/dbt-cloud/api-v2-legacy" class="underline hover:text-slate-400" target="_blank" rel="noopener">dbt Cloud API</a>. We update this when a competitor ships a new agent-facing feature.
+      </p>
     </div>
   </section>
 

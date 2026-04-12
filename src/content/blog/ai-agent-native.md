@@ -122,8 +122,8 @@ stripe = httpx.post(f"{BASE}/connections", headers=HEADERS, json={
 bq = httpx.post(f"{BASE}/connections", headers=HEADERS, json={
     "name": "Analytics Warehouse",
     "connection_type": "bigquery",
-    "config": {"project_id": "my-project", "dataset": "raw_stripe",
-               "credentials_json": "..."},
+    "config": {"project": "my-project", "dataset": "raw_stripe",
+               "service_account_json": "..."},
 }).json()
 
 # 4. Introspect, build upload, run, transform...
