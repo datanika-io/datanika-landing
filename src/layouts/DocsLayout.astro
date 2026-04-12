@@ -27,29 +27,71 @@ const articleLD = JSON.stringify({
   },
 });
 
-const sections = [
-  { label: "Overview", href: "/docs" },
-  { label: "Getting Started", href: "/docs/getting-started" },
-  { label: "Organizations & Members", href: "/docs/organizations" },
-  { label: "Connections", href: "/docs/connections" },
-  { label: "Connectors", href: "/docs/connectors" },
-  { label: "Uploads", href: "/docs/uploads" },
-  { label: "Transformations", href: "/docs/transformations" },
-  { label: "Transformation Guide", href: "/docs/transformations-guide" },
-  { label: "Pipelines", href: "/docs/pipelines" },
-  { label: "Scheduling & Dependencies", href: "/docs/scheduling" },
-  { label: "Scheduling Guide", href: "/docs/scheduling-guide" },
-  { label: "Runs & Monitoring", href: "/docs/runs" },
-  { label: "Data Catalog", href: "/docs/catalog" },
-  { label: "File Uploads", href: "/docs/file-uploads" },
-  { label: "API Keys", href: "/docs/api-keys" },
-  { label: "API Reference", href: "/docs/api" },
-  { label: "AI Agents", href: "/docs/ai-agents" },
-  { label: "Audit Log", href: "/docs/audit-log" },
-  { label: "Self-Hosting", href: "/docs/self-hosting" },
-  { label: "Backup & Import", href: "/docs/ai-import" },
-  { label: "Architecture", href: "/docs/architecture" },
+// Sidebar IA — 6 collapsible groups (issue #103, see plans/product/SPEC_DOCS_IA_REDESIGN.md).
+// Order matters: it's the reading order for someone going from "what is this?" to "running it in prod".
+// Add new pages by appending to the relevant group; don't reach for a new top-level entry unless
+// you're carving out a new audience (devs, admins, etc.) — that's Approach B territory.
+const groups = [
+  {
+    label: "Getting Started",
+    items: [
+      { label: "Overview", href: "/docs" },
+      { label: "Getting Started", href: "/docs/getting-started" },
+      { label: "Architecture", href: "/docs/architecture" },
+    ],
+  },
+  {
+    label: "Connect",
+    items: [
+      // Order matters: connect (Connections) → configure (Connectors) → load
+      // (Uploads). The docs-sidebar test enforces the Connections→Connectors
+      // →Uploads adjacency as a guardrail for that mental model. File Uploads
+      // (the file-import feature) sits at the end of the group as the
+      // alternative path for users without a database to connect.
+      { label: "Connections", href: "/docs/connections" },
+      { label: "Connectors", href: "/docs/connectors" },
+      { label: "Uploads", href: "/docs/uploads" },
+      { label: "File Uploads", href: "/docs/file-uploads" },
+    ],
+  },
+  {
+    label: "Build",
+    items: [
+      { label: "Transformations", href: "/docs/transformations" },
+      { label: "Transformation Guide", href: "/docs/transformations-guide" },
+      { label: "Data Catalog", href: "/docs/catalog" },
+    ],
+  },
+  {
+    label: "Run & Schedule",
+    items: [
+      { label: "Pipelines", href: "/docs/pipelines" },
+      { label: "Scheduling & Dependencies", href: "/docs/scheduling" },
+      { label: "Scheduling Guide", href: "/docs/scheduling-guide" },
+      { label: "Runs & Monitoring", href: "/docs/runs" },
+    ],
+  },
+  {
+    label: "Operate",
+    items: [
+      { label: "Organizations & Members", href: "/docs/organizations" },
+      { label: "API Keys", href: "/docs/api-keys" },
+      { label: "Audit Log", href: "/docs/audit-log" },
+      { label: "Self-Hosting", href: "/docs/self-hosting" },
+      { label: "Backup & Import", href: "/docs/ai-import" },
+    ],
+  },
+  {
+    label: "API & Reference",
+    items: [
+      { label: "API Reference", href: "/docs/api" },
+      { label: "AI Agents", href: "/docs/ai-agents" },
+    ],
+  },
 ];
+
+// Flat view kept for code that just needs "every page" — breadcrumb lookup, mobile <select>, tests.
+const sections = groups.flatMap((g) => g.items);
 
 const currentPath = Astro.url.pathname.replace(/\/$/, "") || "/docs";
 
@@ -114,20 +156,52 @@ const breadcrumbLD = JSON.stringify({
       <div class="flex gap-10">
         <!-- Sidebar -->
         <aside class="hidden w-56 shrink-0 md:block">
-          <nav class="sticky top-24 max-h-[calc(100vh-7rem)] space-y-1 overflow-y-auto pr-2">
-            {sections.map((s) => (
-              <a
-                href={s.href}
-                class:list={[
-                  "block rounded-lg px-3 py-2 text-sm transition-colors",
-                  currentPath === s.href.replace(/\/$/, "")
-                    ? "bg-violet-500/10 text-violet-400 font-medium"
-                    : "text-slate-400 hover:text-white hover:bg-slate-800/50",
-                ]}
-              >
-                {s.label}
-              </a>
-            ))}
+          <nav class="sticky top-24 max-h-[calc(100vh-7rem)] space-y-3 overflow-y-auto pr-2">
+            {groups.map((group) => {
+              const groupHasCurrent = group.items.some(
+                (i) => i.href.replace(/\/$/, "") === currentPath
+              );
+              return (
+                <details
+                  class="group/details"
+                  data-sidebar-group={group.label}
+                  open={groupHasCurrent}
+                >
+                  <summary class="flex cursor-pointer list-none items-center gap-1 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-slate-500 select-none hover:text-slate-300">
+                    <svg
+                      class="h-3 w-3 transition-transform group-open/details:rotate-90"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
+                    <span>{group.label}</span>
+                  </summary>
+                  <div class="mt-1 space-y-1">
+                    {group.items.map((s) => (
+                      <a
+                        href={s.href}
+                        class:list={[
+                          "block rounded-lg px-3 py-2 text-sm transition-colors",
+                          currentPath === s.href.replace(/\/$/, "")
+                            ? "bg-violet-500/10 text-violet-400 font-medium"
+                            : "text-slate-400 hover:text-white hover:bg-slate-800/50",
+                        ]}
+                      >
+                        {s.label}
+                      </a>
+                    ))}
+                  </div>
+                </details>
+              );
+            })}
           </nav>
         </aside>
 
@@ -137,10 +211,14 @@ const breadcrumbLD = JSON.stringify({
             id="docs-mobile-nav"
             class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-300"
           >
-            {sections.map((s) => (
-              <option value={s.href} selected={currentPath === s.href.replace(/\/$/, "")}>
-                {s.label}
-              </option>
+            {groups.map((group) => (
+              <optgroup label={group.label}>
+                {group.items.map((s) => (
+                  <option value={s.href} selected={currentPath === s.href.replace(/\/$/, "")}>
+                    {s.label}
+                  </option>
+                ))}
+              </optgroup>
             ))}
           </select>
         </div>
@@ -158,6 +236,45 @@ const breadcrumbLD = JSON.stringify({
     <script>
       const sel = document.getElementById("docs-mobile-nav") as HTMLSelectElement;
       sel?.addEventListener("change", () => { window.location.href = sel.value; });
+
+      // Persist sidebar group expand/collapse state across pages.
+      // Storage key is namespaced under "docs:" so future sidebars (e.g. /api/)
+      // can use their own key without colliding.
+      const STORAGE_KEY = "docs:sidebar:open-groups";
+      type GroupState = Record<string, boolean>;
+      function loadState(): GroupState {
+        try {
+          return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}") as GroupState;
+        } catch {
+          return {};
+        }
+      }
+      function saveState(state: GroupState): void {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        } catch {
+          // localStorage may be disabled (private browsing); fail silently.
+        }
+      }
+      const state = loadState();
+      document
+        .querySelectorAll<HTMLDetailsElement>("details[data-sidebar-group]")
+        .forEach((el) => {
+          const name = el.dataset.sidebarGroup;
+          if (!name) return;
+          // Astro renders the active page's group with `open` already; respect
+          // it on first paint so the user lands on a useful sidebar even with
+          // empty localStorage. Stored state only overrides for OTHER groups.
+          if (!el.open && state[name] === true) el.setAttribute("open", "");
+          if (el.open && state[name] === false && !el.querySelector("a.text-violet-400")) {
+            el.removeAttribute("open");
+          }
+          el.addEventListener("toggle", () => {
+            const s = loadState();
+            s[name] = el.open;
+            saveState(s);
+          });
+        });
     </script>
   </body>
 </html>
