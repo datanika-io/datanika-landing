@@ -95,6 +95,9 @@ export const useCases: UseCase[] = [
       "Build a product analytics funnel from event tables",
       "Aggregate content engagement metrics",
     ],
+    seoTitle: "MySQL to BigQuery Pipeline | Datanika",
+    seoDescription: "Replicate MySQL databases to BigQuery for analytics. Automatic schema mapping, incremental sync, built-in dbt transforms. No Kubernetes required. Start free.",
+    seoH1: "MySQL to BigQuery",
   },
   {
     slug: "mongodb-to-snowflake",
@@ -119,6 +122,9 @@ export const useCases: UseCase[] = [
       "Join flattened collections for cross-entity reporting",
       "Build customer 360 views from multiple MongoDB collections",
     ],
+    seoTitle: "MongoDB to Snowflake Pipeline | Datanika",
+    seoDescription: "Flatten MongoDB documents into Snowflake tables. Automatic nested-to-relational mapping, dbt transforms, and scheduling. No code required. Start free.",
+    seoH1: "MongoDB to Snowflake",
   },
   {
     slug: "stripe-to-bigquery",
@@ -170,6 +176,9 @@ export const useCases: UseCase[] = [
       "Join HubSpot deals with Stripe payments for revenue attribution",
       "Create lead scoring models based on engagement data",
     ],
+    seoTitle: "HubSpot to Snowflake Pipeline | Datanika",
+    seoDescription: "Sync HubSpot contacts, deals, and companies to Snowflake for CRM analytics. Build sales funnel reports with dbt. Open source, self-hostable. Start free.",
+    seoH1: "HubSpot to Snowflake",
   },
   {
     slug: "salesforce-to-bigquery",
@@ -218,6 +227,9 @@ export const useCases: UseCase[] = [
       "Create product affinity analysis (frequently bought together)",
       "Track inventory turnover and restock alerts",
     ],
+    seoTitle: "Shopify to BigQuery — E-Commerce Analytics | Datanika",
+    seoDescription: "Load Shopify orders, products, and customers into BigQuery. Build cohort, AOV, and product analytics with dbt transforms. Start free on Datanika today.",
+    seoH1: "Shopify to BigQuery",
   },
   {
     slug: "kafka-to-clickhouse",
@@ -242,6 +254,9 @@ export const useCases: UseCase[] = [
       "Calculate rolling window metrics (hourly, daily active users)",
       "Create event funnels for product analytics",
     ],
+    seoTitle: "Kafka to ClickHouse — Streaming Analytics | Datanika",
+    seoDescription: "Stream Kafka topics into ClickHouse for real-time analytics. Process clickstreams, IoT, and event data. dbt transforms built in. Start free on Datanika.",
+    seoH1: "Kafka to ClickHouse",
   },
   {
     slug: "s3-to-snowflake",

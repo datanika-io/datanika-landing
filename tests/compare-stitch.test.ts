@@ -20,8 +20,8 @@ describe("Datanika vs Stitch comparison page", () => {
     expect(html).toBeTruthy();
   });
 
-  it("has comparison title", () => {
-    expect(html).toContain("Datanika vs Stitch");
+  it("has comparison title (Stitch Data Alternative after Tier 2 rewrite)", () => {
+    expect(html).toContain("Stitch Data Alternative");
   });
 
   it("mentions open-source advantage", () => {

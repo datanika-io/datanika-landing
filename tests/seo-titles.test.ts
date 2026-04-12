@@ -56,6 +56,22 @@ const tier1: TierSpec[] = [
   { path: "connectors/salesforce/index.html", primaryKeyword: "salesforce etl", titleMustContain: "Salesforce ETL" },
 ];
 
+// --- Tier 2: 12 pages from validated Keyword Planner data ---
+const tier2: TierSpec[] = [
+  { path: "use-cases/mysql-to-bigquery/index.html", primaryKeyword: "mysql to bigquery", titleMustContain: "MySQL to BigQuery" },
+  { path: "connectors/mssql/index.html", primaryKeyword: "sql server etl tool", titleMustContain: "SQL Server ETL" },
+  { path: "connectors/hubspot/index.html", primaryKeyword: "hubspot etl", titleMustContain: "HubSpot ETL" },
+  { path: "use-cases/hubspot-to-snowflake/index.html", primaryKeyword: "hubspot to snowflake", titleMustContain: "HubSpot to Snowflake" },
+  { path: "use-cases/shopify-to-bigquery/index.html", primaryKeyword: "shopify to bigquery", titleMustContain: "Shopify to BigQuery" },
+  { path: "use-cases/mongodb-to-snowflake/index.html", primaryKeyword: "mongodb to snowflake", titleMustContain: "MongoDB to Snowflake" },
+  { path: "connectors/clickhouse/index.html", primaryKeyword: "clickhouse etl", titleMustContain: "ClickHouse ETL" },
+  { path: "connectors/synapse/index.html", primaryKeyword: "azure synapse etl", titleMustContain: "Azure Synapse ETL" },
+  { path: "connectors/redshift/index.html", primaryKeyword: "redshift etl tool", titleMustContain: "Redshift ETL" },
+  { path: "use-cases/kafka-to-clickhouse/index.html", primaryKeyword: "kafka to clickhouse", titleMustContain: "Kafka to ClickHouse" },
+  { path: "connectors/mysql/index.html", primaryKeyword: "mysql etl tool", titleMustContain: "MySQL ETL" },
+  { path: "compare/stitch/index.html", primaryKeyword: "stitch data alternative", titleMustContain: "Stitch Data Alternative" },
+];
+
 describe("Tier 1 SEO title/meta compliance", () => {
   for (const spec of tier1) {
     describe(spec.path, () => {
@@ -88,6 +104,44 @@ describe("Tier 1 SEO title/meta compliance", () => {
         const h1Match = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/);
         expect(h1Match, "no <h1> found").not.toBeNull();
         // Strip inner HTML tags for text content check
+        const h1Text = h1Match![1].replace(/<[^>]*>/g, "").trim();
+        expect(h1Text.length).toBeGreaterThan(0);
+      });
+    });
+  }
+});
+
+describe("Tier 2 SEO title/meta compliance", () => {
+  for (const spec of tier2) {
+    describe(spec.path, () => {
+      const html = readHtml(spec.path);
+      const title = extractTitle(html);
+      const meta = extractMeta(html);
+
+      it("title is not the Layout default", () => {
+        expect(title).not.toBe(LAYOUT_DEFAULT_TITLE);
+      });
+
+      it("title is ≤ 60 characters", () => {
+        expect(title.length, `title is ${title.length} chars: "${title}"`).toBeLessThanOrEqual(60);
+      });
+
+      it("title contains primary keyword", () => {
+        expect(title.toLowerCase()).toContain(spec.titleMustContain.toLowerCase());
+      });
+
+      it("title ends with | Datanika", () => {
+        expect(title).toMatch(/\|\s*Datanika\s*$/);
+      });
+
+      it("meta description is 150–160 characters", () => {
+        expect(meta.length, `meta is ${meta.length} chars: "${meta}"`).toBeGreaterThanOrEqual(150);
+        expect(meta.length, `meta is ${meta.length} chars: "${meta}"`).toBeLessThanOrEqual(160);
+      });
+
+      it("visible H1 exists and is not empty", () => {
+        const h1Match = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/);
+        expect(h1Match, "no <h1> found").not.toBeNull();
         const h1Text = h1Match![1].replace(/<[^>]*>/g, "").trim();
         expect(h1Text.length).toBeGreaterThan(0);
       });

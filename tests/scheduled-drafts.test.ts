@@ -14,10 +14,10 @@ function readFrontmatter(filename: string): Record<string, string> {
   const file = resolve(BLOG_DIR, filename);
   expect(existsSync(file), `Missing: ${filename}`).toBe(true);
   const content = readFileSync(file, "utf-8");
-  const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
+  const fmMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
   expect(fmMatch, `No frontmatter in ${filename}`).not.toBeNull();
   const fm: Record<string, string> = {};
-  for (const line of fmMatch![1].split("\n")) {
+  for (const line of fmMatch![1].split(/\r?\n/)) {
     const m = line.match(/^(\w+):\s*(.+)/);
     if (m) fm[m[1]] = m[2].replace(/^["']|["']$/g, "");
   }
