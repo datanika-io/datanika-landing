@@ -3,45 +3,7 @@ import Layout from "../layouts/Layout.astro";
 import Navbar from "../components/Navbar.astro";
 import Footer from "../components/Footer.astro";
 import ConversionCTA from "../components/ConversionCTA.astro";
-
-const tiers = [
-  {
-    number: "1",
-    name: "Discover",
-    description: "Meta endpoints return full JSON Schema for every connection type, dlt config, dbt test, and materialization. The agent reads the schema — it never guesses.",
-    endpoints: "GET /meta/connection-types, /meta/dlt-config-schema, /meta/dbt-tests, /meta/materializations",
-  },
-  {
-    number: "2",
-    name: "Introspect",
-    description: "List source tables, inspect column types, preview sample rows, and execute read-only SQL. The agent understands the data before building anything.",
-    endpoints: "POST /connections/{id}/introspect, /columns, /preview, /query",
-  },
-  {
-    number: "3",
-    name: "Build",
-    description: "Full CRUD for every resource: connections, uploads, pipelines, transformations, schedules, and notification channels.",
-    endpoints: "POST /connections, /uploads, /pipelines, /transformations, /schedules",
-  },
-  {
-    number: "4",
-    name: "Validate",
-    description: "Compile dbt transformations to catch Jinja and ref errors. Preview output rows without touching production. Typed error codes let the agent branch on failures.",
-    endpoints: "POST /transformations/{id}/compile, /preview",
-  },
-  {
-    number: "5",
-    name: "Execute",
-    description: "Trigger runs with ?wait=true for synchronous completion. Cancel stuck runs. Retry safely with Idempotency-Key headers — no duplicate resources.",
-    endpoints: "POST /uploads/{id}/run?wait=true, /runs/{id}/cancel",
-  },
-  {
-    number: "6",
-    name: "Control",
-    description: "Monitor run history, stream logs, and browse the auto-generated data catalog to discover loaded tables and schemas.",
-    endpoints: "GET /runs, /runs/{id}/logs, /catalog",
-  },
-];
+import { tiers, tierCount } from "../data/agent-tiers";
 
 const competitors = [
   { feature: "/llms.txt discovery", datanika: true, fivetran: false, airbyte: false, stitch: false, hevo: false },
@@ -75,7 +37,7 @@ const competitors = [
       <div class="inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-4 py-1.5 text-sm text-violet-300 mb-6">
         <span>New</span>
         <span class="text-violet-500">|</span>
-        <span>5-Tier Agent API</span>
+        <span>{tierCount}-Tier Agent API</span>
       </div>
       <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-6">
         <span class="gradient-text">AI Data Pipeline</span><br />
@@ -95,12 +57,12 @@ const competitors = [
     </div>
   </section>
 
-  <!-- 6-Step Golden-Path Loop -->
+  <!-- Capability Tiers (SoT-driven from /api/v1/meta/agent-tiers) -->
   <section class="py-20">
     <div class="max-w-5xl mx-auto px-6">
-      <h2 class="text-3xl font-bold text-center mb-4">6-Step Golden-Path Loop</h2>
+      <h2 class="text-3xl font-bold text-center mb-4">{tierCount} Capability Tiers</h2>
       <p class="text-slate-400 text-center max-w-2xl mx-auto mb-12">
-        The sequence an autonomous agent walks through to build a complete data pipeline — from discovering connection types to monitoring scheduled runs. These are golden-path steps, not to be confused with the five capability tiers exposed by the underlying API.
+        Everything an autonomous agent needs to build a complete data pipeline — from discovering connection types to monitoring scheduled runs. The tiers are the API surface Datanika exposes; each one groups related endpoints an agent calls in order.
       </p>
       <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {tiers.map((tier) => (
@@ -111,8 +73,17 @@ const competitors = [
               </span>
               <h3 class="text-lg font-semibold text-white">{tier.name}</h3>
             </div>
-            <p class="text-sm text-slate-400 mb-3">{tier.description}</p>
-            <code class="block text-xs text-slate-500 bg-slate-900 rounded px-2 py-1.5 break-all">{tier.endpoints}</code>
+            <p class="text-sm text-slate-400 mb-3">{tier.summary}</p>
+            <ul class="space-y-2">
+              {tier.capabilities.map((cap) => (
+                <li class="text-xs text-slate-500">
+                  <span class="text-slate-300 font-medium">{cap.name}</span>
+                  <code class="block mt-1 bg-slate-900 rounded px-2 py-1.5 break-all">
+                    {cap.endpoints.slice(0, 2).join(", ")}{cap.endpoints.length > 2 ? ", …" : ""}
+                  </code>
+                </li>
+              ))}
+            </ul>
           </div>
         ))}
       </div>
@@ -186,7 +157,7 @@ httpx.post(f"{"{"}BASE{"}"}/transformations/{"{"}model['id']{"}"}/preview", head
             <span class="rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-400">No auth required</span>
           </div>
           <p class="text-slate-400 text-sm mb-4">
-            Plain-text discovery document at the site root. Contains the API summary, base URL, authentication format, rate limits by plan, and the complete 5-tier capability list.
+            Plain-text discovery document at the site root. Contains the API summary, base URL, authentication format, rate limits by plan, and the complete {tierCount}-tier capability list.
           </p>
           <p class="text-slate-400 text-sm mb-4">Point any LLM here first.</p>
           <a href="https://app.datanika.io/llms.txt" class="text-violet-400 text-sm hover:underline" target="_blank" rel="noopener">

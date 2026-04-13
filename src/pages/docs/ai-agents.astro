@@ -1,5 +1,13 @@
 ---
 import DocsLayout from "../../layouts/DocsLayout.astro";
+import {
+  tiers,
+  tierCount,
+  goldenPath,
+  errorCodes,
+  uiOnlyOperations,
+  renderInline,
+} from "../../data/agent-tiers";
 ---
 
 <DocsLayout
@@ -14,8 +22,12 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
   <h2>Overview</h2>
   <p>
     Datanika's API is designed for autonomous AI agents. Two unauthenticated discovery documents
-    tell the agent everything it needs to know, and a 5-tier capability stack lets it build,
+    tell the agent everything it needs to know, and a {tierCount}-tier capability stack lets it build,
     validate, and run pipelines without human intervention.
+  </p>
+  <p class="text-xs text-slate-500">
+    The tier structure on this page is fetched at build time from <code>app.datanika.io/api/v1/meta/agent-tiers</code>, so
+    it stays in sync with the live API. See <a href="https://github.com/datanika-io/datanika-landing/issues/108" target="_blank" rel="noopener">issue #108</a> for background.
   </p>
 
   <h2>Discovery Documents</h2>
@@ -48,94 +60,40 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
     </tbody>
   </table>
 
-  <h2>6-Step Golden-Path Loop</h2>
-  <p>An agent building a pipeline walks through six progressively-deeper steps. These golden-path steps are distinct from the <a href="#capability-tiers-reference">five capability tiers</a> published in <code>/llms.txt</code>; the steps are <em>how</em> an agent uses the API, the tiers are <em>what</em> the API exposes.</p>
-
-  <h3>Step 1 — Discover</h3>
-  <p>Meta endpoints return full JSON Schema for every resource type. The agent reads the schema and builds valid configs instead of guessing.</p>
-  <ul>
-    <li><code>GET /api/v1/meta/connection-types</code> — 32 connection types with per-type config schemas</li>
-    <li><code>GET /api/v1/meta/dlt-config-schema</code> — upload config schema (single_table / full_database modes)</li>
-    <li><code>GET /api/v1/meta/dbt-tests</code> — available test types with parameter schemas</li>
-    <li><code>GET /api/v1/meta/materializations</code> — dbt materialization strategies</li>
-  </ul>
-
-  <h3>Step 2 — Introspect</h3>
-  <p>Understand the source data before building anything.</p>
-  <ul>
-    <li><code>POST /api/v1/connections/{'{'}id{'}'}/introspect</code> — list schemas and tables</li>
-    <li><code>POST /api/v1/connections/{'{'}id{'}'}/columns</code> — column names, types, and metadata</li>
-    <li><code>POST /api/v1/connections/{'{'}id{'}'}/preview</code> — sample N rows</li>
-    <li><code>POST /api/v1/connections/{'{'}id{'}'}/query</code> — execute read-only SQL</li>
-  </ul>
-
-  <h3>Step 3 — Build</h3>
-  <p>Full CRUD for every resource:</p>
-  <ul>
-    <li>Connections (source + destination)</li>
-    <li>Uploads (extract + load jobs)</li>
-    <li>Pipelines (orchestrated dbt runs)</li>
-    <li>Transformations (SQL models)</li>
-    <li>Schedules (cron-based automation)</li>
-    <li>Notification channels (Slack, email, webhook)</li>
-  </ul>
-
-  <h3>Step 4 — Validate</h3>
-  <p>Check your work before executing. This is the key differentiator — most competitor APIs skip this step entirely.</p>
-  <ul>
-    <li><code>POST /api/v1/transformations/{'{'}id{'}'}/compile</code> — validate SQL, Jinja, and refs without touching the warehouse</li>
-    <li><code>POST /api/v1/transformations/{'{'}id{'}'}/preview</code> — compile + run <code>SELECT * FROM (...) LIMIT N</code> to see sample output</li>
-  </ul>
-
-  <h3>Step 5 — Execute</h3>
-  <ul>
-    <li><code>POST /api/v1/uploads/{'{'}id{'}'}/run?wait=true</code> — trigger and wait for completion (default 120s, max 300s)</li>
-    <li><code>POST /api/v1/pipelines/{'{'}id{'}'}/run?wait=true</code> — same for pipeline runs</li>
-    <li><code>POST /api/v1/transformations/{'{'}id{'}'}/run?wait=true</code> — same for transformation runs</li>
-    <li><code>POST /api/v1/runs/{'{'}id{'}'}/cancel</code> — cancel pending or running runs</li>
-  </ul>
-
-  <h3>Step 6 — Control</h3>
-  <ul>
-    <li><code>GET /api/v1/runs</code> — run history with filtering</li>
-    <li><code>GET /api/v1/runs/{'{'}id{'}'}/logs</code> — streaming execution logs</li>
-    <li><code>GET /api/v1/catalog</code> — browse all tables discovered across pipelines</li>
-  </ul>
-
-  <h2 id="capability-tiers-reference">Five Capability Tiers (reference)</h2>
+  <h2 id="capability-tiers">Capability Tiers</h2>
   <p>
-    The underlying API surface is published in <code>/llms.txt</code> as five capability tiers, reflecting how the
-    endpoints were shipped in core (PRs #42, #55, #58, #62, #65):
+    The API surface is organised as {tierCount} capability tiers. Each tier groups related endpoints an agent calls
+    in sequence — discover what exists, then build, validate, execute, and observe. The full list below is the
+    canonical source from core, not a handwritten mirror.
+  </p>
+
+  {tiers.map((tier) => (
+    <section>
+      <h3 id={`tier-${tier.number}`}>Tier {tier.number} — {tier.name}</h3>
+      <p>{tier.summary}</p>
+      {tier.capabilities.map((cap) => (
+        <>
+          <h4>{cap.name}</h4>
+          <p>{cap.description}</p>
+          <ul>
+            {cap.endpoints.map((endpoint) => (
+              <li><code>{endpoint}</code></li>
+            ))}
+          </ul>
+        </>
+      ))}
+    </section>
+  ))}
+
+  <h2 id="golden-path">Golden-Path Loop ({goldenPath.length} steps)</h2>
+  <p>
+    The recommended endpoint-by-endpoint sequence for an agent building a pipeline from scratch. This is the
+    long-form expansion of the capability tiers above — a concrete ordering an agent can follow verbatim.
   </p>
   <ol>
-    <li><strong>Tier 1 — Discovery &amp; introspection</strong>: meta endpoints, source introspection, data catalog.</li>
-    <li><strong>Tier 2 — Transformation validation</strong>: compile + preview on <code>/transformations</code>.</li>
-    <li><strong>Tier 3 — Typed config schemas</strong>: inline per-type OpenAPI schemas via discriminator.</li>
-    <li><strong>Tier 4 — Run control</strong>: <code>?wait=true</code>, <code>/cancel</code>, <code>Idempotency-Key</code>.</li>
-    <li><strong>Tier 5 — Machine-readable discovery</strong>: <code>/llms.txt</code> and <code>/api/v1/agent-guide.md</code>.</li>
-  </ol>
-
-  <h2>Full Endpoint Sequence (17 steps)</h2>
-  <p>The recommended endpoint-by-endpoint sequence for an agent building a pipeline from scratch — the detailed expansion of the 6-step golden-path loop above:</p>
-
-  <ol>
-    <li><code>GET /api/v1/meta/connection-types</code> — discover available source and destination types</li>
-    <li><code>POST /api/v1/connections</code> — create a source connection (e.g. Stripe)</li>
-    <li><code>POST /api/v1/connections</code> — create a destination connection (e.g. BigQuery)</li>
-    <li><code>POST /api/v1/connections/{'{'}id{'}'}/test</code> — verify both connections work</li>
-    <li><code>POST /api/v1/connections/{'{'}id{'}'}/introspect</code> — list source tables</li>
-    <li><code>POST /api/v1/connections/{'{'}id{'}'}/columns</code> — inspect column types</li>
-    <li><code>GET /api/v1/meta/dlt-config-schema</code> — learn dlt_config options</li>
-    <li><code>POST /api/v1/uploads</code> — create an extract+load job</li>
-    <li><code>POST /api/v1/uploads/{'{'}id{'}'}/run?wait=true</code> — trigger and wait</li>
-    <li><code>GET /api/v1/catalog</code> — discover loaded tables in the destination</li>
-    <li><code>GET /api/v1/meta/materializations</code> — learn dbt materialization types</li>
-    <li><code>GET /api/v1/meta/dbt-tests</code> — learn available test types</li>
-    <li><code>POST /api/v1/transformations</code> — create a dbt SQL model</li>
-    <li><code>POST /api/v1/transformations/{'{'}id{'}'}/compile</code> — validate Jinja + refs</li>
-    <li><code>POST /api/v1/transformations/{'{'}id{'}'}/preview</code> — see sample output rows</li>
-    <li><code>POST /api/v1/schedules</code> — schedule the pipeline on a cron</li>
-    <li><code>GET /api/v1/runs</code> — monitor run history</li>
+    {goldenPath.map((step) => (
+      <li set:html={renderInline(step)} />
+    ))}
   </ol>
 
   <h2>Error Handling</h2>
@@ -150,36 +108,13 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
       </tr>
     </thead>
     <tbody>
-      <tr>
-        <td><code>compilation_error</code></td>
-        <td>Jinja or ref error in dbt compile</td>
-        <td>Fix the SQL and re-compile</td>
-      </tr>
-      <tr>
-        <td><code>execution_error</code></td>
-        <td>Warehouse query failed</td>
-        <td>Check table names and SQL syntax</td>
-      </tr>
-      <tr>
-        <td><code>missing_destination</code></td>
-        <td>Transformation has no destination set</td>
-        <td>Set <code>destination_connection_id</code></td>
-      </tr>
-      <tr>
-        <td><code>unsafe_sql</code></td>
-        <td>Compiled SQL failed read-only check</td>
-        <td>Review the transformation SQL</td>
-      </tr>
-      <tr>
-        <td><code>invalid_request</code></td>
-        <td>Malformed request body</td>
-        <td>Check field types and required fields</td>
-      </tr>
-      <tr>
-        <td><code>not_cancellable</code></td>
-        <td>Run already completed</td>
-        <td>No action needed</td>
-      </tr>
+      {errorCodes.map((err) => (
+        <tr>
+          <td><code>{err.code}</code></td>
+          <td>{err.meaning}</td>
+          <td set:html={renderInline(err.action)} />
+        </tr>
+      ))}
     </tbody>
   </table>
 
@@ -206,12 +141,9 @@ Content-Type: application/json
   <h2>What the API Cannot Do</h2>
   <p>These operations are only available in the Datanika UI:</p>
   <ul>
-    <li><strong>User management</strong> — create/invite users, assign roles</li>
-    <li><strong>Billing</strong> — change plans, view invoices</li>
-    <li><strong>SSO configuration</strong> — SAML/OIDC setup</li>
-    <li><strong>File uploads</strong> — CSV/JSON/Parquet drag-and-drop (UI only)</li>
-    <li><strong>OAuth connections</strong> — Google/GitHub login setup</li>
-    <li><strong>Organization creation</strong> — orgs are created via the signup flow</li>
+    {uiOnlyOperations.map((op) => (
+      <li set:html={renderInline(op)} />
+    ))}
   </ul>
   <p>Do not attempt these via the API — there are no endpoints for them. Documenting this explicitly prevents agents from entering hallucination loops trying to find non-existent endpoints.</p>
 
