@@ -1,5 +1,17 @@
 ---
 import DocsLayout from "../../layouts/DocsLayout.astro";
+import RelatedConnectors from "../../components/RelatedConnectors.astro";
+import { connectors } from "../../data/connectors";
+
+// Group every connector by its `category` field from connectors.ts. Computed
+// dynamically so adding a new category to the data file surfaces it here
+// automatically — no hardcoded category list. Order is whatever order the
+// categories first appear in the data file, which is authorial (not alpha).
+const categoryOrder = Array.from(new Set(connectors.map((c) => c.category)));
+const byCategory = categoryOrder.map((category) => ({
+  category,
+  items: connectors.filter((c) => c.category === category),
+}));
 ---
 
 <DocsLayout title="Connections">
@@ -121,4 +133,15 @@ Config:
   loaded_at_field: updated_at
   warn_after: 12 hours
   error_after: 24 hours`} /></pre>
+
+  <h2 id="all-connectors">All Supported Connectors</h2>
+  <p>Every connector Datanika ships, grouped by category. Click through for the full connector reference, supported configuration fields, and typical use cases.</p>
+  {byCategory.map((group) => (
+    <RelatedConnectors
+      heading={group.category}
+      connectors={group.items}
+      id={`connectors-${group.category.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
+    />
+  ))}
+  <p><a href="/connectors">Browse the full connector index →</a></p>
 </DocsLayout>

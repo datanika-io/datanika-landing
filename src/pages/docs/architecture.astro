@@ -1,5 +1,15 @@
 ---
 import DocsLayout from "../../layouts/DocsLayout.astro";
+import RelatedConnectors from "../../components/RelatedConnectors.astro";
+import { connectors } from "../../data/connectors";
+
+// Every connector that can be used as a destination in Datanika's load
+// layer. Computed from the data file: a connector is a destination if its
+// direction is not "source" (i.e. "destination" or "both"). This includes
+// all databases (Postgres, MySQL, SQLite, etc.), all cloud warehouses, and
+// DuckDB. If a new destination connector is added to connectors.ts, it
+// shows up here automatically — no hardcoded list to maintain.
+const destinationConnectors = connectors.filter((c) => c.direction !== "source");
 ---
 
 <DocsLayout title="Architecture" description="Technical overview of Datanika's architecture, tech stack, data flow, and security model.">
@@ -132,4 +142,10 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
     <li><a href="/api/reference">API Reference</a> — Full REST API v1 documentation</li>
     <li><a href="/docs/connections">Connections</a> — Supported connectors and configuration</li>
   </ul>
+
+  <RelatedConnectors
+    heading="Supported destinations"
+    description="Datanika's load layer (dlt) can write to any of these. The dbt transformation layer runs against the same destination. All are computed dynamically from the connectors data file — adding a new destination type to the connector registry surfaces it here automatically."
+    connectors={destinationConnectors}
+  />
 </DocsLayout>
