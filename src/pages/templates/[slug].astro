@@ -1,0 +1,247 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Navbar from "../../components/Navbar.astro";
+import Footer from "../../components/Footer.astro";
+import ConversionCTA from "../../components/ConversionCTA.astro";
+import { templates } from "../../data/templates";
+import type { Template } from "../../data/templates";
+import { connectors } from "../../data/connectors";
+
+export function getStaticPaths() {
+  return templates.map((tpl) => ({
+    params: { slug: tpl.slug },
+    props: { template: tpl },
+  }));
+}
+
+interface Props {
+  template: Template;
+}
+
+const { template } = Astro.props;
+
+const breadcrumbs = [
+  { name: "Home", url: "/" },
+  { name: "Templates", url: "/templates" },
+  { name: template.h1, url: `/templates/${template.slug}` },
+];
+
+// Cold-traffic deep link: preserves ?template=<slug> across the auth wall so
+// the logged-in flow lands on the prefilled connection form via the existing
+// ConnectionState.load_template_from_query bridge (PR #81, instrumented in
+// PR #94). Core-side AuthState change (separate PR) will propagate the slug
+// across signup to complete the cold-traffic → prefilled-pipeline funnel.
+const tryTemplateHref = `https://app.datanika.io/pipelines/templates?template=${template.slug}`;
+
+const sourceConnector = connectors.find((c) => c.slug === template.sourceConnectorSlug);
+const destConnector = connectors.find((c) => c.slug === template.destinationConnectorSlug);
+
+const relatedTemplateDetails = template.relatedTemplates
+  .map((slug) => templates.find((t) => t.slug === slug))
+  .filter((t): t is Template => t !== undefined);
+
+// HowTo JSON-LD — Google rewards templated how-to pages for commercial
+// queries and shows them in rich results. Steps mirror the visible
+// "How it works" section.
+const howToSteps = [
+  {
+    name: `Create a free Datanika account and open the ${template.source} → ${template.destination} template`,
+    url: tryTemplateHref,
+  },
+  {
+    name: `Enter your ${template.source} credentials — the template prefills every non-credential field for you`,
+    url: tryTemplateHref,
+  },
+  {
+    name: `Confirm the ${template.destination} connection settings and save`,
+    url: tryTemplateHref,
+  },
+  {
+    name: "Run the pipeline and inspect the loaded data in your warehouse",
+    url: tryTemplateHref,
+  },
+];
+
+const howToJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "HowTo",
+  name: template.h1,
+  description: template.description,
+  totalTime: `PT${template.timeToFirstRun.replace(/\D/g, "") || "5"}M`,
+  supply: template.prerequisites.map((p) => ({ "@type": "HowToSupply", name: p })),
+  step: howToSteps.map((s, i) => ({
+    "@type": "HowToStep",
+    position: i + 1,
+    name: s.name,
+    url: s.url,
+  })),
+};
+---
+
+<Layout
+  title={template.seoTitle}
+  description={template.seoDescription}
+  breadcrumbs={breadcrumbs}
+  extraJsonLd={[howToJsonLd]}
+>
+  <Navbar />
+
+  <!-- Hero -->
+  <section class="relative pt-32 pb-16 overflow-hidden">
+    <div class="glow bg-violet-600 -top-40 -left-40"></div>
+    <div class="glow bg-cyan-600 -bottom-40 -right-40"></div>
+    <div class="relative max-w-4xl mx-auto px-6">
+      <div class="flex items-center gap-2 text-sm text-slate-500 mb-4">
+        <a href={`/connectors/${template.sourceConnectorSlug}`} class="px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 hover:text-white transition-colors">{template.source}</a>
+        <span class="text-slate-600">→</span>
+        <a href={`/connectors/${template.destinationConnectorSlug}`} class="px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300 hover:text-white transition-colors">{template.destination}</a>
+        <span class="ml-3 text-slate-600">•</span>
+        <span class="text-slate-500">{template.timeToFirstRun} to first run</span>
+      </div>
+      <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight mb-4">
+        <span class="gradient-text">{template.h1}</span>
+      </h1>
+      <p class="text-xl text-slate-300 leading-relaxed max-w-3xl mb-4">
+        {template.tagline}
+      </p>
+      <p class="text-base text-slate-400 leading-relaxed max-w-3xl">
+        {template.description}
+      </p>
+      <div class="flex flex-col sm:flex-row gap-4 mt-8">
+        <ConversionCTA href={tryTemplateHref} class="btn-primary">Try this template</ConversionCTA>
+        <a href="/templates" class="btn-secondary">View all templates</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Use Case -->
+  <section class="py-12">
+    <div class="max-w-4xl mx-auto px-6">
+      <h2 class="text-2xl font-bold mb-4">What this template does</h2>
+      <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur p-6">
+        <p class="text-slate-300 leading-relaxed">{template.useCase}</p>
+      </div>
+    </div>
+  </section>
+
+  {template.whatItLoads.length > 0 && (
+    <!-- What it loads -->
+    <section class="py-12">
+      <div class="max-w-4xl mx-auto px-6">
+        <h2 class="text-2xl font-bold mb-6">What it loads</h2>
+        <ul class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {template.whatItLoads.map((resource) => (
+            <li class="rounded-xl border border-slate-800 bg-slate-900/50 px-4 py-3 text-slate-300">
+              <span class="text-emerald-400 mr-2">&#10003;</span>{resource}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  )}
+
+  <!-- Prerequisites -->
+  <section class="py-12">
+    <div class="max-w-4xl mx-auto px-6">
+      <h2 class="text-2xl font-bold mb-6">Prerequisites</h2>
+      <ul class="space-y-3">
+        {template.prerequisites.map((req) => (
+          <li class="flex items-start gap-3 rounded-xl border border-slate-800 bg-slate-900/50 p-4">
+            <span class="text-amber-400 mt-0.5 shrink-0">&#9888;</span>
+            <p class="text-slate-300">{req}</p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="py-12">
+    <div class="max-w-4xl mx-auto px-6">
+      <h2 class="text-2xl font-bold mb-6">How it works</h2>
+      <ol class="space-y-4">
+        {howToSteps.map((step, i) => (
+          <li class="flex gap-4">
+            <span class="flex items-center justify-center w-8 h-8 rounded-full bg-violet-500/20 text-violet-300 font-bold text-sm shrink-0">{i + 1}</span>
+            <div class="pt-1">
+              <p class="text-slate-300">{step.name}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <!-- Example transformation -->
+  <section class="py-12">
+    <div class="max-w-4xl mx-auto px-6">
+      <h2 class="text-2xl font-bold mb-6">Example transformation</h2>
+      <p class="text-slate-400 mb-4">Once the template loads, write dbt models against the staging schema. This example runs on the output of the {template.h1}:</p>
+      <pre class="rounded-xl border border-slate-800 bg-slate-950/80 p-6 overflow-x-auto text-sm text-slate-200"><code>{template.exampleSql}</code></pre>
+    </div>
+  </section>
+
+  <!-- Related connectors -->
+  <section class="py-12">
+    <div class="max-w-4xl mx-auto px-6">
+      <h2 class="text-2xl font-bold mb-6">Related connectors</h2>
+      <div class="grid sm:grid-cols-2 gap-4">
+        {sourceConnector && (
+          <a href={`/connectors/${sourceConnector.slug}`} class="rounded-xl border border-slate-800 bg-slate-900/50 p-5 transition-colors hover:border-violet-500/50">
+            <p class="text-sm text-slate-500 mb-1">Source</p>
+            <p class="font-semibold text-white">{sourceConnector.name}</p>
+            <p class="text-sm text-slate-400 mt-1">Connector details and setup guide →</p>
+          </a>
+        )}
+        {destConnector && (
+          <a href={`/connectors/${destConnector.slug}`} class="rounded-xl border border-slate-800 bg-slate-900/50 p-5 transition-colors hover:border-violet-500/50">
+            <p class="text-sm text-slate-500 mb-1">Destination</p>
+            <p class="font-semibold text-white">{destConnector.name}</p>
+            <p class="text-sm text-slate-400 mt-1">Connector details and setup guide →</p>
+          </a>
+        )}
+      </div>
+    </div>
+  </section>
+
+  {relatedTemplateDetails.length > 0 && (
+    <section class="py-12">
+      <div class="max-w-4xl mx-auto px-6">
+        <h2 class="text-2xl font-bold mb-6">Related templates</h2>
+        <div class="grid sm:grid-cols-2 gap-4">
+          {relatedTemplateDetails.map((rel) => (
+            <a href={`/templates/${rel.slug}`} class="rounded-xl border border-slate-800 bg-slate-900/50 p-5 transition-colors hover:border-violet-500/50">
+              <div class="flex items-center gap-2 text-xs text-slate-500 mb-2">
+                <span class="px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">{rel.source}</span>
+                <span class="text-slate-600">→</span>
+                <span class="px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300">{rel.destination}</span>
+              </div>
+              <p class="font-semibold text-white">{rel.h1}</p>
+              <p class="text-sm text-slate-400 mt-1 line-clamp-2">{rel.tagline}</p>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- Final CTA -->
+  <section class="py-20">
+    <div class="max-w-3xl mx-auto px-6 text-center">
+      <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur p-12">
+        <h2 class="text-3xl font-bold mb-4">
+          Ready to try the {template.h1}?
+        </h2>
+        <p class="text-slate-400 mb-8 text-lg">
+          Free to start — no credit card, no sales call. {template.timeToFirstRun} to first run.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <ConversionCTA href={tryTemplateHref} class="btn-primary">Try this template</ConversionCTA>
+          <a href="https://github.com/datanika-io/datanika-core" class="btn-secondary">View on GitHub</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <Footer />
+</Layout>

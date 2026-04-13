@@ -38,6 +38,13 @@ describe("navbar links", () => {
     expect(html).toContain('href="/api"');
   });
 
+  it("has Templates link", () => {
+    // Issue #122 — Option C public template landing pages.
+    // Sits between API and Blog, matching the user-chosen slot from
+    // SPEC_PUBLIC_TEMPLATE_LANDING.md.
+    expect(html).toContain('href="/templates"');
+  });
+
   it("has Blog link", () => {
     expect(html).toContain('href="/blog"');
   });
