@@ -6,6 +6,7 @@ import ConversionCTA from "../../components/ConversionCTA.astro";
 import { connectors } from "../../data/connectors";
 import type { Connector } from "../../data/connectors";
 import { useCases } from "../../data/use-cases";
+import { templates } from "../../data/templates";
 import { existsSync } from "fs";
 import { resolve } from "path";
 
@@ -47,6 +48,15 @@ const pageH1 = connector.seoH1 ?? connector.name;
 // Auto-compute cross-type internal links
 const matchingUseCases = useCases.filter(
   (uc) => uc.sourceSlug === connector.slug || uc.destinationSlug === connector.slug
+);
+
+// Pipeline Templates that use this connector as source or destination.
+// Only a handful of connectors match today (3 templates × 2 sides), so the
+// section renders only on pages where at least one template is relevant.
+const matchingTemplates = templates.filter(
+  (tpl) =>
+    tpl.sourceConnectorSlug === connector.slug ||
+    tpl.destinationConnectorSlug === connector.slug,
 );
 
 const setupGuideExists = existsSync(
@@ -193,6 +203,32 @@ const comparisonSlugs = ["airbyte", "fivetran", "stitch", "hevo"];
             </div>
           </div>
         </a>
+      </div>
+    </section>
+  )}
+
+  <!-- Pipeline Templates using this connector -->
+  {matchingTemplates.length > 0 && (
+    <section class="py-16">
+      <div class="max-w-4xl mx-auto px-6">
+        <h2 class="text-2xl font-bold mb-6">Templates with {connector.name}</h2>
+        <div class="grid sm:grid-cols-2 gap-4">
+          {matchingTemplates.map((tpl) => (
+            <a
+              href={`/templates/${tpl.slug}`}
+              class="rounded-xl border border-slate-800 bg-slate-900/50 p-5 transition-colors hover:border-violet-500/50"
+            >
+              <div class="flex items-center gap-2 text-sm text-slate-500 mb-2">
+                <span class="px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">{tpl.source}</span>
+                <span class="text-slate-600">→</span>
+                <span class="px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300">{tpl.destination}</span>
+              </div>
+              <p class="font-semibold text-white">{tpl.h1}</p>
+              <p class="text-sm text-slate-400 mt-1 line-clamp-2">{tpl.tagline}</p>
+              <p class="text-xs text-slate-500 mt-2">{tpl.timeToFirstRun} to first run</p>
+            </a>
+          ))}
+        </div>
       </div>
     </section>
   )}

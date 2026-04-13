@@ -101,4 +101,36 @@ describe("Stripe connector page", () => {
   it("has api_key config field", () => {
     expect(html).toContain("api_key");
   });
+
+  it("auto-links to the Stripe → Postgres template (issue #126)", () => {
+    // Session 3 auto-cross-link: every connector page that matches a template's
+    // source or destination slug must render a "Templates with <connector>" section.
+    expect(html).toContain('href="/templates/stripe-to-postgres"');
+    expect(html).toContain("Templates with Stripe");
+  });
+});
+
+describe("PostgreSQL connector page — template cross-links", () => {
+  let html: string;
+  beforeAll(() => {
+    html = readHtml("connectors/postgresql/index.html");
+  });
+
+  it("auto-links to both templates that use postgresql", () => {
+    expect(html).toContain('href="/templates/stripe-to-postgres"');
+    expect(html).toContain('href="/templates/postgres-to-bigquery"');
+  });
+});
+
+describe("MongoDB connector page — no template cross-links", () => {
+  let html: string;
+  beforeAll(() => {
+    html = readHtml("connectors/mongodb/index.html");
+  });
+
+  it("does not render a Templates section when no template matches", () => {
+    // MongoDB is not a source or destination in any of the 3 launch templates,
+    // so the auto-computed section must be absent (not empty-rendered).
+    expect(html).not.toContain("Templates with MongoDB");
+  });
 });
