@@ -111,6 +111,7 @@ describe("Conversion CTA usage — every signup CTA must use ConversionCTA", () 
     "pages/compare/fivetran.astro",
     "pages/compare/hevo.astro",
     "pages/compare/stitch.astro",
+    "pages/ai-agents.astro",
   ];
 
   it.each(REQUIRED_CTA_FILES)("%s imports and uses ConversionCTA", (relPath) => {

@@ -2,6 +2,7 @@
 import Layout from "../layouts/Layout.astro";
 import Navbar from "../components/Navbar.astro";
 import Footer from "../components/Footer.astro";
+import ConversionCTA from "../components/ConversionCTA.astro";
 
 const tiers = [
   {
@@ -86,7 +87,7 @@ const competitors = [
         <code class="text-violet-300 bg-slate-800 px-1.5 py-0.5 rounded text-base">/llms.txt</code> and go.
       </p>
       <div class="flex flex-col sm:flex-row gap-4 justify-center">
-        <a href="https://app.datanika.io" class="btn-primary">Get Your API Key</a>
+        <ConversionCTA href="https://app.datanika.io" class="btn-primary">Get Your API Key</ConversionCTA>
         <a href="https://app.datanika.io/llms.txt" class="btn-secondary" target="_blank" rel="noopener">
           View /llms.txt
         </a>
@@ -257,7 +258,7 @@ httpx.post(f"{"{"}BASE{"}"}/transformations/{"{"}model['id']{"}"}/preview", head
           <code class="text-violet-300 bg-slate-800 px-1.5 py-0.5 rounded text-sm">/llms.txt</code>, and watch it build.
         </p>
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
-          <a href="https://app.datanika.io" class="btn-primary">Start Free</a>
+          <ConversionCTA href="https://app.datanika.io" class="btn-primary">Start Free</ConversionCTA>
           <a href="/docs/ai-agents" class="btn-secondary">Read the Docs</a>
         </div>
       </div>
