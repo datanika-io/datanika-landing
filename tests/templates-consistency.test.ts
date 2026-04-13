@@ -84,6 +84,18 @@ describe("templates SoT — shape invariants", () => {
     expect(set.size).toBe(templates.length);
   });
 
+  // Core #101's AuthState._post_auth_redirect_target() validates
+  // ?template=<slug> against this regex; non-matching slugs silently drop to /.
+  it("template slugs match core AuthState redirect regex", () => {
+    const coreSlugRegex = /^[a-z0-9][a-z0-9-]{0,63}$/;
+    for (const slug of templateSlugs) {
+      expect(
+        coreSlugRegex.test(slug),
+        `slug '${slug}' violates core AuthState ?template= regex — cold-traffic auth redirect will silently fall back to /`,
+      ).toBe(true);
+    }
+  });
+
   it("relatedTemplates references resolve to existing slugs", () => {
     for (const tpl of templates) {
       for (const rel of tpl.relatedTemplates) {
