@@ -106,6 +106,97 @@ describe("comparison pages link to connectors and use-cases", () => {
   }
 });
 
+// --- Docs pages cross-link to service connectors (issue #117) ---
+//
+// Each of these 5 high-traffic docs pages gets a "Related Connectors" section
+// driven by src/components/RelatedConnectors.astro. Filter logic lives in the
+// individual .astro pages so each context can tune its own list — the tests
+// below pin the *expected result counts* so a drift in either the filter or
+// the underlying connectors.ts data is caught immediately.
+
+function uniqueConnectorLinks(html: string): Set<string> {
+  const matches = html.match(/href="\/connectors\/[^"#]*"/g) || [];
+  return new Set(matches);
+}
+
+describe("docs pages cross-link service connectors (#117)", () => {
+  it("/docs/connections links to all 32 connectors", () => {
+    // The page groups connectors by category and renders every one. If a
+    // new connector is added to src/data/connectors.ts, this count changes
+    // and the test flags that the expected count needs updating.
+    const html = readHtml("docs/connections/index.html");
+    const links = uniqueConnectorLinks(html);
+    expect(links.size, `/docs/connections should link all 32 connectors`).toBe(32);
+  });
+
+  it("/docs/pipelines links to the 5 Pipeline Templates connectors", () => {
+    // Must match the TEMPLATE_CONNECTOR_SLUGS set in the pipelines page,
+    // which mirrors the Pipeline Templates MVP shipped in core PR #81.
+    const html = readHtml("docs/pipelines/index.html");
+    const links = uniqueConnectorLinks(html);
+    for (const slug of ["stripe", "postgresql", "bigquery", "csv", "duckdb"]) {
+      expect(
+        links.has(`href="/connectors/${slug}"`),
+        `/docs/pipelines missing template connector /connectors/${slug}`
+      ).toBe(true);
+    }
+    expect(links.size).toBe(5);
+  });
+
+  it("/docs/transformations links to 6 materialized-destination connectors", () => {
+    // Filter: direction !== "source" AND (category === "Cloud Warehouse" OR
+    // slug === "clickhouse"). Currently BigQuery, Snowflake, Redshift,
+    // Databricks, Synapse, ClickHouse.
+    const html = readHtml("docs/transformations/index.html");
+    const links = uniqueConnectorLinks(html);
+    for (const slug of [
+      "bigquery",
+      "snowflake",
+      "redshift",
+      "databricks",
+      "synapse",
+      "clickhouse",
+    ]) {
+      expect(
+        links.has(`href="/connectors/${slug}"`),
+        `/docs/transformations missing warehouse /connectors/${slug}`
+      ).toBe(true);
+    }
+    expect(links.size).toBe(6);
+  });
+
+  it("/docs/getting-started links to the 5 Tier 1 connectors", () => {
+    const html = readHtml("docs/getting-started/index.html");
+    const links = uniqueConnectorLinks(html);
+    for (const slug of ["stripe", "postgresql", "bigquery", "snowflake", "salesforce"]) {
+      expect(
+        links.has(`href="/connectors/${slug}"`),
+        `/docs/getting-started missing Tier 1 /connectors/${slug}`
+      ).toBe(true);
+    }
+    expect(links.size).toBe(5);
+  });
+
+  it("/docs/architecture links to all 11 destination connectors", () => {
+    // Filter: direction !== "source". Currently 6 databases + 5 cloud
+    // warehouses = 11. If connectors.ts grows a new destination type (e.g.,
+    // Motherduck), this count changes and the test will flag it.
+    const html = readHtml("docs/architecture/index.html");
+    const links = uniqueConnectorLinks(html);
+    expect(
+      links.size,
+      `/docs/architecture should link all destination connectors`
+    ).toBe(11);
+    // Sanity: must include the cloud warehouses by name.
+    for (const slug of ["bigquery", "snowflake", "redshift", "databricks", "synapse"]) {
+      expect(
+        links.has(`href="/connectors/${slug}"`),
+        `/docs/architecture missing /connectors/${slug}`
+      ).toBe(true);
+    }
+  });
+});
+
 // --- Blog posts must have ≥3 internal links ---
 
 describe("blog posts have ≥3 internal links", () => {

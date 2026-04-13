@@ -1,5 +1,18 @@
 ---
 import DocsLayout from "../../layouts/DocsLayout.astro";
+import RelatedConnectors from "../../components/RelatedConnectors.astro";
+import { connectors } from "../../data/connectors";
+
+// Warehouses where dbt can materialize models. Filter is derived from the
+// data file: every non-source-only connector in the Cloud Warehouse category,
+// plus ClickHouse (which ships under "Database" because it's an OLAP DB but
+// supports materialized destinations for analytics workloads the same way).
+// Synapse is included because dbt-synapse supports materializations.
+const transformationDestinations = connectors.filter(
+  (c) =>
+    c.direction !== "source" &&
+    (c.category === "Cloud Warehouse" || c.slug === "clickhouse")
+);
 ---
 
 <DocsLayout title="Transformations">
@@ -84,4 +97,10 @@ Tests:
 
   <h2>dbt Packages</h2>
   <p>Install community dbt packages (e.g., <code>dbt_utils</code>, <code>dbt_date</code>) to extend your transformations with reusable macros and tests. Manage packages through the UI — Datanika handles <code>packages.yml</code> and <code>dbt deps</code> automatically.</p>
+
+  <RelatedConnectors
+    heading="Warehouses for dbt transformations"
+    description="Datanika runs dbt against any of these destinations. Each supports materialized models (table, view, incremental) and the full dbt macro set."
+    connectors={transformationDestinations}
+  />
 </DocsLayout>
