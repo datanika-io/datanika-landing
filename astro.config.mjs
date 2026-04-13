@@ -34,6 +34,11 @@ export default defineConfig({
         } else if (path === "/ai-agents/" || path === "/ai-agents") {
           item.changefreq = "monthly";
           item.priority = 0.8;
+        } else if (path === "/templates" || path === "/templates/" || path.startsWith("/templates/")) {
+          // Templates target late-funnel commercial queries — higher priority
+          // than connector/use-case pages (0.7) but below pricing (0.9).
+          item.changefreq = "monthly";
+          item.priority = 0.8;
         } else if (path.startsWith("/connectors/") || path.startsWith("/use-cases/") || path.startsWith("/compare/")) {
           item.changefreq = "monthly";
           item.priority = 0.7;
