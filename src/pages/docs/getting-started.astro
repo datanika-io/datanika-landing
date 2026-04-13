@@ -1,6 +1,21 @@
 ---
 import DocsLayout from "../../layouts/DocsLayout.astro";
 import ConversionCTA from "../../components/ConversionCTA.astro";
+import RelatedConnectors from "../../components/RelatedConnectors.astro";
+import { connectors } from "../../data/connectors";
+
+// Top Tier 1 connectors by buyer intent — the five someone most likely
+// wants to wire up in their first pipeline. Curated as a slug set so
+// re-ordering Tier 1 is a one-line change and the test suite catches
+// rename/removal drift in connectors.ts.
+const TIER_1_SLUGS = new Set([
+  "stripe",       // highest buyer intent, revenue analytics
+  "postgresql",   // most common source
+  "bigquery",     // most common destination
+  "snowflake",    // enterprise destination
+  "salesforce",   // enterprise CRM source
+]);
+const tier1Connectors = connectors.filter((c) => TIER_1_SLUGS.has(c.slug));
 ---
 
 <DocsLayout title="Getting Started" description="Step-by-step guide to setting up your first data pipeline with Datanika.">
@@ -88,4 +103,10 @@ import ConversionCTA from "../../components/ConversionCTA.astro";
       <p class="text-sm text-slate-400 !mb-0">Deploy the open-source core on your own infrastructure.</p>
     </a>
   </div>
+
+  <RelatedConnectors
+    heading="Popular connectors to try first"
+    description="Start here if you're setting up your first pipeline. These are the five connectors most Datanika users wire up within their first week — pick one, follow the setup guide, and you'll have data flowing in minutes."
+    connectors={tier1Connectors}
+  />
 </DocsLayout>

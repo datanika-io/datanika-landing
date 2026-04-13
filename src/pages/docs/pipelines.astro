@@ -1,5 +1,23 @@
 ---
 import DocsLayout from "../../layouts/DocsLayout.astro";
+import RelatedConnectors from "../../components/RelatedConnectors.astro";
+import { connectors } from "../../data/connectors";
+
+// Connectors used in the Pipeline Templates MVP (core PR #81). Listed here
+// as a slug set so the set is the *only* thing curated; names and
+// descriptions come from the data file, and a rename or removal in
+// connectors.ts will produce an empty or truncated list that the test suite
+// catches instead of silently rendering stale metadata.
+const TEMPLATE_CONNECTOR_SLUGS = new Set([
+  "stripe",        // source: Stripe → Postgres template
+  "postgresql",    // source/dest: Stripe → Postgres, Postgres → BigQuery
+  "bigquery",      // dest: Postgres → BigQuery
+  "csv",           // source: CSV → DuckDB
+  "duckdb",        // dest: CSV → DuckDB
+]);
+const templateConnectors = connectors.filter((c) =>
+  TEMPLATE_CONNECTOR_SLUGS.has(c.slug)
+);
 ---
 
 <DocsLayout title="Pipelines">
@@ -67,4 +85,10 @@ stg_*                # all staging models
 +dim_customers       # dim_customers and all upstream dependencies</code></pre>
     </li>
   </ul>
+
+  <RelatedConnectors
+    heading="Connectors in Pipeline Templates"
+    description="These connectors power the pre-configured templates in Pipeline Templates — pick a template, plug in credentials, and a working pipeline runs in minutes. See /pipelines/templates inside the app."
+    connectors={templateConnectors}
+  />
 </DocsLayout>

@@ -1,0 +1,53 @@
+---
+// Renders a "Related Connectors" section inside a docs page. Integrates with
+// DocsLayout's prose-docs styling — no custom classes, just <h2> / <p> / <ul>
+// / <a> so the existing `[&_h2]`, `[&_ul]`, `[&_a]` Tailwind prose rules in
+// DocsLayout handle the formatting.
+//
+// Pages pass an already-filtered `connectors` list plus the heading and an
+// optional one-line description. Filter logic stays in the caller so each doc
+// page can tune the context without coupling to this component — see issue #117
+// and PR #87's auto-detection pattern.
+
+import type { Connector } from "../data/connectors";
+
+interface Props {
+  heading: string;
+  description?: string;
+  connectors: Connector[];
+  // Optional anchor id for deep-linking from other docs pages.
+  id?: string;
+  // When true, append a "Browse all 32 connectors →" footer link.
+  showAllLink?: boolean;
+}
+
+const {
+  heading,
+  description,
+  connectors: items,
+  id = "related-connectors",
+  showAllLink = false,
+} = Astro.props;
+
+// Short description = first sentence of the connector's long description.
+// Keeps each list row scannable without leaving the data file duplicated.
+function shortDescription(full: string): string {
+  const firstSentence = full.split(/\.\s/)[0];
+  return firstSentence.endsWith(".") ? firstSentence : firstSentence + ".";
+}
+---
+
+<h2 id={id}>{heading}</h2>
+{description && <p>{description}</p>}
+<ul>
+  {items.map((c) => (
+    <li>
+      <a href={`/connectors/${c.slug}`}>{c.name}</a> — {shortDescription(c.description)}
+    </li>
+  ))}
+</ul>
+{showAllLink && (
+  <p>
+    <a href="/connectors">Browse all 32 connectors →</a>
+  </p>
+)}
