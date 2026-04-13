@@ -132,6 +132,8 @@ bq = httpx.post(f"{BASE}/connections", headers=HEADERS, json={
 
 Or just tell your agent: *"Read https://app.datanika.io/llms.txt and build me a Stripe-to-BigQuery pipeline."*
 
+For a head start, point the agent at our public [pipeline templates](/templates) — the [Stripe → Postgres](/templates/stripe-to-postgres) and [Postgres → BigQuery](/templates/postgres-to-bigquery) pages ship pre-validated schemas, prerequisites, and example transformations that collapse the Tier 1 discovery loop into a single read.
+
 ## What's Next
 
 We're working on agent-specific observability (tracking which pipelines were built by agents vs. humans) and a Claude Code MCP integration for building pipelines directly from your terminal.
