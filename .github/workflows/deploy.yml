@@ -31,15 +31,23 @@ jobs:
 
       - name: Deploy to Aweb
         uses: appleboy/ssh-action@v1
+        env:
+          # Forwarded into the remote build — Astro reads import.meta.env.PUBLIC_*
+          # at build time, so this MUST be set before `npm run build` on Aweb.
+          # Empty/unset = ConversionCTA falls back to plain <a> and Google Ads
+          # attribution silently breaks. Non-optional for the production build.
+          PUBLIC_GOOGLE_ADS_CONVERSION_LABEL: ${{ secrets.PUBLIC_GOOGLE_ADS_CONVERSION_LABEL }}
         with:
           host: ${{ secrets.AWEB_HOST }}
           username: root
           key: ${{ secrets.AWEB_SSH_KEY }}
+          envs: PUBLIC_GOOGLE_ADS_CONVERSION_LABEL
           script: |
             set -e
             cd /opt/datanika/datanika-landing
             git pull origin main
             npm ci
+            export PUBLIC_GOOGLE_ADS_CONVERSION_LABEL
             npm run build
             cp -r dist/* /var/www/datanika.io/
             echo "Landing deploy complete"
