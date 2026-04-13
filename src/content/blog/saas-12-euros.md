@@ -99,6 +99,8 @@ docker compose up -d
 
 That's it. App on port 3000, no Kubernetes, no cloud provider lock-in. The [self-hosting guide](/docs/self-hosting) covers configuration, backups, and upgrades.
 
+Once the containers are up, the fastest way to verify everything works is the [CSV to DuckDB template](/templates/csv-to-duckdb) — zero credentials, zero cloud accounts, first rows loaded in two minutes. No egress fees to trip over, no service-account JSON to provision.
+
 The [open-core architecture](/blog/open-core-plugin) means self-hosted gets all features — the billing plugin simply doesn't load. No crippled "community edition".
 
 ## If You're Launching
