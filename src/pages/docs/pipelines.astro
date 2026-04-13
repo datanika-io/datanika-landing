@@ -2,6 +2,7 @@
 import DocsLayout from "../../layouts/DocsLayout.astro";
 import RelatedConnectors from "../../components/RelatedConnectors.astro";
 import { connectors } from "../../data/connectors";
+import { templates } from "../../data/templates";
 
 // Connectors used in the Pipeline Templates MVP (core PR #81). Listed here
 // as a slug set so the set is the *only* thing curated; names and
@@ -91,4 +92,15 @@ stg_*                # all staging models
     description="These connectors power the pre-configured templates in Pipeline Templates — pick a template, plug in credentials, and a working pipeline runs in minutes. See /pipelines/templates inside the app."
     connectors={templateConnectors}
   />
+
+  <h2>Related Templates</h2>
+  <p>Every template below has a public landing page with prerequisites, the exact resources it loads, and a deep-link into the in-app prefilled flow:</p>
+  <ul>
+    {templates.map((tpl) => (
+      <li>
+        <a href={`/templates/${tpl.slug}`}><strong>{tpl.h1}</strong></a>
+        {" — "}{tpl.tagline} <span class="text-slate-500">({tpl.timeToFirstRun} to first run)</span>
+      </li>
+    ))}
+  </ul>
 </DocsLayout>

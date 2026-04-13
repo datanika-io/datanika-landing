@@ -99,3 +99,4 @@ Full documentation: [datanika.io/api/reference](/api/reference)
 - [API Keys](/api/keys) — create and manage API keys
 - [Self-Hosting Guide](/docs/self-hosting) — the API works on self-hosted deployments too
 - [32 Connectors](/connectors) — everything you can manage via the API
+- [Pipeline Templates](/templates) — prefilled starting points your API-driven workflows can clone: [Stripe → Postgres](/templates/stripe-to-postgres), [Postgres → BigQuery](/templates/postgres-to-bigquery), [CSV → DuckDB](/templates/csv-to-duckdb)

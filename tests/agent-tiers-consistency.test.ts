@@ -13,7 +13,14 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
 import { resolve } from "path";
-import { tierCount, capabilityCount, tiers, goldenPath } from "../src/data/agent-tiers";
+import {
+  tierCount,
+  capabilityCount,
+  tiers,
+  goldenPath,
+  validatePayload,
+} from "../src/data/agent-tiers";
+import fallback from "../src/data/agent-tiers.fallback.json";
 
 const BLOG_POST = resolve(__dirname, "../src/content/blog/ai-agent-native.md");
 
@@ -46,6 +53,79 @@ describe("agent-tiers SoT — data shape invariants", () => {
   it("golden path has at least 10 steps", () => {
     // Sanity: the golden path should be the long-form expansion, not a stub.
     expect(goldenPath.length).toBeGreaterThanOrEqual(10);
+  });
+});
+
+describe("agent-tiers SoT — strict validator (landing #123)", () => {
+  // The checked-in fallback snapshot is our known-good fixture. Every
+  // mutation below is a shallow clone with one field broken.
+  function clone<T>(o: T): T {
+    return JSON.parse(JSON.stringify(o));
+  }
+
+  it("accepts the checked-in fallback snapshot", () => {
+    expect(() => validatePayload(fallback)).not.toThrow();
+  });
+
+  it("rejects non-object payloads", () => {
+    expect(() => validatePayload(null)).toThrow();
+    expect(() => validatePayload("string")).toThrow();
+    expect(() => validatePayload(42)).toThrow();
+    expect(() => validatePayload([])).toThrow(/tier_count/);
+  });
+
+  it("rejects missing top-level fields", () => {
+    for (const field of [
+      "tier_count",
+      "capability_count",
+      "tiers",
+      "golden_path",
+      "error_codes",
+      "ui_only_operations",
+    ]) {
+      const broken = clone(fallback) as Record<string, unknown>;
+      delete broken[field];
+      expect(
+        () => validatePayload(broken),
+        `deleting '${field}' should throw`,
+      ).toThrow();
+    }
+  });
+
+  it("rejects missing tiers[].capabilities", () => {
+    const broken = clone(fallback);
+    delete (broken.tiers[0] as Record<string, unknown>).capabilities;
+    expect(() => validatePayload(broken)).toThrow(/capabilities/);
+  });
+
+  it("rejects missing tiers[].capabilities[].endpoints", () => {
+    const broken = clone(fallback);
+    delete (broken.tiers[0].capabilities[0] as Record<string, unknown>).endpoints;
+    expect(() => validatePayload(broken)).toThrow(/endpoints/);
+  });
+
+  it("rejects empty tiers[].capabilities[].endpoints", () => {
+    const broken = clone(fallback);
+    broken.tiers[0].capabilities[0].endpoints = [];
+    expect(() => validatePayload(broken)).toThrow(/endpoints empty/);
+  });
+
+  it("rejects wrong type in tiers[].capabilities[].endpoints[]", () => {
+    const broken = clone(fallback);
+    broken.tiers[0].capabilities[0].endpoints = [123];
+    expect(() => validatePayload(broken)).toThrow(/not a string/);
+  });
+
+  it("rejects malformed error_codes entries", () => {
+    const broken = clone(fallback);
+    broken.error_codes[0] = { code: "x" }; // missing meaning + action
+    expect(() => validatePayload(broken)).toThrow(/error_codes/);
+  });
+
+  it("rejects capability with missing name", () => {
+    const broken = clone(fallback);
+    delete (broken.tiers[0].capabilities[0] as Record<string, unknown>).name;
+    expect(() => validatePayload(broken)).toThrow(/name missing/);
   });
 });
 

@@ -143,6 +143,20 @@ describe("docs pages cross-link service connectors (#117)", () => {
     expect(links.size).toBe(5);
   });
 
+  it("/docs/pipelines has a Related Templates section linking all 3 template slugs (issue #126)", () => {
+    // Session 3 cross-link: every public template landing page should be
+    // reachable from the primary docs pipelines page so engineering-oriented
+    // visitors discover the template surface.
+    const html = readHtml("docs/pipelines/index.html");
+    expect(html).toContain("Related Templates");
+    for (const slug of ["stripe-to-postgres", "postgres-to-bigquery", "csv-to-duckdb"]) {
+      expect(
+        html,
+        `/docs/pipelines missing link to /templates/${slug}`,
+      ).toContain(`href="/templates/${slug}"`);
+    }
+  });
+
   it("/docs/transformations links to 6 materialized-destination connectors", () => {
     // Filter: direction !== "source" AND (category === "Cloud Warehouse" OR
     // slug === "clickhouse"). Currently BigQuery, Snowflake, Redshift,
