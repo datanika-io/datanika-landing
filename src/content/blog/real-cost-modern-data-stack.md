@@ -9,7 +9,7 @@ tags: ["modern-data-stack", "pricing", "cost", "open-source", "ai-agents", "boot
 
 Everyone has an opinion about the "modern data stack." Very few people publish the bill.
 
-The standard pitch — Fivetran for extract, Snowflake for warehouse, dbt Cloud for transform, Looker for BI, Monte Carlo for observability — is sold as the default for any company with more than three engineers. In 2020 that bundle cost a small team maybe $1,500/mo. By 2024 it was closer to $3,000. In 2026, with Fivetran counting deletes as MAR and enforcing a $5 per-connection minimum, it's worse.
+The standard pitch — [Fivetran](/compare/fivetran/) for extract, Snowflake for warehouse, dbt Cloud for transform, Looker for BI, Monte Carlo for observability — is sold as the default for any company with more than three engineers. In 2020 that bundle cost a small team maybe $1,500/mo. By 2024 it was closer to $3,000. In 2026, with Fivetran counting deletes as MAR and enforcing a $5 per-connection minimum, it's worse.
 
 Meanwhile, something genuinely new happened in the last eighteen months: **open-source ELT caught up to the commercial tools, and AI coding agents got good enough to own the "glue work" that used to justify half the price tag.** The honest cost of running a growing team's data stack in 2026 isn't $3,000/mo. If you're willing to self-host and let an agent do the connector wiring, it's closer to $15.
 
@@ -51,7 +51,7 @@ Two things, mostly.
 
 The blocker used to be **orchestration and the UI**. You'd end up with a half-finished Airflow deployment, a YAML graveyard, and a Grafana dashboard nobody checks. That's the piece that actually burned out small data teams.
 
-**Second**: coding agents. In 2024, writing a new source extractor with dlt meant reading the docs, writing a test, debugging pagination, and babysitting the first few runs. In 2026, you ask Claude or GPT to scaffold it, give it the API spec, and the first draft compiles. The "agent-shaped work" — wiring up credentials, mapping columns, writing the five lines of Jinja dbt needs — is the cheapest it has ever been.
+**Second**: coding agents. In 2024, writing a new source extractor with dlt meant reading the docs, writing a test, debugging pagination, and babysitting the first few runs. In 2026, you ask Claude or GPT to scaffold it, give it the API spec, and the first draft compiles. The "agent-shaped work" — wiring up credentials, mapping columns, writing the five lines of Jinja dbt needs — is the cheapest it has ever been. (We wrote about this shift in more depth in [our AI-agent-native positioning post](/blog/ai-agent-native/); the short version is that the API surface you expose to agents now matters more than the connector count.)
 
 The implication is uncomfortable for the managed-ELT vendors: **the thing you were paying Fivetran to avoid doing is now the thing an agent does in eight minutes for the cost of a few tokens.**
 
@@ -90,7 +90,7 @@ Here's the same 10-source, 10M-row profile priced across everything a 2026 data 
 | **Datanika Pro ($79) + BigQuery + Metabase OSS** | **$79** | **$20** | **$0** | **~$99** |
 | **Self-hosted Datanika + DuckDB + Metabase OSS + agent** | **€12** | **$0** | **$0** | **~$15** |
 
-Datanika's $79 Pro tier includes EL, T, scheduling, notifications, and multi-tenant dbt projects in a single app — which is why it lands where it does. The self-hosted tier is a straight VPS bill.
+[Datanika's $79 Pro tier](/pricing/) includes EL, T, scheduling, notifications, and multi-tenant dbt projects in a single app — which is why it lands where it does. The self-hosted tier is a straight VPS bill.
 
 Before anyone writes me an angry email: yes, these are rounded. Yes, "it depends." Yes, the Snowflake bill for any team that actually writes meaningful SQL is going to be more than $120. But the order-of-magnitude gap between the top row and the bottom row is the real story and it's not a rounding error.
 
@@ -120,7 +120,7 @@ If the answers are "yes long-tail, yes Python, no warehouse isn't the biggest" �
 
 You can do everything in this post without us. `dlt` is on PyPI, `dbt-core` is on PyPI, DuckDB is on PyPI, Metabase ships a Docker image. Nothing about "open-source ELT + an agent" requires buying anything from anyone.
 
-What Datanika is, honestly, is **the UI and orchestration layer that keeps the six-container Docker Compose from turning into Airflow**. We wrap `dlt` for extract, `dbt-core` for transform, APScheduler + Celery for scheduling, and add a multi-tenant Reflex UI so you can point-and-click the boring parts and let an agent drive the rest via our [Agent API](https://datanika.io/ai-agents/). The core is open source under AGPL-3.0; the billing layer is a paid plugin. If self-hosting scares you, Pro is $79/mo. If it doesn't, the core runs on the same €12 VPS as everything else in this post.
+What Datanika is, honestly, is **the UI and orchestration layer that keeps the six-container Docker Compose from turning into Airflow**. We wrap `dlt` for extract, `dbt-core` for transform, APScheduler + Celery for scheduling, and add a multi-tenant Reflex UI so you can point-and-click the boring parts and let an agent drive the rest via our [Agent API](/ai-agents/). The core is open source under AGPL-3.0; the billing layer is a paid plugin. If self-hosting scares you, Pro is $79/mo. If it doesn't, the core runs on the same €12 VPS as everything else in this post.
 
 We are not the cheapest thing on the table — `dlt` + `dbt-core` hand-rolled is. We are the cheapest thing with a UI and scheduling and notifications that an agent can talk to.
 
@@ -128,10 +128,10 @@ We are not the cheapest thing on the table — `dlt` + `dbt-core` hand-rolled is
 
 The modern data stack in 2024 was an unbundling story: one tool per layer, each one priced for the Fortune 500, all of them assuming you had a dedicated data team. The 2026 version is a rebundling story. `dlt` + `dbt-core` + one VPS + one agent collapses five vendor invoices into a Hetzner bill with a euro sign on it.
 
-None of this is theoretical. [This blog is published](https://datanika.io/blog/saas-12-euros/) from a €12/mo stack. Our [Agent API](https://datanika.io/ai-agents/) exists because we use agents to build pipelines on Datanika, not just because other people might. The stack in the table above is the stack we run.
+None of this is theoretical. [This blog is published](/blog/saas-12-euros/) from a €12/mo stack. Our [Agent API](/ai-agents/) exists because we use agents to build pipelines on Datanika, not just because other people might. The stack in the table above is the stack we run.
 
 If the number on your current data-tools invoice has three commas in it and you haven't looked at this math in twelve months, look again. A lot changed while you weren't looking.
 
 ---
 
-*Datanika is an open-source data pipeline platform — `dlt` for extract, `dbt-core` for transform, APScheduler for orchestration, Reflex for the UI. [Start free](https://app.datanika.io/), [self-host it](https://datanika.io/docs/self-hosting/), or [read the Agent API docs](https://datanika.io/docs/ai-agents/) if you want an agent to drive the whole thing.*
+*Datanika is an open-source data pipeline platform — `dlt` for extract, `dbt-core` for transform, APScheduler for orchestration, Reflex for the UI. [Start free](https://app.datanika.io/), [self-host it](/docs/self-hosting/), or [read the Agent API docs](/docs/ai-agents/) if you want an agent to drive the whole thing.*
