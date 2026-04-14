@@ -1,0 +1,359 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Navbar from "../components/Navbar.astro";
+import Footer from "../components/Footer.astro";
+import ConversionCTA from "../components/ConversionCTA.astro";
+
+// Illustrative Fivetran Starter-tier estimates derived from fivetran.com/pricing
+// (public calculator). Disclosure block at the bottom of the page tells visitors
+// to hit Fivetran's own calculator for their specific destination + sync frequency.
+// Numbers are conservative — point of the calculator is the shape of the curve,
+// not a precise line-item of Fivetran's bill.
+const presets = [
+  { mar: 100_000, label: "100k", fivetran: 120 },
+  { mar: 500_000, label: "500k", fivetran: 250 },
+  { mar: 1_000_000, label: "1M", fivetran: 400 },
+  { mar: 5_000_000, label: "5M", fivetran: 1200 },
+  { mar: 10_000_000, label: "10M", fivetran: 2200 },
+  { mar: 25_000_000, label: "25M", fivetran: 4500 },
+];
+
+const datanikaProMonthly = 79;
+
+// Why MAR pricing hurts — the four canonical complaints we hear from the
+// /compare/fivetran funnel and in r/dataengineering threads.
+const marPains = [
+  {
+    title: "Growth penalty",
+    body: "Your bill scales with success. The product that used to cost $250/mo costs $2,500/mo after you onboard a big customer — without you turning a single dial.",
+  },
+  {
+    title: "Un-budgetable",
+    body: "You can't tell finance what next quarter's pipeline bill will be. MAR moves with traffic, deduplication rules, sync frequency, and destination choice.",
+  },
+  {
+    title: "Sync-frequency tax",
+    body: "Hourly syncs, change data capture, and historical backfills all inflate MAR. Going from daily → hourly can 5x the same dataset's bill.",
+  },
+  {
+    title: "No room to experiment",
+    body: "Every new source you add shows up on the next invoice. Teams self-censor — they stop adding pipelines because the meter is always running.",
+  },
+];
+
+const datanikaWins = [
+  {
+    title: "Flat monthly bill",
+    body: "Pro is $79/mo. It stays $79/mo whether you move 10,000 rows or 10 million. The only thing that changes the bill is seats or plan tier.",
+  },
+  {
+    title: "We charge for runs, not rows",
+    body: "Pro includes 15,000 model runs per month. A run can process 10 rows or 10 billion — same cost. Volume is free; orchestration is the thing you pay for.",
+  },
+  {
+    title: "Self-host if you want",
+    body: "The core platform is AGPL-3.0. One docker compose up on your own box and your bill is $0. Every connector and every feature works in self-hosted.",
+  },
+  {
+    title: "All 32 connectors on every tier",
+    body: "No per-connection minimums, no locked-behind-Enterprise destinations. The Free tier gets the same connector catalog as Enterprise.",
+  },
+];
+
+const pageTitle = "Why Datanika is cheaper than Fivetran — MAR Calculator";
+const pageDescription =
+  "Fivetran charges per Monthly Active Row (MAR). Datanika is flat $79/mo. See the savings at 100k, 500k, and 5M rows with our public calculator.";
+---
+
+<Layout
+  title={pageTitle}
+  description={pageDescription}
+  breadcrumbs={[
+    { name: "Home", url: "/" },
+    { name: "Why cheaper than Fivetran", url: "/why-cheaper" },
+  ]}
+>
+  <Navbar />
+
+  <!-- Hero -->
+  <section class="relative pt-32 pb-16 overflow-hidden">
+    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-violet-600/15 rounded-full blur-[120px] pointer-events-none"></div>
+    <div class="absolute bottom-0 right-0 w-[300px] h-[300px] bg-fuchsia-600/10 rounded-full blur-[100px] pointer-events-none"></div>
+    <div class="relative max-w-4xl mx-auto px-6 text-center">
+      <p class="text-sm uppercase tracking-widest text-violet-400 mb-4">Pricing Deep Dive</p>
+      <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight mb-6">
+        Why Datanika is <span class="gradient-text">cheaper than Fivetran</span>
+      </h1>
+      <p class="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-4">
+        Fivetran charges per Monthly Active Row. We don&rsquo;t. One&nbsp;flat&nbsp;$79/mo plan covers any realistic pipeline volume.
+      </p>
+      <p class="text-sm text-slate-500 max-w-xl mx-auto">
+        Punch your row count into the calculator below and see what MAR pricing costs at scale.
+      </p>
+    </div>
+  </section>
+
+  <!-- The Core Idea -->
+  <section class="py-12">
+    <div class="max-w-5xl mx-auto px-6">
+      <div class="grid md:grid-cols-2 gap-6">
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur p-8">
+          <h3 class="text-sm font-semibold uppercase tracking-widest text-slate-500 mb-3">Fivetran charges for</h3>
+          <p class="text-2xl font-bold text-white mb-2">Rows moved</p>
+          <p class="text-sm text-slate-400">
+            MAR = every unique row touched by a sync in a billing month. The more data you move, the higher the bill &mdash; and every new source compounds it.
+          </p>
+        </div>
+        <div class="rounded-2xl border border-violet-500/40 bg-slate-900/50 backdrop-blur p-8">
+          <h3 class="text-sm font-semibold uppercase tracking-widest text-violet-400 mb-3">Datanika charges for</h3>
+          <p class="text-2xl font-bold text-white mb-2">Model runs</p>
+          <p class="text-sm text-slate-400">
+            One run = one scheduled execution. Processing 10 rows or 10&nbsp;million rows counts the same. Pro includes 15,000 runs/mo &mdash; enough for hourly syncs across 20+ pipelines.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Calculator -->
+  <section id="calculator" class="py-16">
+    <div class="max-w-5xl mx-auto px-6">
+      <div class="text-center mb-10">
+        <h2 class="text-3xl font-bold text-white mb-3">MAR Pricing Calculator</h2>
+        <p class="text-slate-400 max-w-xl mx-auto text-sm">
+          Pick a row count or type one in. All Datanika figures use the <a href="/pricing" class="text-violet-400 hover:text-violet-300 underline">$79/mo Pro</a> plan. Fivetran figures are illustrative Starter-tier estimates &mdash; see the disclosure below.
+        </p>
+      </div>
+
+      <div class="rounded-2xl border border-slate-800 bg-slate-900/60 backdrop-blur p-6 md:p-10">
+        <!-- Preset buttons -->
+        <div class="flex flex-wrap justify-center gap-2 mb-8" id="mar-presets">
+          {presets.map((preset) => (
+            <button
+              type="button"
+              class="px-4 py-2 rounded-full border border-slate-700 text-sm text-slate-300 hover:border-violet-500/50 hover:text-white transition-colors"
+              data-mar={preset.mar}
+              data-fivetran={preset.fivetran}
+            >
+              {preset.label} rows
+            </button>
+          ))}
+        </div>
+
+        <!-- Custom input -->
+        <div class="max-w-sm mx-auto mb-10">
+          <label class="block text-xs uppercase tracking-widest text-slate-500 mb-2 text-center">
+            Or type a monthly row count
+          </label>
+          <div class="flex items-center gap-2">
+            <input
+              id="mar-input"
+              type="number"
+              min="0"
+              step="100000"
+              value="500000"
+              class="flex-1 rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white text-center font-mono focus:border-violet-500 focus:outline-none"
+            />
+            <span class="text-slate-500 text-sm">rows/mo</span>
+          </div>
+        </div>
+
+        <!-- Result cards -->
+        <div class="grid md:grid-cols-2 gap-6">
+          <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-6 text-center">
+            <p class="text-xs uppercase tracking-widest text-slate-500 mb-2">Fivetran</p>
+            <p class="text-5xl font-bold text-slate-300 mb-1">
+              <span class="text-2xl align-top">~$</span><span id="result-fivetran">250</span>
+            </p>
+            <p class="text-sm text-slate-500">per month</p>
+            <p class="mt-4 text-xs text-slate-600">
+              <span id="result-fivetran-annual">$3,000</span>/yr
+            </p>
+          </div>
+          <div class="rounded-xl border border-violet-500/50 bg-slate-950/60 p-6 text-center relative">
+            <div class="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-violet-500 to-cyan-400 px-3 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider">
+              Flat
+            </div>
+            <p class="text-xs uppercase tracking-widest text-violet-400 mb-2">Datanika Pro</p>
+            <p class="text-5xl font-bold text-white mb-1">
+              <span class="text-2xl align-top">$</span>79
+            </p>
+            <p class="text-sm text-slate-400">per month</p>
+            <p class="mt-4 text-xs text-slate-500">
+              $948/yr
+            </p>
+          </div>
+        </div>
+
+        <!-- Savings callout -->
+        <div class="mt-8 text-center">
+          <p class="text-sm text-slate-400">
+            You save <span id="result-savings-yearly" class="text-emerald-400 font-bold text-lg">$2,052</span>/year &mdash;
+            that&rsquo;s <span id="result-savings-ratio" class="text-violet-400 font-semibold">3.2&times;</span> cheaper
+          </p>
+        </div>
+
+        <!-- CTA -->
+        <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+          <ConversionCTA href="https://app.datanika.io" class="btn-primary">Start Free</ConversionCTA>
+          <a href="/pricing" class="btn-secondary">See full pricing</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Why MAR pricing hurts -->
+  <section class="py-16">
+    <div class="max-w-5xl mx-auto px-6">
+      <h2 class="text-3xl font-bold text-white text-center mb-12">Four reasons MAR pricing hurts</h2>
+      <div class="grid md:grid-cols-2 gap-6">
+        {marPains.map((pain) => (
+          <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur p-6">
+            <h3 class="text-lg font-semibold text-white mb-2">{pain.title}</h3>
+            <p class="text-sm text-slate-400">{pain.body}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Why Datanika is different -->
+  <section class="py-16">
+    <div class="max-w-5xl mx-auto px-6">
+      <h2 class="text-3xl font-bold text-white text-center mb-12">How Datanika&rsquo;s model is different</h2>
+      <div class="grid md:grid-cols-2 gap-6">
+        {datanikaWins.map((win) => (
+          <div class="rounded-2xl border border-violet-800/40 bg-slate-900/50 backdrop-blur p-6">
+            <h3 class="text-lg font-semibold text-white mb-2">{win.title}</h3>
+            <p class="text-sm text-slate-400">{win.body}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Disclosure -->
+  <section class="py-10">
+    <div class="max-w-3xl mx-auto px-6">
+      <div class="rounded-xl border border-slate-800/80 bg-slate-950/40 p-6 text-xs text-slate-500 leading-relaxed">
+        <p class="font-semibold text-slate-400 mb-2">About the Fivetran numbers</p>
+        <p>
+          Fivetran figures above are illustrative Starter-tier estimates. Actual Fivetran pricing depends on destination, sync frequency, change data capture, historical backfills, and deduplication rules, and changes over time. Run your specific pipeline through <a href="https://www.fivetran.com/pricing" class="text-slate-400 underline hover:text-slate-300" rel="nofollow">Fivetran&rsquo;s own pricing calculator</a> for a binding number. Datanika Pro&rsquo;s $79/mo figure is binding and covers any realistic MAR volume &mdash; we price on model runs, not rows moved.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="py-16">
+    <div class="max-w-3xl mx-auto px-6 text-center">
+      <h2 class="text-3xl font-bold text-white mb-4">Stop paying per row</h2>
+      <p class="text-slate-400 mb-8">
+        Free tier is $0 forever. Pro is $79/mo flat. Self-host for $0. Pick the one that fits.
+      </p>
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <ConversionCTA href="https://app.datanika.io" class="btn-primary">Try Datanika Free</ConversionCTA>
+        <a href="/compare/fivetran" class="btn-secondary">Full Fivetran comparison</a>
+      </div>
+    </div>
+  </section>
+
+  <Footer />
+</Layout>
+
+<script define:vars={{ datanikaProMonthly }}>
+  function initMarCalculator() {
+    const input = document.getElementById("mar-input");
+    const presetButtons = document.querySelectorAll("#mar-presets button");
+    const fivetranEl = document.getElementById("result-fivetran");
+    const fivetranAnnualEl = document.getElementById("result-fivetran-annual");
+    const savingsYearlyEl = document.getElementById("result-savings-yearly");
+    const savingsRatioEl = document.getElementById("result-savings-ratio");
+
+    if (!input || !fivetranEl) return;
+
+    // Preset curve points, kept in sync with src/pages/why-cheaper.astro `presets`.
+    // We interpolate Fivetran cost between anchor points in log-log space so the
+    // custom-input experience stays smooth rather than snapping between tiers.
+    const anchors = [
+      { mar: 100_000, cost: 120 },
+      { mar: 500_000, cost: 250 },
+      { mar: 1_000_000, cost: 400 },
+      { mar: 5_000_000, cost: 1200 },
+      { mar: 10_000_000, cost: 2200 },
+      { mar: 25_000_000, cost: 4500 },
+    ];
+
+    function fivetranCost(mar) {
+      if (mar <= 0) return 0;
+      if (mar <= anchors[0].mar) {
+        // Under the smallest tier — linear ramp from 0 to first anchor
+        return Math.round((mar / anchors[0].mar) * anchors[0].cost);
+      }
+      if (mar >= anchors[anchors.length - 1].mar) {
+        // Beyond the largest anchor — extrapolate from the last segment slope
+        const a = anchors[anchors.length - 2];
+        const b = anchors[anchors.length - 1];
+        const logSlope =
+          (Math.log(b.cost) - Math.log(a.cost)) /
+          (Math.log(b.mar) - Math.log(a.mar));
+        const logCost =
+          Math.log(b.cost) + logSlope * (Math.log(mar) - Math.log(b.mar));
+        return Math.round(Math.exp(logCost));
+      }
+      // Between two anchors — log-log interpolation
+      for (let i = 0; i < anchors.length - 1; i++) {
+        const a = anchors[i];
+        const b = anchors[i + 1];
+        if (mar >= a.mar && mar <= b.mar) {
+          const logSlope =
+            (Math.log(b.cost) - Math.log(a.cost)) /
+            (Math.log(b.mar) - Math.log(a.mar));
+          const logCost =
+            Math.log(a.cost) + logSlope * (Math.log(mar) - Math.log(a.mar));
+          return Math.round(Math.exp(logCost));
+        }
+      }
+      return 0;
+    }
+
+    function formatCurrency(n) {
+      return n.toLocaleString("en-US");
+    }
+
+    function update() {
+      const mar = Math.max(0, parseInt(input.value, 10) || 0);
+      const fivetranMonthly = fivetranCost(mar);
+      const fivetranAnnual = fivetranMonthly * 12;
+      const datanikaAnnual = datanikaProMonthly * 12;
+      const savingsYearly = Math.max(0, fivetranAnnual - datanikaAnnual);
+      const ratio = datanikaProMonthly > 0 ? fivetranMonthly / datanikaProMonthly : 0;
+
+      fivetranEl.textContent = formatCurrency(fivetranMonthly);
+      fivetranAnnualEl.textContent = "$" + formatCurrency(fivetranAnnual);
+      savingsYearlyEl.textContent = "$" + formatCurrency(savingsYearly);
+
+      if (fivetranMonthly <= datanikaProMonthly) {
+        savingsRatioEl.textContent = "on par";
+      } else {
+        savingsRatioEl.textContent = ratio.toFixed(1) + "\u00d7";
+      }
+    }
+
+    presetButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const mar = btn.getAttribute("data-mar");
+        if (mar) {
+          input.value = mar;
+          update();
+        }
+      });
+    });
+
+    input.addEventListener("input", update);
+    update();
+  }
+
+  initMarCalculator();
+  document.addEventListener("astro:page-load", initMarCalculator);
+</script>
