@@ -25,9 +25,12 @@ function readFrontmatter(filename: string): Record<string, string> {
 }
 
 const scheduledPosts = [
-  { file: "security-tests-before-launch.md", date: "2026-04-15", category: "engineering", titleContains: "Security Tests" },
   { file: "billing-provider-migration.md", date: "2026-04-18", category: "engineering", titleContains: "Payment Provider" },
   { file: "temp-file-cleanup.md", date: "2026-04-21", category: "engineering", titleContains: "Filled My Disk" },
+];
+
+const publishedScheduledPosts = [
+  { file: "security-tests-before-launch.md", date: "2026-04-15", category: "engineering", titleContains: "Security Tests" },
 ];
 
 describe("scheduled draft posts", () => {
@@ -54,12 +57,31 @@ describe("scheduled draft posts", () => {
   }
 });
 
+describe("published scheduled posts have draft: false", () => {
+  for (const post of publishedScheduledPosts) {
+    describe(post.file, () => {
+      const fm = readFrontmatter(post.file);
+
+      it("has draft: false", () => {
+        expect(fm.draft).toBe("false");
+      });
+
+      it(`has date ${post.date}`, () => {
+        expect(fm.date).toBe(post.date);
+      });
+
+      it("has title", () => {
+        expect(fm.title).toContain(post.titleContains);
+      });
+    });
+  }
+});
+
 describe("draft posts are NOT in the built blog index", () => {
   it("blog index does not contain draft post titles", () => {
     const indexFile = resolve(__dirname, "../dist/blog/index.html");
     if (!existsSync(indexFile)) return; // skip if dist not built
     const html = readFileSync(indexFile, "utf-8");
-    expect(html).not.toContain("109 Security Tests");
     expect(html).not.toContain("Payment Provider, Then Ripped");
     expect(html).not.toContain("Silently Filled My Disk");
   });

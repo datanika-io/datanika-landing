@@ -2,7 +2,7 @@
 title: "109 Security Tests, Zero Docker Required. Here's What I Tested Before Launch."
 description: "SQL injection, path traversal, auth exploits, input validation, tenant isolation — 109 tests across 10 files, all running on in-memory SQLite. No Docker, no external services."
 date: 2026-04-15
-draft: true
+draft: false
 author: "Datanika Team"
 category: "engineering"
 tags: ["security", "testing", "owasp", "engineering"]
