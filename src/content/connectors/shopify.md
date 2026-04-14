@@ -39,7 +39,7 @@ Shopify is the go-to e-commerce source for teams building revenue analytics, inv
 
 ## Step 2 — Add the connection in Datanika
 
-1. Open **Connections → New connection** and select **Shopify**.
+1. In Datanika, open **`/connections`** and pick **Shopify** from the type dropdown at the top of the inline New Connection form.
 2. Fill in:
    - **API Key** — the Admin API access token from Step 1. Stored encrypted.
    - **Store** — your Shopify store subdomain (e.g. `my-store` from `my-store.myshopify.com`). Just the subdomain, not the full URL.

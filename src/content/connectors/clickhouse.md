@@ -57,8 +57,8 @@ Create a **dedicated loader user** rather than reusing the `default` admin accou
 
 ## Step 2 — Add the connection in Datanika
 
-1. In Datanika, open **Connections → New connection**.
-2. Pick **ClickHouse** from the connector list.
+1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page — there's no separate "New Connection" button to click.
+2. From the **type dropdown** at the top of the form, pick **ClickHouse**.
 3. Fill in the form:
    - **Name** — e.g. `clickhouse-prod` or `clickhouse-analytics`.
    - **Host** — the hostname, e.g. `abc123.clickhouse.cloud` or `clickhouse.internal`.

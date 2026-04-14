@@ -40,7 +40,7 @@ HubSpot is the most common marketing + CRM source our users sync into their ware
 
 ## Step 2 — Add the connection in Datanika
 
-1. Open **Connections → New connection** and select **HubSpot**.
+1. In Datanika, open **`/connections`** and pick **HubSpot** from the type dropdown at the top of the inline New Connection form.
 2. Fill in:
    - **API Key** — the private app access token from Step 1. Stored encrypted.
 3. Click **Save**.

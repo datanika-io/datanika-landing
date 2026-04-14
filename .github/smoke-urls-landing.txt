@@ -1,0 +1,24 @@
+# Post-deploy smoke gate URL list for datanika.io (landing).
+# Format: path|content-type-substring|body-substring-or-empty
+# Source of truth: plans/growth/SMOKE_URLS.md (Growth-owned).
+# Sync from there on change; ping Infra in landing#147 on edits.
+#
+# DEVIATIONS from SMOKE_URLS.md (flagged to Growth for SoT update):
+#   1. All landing paths require trailing slash (Astro build.format: directory).
+#      Without the slash, landing serves 301 redirects, not 200.
+#   2. Sitemap is served at /sitemap-index.xml (astrojs/sitemap default), not
+#      /sitemap.xml. The latter 404s.
+#   3. /llms.txt is INTENTIONALLY MISSING until the courtesy mirror on
+#      datanika.io ships. Tracked in landing#147.
+/|text/html|
+/ai-agents/|text/html|/llms.txt
+/docs/ai-agents/|text/html|app.datanika.io/llms.txt
+/blog/ai-agent-native/|text/html|
+/templates/stripe-to-postgres/|text/html|
+/pricing/|text/html|$79
+/docs/getting-started/|text/html|
+/compare/airbyte/|text/html|
+/compare/fivetran/|text/html|
+/compare/stitch/|text/html|
+/compare/hevo/|text/html|
+/sitemap-index.xml|xml|

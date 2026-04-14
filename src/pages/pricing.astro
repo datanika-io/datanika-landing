@@ -19,6 +19,30 @@ const faqJsonLd = buildFaqPageJsonLd(pricingFaq);
 >
   <Navbar />
   <Pricing />
+
+  <!-- Comparison nudge — links to the MAR calculator / narrative page. -->
+  <section class="pb-12">
+    <div class="max-w-3xl mx-auto px-6">
+      <a
+        href="/why-cheaper"
+        class="group block rounded-2xl border border-slate-800 bg-slate-900/40 backdrop-blur p-6 hover:border-violet-500/40 transition-colors"
+      >
+        <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4 text-center sm:text-left">
+          <div class="flex-1">
+            <p class="text-sm uppercase tracking-widest text-violet-400 mb-1">Coming from Fivetran?</p>
+            <p class="text-lg text-white font-semibold">See what MAR pricing costs at scale</p>
+            <p class="text-sm text-slate-400 mt-1">
+              Public calculator: enter your row count and compare Datanika&rsquo;s $79/mo flat rate against Fivetran&rsquo;s per-row bill at 100k, 500k, and 5M rows.
+            </p>
+          </div>
+          <span class="text-violet-400 group-hover:translate-x-1 transition-transform text-sm font-semibold whitespace-nowrap">
+            Open calculator &rarr;
+          </span>
+        </div>
+      </a>
+    </div>
+  </section>
+
   <FAQ items={pricingFaq} />
   <Footer />
 </Layout>

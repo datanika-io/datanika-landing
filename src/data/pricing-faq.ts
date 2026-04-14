@@ -50,6 +50,11 @@ export const pricingFaq: FAQItem[] = [
       "No. Unlike Fivetran's per-connection minimums, Datanika charges by model runs only. All 32 connectors are available on every plan — including Free. Use as many as you need.",
   },
   {
+    question: "How does this compare to Fivetran's MAR pricing?",
+    answer:
+      "Fivetran bills per Monthly Active Row. We bill a flat $79/mo on Pro — no matter the row volume. See /why-cheaper for a public MAR calculator showing the savings at 100k, 500k, and 5M rows.",
+  },
+  {
     question: "Can I change plans anytime?",
     answer:
       "Yes. Upgrade or downgrade from the billing page. Prorated charges are handled automatically by Paddle. No contracts, no cancellation fees — cancel whenever you want.",

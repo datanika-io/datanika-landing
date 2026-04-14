@@ -226,6 +226,7 @@ const breadcrumbLD =
       <script type="application/ld+json" set:html={JSON.stringify(obj)} />
     ))}
     <script defer data-domain="datanika.io" src="https://plausible.datanika.io/js/script.tagged-events.js"></script>
+    <!-- Cloudflare Web Analytics (manual install — auto-install fails on this zone, see landing#141) --><script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "3a0130e3eec942769b3ecef15213b015"}'></script><!-- End Cloudflare Web Analytics -->
     <!-- Google Ads conversion tracking (AW-18081528527) -->
     <script is:inline async src="https://www.googletagmanager.com/gtag/js?id=AW-18081528527"></script>
     <script is:inline>

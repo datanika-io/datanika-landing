@@ -14,22 +14,29 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 2  # need previous commit to diff changed files for IndexNow
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: "22"
           cache: "npm"
 
       - name: Install dependencies
+        id: install
         run: npm ci
 
       - name: Build
+        id: build
         run: npm run build
 
+      - name: Run tests
+        id: test
+        run: npm test
+
       - name: Deploy to Aweb
+        id: deploy
         uses: appleboy/ssh-action@v1
         env:
           # Forwarded into the remote build — Astro reads import.meta.env.PUBLIC_*
@@ -120,3 +127,47 @@ jobs:
             -H "Content-Type: application/json; charset=utf-8" \
             -d "$PAYLOAD" \
             -w "\nHTTP %{http_code}\n" || echo "IndexNow ping failed (non-fatal)"
+
+      # Telegram alert on any build-and-deploy failure. Fires on install, build,
+      # vitest, or SSH deploy failure — anything that leaves main "merged but
+      # unshipped". See landing#140 for the decision record and Infra's
+      # constraints. IndexNow is continue-on-error so it never triggers this.
+      - name: Telegram alert on failure
+        if: failure()
+        env:
+          INSTALL_OUTCOME: ${{ steps.install.outcome }}
+          BUILD_OUTCOME: ${{ steps.build.outcome }}
+          TEST_OUTCOME: ${{ steps.test.outcome }}
+          DEPLOY_OUTCOME: ${{ steps.deploy.outcome }}
+          COMMIT_SHA: ${{ github.sha }}
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        run: |
+          if [ "$INSTALL_OUTCOME" = "failure" ]; then STEP="Install dependencies"
+          elif [ "$BUILD_OUTCOME" = "failure" ]; then STEP="Build"
+          elif [ "$TEST_OUTCOME" = "failure" ]; then STEP="Run tests"
+          elif [ "$DEPLOY_OUTCOME" = "failure" ]; then STEP="Deploy to Aweb"
+          else STEP="unknown (see run URL)"
+          fi
+          SHORT_SHA=${COMMIT_SHA:0:7}
+          FIRST_LINE=$(printf '%s\n' "$COMMIT_MSG" | head -1)
+          TEXT=$(printf '\xf0\x9f\x9a\xa8 *Landing deploy failed*\n\n*Step:* `%s`\n*Commit:* `%s`\n*Message:* %s\n*Run:* %s' \
+            "$STEP" "$SHORT_SHA" "$FIRST_LINE" "$RUN_URL")
+          curl -fsS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=1201995" \
+            --data-urlencode "text=${TEXT}" \
+            --data-urlencode "parse_mode=Markdown"
+
+  # Post-deploy smoke gate. Fails loud if any curated URL 404s, returns an
+  # empty body, or serves the wrong content-type/body substring. See
+  # plans/growth/SMOKE_URLS.md (Growth-owned SoT) for the curation rationale.
+  # Non-empty body check is the critical guard — core#124 returned a
+  # 404 Content-Length: 0 that a status-only check would have missed.
+  smoke:
+    runs-on: ubuntu-latest
+    needs: build-and-deploy
+    steps:
+      - uses: actions/checkout@v6
+      - name: Smoke gate — datanika.io
+        run: bash .github/smoke-check.sh https://datanika.io .github/smoke-urls-landing.txt

@@ -56,8 +56,8 @@ Create a **dedicated read-only role** rather than reusing an existing login. Thi
 
 ## Step 2 — Add the connection in Datanika
 
-1. In Datanika, open **Connections → New connection**.
-2. Pick **PostgreSQL** from the connector list.
+1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page — there's no separate "New Connection" button to click.
+2. From the **type dropdown** at the top of the form, pick **PostgreSQL**.
 3. Fill in the form:
    - **Name** — a label you'll recognize later, e.g. `postgres-prod-readonly`.
    - **Host** — the hostname or IP of your Postgres server.
