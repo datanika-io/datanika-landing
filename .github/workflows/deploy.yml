@@ -123,3 +123,16 @@ jobs:
             -H "Content-Type: application/json; charset=utf-8" \
             -d "$PAYLOAD" \
             -w "\nHTTP %{http_code}\n" || echo "IndexNow ping failed (non-fatal)"
+
+  # Post-deploy smoke gate. Fails loud if any curated URL 404s, returns an
+  # empty body, or serves the wrong content-type/body substring. See
+  # plans/growth/SMOKE_URLS.md (Growth-owned SoT) for the curation rationale.
+  # Non-empty body check is the critical guard — core#124 returned a
+  # 404 Content-Length: 0 that a status-only check would have missed.
+  smoke:
+    runs-on: ubuntu-latest
+    needs: build-and-deploy
+    steps:
+      - uses: actions/checkout@v4
+      - name: Smoke gate — datanika.io
+        run: bash .github/smoke-check.sh https://datanika.io .github/smoke-urls-landing.txt
