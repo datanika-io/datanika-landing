@@ -48,7 +48,7 @@ MongoDB is the most common NoSQL source our users sync into a relational warehou
 
 ## Step 2 — Add the connection in Datanika
 
-1. Open **Connections → New connection** and select **MongoDB**.
+1. In Datanika, open **`/connections`** and pick **MongoDB** from the type dropdown at the top of the inline New Connection form.
 2. Fill in: **Name**, **Host**, **Port** (default `27017`), **Database**, **User**, **Password**.
 3. Click **Save**.
 

@@ -44,8 +44,8 @@ Create a **dedicated restricted key** instead of reusing your secret key. Restri
 
 ## Step 2 — Add the connection in Datanika
 
-1. In Datanika, open **Connections → New connection**.
-2. Pick **Stripe** from the connector list.
+1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page — there's no separate "New Connection" button to click.
+2. From the **type dropdown** at the top of the form, pick **Stripe**.
 3. Fill in the form:
    - **Name** — a label you'll recognize later, e.g. `stripe-prod` or `stripe-test`.
    - **API key** — paste the restricted key from Step 1 (`rk_live_…` or `rk_test_…`). Stored encrypted at rest with Fernet.
