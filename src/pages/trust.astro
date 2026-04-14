@@ -1,0 +1,329 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Navbar from "../components/Navbar.astro";
+import Footer from "../components/Footer.astro";
+---
+
+<Layout
+  title="Trust & Security — Datanika"
+  description="Datanika's security architecture, compliance posture, data protection practices, and infrastructure overview. 109 security tests, SOC 2 Type I in progress."
+>
+  <Navbar />
+  <main class="mx-auto max-w-4xl px-6 py-20">
+    <h1 class="mb-2 text-4xl font-bold gradient-text">Trust & Security</h1>
+    <p class="mb-10 text-lg text-slate-400">
+      How we protect your data, your credentials, and your pipelines.
+    </p>
+
+    <div class="space-y-12 text-slate-300 leading-relaxed [&_h2]:text-2xl [&_h2]:font-semibold [&_h2]:text-white [&_h2]:mb-4 [&_h3]:text-lg [&_h3]:font-medium [&_h3]:text-white [&_h3]:mb-2 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:space-y-2">
+
+      <!-- Security Architecture -->
+      <section>
+        <h2>Security Architecture</h2>
+        <p class="mb-4">
+          Security is built into every layer of Datanika — from how we store credentials
+          to how we isolate tenants. Our codebase is open-source, so every security claim
+          below is verifiable in code.
+        </p>
+
+        <div class="grid gap-6 sm:grid-cols-2">
+          <div class="rounded-lg border border-slate-800 bg-slate-900/50 p-5">
+            <h3>Multi-tenant isolation</h3>
+            <p class="text-sm text-slate-400">
+              All tables use <code class="text-violet-400">org_id</code> column filtering
+              via <code class="text-violet-400">TenantMixin</code>. Every query is scoped
+              to the authenticated organization. <strong class="text-slate-300">25 cross-tenant
+              boundary tests</strong> cover every <code class="text-violet-400">/api/v1/*</code>
+              mutation route — each test proves that Org A cannot read, update, or delete
+              Org B's data.
+            </p>
+          </div>
+
+          <div class="rounded-lg border border-slate-800 bg-slate-900/50 p-5">
+            <h3>Credential encryption</h3>
+            <p class="text-sm text-slate-400">
+              Connection credentials (API keys, database passwords, service account JSON)
+              are encrypted at rest using <strong class="text-slate-300">Fernet</strong>
+              symmetric encryption. Credentials are decrypted only at pipeline runtime,
+              never logged, and never exposed in the UI after initial save.
+            </p>
+          </div>
+
+          <div class="rounded-lg border border-slate-800 bg-slate-900/50 p-5">
+            <h3>Authentication</h3>
+            <p class="text-sm text-slate-400">
+              Passwords are hashed with <strong class="text-slate-300">bcrypt</strong>.
+              Sessions use <strong class="text-slate-300">JWT</strong> tokens. API access
+              uses scoped API keys. SSO is available via <strong class="text-slate-300">SAML 2.0</strong>
+              and <strong class="text-slate-300">OIDC</strong> on the Enterprise plan.
+              OAuth login with Google and GitHub is available on all plans.
+            </p>
+          </div>
+
+          <div class="rounded-lg border border-slate-800 bg-slate-900/50 p-5">
+            <h3>Authorization</h3>
+            <p class="text-sm text-slate-400">
+              Role-based access control with four roles: <strong class="text-slate-300">Owner</strong>,
+              <strong class="text-slate-300">Admin</strong>,
+              <strong class="text-slate-300">Editor</strong>, and
+              <strong class="text-slate-300">Viewer</strong>. Permissions are enforced at
+              both the UI state layer and the service layer — no client-side-only guards.
+            </p>
+          </div>
+
+          <div class="rounded-lg border border-slate-800 bg-slate-900/50 p-5">
+            <h3>Audit logging</h3>
+            <p class="text-sm text-slate-400">
+              All mutations (create, update, delete) are logged with user ID, organization,
+              action type, and timestamp. Audit logs are queryable per-org and retained
+              for the lifetime of the account.
+            </p>
+          </div>
+
+          <div class="rounded-lg border border-slate-800 bg-slate-900/50 p-5">
+            <h3>Security testing</h3>
+            <p class="text-sm text-slate-400">
+              <strong class="text-slate-300">109 security test functions</strong> across
+              10 dedicated test files covering authentication, injection, path traversal,
+              tenant isolation, rate limiting, token security, file-upload security, CSRF,
+              input validation, and API-key security. Every push to <code class="text-violet-400">dev</code>
+              runs the full suite.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Compliance -->
+      <section>
+        <h2>Compliance</h2>
+
+        <div class="rounded-lg border border-violet-500/30 bg-violet-500/5 p-6 mb-6">
+          <div class="flex items-start gap-4">
+            <div class="flex-shrink-0 mt-1">
+              <svg class="h-6 w-6 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+            </div>
+            <div>
+              <h3 class="text-lg font-semibold text-white mb-1">SOC 2 Type I — in progress</h3>
+              <p class="text-sm text-slate-400">
+                We are actively working toward SOC 2 Type I certification with a target
+                completion in <strong class="text-slate-300">Q3 2026</strong>. Our 90-day
+                readiness roadmap covers the CC1–CC9 Common Criteria control objectives,
+                with ~65% of controls already implemented in code. Vendor evaluation
+                (Drata, Vanta, Secureframe) is underway, and an independent auditor will
+                be engaged in the first phase.
+              </p>
+              <p class="text-sm text-slate-400 mt-2">
+                If you're evaluating Datanika for an enterprise deployment and need details
+                on our compliance timeline, contact
+                <a href="mailto:security@datanika.io" class="text-violet-400 hover:underline">security@datanika.io</a>.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <ul>
+          <li>
+            <strong class="text-white">GDPR:</strong> data processed and stored in the EU
+            (Hetzner, Germany). Data Processing Agreement (DPA) available on request —
+            email <a href="mailto:info@datanika.io" class="text-violet-400 hover:underline">info@datanika.io</a>.
+          </li>
+          <li>
+            <strong class="text-white">Data residency:</strong> all customer data resides
+            in Hetzner's Falkenstein data center (Germany, EU). No data is transferred
+            outside the EU unless explicitly configured by the customer (e.g., a BigQuery
+            destination in US-region).
+          </li>
+          <li>
+            <strong class="text-white">Data retention:</strong> pipeline run logs and
+            metadata are retained for the lifetime of the account. Deleted organizations
+            have their data purged within 30 days. Credentials are wiped immediately on
+            connection deletion.
+          </li>
+        </ul>
+      </section>
+
+      <!-- Infrastructure -->
+      <section>
+        <h2>Infrastructure</h2>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-slate-800">
+                <th class="text-left py-3 pr-4 text-slate-400 font-medium">Layer</th>
+                <th class="text-left py-3 pr-4 text-slate-400 font-medium">Provider</th>
+                <th class="text-left py-3 text-slate-400 font-medium">Details</th>
+              </tr>
+            </thead>
+            <tbody class="text-slate-300">
+              <tr class="border-b border-slate-800/50">
+                <td class="py-3 pr-4 font-medium text-white">Application hosting</td>
+                <td class="py-3 pr-4">Hetzner</td>
+                <td class="py-3">Dedicated server, Falkenstein (Germany, EU). Ubuntu 24.04 LTS.</td>
+              </tr>
+              <tr class="border-b border-slate-800/50">
+                <td class="py-3 pr-4 font-medium text-white">CDN & DDoS protection</td>
+                <td class="py-3 pr-4">Cloudflare</td>
+                <td class="py-3">All traffic proxied. WAF rules, rate limiting, bot management.</td>
+              </tr>
+              <tr class="border-b border-slate-800/50">
+                <td class="py-3 pr-4 font-medium text-white">TLS</td>
+                <td class="py-3 pr-4">Cloudflare + Nginx</td>
+                <td class="py-3">TLS 1.2+ enforced. Cloudflare Origin Certificate for backend. HSTS enabled.</td>
+              </tr>
+              <tr class="border-b border-slate-800/50">
+                <td class="py-3 pr-4 font-medium text-white">Database</td>
+                <td class="py-3 pr-4">PostgreSQL 16</td>
+                <td class="py-3">Encrypted connections. Automated backups.</td>
+              </tr>
+              <tr class="border-b border-slate-800/50">
+                <td class="py-3 pr-4 font-medium text-white">Monitoring</td>
+                <td class="py-3 pr-4">Prometheus + Grafana</td>
+                <td class="py-3">Container metrics, resource utilization, alerting.</td>
+              </tr>
+              <tr>
+                <td class="py-3 pr-4 font-medium text-white">Analytics</td>
+                <td class="py-3 pr-4">Plausible CE</td>
+                <td class="py-3">Self-hosted, cookie-free, GDPR-compliant. No third-party tracking.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Subprocessors -->
+      <section>
+        <h2>Subprocessors</h2>
+        <p class="mb-4">
+          The following third-party services process data on behalf of Datanika customers:
+        </p>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-slate-800">
+                <th class="text-left py-3 pr-4 text-slate-400 font-medium">Subprocessor</th>
+                <th class="text-left py-3 pr-4 text-slate-400 font-medium">Purpose</th>
+                <th class="text-left py-3 text-slate-400 font-medium">Data location</th>
+              </tr>
+            </thead>
+            <tbody class="text-slate-300">
+              <tr class="border-b border-slate-800/50">
+                <td class="py-3 pr-4 font-medium text-white">Hetzner Online GmbH</td>
+                <td class="py-3 pr-4">Application hosting, database, worker processes</td>
+                <td class="py-3">Germany, EU</td>
+              </tr>
+              <tr class="border-b border-slate-800/50">
+                <td class="py-3 pr-4 font-medium text-white">Cloudflare, Inc.</td>
+                <td class="py-3 pr-4">CDN, DDoS protection, DNS, TLS termination</td>
+                <td class="py-3">Global (nearest PoP)</td>
+              </tr>
+              <tr class="border-b border-slate-800/50">
+                <td class="py-3 pr-4 font-medium text-white">Paddle.com Market Ltd</td>
+                <td class="py-3 pr-4">Payment processing (Merchant of Record)</td>
+                <td class="py-3">UK / EU</td>
+              </tr>
+              <tr class="border-b border-slate-800/50">
+                <td class="py-3 pr-4 font-medium text-white">Google Workspace</td>
+                <td class="py-3 pr-4">Business email (transactional emails via SMTP)</td>
+                <td class="py-3">EU data region</td>
+              </tr>
+              <tr>
+                <td class="py-3 pr-4 font-medium text-white">GitHub (Microsoft)</td>
+                <td class="py-3 pr-4">Source code hosting, CI/CD</td>
+                <td class="py-3">US</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="mt-4 text-sm text-slate-500">
+          We notify customers of subprocessor changes at least 30 days in advance.
+          To receive notifications, email
+          <a href="mailto:info@datanika.io" class="text-violet-400 hover:underline">info@datanika.io</a>
+          with subject "Subprocessor updates."
+        </p>
+      </section>
+
+      <!-- Open Source -->
+      <section>
+        <h2>Open Source</h2>
+        <p>
+          Datanika's core is open-source at
+          <a href="https://github.com/datanika-io/datanika-core" class="text-violet-400 hover:underline">github.com/datanika-io/datanika-core</a>.
+          This means:
+        </p>
+        <ul>
+          <li>
+            <strong class="text-white">Auditability:</strong> every security claim on this page
+            is verifiable in the source code. The 109 security tests, the
+            <code class="text-violet-400">TenantMixin</code>, the Fernet encryption layer —
+            all public.
+          </li>
+          <li>
+            <strong class="text-white">No vendor lock-in:</strong> you can self-host Datanika
+            on your own infrastructure with full control over data residency and network
+            access. See the <a href="/docs/self-hosting" class="text-violet-400 hover:underline">self-hosting guide</a>.
+          </li>
+          <li>
+            <strong class="text-white">Community review:</strong> security-critical code paths
+            benefit from community scrutiny in addition to our internal testing.
+          </li>
+        </ul>
+      </section>
+
+      <!-- Responsible Disclosure -->
+      <section>
+        <h2>Responsible Disclosure</h2>
+        <p class="mb-4">
+          We take security vulnerabilities seriously. If you discover a vulnerability
+          in Datanika, please report it responsibly:
+        </p>
+
+        <div class="rounded-lg border border-slate-800 bg-slate-900/50 p-6">
+          <p class="text-white font-medium mb-3">Report a vulnerability</p>
+          <p class="mb-3">
+            Email
+            <a href="mailto:security@datanika.io" class="text-violet-400 hover:underline font-medium">security@datanika.io</a>
+            with a description, steps to reproduce, and affected components.
+          </p>
+          <div class="grid gap-3 sm:grid-cols-3 text-sm">
+            <div class="rounded border border-slate-800 bg-slate-900 p-3 text-center">
+              <p class="text-slate-400">Acknowledgement</p>
+              <p class="text-white font-semibold mt-1">48 hours</p>
+            </div>
+            <div class="rounded border border-slate-800 bg-slate-900 p-3 text-center">
+              <p class="text-slate-400">Initial assessment</p>
+              <p class="text-white font-semibold mt-1">7 days</p>
+            </div>
+            <div class="rounded border border-slate-800 bg-slate-900 p-3 text-center">
+              <p class="text-slate-400">Patch release</p>
+              <p class="text-white font-semibold mt-1">90 days</p>
+            </div>
+          </div>
+          <p class="text-sm text-slate-500 mt-4">
+            Full disclosure policy:
+            <a href="https://github.com/datanika-io/datanika-core/blob/master/SECURITY.md" class="text-violet-400 hover:underline">SECURITY.md</a>
+          </p>
+        </div>
+      </section>
+
+      <!-- Contact -->
+      <section>
+        <h2>Questions?</h2>
+        <p>
+          For security questions, vulnerability reports, or DPA requests:
+          <a href="mailto:security@datanika.io" class="text-violet-400 hover:underline">security@datanika.io</a>
+        </p>
+        <p class="mt-2">
+          For general compliance inquiries and subprocessor update subscriptions:
+          <a href="mailto:info@datanika.io" class="text-violet-400 hover:underline">info@datanika.io</a>
+        </p>
+      </section>
+
+    </div>
+  </main>
+  <Footer />
+</Layout>
