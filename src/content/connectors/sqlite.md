@@ -56,16 +56,17 @@ Then use `/mnt/myapp/app.sqlite` as the path in Step 2. Read-only is enough — 
 
 ## Step 2 — Add the connection in Datanika
 
-1. In Datanika, open **Connections → New connection**.
-2. Select **SQLite** from the connector list. Filter by **Source** direction.
-3. Fill in the form:
-   - **Name** — a label you'll recognize, e.g. `sqlite-myapp`.
-   - **Path to SQLite file** — the full path from Step 1. Include the extension. Examples: `/var/datanika/sources/app.sqlite`, `/mnt/myapp/data.db`.
-4. Click **Save**. Datanika never writes to a SQLite source — the connector opens the file read-only at pipeline runtime, so no explicit toggle is needed.
+1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page — there's no separate "New Connection" button to click.
+2. From the **type dropdown** at the top of the form, pick **SQLite**. The form reshapes itself to show the SQLite-specific fields.
+3. Fill in:
+   - **Connection Name** — a label you'll recognize, e.g. `sqlite-myapp`.
+   - **Database Path** — the full path from Step 1. Include the extension. Examples: `/var/datanika/sources/app.sqlite`, `/mnt/myapp/data.db`.
+4. Click **Test Connection**. Datanika opens the file and reports success or an error. Because SQLite has no credentials, any failure here is a path or permission issue — not an auth problem.
+5. Click **Create Connection**.
+
+> **Name + path is all you get on the form.** The SQLite Connection form has exactly two inputs: Connection Name and Database Path (plus a **Use raw JSON config** escape hatch for advanced cases). Datanika never writes to a SQLite source — the connector opens the file read-only at pipeline runtime, enforced by the source role, so no UI toggle is needed.
 
 ![Adding the SQLite connection in Datanika](/docs/connectors/sqlite/02-add-connection.png)
-
-> **Zero credentials.** Like DuckDB, SQLite has no user, password, host, or port — the file path IS the connection. If Test connection fails, it's always a path or permission issue, never a credential issue.
 
 ## Step 3 — Configure tables and schemas
 
