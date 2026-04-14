@@ -21,7 +21,7 @@ SQLite is the embedded database you already have. Mobile apps, desktop apps, bro
 
 - A **Datanika account** with permission to create connections (Admin or Editor role).
 - A **destination warehouse** already connected in Datanika. If you're just experimenting, [DuckDB as destination](/docs/connectors/duckdb) is the zero-credentials option and pairs well with this guide.
-- A **SQLite file** you want to sync, at a path Datanika can read. On self-hosted, that's any path inside the `app` container's filesystem or a mounted volume. On Datanika Cloud, you'll upload the file through the UI (see Step 1).
+- A **SQLite file** you want to sync, at a path Datanika can read. The SQLite connector takes a filesystem path, which means **this guide is self-hosted-only today** — Datanika Cloud doesn't expose a filesystem path users can write to from outside the container. If you need SQLite-as-source on Datanika Cloud, [open a ticket](mailto:support@datanika.io) so we can track demand.
 - SQLite itself is bundled with Python 3 and therefore with Datanika — **no separate install needed**.
 
 ## Step 1 — Make the SQLite file reachable
@@ -52,13 +52,7 @@ services:
 ```
 Then use `/mnt/myapp/app.sqlite` as the path in Step 2. Read-only is enough — Datanika never writes to a SQLite source.
 
-**Datanika Cloud**
-
-1. In Datanika, open **Connections → New connection → SQLite**.
-2. Click **Upload SQLite file** and drag the `.sqlite` / `.db` / `.sqlite3` file from your laptop.
-3. Datanika stores the file in your org's managed storage. You'll see an internal path populated in the form automatically — skip to Step 3 below.
-
-> **Size limits.** Self-hosted Datanika has no hard cap on SQLite file size, but loads get slow past ~10 GB — at that size you're better off exporting to Parquet or loading the SQLite into a real database first. Datanika Cloud caps the upload at 500 MB; [open a ticket](mailto:support@datanika.io) if you need more.
+> **Size guidance.** Self-hosted Datanika has no hard cap on SQLite file size, but loads get slow past ~10 GB — at that size you're better off exporting to Parquet or loading the SQLite into a real database first.
 
 ## Step 2 — Add the connection in Datanika
 
@@ -66,10 +60,8 @@ Then use `/mnt/myapp/app.sqlite` as the path in Step 2. Read-only is enough — 
 2. Select **SQLite** from the connector list. Filter by **Source** direction.
 3. Fill in the form:
    - **Name** — a label you'll recognize, e.g. `sqlite-myapp`.
-   - **Database file path** — the full path from Step 1. Include the extension. Examples: `/var/datanika/sources/app.sqlite`, `/mnt/myapp/data.db`.
-   - **Read-only** — leave checked. Datanika only reads, never writes, when SQLite is a source.
-4. Click **Test connection**. Datanika opens the file, runs `PRAGMA schema_version`, and lists the tables. You should see a green ✅ within a second.
-5. Click **Save**.
+   - **Path to SQLite file** — the full path from Step 1. Include the extension. Examples: `/var/datanika/sources/app.sqlite`, `/mnt/myapp/data.db`.
+4. Click **Save**. Datanika never writes to a SQLite source — the connector opens the file read-only at pipeline runtime, so no explicit toggle is needed.
 
 ![Adding the SQLite connection in Datanika](/docs/connectors/sqlite/02-add-connection.png)
 
