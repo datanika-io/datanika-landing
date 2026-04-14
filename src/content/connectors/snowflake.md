@@ -71,8 +71,8 @@ Create a **dedicated user and role** rather than reusing a personal login. This 
 
 ## Step 2 — Add the connection in Datanika
 
-1. In Datanika, open **Connections → New connection**.
-2. Pick **Snowflake** from the connector list.
+1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page — there's no separate "New Connection" button to click.
+2. From the **type dropdown** at the top of the form, pick **Snowflake**.
 3. Fill in the form:
    - **Account** — the Snowflake account identifier, e.g. `xy12345.us-east-1`.
    - **User** — `DATANIKA_USER` (or whatever you named it).

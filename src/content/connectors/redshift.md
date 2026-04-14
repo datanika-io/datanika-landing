@@ -57,8 +57,8 @@ Create a **dedicated loader user** rather than reusing an admin account. This ke
 
 ## Step 2 — Add the connection in Datanika
 
-1. In Datanika, open **Connections → New connection**.
-2. Pick **Amazon Redshift** from the connector list.
+1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page — there's no separate "New Connection" button to click.
+2. From the **type dropdown** at the top of the form, pick **Amazon Redshift**.
 3. Fill in the form:
    - **Name** — e.g. `redshift-prod` or `redshift-analytics`.
    - **Host** — the cluster endpoint, e.g. `my-cluster.abc123.us-east-1.redshift.amazonaws.com`.

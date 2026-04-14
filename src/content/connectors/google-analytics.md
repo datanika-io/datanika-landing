@@ -51,8 +51,8 @@ Google Analytics is the highest-volume marketing source our users sync — landi
 
 ## Step 2 — Add the connection in Datanika
 
-1. In Datanika, open **Connections → New connection**.
-2. Pick **Google Analytics** from the connector list.
+1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page — there's no separate "New Connection" button to click.
+2. From the **type dropdown** at the top of the form, pick **Google Analytics**.
 3. Fill in the form:
    - **Name** — e.g. `ga4-prod` or `ga4-marketing`.
    - **Property ID** — the GA4 property ID (numeric), e.g. `123456789`.

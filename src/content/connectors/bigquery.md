@@ -48,8 +48,8 @@ Create a **dedicated service account** rather than reusing a personal account or
 
 ## Step 2 — Add the connection in Datanika
 
-1. In Datanika, open **Connections → New connection**.
-2. Pick **BigQuery** from the connector list.
+1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page — there's no separate "New Connection" button to click.
+2. From the **type dropdown** at the top of the form, pick **BigQuery**.
 3. Fill in the form:
    - **Name** — e.g. `bigquery-prod` or `bigquery-analytics`.
    - **GCP Project** — the project ID (not the display name). Find it in the GCP Console → Dashboard → Project info, e.g. `my-company-prod-12345`.

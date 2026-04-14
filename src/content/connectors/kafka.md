@@ -56,8 +56,8 @@ Apache Kafka is the backbone of most event-driven architectures — teams use Da
 
 ## Step 2 — Add the connection in Datanika
 
-1. In Datanika, open **Connections → New connection**.
-2. Pick **Apache Kafka** from the connector list.
+1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page — there's no separate "New Connection" button to click.
+2. From the **type dropdown** at the top of the form, pick **Apache Kafka**.
 3. Fill in the form:
    - **Name** — e.g. `kafka-prod` or `kafka-events`.
    - **Bootstrap servers** — comma-separated list of broker addresses, e.g. `broker1:9092,broker2:9092` or `pkc-abc12.us-east-1.aws.confluent.cloud:9092`.

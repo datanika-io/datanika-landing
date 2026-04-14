@@ -43,7 +43,7 @@ MySQL is one of the most common operational databases our users sync into their 
 
 ## Step 2 — Add the connection in Datanika
 
-1. Open **Connections → New connection** and select **MySQL**.
+1. In Datanika, open **`/connections`** and pick **MySQL** from the type dropdown at the top of the inline New Connection form.
 2. Fill in:
    - **Name** — e.g. `mysql-prod-readonly`
    - **Host / Port** — your MySQL server, default port `3306`

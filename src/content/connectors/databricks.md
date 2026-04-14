@@ -53,8 +53,8 @@ Databricks is the enterprise lakehouse platform — teams choose it when they ne
 
 ## Step 2 — Add the connection in Datanika
 
-1. In Datanika, open **Connections → New connection**.
-2. Pick **Databricks** from the connector list.
+1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page — there's no separate "New Connection" button to click.
+2. From the **type dropdown** at the top of the form, pick **Databricks**.
 3. Fill in the form:
    - **Name** — e.g. `databricks-prod` or `databricks-lakehouse`.
    - **Server hostname** — the workspace URL hostname, e.g. `adb-1234567890.12.azuredatabricks.net`.
