@@ -21,14 +21,12 @@ DuckDB is an embedded columnar analytical database — think "SQLite for analyti
 
 - A **Datanika account** with permission to create connections (Admin or Editor role).
 - A **source connection** already wired up in Datanika — PostgreSQL, Stripe, a CSV upload, anything. DuckDB is a destination here, so you need data flowing *into* it from somewhere else.
-- **Write access** to a filesystem path Datanika can reach. On self-hosted Datanika, that's any directory on the container's filesystem (or a mounted volume). On Datanika Cloud, it's the managed per-org storage — Datanika picks the path for you.
-- DuckDB itself is bundled with Datanika — **you do not need to install it separately**. No `duckdb` CLI, no Python package, no service to run.
+- **Write access** to a filesystem path Datanika can reach — any directory on the container's filesystem or a mounted volume on self-hosted Datanika.
+- The DuckDB Python engine is bundled with Datanika — **you do not need to install it separately**. The `duckdb` standalone CLI binary is NOT bundled; if you want one for ad-hoc inspection, install it separately from [duckdb.org/docs/installation](https://duckdb.org/docs/installation).
 
 ## Step 1 — Pick a file path
 
 DuckDB stores its entire database in a single file. You just need to decide where that file lives.
-
-**Self-hosted Datanika**
 
 1. Choose a directory inside the `app` container (or a host-mounted volume). We recommend creating a dedicated directory so the file is easy to back up and hard to accidentally `rm -rf`:
    ```bash
@@ -36,10 +34,6 @@ DuckDB stores its entire database in a single file. You just need to decide wher
    ```
 2. Pick a filename that describes what's going in it, for example `analytics.duckdb` or `raw_stripe.duckdb`. Full path: `/var/datanika/duckdb/analytics.duckdb`.
 3. If you mount `/var/datanika/duckdb` as a Docker volume, the file will survive container rebuilds. If you skip the volume, the file is lost when the container is replaced — fine for local experimentation, not for anything you care about.
-
-**Datanika Cloud**
-
-Skip this step entirely. Datanika Cloud manages the path for you under a per-org storage prefix. You won't see a file-path field in Step 2 on Cloud.
 
 > **Zero credentials.** Unlike every other database in this list, DuckDB has no user, password, host, or port. The file path IS the connection string. This is also why DuckDB is the right choice for the "zero-credentials onboarding" story — no external account to sign up for.
 
@@ -49,10 +43,8 @@ Skip this step entirely. Datanika Cloud manages the path for you under a per-org
 2. Select **DuckDB** from the connector list. Filter by the **Destination** direction if the list is long.
 3. Fill in the form:
    - **Name** — a label you'll recognize, e.g. `duckdb-analytics`. This is what shows up in pipeline pickers.
-   - **Database file path** — the full path from Step 1 (self-hosted only). On Cloud, this field is hidden.
-   - **Read-only** — leave unchecked. You need write access for a destination connection.
-4. Click **Test connection**. Datanika opens the file (creating it if it doesn't exist yet), runs a round-trip query, and closes it. You should see a green ✅ within a second or two.
-5. Click **Save**.
+   - **Path to DuckDB file** — the full path from Step 1, e.g. `/var/datanika/duckdb/analytics.duckdb`. You can also use `:memory:` for an ephemeral in-process database (data is lost when the worker exits — only useful for smoke tests).
+4. Click **Save**. DuckDB will open (or create) the file on the first pipeline run.
 
 ![Adding the DuckDB connection in Datanika](/docs/connectors/duckdb/02-add-connection.png)
 
@@ -78,11 +70,10 @@ DuckDB supports schemas just like a full warehouse — they're namespaces inside
 1. From the pipeline page, click **Run now**.
 2. Watch the **Runs** tab. DuckDB loads are typically **fast** — seconds to minutes for anything under a few GB, because there's no network round-trip, no query planner warmup, and no cloud API rate limit.
 3. When the run finishes, open **Catalog → DuckDB → `raw_<source>`** and browse the landed tables. You can preview rows and see column types directly in Datanika's Data Catalog, no SQL required.
-4. For a deeper inspection, you can also open the file with the `duckdb` CLI:
+4. For a deeper inspection without leaving Datanika, open **SQL Editor**, point it at the DuckDB connection, and run `SHOW TABLES;` or `SELECT count(*) FROM raw_postgres.users;`. If you'd rather drive DuckDB from outside Datanika, run the Python engine that's already in the container:
    ```bash
-   docker exec -it datanika-app duckdb /var/datanika/duckdb/analytics.duckdb
-   D SHOW TABLES;
-   D SELECT count(*) FROM raw_postgres.users;
+   docker exec -it datanika-app python -c \
+     "import duckdb; con = duckdb.connect('/var/datanika/duckdb/analytics.duckdb'); print(con.execute('SHOW TABLES').fetchall())"
    ```
 
 ![Inspecting the first run](/docs/connectors/duckdb/04-first-run.png)
@@ -106,7 +97,7 @@ DuckDB supports schemas just like a full warehouse — they're namespaces inside
 **Fix.** Run `mkdir -p /var/datanika/duckdb` (or your chosen parent) inside the Datanika container, then re-test the connection. If you're running in Docker, make sure the directory lives on a mounted volume or it'll disappear on the next rebuild.
 
 ### `Conflicting lock is held in <pid>` or `Could not set lock on file`
-**Cause.** Another process has the `.duckdb` file open in write mode. Usually this is a second pipeline run, a background Celery task, or a `duckdb` CLI session you forgot to close.
+**Cause.** Another process has the `.duckdb` file open in write mode. Usually this is a second pipeline run or a background Celery task — or, if you've shelled into the container, a Python / external-CLI session you forgot to close.
 **Fix.** Close the other writer. For a hung session, restart the `datanika-app` container to drop stale locks. Long-term fix: use one `.duckdb` file per source, or switch to Postgres/BigQuery for concurrent workloads.
 
 ### `Catastrophic failure: database file is not a valid DuckDB file`
@@ -114,12 +105,8 @@ DuckDB supports schemas just like a full warehouse — they're namespaces inside
 **Fix.** Move or delete the bad file (`mv /var/datanika/duckdb/analytics.duckdb{,.bak}`) and re-run Test connection. Datanika will create a fresh empty database.
 
 ### The file grows without bound after every run
-**Cause.** DuckDB doesn't automatically reclaim space from deleted rows — `replace` loads keep the old pages until you `VACUUM` or `CHECKPOINT`.
-**Fix.** From the `duckdb` CLI run `CHECKPOINT;` followed by `VACUUM;` periodically. For automation, schedule a maintenance pipeline that runs those statements as a dbt operation.
-
-### Datanika Cloud: "DuckDB is not available as a destination"
-**Cause.** Your Cloud plan doesn't include the managed-DuckDB option, or it's temporarily disabled on your org.
-**Fix.** [Open a support ticket](mailto:support@datanika.io) — we enable it on request. DuckDB-as-destination works on all self-hosted deployments without any flag.
+**Cause.** DuckDB doesn't automatically reclaim space from deleted rows — `replace` loads keep the old pages until you `CHECKPOINT` or `VACUUM`.
+**Fix.** Run `CHECKPOINT;` followed by `VACUUM;` against the DuckDB connection — either from Datanika's SQL Editor, or from a dbt maintenance operation scheduled as its own pipeline.
 
 ## Related
 
