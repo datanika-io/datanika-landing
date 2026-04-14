@@ -13,7 +13,12 @@ related_comparisons:
 draft: false
 ---
 
-CSV is the universal escape hatch. Every SaaS tool exports it, every analyst has a folder of them, and every "can you just give me this data?" request ends with one. Datanika treats CSVs as first-class sources — drag a file into the browser, pick a destination, hit run. No API credentials, no schema modeling, no sandbox account. This is the fastest path from a file on your laptop to a queryable warehouse table. This guide covers **local CSV file uploads**, which is the zero-credentials onboarding path most new users start with.
+CSV is the universal escape hatch. Every SaaS tool exports it, every analyst has a folder of them, and every "can you just give me this data?" request ends with one. Datanika gives you **two different surfaces** for CSVs depending on the use case:
+
+- **Uploads** (`/uploads`) — drag-and-drop a file from your laptop for a one-shot load. This is the zero-friction onboarding path the Getting Started checklist points you at. Uploads are their own Datanika feature with their own UI and their own docs: see [Uploads](/docs/uploads) for the drag-and-drop walkthrough. That's the path to use when you just want a file in a table and you don't need a repeating schedule.
+- **CSV Connections** (`/connections`) — a filesystem-path connection that points at a `.csv` file or a directory of CSVs the `datanika-app` container can read. Use this when you want to **schedule** recurring loads from a known location (a bind-mounted vendor drop folder, an NFS share, a cron-fed inbox). This is what the rest of this guide covers.
+
+If you're a brand-new user following the Getting Started checklist, you almost certainly want Uploads. If you're wiring up recurring nightly loads from a mounted directory, keep reading.
 
 > **Looking for the connector spec?** This is the hands-on setup guide. For the full field-by-field reference — supported encodings, delimiter list, type inference rules, and how JSON and Parquet differ — see the [CSV connector page](/connectors/csv).
 
@@ -21,31 +26,12 @@ CSV is the universal escape hatch. Every SaaS tool exports it, every analyst has
 
 - A **Datanika account** with permission to create connections (Admin or Editor role).
 - A **destination warehouse** already connected in Datanika. If you're just experimenting, [DuckDB as destination](/docs/connectors/duckdb) is the zero-credentials option — together with this guide it's the fastest way to go from CSV to SQL without leaving your laptop.
-- A **CSV file** on your computer. UTF-8 is preferred but Latin-1, Windows-1252, and BOM-prefixed UTF-8 are detected automatically. Common extensions: `.csv`, `.tsv`, `.txt`.
-- For the directory-watcher path (Step 1b): **self-hosted Datanika** with a mounted volume you can drop files into.
+- CSV files at a path the `datanika-app` container can read — a single file or a directory. UTF-8 is preferred but Latin-1, Windows-1252, and BOM-prefixed UTF-8 are handled by the loader at runtime. Common extensions: `.csv`, `.tsv`, `.txt`.
+- **Self-hosted Datanika** with a mounted volume you can drop files into (the CSV Connection needs a filesystem path the container can see).
 
-## Step 1a — Upload a file through the UI (the common case)
+> **Looking for drag-and-drop?** You're on the wrong page. Drag-and-drop CSV loads live on the Uploads surface — see the [Uploads doc](/docs/uploads). This guide continues with the CSV **Connection** (scheduled / directory-watcher) flow only.
 
-This is the zero-friction path and the one the Getting Started checklist points you at.
-
-1. In Datanika, open **Connections → New connection**.
-2. Select **CSV** from the connector list (it lives under the **File** category — filter by that if the list is long).
-3. Drag your `.csv` file into the drop zone, or click **Browse** and pick it from the OS file picker. You can drop multiple files at once — Datanika treats each as a separate table.
-4. Datanika uploads the file to your org's storage and runs a sniff on the first ~64 KB:
-   - **Delimiter** — auto-detected (`,`, `;`, `\t`, `|`).
-   - **Quote character** — auto-detected, defaults to `"`.
-   - **Encoding** — auto-detected.
-   - **Header row** — detected by heuristic; override if Datanika guesses wrong.
-   - **Column types** — inferred from a sample (integer, float, boolean, timestamp, string).
-5. Preview the first 20 rows in the form. Fix any column whose type got inferred wrong (clicking the column header gives you a dropdown).
-6. **Name** the connection — a label you'll recognize, e.g. `q3-signups-export` or `customers-2026-04`.
-7. Click **Save**.
-
-![Dragging a CSV file into Datanika](/docs/connectors/csv/01a-upload-ui.png)
-
-> **File size guidance.** The UI uploader is fine up to ~500 MB per file. Above that, use Step 1b (directory watcher) — it streams from disk instead of pushing the whole file through the browser.
-
-## Step 1b — Watch a directory (self-hosted, recurring loads)
+## Step 1 — Make the CSV files reachable to the container
 
 Use this when you have files arriving on disk on a schedule — e.g., a nightly export from another tool, a vendor's SFTP drop, or a shared network folder.
 
@@ -62,7 +48,7 @@ Use this when you have files arriving on disk on a schedule — e.g., a nightly 
 5. Fill in:
    - **Directory path** — `/var/datanika/inbox` (from the bind mount).
    - **File glob** — e.g. `*.csv` (default) or `exports/**/customers-*.csv` for recursive matches.
-   - **Delimiter / encoding / header row** — as in Step 1a. These apply to every file matching the glob; files with different shapes need their own connection.
+   - **Delimiter / encoding / header row** — these apply to every file matching the glob; files with different shapes need their own connection.
 6. Click **Test connection**. Datanika lists the files that currently match the glob and you can spot-check by opening one in the row preview.
 7. Click **Save**.
 
@@ -128,8 +114,8 @@ UI-uploaded files are one-shot — you uploaded a specific file, you load it onc
 **Fix.** Check **Pipelines → `<your pipeline>` → Processed files** to see what Datanika thinks it's already loaded. If the list is stale or empty, the fix is usually to rename new files with a timestamp suffix and keep the full history in the tracked list, instead of rotating in place.
 
 ### Upload fails with "File too large"
-**Cause.** You're hitting the ~500 MB UI uploader limit.
-**Fix.** Switch to the directory-watcher flow (Step 1b) on self-hosted, or split the file with `split -l 500000 big.csv part_` and upload the parts as an append pipeline. On Datanika Cloud, [open a ticket](mailto:support@datanika.io) if you need a one-time larger upload.
+**Cause.** You're hitting the Uploads-surface size limit — which is a different product surface from this guide. See the [Uploads doc](/docs/uploads) for the current limits and guidance.
+**Fix.** If you have shell access to the host, switch to a CSV Connection (this guide) — point it at a bind-mounted directory and there's no browser-uploader cap. Alternatively, split the file with `split -l 500000 big.csv part_` and load the parts as an append pipeline. On Datanika Cloud where no mounted directory is available, [open a ticket](mailto:support@datanika.io).
 
 ## Related
 
