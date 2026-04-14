@@ -2,7 +2,7 @@
 title: "Introducing the Datanika REST API v1"
 description: "Programmatic access to your data pipelines — 36 endpoints, OpenAPI docs, scoped API keys, and plan-based rate limiting."
 date: 2026-04-10
-updatedDate: 2026-04-10
+updatedDate: 2026-04-14
 author: "Datanika Team"
 category: "announcement"
 tags: ["announcement", "api", "developer-experience"]
@@ -72,13 +72,16 @@ curl https://app.datanika.io/api/v1/runs?status=failed \
      -H "Authorization: Bearer etf_monitor_key"
 ```
 
-**Bulk setup** — Import connections, uploads, and pipelines from a JSON config:
+**Bulk setup** — Provision pipelines from a shell script or your infra automation. Every write endpoint is exposed and supports the `Idempotency-Key` header, so re-running the script is safe. POST each resource in turn — connections first, then the upload or pipeline that references them, then a schedule:
 ```bash
-curl -X POST https://app.datanika.io/api/v1/import \
+curl -X POST https://app.datanika.io/api/v1/connections \
      -H "Authorization: Bearer etf_admin_key" \
      -H "Content-Type: application/json" \
-     -d @pipeline-config.json
+     -H "Idempotency-Key: bootstrap-2026-04-14-src" \
+     -d @source-postgres.json
 ```
+
+Available write endpoints: `/connections`, `/uploads`, `/pipelines`, `/transformations`, `/schedules`, `/notifications/channels`. Keep the JSON bodies in version control next to your infra code.
 
 **Scheduled reporting** — Fetch run history for weekly reports:
 ```bash
