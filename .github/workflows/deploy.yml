@@ -14,11 +14,11 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 2  # need previous commit to diff changed files for IndexNow
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: "22"
           cache: "npm"
@@ -168,6 +168,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-and-deploy
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Smoke gate — datanika.io
         run: bash .github/smoke-check.sh https://datanika.io .github/smoke-urls-landing.txt
