@@ -82,9 +82,6 @@ MySQL is one of the most common operational databases our users sync into their 
 ### Connection test times out
 **Fix.** Check firewall rules and MySQL's `bind-address` config. Ensure Datanika's IP can reach the MySQL host on port 3306.
 
-### `SSL connection error`
-**Fix.** If MySQL requires SSL, ensure Datanika's connection uses `ssl_mode=REQUIRED`. For self-signed certs, you may need `ssl_mode=PREFERRED`.
-
 ## Related
 
 - **Use cases:** [MySQL → BigQuery](/use-cases/mysql-to-bigquery)
