@@ -9,6 +9,13 @@ const blog = defineCollection({
     date: z.coerce.date(),
     /** Optional — set when a post is updated after initial publication. */
     updatedDate: z.coerce.date().optional(),
+    /**
+     * Optional — scheduled publish timestamp. When set and in the future,
+     * the post is filtered out of listings, RSS, OG, and static paths.
+     * When unset, the post is treated as immediately visible (back-compat).
+     * Pair with a daily rebuild cron to auto-publish on the target date.
+     */
+    publishedAt: z.coerce.date().optional(),
     author: z.string().default("Datanika Team"),
     /** Optional — high-level topic for Article schema `articleSection`. */
     category: z.string().optional(),

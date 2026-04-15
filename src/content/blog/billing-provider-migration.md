@@ -2,7 +2,7 @@
 title: "I Integrated a Payment Provider, Then Ripped It Out and Switched to Another"
 description: "Built the entire billing system on LemonSqueezy, then discovered it couldn't pay out to my country. Migrated to Paddle — here's why the plugin architecture made it survivable."
 date: 2026-04-18
-draft: true
+publishedAt: 2026-04-18
 author: "Datanika Team"
 category: "engineering"
 tags: ["billing", "paddle", "migration", "open-core", "engineering"]

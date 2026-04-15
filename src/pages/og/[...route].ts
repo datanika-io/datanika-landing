@@ -19,6 +19,7 @@ import { OGImageRoute } from "astro-og-canvas";
 import { getCollection } from "astro:content";
 import { connectors } from "../../data/connectors";
 import { useCases } from "../../data/use-cases";
+import { isPostVisible } from "../../utils/blog-visibility";
 
 // ---------------------------------------------------------------------------
 // Brand tokens
@@ -49,7 +50,9 @@ async function buildPageMap(): Promise<Record<string, PageData>> {
   const pages: Record<string, PageData> = {};
 
   // Blog posts — read from the `blog` content collection.
-  const blogPosts = await getCollection("blog", ({ data }) => !data.draft);
+  const blogPosts = await getCollection("blog", ({ data }) =>
+    isPostVisible(data),
+  );
   for (const post of blogPosts) {
     pages[`blog/${post.id}`] = {
       category: (post.data.category ?? "Blog").toUpperCase(),
