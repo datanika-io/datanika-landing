@@ -3,8 +3,9 @@ import Layout from "../../layouts/Layout.astro";
 import Navbar from "../../components/Navbar.astro";
 import Footer from "../../components/Footer.astro";
 import { getCollection } from "astro:content";
+import { isPostVisible } from "../../utils/blog-visibility";
 
-const posts = (await getCollection("blog", ({ data }) => !data.draft))
+const posts = (await getCollection("blog", ({ data }) => isPostVisible(data)))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 ---
 
