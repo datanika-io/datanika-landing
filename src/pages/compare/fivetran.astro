@@ -22,7 +22,7 @@ const features = [
 const chooseDatanika = [
   "You want an open-source platform you can self-host",
   "You need ELT + transforms + scheduling in one tool",
-  "You're cost-conscious (10x cheaper than Fivetran for small teams)",
+  "You're cost-conscious (10–50× cheaper than Fivetran per GB at realistic volumes)",
   "You want to avoid vendor lock-in",
   "You need dbt transformations built into the same UI",
 ];
@@ -31,6 +31,39 @@ const chooseFivetran = [
   "You need 500+ managed connectors",
   "You want zero-maintenance SaaS with enterprise support",
   "You need the most battle-tested reliability at scale",
+];
+
+// DRAFT — Pricing V2 GB-normalized comparison table per SPEC_PRICING_V2.md §6.1.
+// Lives on branch 182-pricing-v2-copy-draft through P1–P4 and merges at P5 cutover.
+// Fivetran numbers are illustrative Starter-tier estimates via the MAR curve on
+// /why-cheaper/ using a mid-range 5 KB/row conversion. The honesty disclosure on
+// /why-cheaper/ applies here too — hit Fivetran's own calculator for a binding
+// number on your specific destination + sync frequency.
+const gbPricingRows = [
+  {
+    volume: "10 GB / mo",
+    note: "Evaluation or side project",
+    datanika: "$0",
+    datanikaPerGB: "Free tier",
+    competitor: "~$600",
+    competitorPerGB: "~$60 / GB",
+  },
+  {
+    volume: "100 GB / mo",
+    note: "A real production pipeline",
+    datanika: "$79",
+    datanikaPerGB: "$0.79 / GB",
+    competitor: "~$3,800",
+    competitorPerGB: "~$38 / GB",
+  },
+  {
+    volume: "1 TB / mo",
+    note: "Multi-pipeline data team",
+    datanika: "$399",
+    datanikaPerGB: "$0.39 / GB",
+    competitor: "~$22,000",
+    competitorPerGB: "~$22 / GB",
+  },
 ];
 ---
 
@@ -60,11 +93,11 @@ const chooseFivetran = [
       </p>
       <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
         <ConversionCTA href="https://app.datanika.io" class="btn-primary">Try Datanika Free</ConversionCTA>
-        <a href="/why-cheaper" class="btn-secondary">See the MAR calculator</a>
+        <a href="/why-cheaper" class="btn-secondary">See the GB calculator</a>
       </div>
       <p class="mt-4 text-xs text-slate-500">
-        Curious how the $79/mo flat rate stacks up against Fivetran&rsquo;s per-row bill?
-        <a href="/why-cheaper" class="text-violet-400 hover:text-violet-300 underline">Open the public MAR pricing calculator &rarr;</a>
+        Curious how honest per-GB pricing stacks up against Fivetran&rsquo;s per-row bill?
+        <a href="/why-cheaper" class="text-violet-400 hover:text-violet-300 underline">Open the public GB pricing calculator &rarr;</a>
       </p>
     </div>
   </section>
@@ -105,6 +138,48 @@ const chooseFivetran = [
           </tbody>
         </table>
       </div>
+    </div>
+  </section>
+
+  <!-- GB-normalized pricing -->
+  <section class="py-20">
+    <div class="max-w-5xl mx-auto px-6">
+      <h2 class="text-3xl font-bold text-center mb-3">GB-normalized pricing</h2>
+      <p class="text-sm text-slate-500 text-center mb-10 max-w-2xl mx-auto">
+        How the bill looks at three common volumes. Fivetran numbers are illustrative Starter-tier estimates via MAR conversion — open <a href="/why-cheaper" class="text-violet-400 underline hover:text-violet-300">/why-cheaper</a> for the live calculator and the honesty disclosure, or run your own numbers through <a href="https://www.fivetran.com/pricing" class="text-slate-400 underline hover:text-slate-300" rel="nofollow">Fivetran&rsquo;s calculator</a>.
+      </p>
+      <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur p-8 overflow-x-auto">
+        <table class="w-full text-left">
+          <thead>
+            <tr class="border-b border-slate-700">
+              <th class="pb-4 pr-4 text-sm font-medium text-slate-400">Monthly volume</th>
+              <th class="pb-4 px-4 text-sm font-medium text-violet-400 text-center">Datanika</th>
+              <th class="pb-4 pl-4 text-sm font-medium text-slate-400 text-center">Fivetran Starter</th>
+            </tr>
+          </thead>
+          <tbody>
+            {gbPricingRows.map((row) => (
+              <tr class="border-b border-slate-800/60">
+                <td class="py-4 pr-4 text-sm text-slate-300">
+                  <strong class="text-white">{row.volume}</strong>
+                  <br /><span class="text-xs text-slate-500">{row.note}</span>
+                </td>
+                <td class="py-4 px-4 text-center text-sm">
+                  <span class="text-white font-mono">{row.datanika}</span>
+                  <br /><span class="text-xs text-emerald-400">{row.datanikaPerGB}</span>
+                </td>
+                <td class="py-4 pl-4 text-center text-sm">
+                  <span class="text-slate-300 font-mono">{row.competitor}</span>
+                  <br /><span class="text-xs text-slate-500">{row.competitorPerGB}</span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p class="text-xs text-slate-600 mt-6 text-center">
+        Datanika Free caps at 10 GB/mo. Pro includes 100 GB, $0.50/GB after. Enterprise includes 1 TB, $0.25/GB after. Pick ELT mode to cut your billed volume by 3–5× vs ETL — <a href="/why-cheaper#pick-elt" class="text-violet-400 underline hover:text-violet-300">details</a>.
+      </p>
     </div>
   </section>
 
@@ -157,7 +232,7 @@ const chooseFivetran = [
             <li>Self-host via Docker Compose</li>
             <li>AGPL-3.0 open-source</li>
             <li>Python stack (dlt + dbt-core)</li>
-            <li>Free $0 / Pro $79/mo / Enterprise from $399/mo</li>
+            <li>Free $0 (10 GB/mo) · Pro $79 (100 GB + $0.50/GB) · Ent. from $399 (1 TB + $0.25/GB)</li>
           </ul>
         </div>
         <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur p-8">
