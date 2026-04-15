@@ -2,7 +2,7 @@
 title: "dlt and dbt Silently Filled My Disk. Here's the Cleanup System I Had to Build."
 description: "dlt leaves orphaned pipeline dirs, dbt leaves stale target/ dirs. With per-tenant projects, multiply by N tenants. Here's the three-layer cleanup system that keeps disk usage predictable."
 date: 2026-04-21
-draft: true
+publishedAt: 2026-04-21
 author: "Datanika Team"
 category: "engineering"
 tags: ["dlt", "dbt", "maintenance", "ops", "engineering"]
