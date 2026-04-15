@@ -1,6 +1,9 @@
 ---
 import ConversionCTA from "./ConversionCTA.astro";
 
+// DRAFT — Pricing V2 (volume-aware). Held on branch 182-pricing-v2-copy-draft
+// until cloud volume metering is green in staging for >=14 days (see
+// plans/growth/SPEC_PRICING_V2.md §11). Do not merge before P5 cutover.
 const tiers = [
   {
     name: "Free",
@@ -8,8 +11,9 @@ const tiers = [
     annualPrice: "$0",
     period: "forever",
     annualPeriod: "forever",
-    description: "For individuals exploring data pipelines.",
+    description: "For evaluation and side projects.",
     features: [
+      "10 GB processed / month",
       "1 team member",
       "5 connections",
       "2 schedules",
@@ -28,8 +32,10 @@ const tiers = [
     period: "/month",
     annualPeriod: "/month, billed annually",
     annualTotal: "$790/year",
-    description: "For teams that need power and scale.",
+    description: "For teams running production pipelines.",
     features: [
+      "100 GB processed / month",
+      "$0.50 / GB overage",
       "5 team members",
       "25 connections",
       "Unlimited schedules",
@@ -50,11 +56,12 @@ const tiers = [
     annualTotal: "From $3,990/year",
     description: "For organizations with advanced needs. Extra seats at $25/mo each.",
     features: [
+      "1 TB processed / month",
+      "$0.25 / GB overage",
       "10 team members included",
       "50 connections",
       "Unlimited schedules",
       "50,000 model runs / month",
-      "Overage: $0.01 / run",
       "SSO (SAML/OIDC)",
       "SOC 2 Type I in progress",
       "Priority support with SLA",
@@ -73,7 +80,7 @@ const tiers = [
         Simple, transparent <span class="gradient-text">pricing</span>
       </h2>
       <p class="mx-auto mt-4 max-w-2xl text-lg text-slate-400">
-        Start free and scale as your data needs grow. No per-row fees, no surprise bills.
+        You pay for bytes, not tables. Start free with 10 GB, see the cost before you run, no MAR surprises.
       </p>
 
       <!-- Monthly / Annual Toggle -->
