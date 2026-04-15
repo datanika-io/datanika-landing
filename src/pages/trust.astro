@@ -32,10 +32,12 @@ import Footer from "../components/Footer.astro";
             <p class="text-sm text-slate-400">
               All tables use <code class="text-violet-400">org_id</code> column filtering
               via <code class="text-violet-400">TenantMixin</code>. Every query is scoped
-              to the authenticated organization. <strong class="text-slate-300">25 cross-tenant
-              boundary tests</strong> cover every <code class="text-violet-400">/api/v1/*</code>
-              mutation route — each test proves that Org A cannot read, update, or delete
-              Org B's data.
+              to the authenticated organization. A dedicated
+              <strong class="text-slate-300">cross-tenant isolation suite</strong> verifies
+              that Org A cannot read, update, or delete Org B's data across connections,
+              uploads, runs, and notifications, with additional
+              <code class="text-violet-400">wrong_org</code> coverage in every service
+              test module.
             </p>
           </div>
 
@@ -110,9 +112,13 @@ import Footer from "../components/Footer.astro";
                 We are actively working toward SOC 2 Type I certification with a target
                 completion in <strong class="text-slate-300">Q3 2026</strong>. Our 90-day
                 readiness roadmap covers the CC1–CC9 Common Criteria control objectives,
-                with ~65% of controls already implemented in code. Vendor evaluation
-                (Drata, Vanta, Secureframe) is underway, and an independent auditor will
-                be engaged in the first phase.
+                with approximately <strong class="text-slate-300">65% of controls already
+                implemented in code</strong> — based on a control-by-control mapping of
+                the CC1–CC9 points of focus against our existing security tests, audit
+                logging, and access-control layers. The remainder is policy documentation
+                and operational runbooks, in progress. Our full gap analysis is available
+                under NDA on request. Vendor evaluation (Drata, Vanta, Secureframe) is
+                underway, and an independent auditor will be engaged in the first phase.
               </p>
               <p class="text-sm text-slate-400 mt-2">
                 If you're evaluating Datanika for an enterprise deployment and need details
@@ -136,10 +142,14 @@ import Footer from "../components/Footer.astro";
             destination in US-region).
           </li>
           <li>
-            <strong class="text-white">Data retention:</strong> pipeline run logs and
-            metadata are retained for the lifetime of the account. Deleted organizations
-            have their data purged within 30 days. Credentials are wiped immediately on
-            connection deletion.
+            <strong class="text-white">Data retention and deletion:</strong> pipeline run
+            logs and metadata are retained for the lifetime of the account. Organizations
+            and connections use a soft-delete model — records are marked deleted and
+            removed from all application code paths, but the underlying
+            Fernet-encrypted data remains in the database until a hard delete is triggered.
+            Customers can request hard deletion of an organization and all associated
+            data by emailing
+            <a href="mailto:security@datanika.io" class="text-violet-400 hover:underline">security@datanika.io</a>.
           </li>
         </ul>
       </section>
