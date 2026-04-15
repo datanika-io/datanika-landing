@@ -14,6 +14,7 @@ export default defineConfig({
   redirects: {
     "/docs/api": "/api/reference",
     "/docs/api-keys": "/api/keys",
+    "/docs/api-versioning": "/api/versioning",
   },
   integrations: [
     sitemap({

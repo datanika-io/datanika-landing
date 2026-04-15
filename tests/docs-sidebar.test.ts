@@ -68,7 +68,7 @@ const EXPECTED_SIDEBAR = EXPECTED_GROUPS.flatMap((g) => g.items);
 // actually static redirect stubs emitted by astro.config.mjs `redirects`.
 // They don't have a sidebar — they're just a meta refresh — so iterating
 // them in sidebar consistency tests would fail spuriously.
-const REDIRECT_STUBS = new Set(["api", "api-keys"]);
+const REDIRECT_STUBS = new Set(["api", "api-keys", "api-versioning"]);
 
 function getDocPages(): string[] {
   if (!existsSync(DIST)) return [];
