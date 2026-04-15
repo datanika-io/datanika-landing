@@ -52,8 +52,6 @@ MongoDB is the most common NoSQL source our users sync into a relational warehou
 2. Fill in: **Name**, **Host**, **Port** (default `27017`), **Database**, **User**, **Password**.
 3. Click **Save**.
 
-> **MongoDB connections don't expose a "Test connection" button.** MongoDB is in Datanika's non-SQL connector category. Credentials are validated on the first pipeline run.
-
 ![Adding MongoDB in Datanika](/docs/connectors/mongodb/02-add-connection.png)
 
 ## Step 3 — Configure collections
