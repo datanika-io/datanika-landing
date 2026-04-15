@@ -138,6 +138,44 @@ git pull origin master
 docker compose up -d --build</code></pre>
   <p>The app container runs migrations automatically on startup.</p>
 
+  <h2>Deploying on Kubernetes</h2>
+  <p>A minimal Helm chart ships in-tree at <code>deploy/helm/datanika/</code>. It installs the same image as the Docker Compose path — one <code>app</code> Deployment (frontend + backend), one <code>celery</code> Deployment, bundled Postgres and Redis, and an optional ingress. Read the <a href="https://github.com/datanika-io/datanika-core/blob/master/deploy/helm/datanika/README.md">chart README</a> for the full <code>values.yaml</code> reference.</p>
+
+  <p>Quickstart from a clone of <code>datanika-core</code>:</p>
+  <pre><code>helm install my-datanika ./deploy/helm/datanika \
+  --namespace datanika --create-namespace \
+  --set secrets.POSTGRES_PASSWORD=$(openssl rand -base64 24) \
+  --set secrets.REDIS_PASSWORD=$(openssl rand -base64 24) \
+  --set secrets.SECRET_KEY=$(openssl rand -base64 32)
+
+kubectl -n datanika get pods -w
+kubectl -n datanika port-forward svc/my-datanika-app 3000:3000</code></pre>
+
+  <div role="note" class="not-prose my-6 rounded-lg border border-amber-500/40 bg-amber-500/5 p-4 text-sm text-amber-100">
+    <p class="font-semibold text-amber-300">⚠ Disable the bundled Postgres and Redis for real workloads</p>
+    <p class="mt-2 text-amber-100/90">The chart ships single-replica <code class="bg-amber-500/10 px-1 py-0.5 rounded text-amber-200">postgres</code> and <code class="bg-amber-500/10 px-1 py-0.5 rounded text-amber-200">redis</code> Deployments so <code class="bg-amber-500/10 px-1 py-0.5 rounded text-amber-200">helm install</code> works out of the box, but they are not production-grade: a single PVC, no replication, no backups. Point at managed databases instead:</p>
+    <pre class="mt-3 bg-slate-900/70 border border-amber-500/20 rounded p-3 overflow-x-auto text-xs text-slate-200"><code>helm install my-datanika ./deploy/helm/datanika \
+  --namespace datanika --create-namespace \
+  --set postgres.enabled=false \
+  --set externalDatabase.host=&lt;managed-postgres-host&gt; \
+  --set env.POSTGRES_USER=&lt;user&gt; \
+  --set env.POSTGRES_DB=&lt;db&gt; \
+  --set secrets.POSTGRES_PASSWORD=&lt;password&gt; \
+  --set redis.enabled=false \
+  --set externalRedis.host=&lt;managed-redis-host&gt; \
+  --set secrets.REDIS_PASSWORD=&lt;password&gt; \
+  --set secrets.SECRET_KEY=$(openssl rand -base64 32)</code></pre>
+    <p class="mt-3 text-amber-100/80">The chart wires <code class="bg-amber-500/10 px-1 py-0.5 rounded text-amber-200">externalDatabase.host</code> into <code class="bg-amber-500/10 px-1 py-0.5 rounded text-amber-200">DATABASE_URL</code> and <code class="bg-amber-500/10 px-1 py-0.5 rounded text-amber-200">externalRedis.host</code> into <code class="bg-amber-500/10 px-1 py-0.5 rounded text-amber-200">REDIS_URL</code> automatically.</p>
+  </div>
+
+  <p>Other things to know before you deploy to production:</p>
+  <ul>
+    <li><strong>ReadWriteMany storage required.</strong> The <code>app</code> and <code>celery</code> pods share a <code>dbt_projects</code> PVC, so the chart requests an RWX storage class. On managed Kubernetes that usually means NFS, EFS, Azure Files, or Filestore; on bare metal, Longhorn or Rook/CephFS both work.</li>
+    <li><strong>Migrations run on every app pod startup.</strong> <code>alembic upgrade head</code> executes before Reflex boots, which is fine at <code>app.replicaCount=1</code> but not yet safe for HA. A pre-install/pre-upgrade Hook Job is tracked separately.</li>
+    <li><strong>Monitoring is not bundled.</strong> Unlike the Hetzner Docker Compose, the chart does not ship Grafana, Prometheus, or cAdvisor — run your cluster's existing observability stack and point it at the app's metrics endpoints.</li>
+    <li><strong>Secret placeholders default to <code>CHANGE-ME</code>.</strong> The chart will install with them so <code>helm lint</code> passes, but always override <code>secrets.*</code> at install time.</li>
+  </ul>
+
   <h2>Production Recommendations</h2>
   <ul>
     <li><strong>Reverse proxy</strong>: Use Nginx or Caddy in front for SSL termination</li>
