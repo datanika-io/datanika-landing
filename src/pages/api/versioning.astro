@@ -1,0 +1,171 @@
+---
+import ApiLayout from "../../layouts/ApiLayout.astro";
+---
+
+<ApiLayout
+  title="API Versioning"
+  description="Datanika REST API versioning policy — breaking-change rules, deprecation lifecycle, stability tiers, and version lifecycle. 12-month deprecation commitment for stable endpoints."
+>
+  <h1>API Versioning Policy</h1>
+  <p class="text-lg text-slate-400">How we evolve the Datanika REST API without breaking your integrations.</p>
+
+  <p>All Datanika REST endpoints live under <code>/api/v1/</code>. This page defines the rules for evolving that surface. It is the commitment enterprise customers and integration partners can point at when evaluating long-term stability.</p>
+
+  <h2>Breaking-Change Rules</h2>
+
+  <p>A <strong>breaking change</strong> is any modification that can cause a working client to fail. The following are breaking:</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Category</th>
+        <th>Examples</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Removal</td>
+        <td>Deleting an endpoint, field, or enum value</td>
+      </tr>
+      <tr>
+        <td>Rename</td>
+        <td>Changing an endpoint path, field name, or query param</td>
+      </tr>
+      <tr>
+        <td>Type change</td>
+        <td>Changing a field from <code>string</code> to <code>integer</code>, or from nullable to non-nullable</td>
+      </tr>
+      <tr>
+        <td>Semantic change</td>
+        <td>Altering the meaning of a status code or error code</td>
+      </tr>
+      <tr>
+        <td>Auth tightening</td>
+        <td>Requiring a new scope or elevating the required role</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>The following are <strong>non-breaking</strong> and may ship without notice:</p>
+
+  <ul>
+    <li>Adding a new endpoint, field, query parameter, or enum value</li>
+    <li>Adding a new optional request-body property</li>
+    <li>Widening a constraint (e.g., raising a <code>maximum</code>)</li>
+    <li>Adding new error codes alongside existing ones</li>
+    <li>Relaxing auth requirements</li>
+  </ul>
+
+  <h2>Deprecation Lifecycle</h2>
+
+  <ol class="list-decimal pl-6 space-y-2">
+    <li>
+      <strong>Announce</strong> — the endpoint or field is marked <code>deprecated: true</code> in the OpenAPI spec and a <code>Sunset</code> HTTP header is added to responses. The minimum notice period is <strong>12 months</strong> from the announcement date.
+    </li>
+    <li>
+      <strong>Warn</strong> — during the notice period the endpoint continues to work. Responses include <code>Deprecation: true</code> and <code>Sunset: &lt;date&gt;</code> headers. Release notes and changelog entries call out the deprecation.
+    </li>
+    <li>
+      <strong>Remove</strong> — after the sunset date the endpoint may return <code>410 Gone</code>. The schema entry is removed from the OpenAPI spec.
+    </li>
+  </ol>
+
+  <p>For critical security fixes, the minimum notice period may be shortened to <strong>30 days</strong> with explicit communication to affected users.</p>
+
+  <h2>Stability Tiers</h2>
+
+  <p>Every operation in the OpenAPI spec carries an <code>x-stability</code> extension so consumers (and enterprise procurement checklists) can assess risk at a glance.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Tier</th>
+        <th>Meaning</th>
+        <th>Commitment</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>stable</strong></td>
+        <td>Production-ready, fully supported</td>
+        <td>12-month deprecation notice before breaking changes</td>
+      </tr>
+      <tr>
+        <td><strong>beta</strong></td>
+        <td>Functionally complete, schema may evolve</td>
+        <td>3-month notice before breaking changes; additive changes ship freely</td>
+      </tr>
+      <tr>
+        <td><strong>experimental</strong></td>
+        <td>Early access, may change or be removed at any time</td>
+        <td>No notice required; not recommended for production integrations</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Current Assignments</h3>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Endpoints</th>
+        <th>Tier</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>/api/v1/connections</code>, <code>/api/v1/uploads</code>, <code>/api/v1/pipelines</code>, <code>/api/v1/transformations</code>, <code>/api/v1/schedules</code> (CRUD + trigger)</td>
+        <td>stable</td>
+      </tr>
+      <tr>
+        <td><code>/api/v1/runs</code>, <code>/api/v1/notifications/channels</code></td>
+        <td>stable</td>
+      </tr>
+      <tr>
+        <td><code>/api/v1/transformations/&#123;id&#125;/compile</code>, <code>/api/v1/transformations/&#123;id&#125;/preview</code></td>
+        <td>stable</td>
+      </tr>
+      <tr>
+        <td><code>/api/v1/catalog</code>, <code>/api/v1/catalog/&#123;id&#125;</code></td>
+        <td>beta</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Promotion Path</h3>
+
+  <p><code>experimental</code> &rarr; <code>beta</code> &rarr; <code>stable</code>. Promotion happens via a PR that updates the <code>x-stability</code> value in the OpenAPI schema and adds a changelog entry. Demotion (e.g., <code>stable</code> &rarr; <code>beta</code>) is treated as a breaking change and follows the deprecation lifecycle above.</p>
+
+  <h2>Version Lifecycle</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Phase</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Active</strong></td>
+        <td><code>/api/v1/</code> — current and only version. Receives features and fixes.</td>
+      </tr>
+      <tr>
+        <td><strong>Deprecated</strong></td>
+        <td>When <code>/api/v2/</code> is introduced, v1 enters a 12-month sunset window.</td>
+      </tr>
+      <tr>
+        <td><strong>Retired</strong></td>
+        <td>After the sunset date, v1 endpoints return <code>410 Gone</code>.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>There are no plans to introduce <code>/api/v2/</code> at this time. When that happens, this page will be updated with a concrete timeline.</p>
+
+  <h2>Source of truth</h2>
+
+  <p>The canonical policy lives in the open-source core repository at <a href="https://github.com/datanika-io/datanika-core/blob/master/docs/api_versioning.md">datanika-core/docs/api_versioning.md</a>. This page is a mirror for discoverability; the core doc is what changes first when the policy evolves.</p>
+
+  <p>For the full list of endpoints and curl examples, see the <a href="/api/reference">API Reference</a>. For authentication and key management, see <a href="/api/keys">API Keys</a>.</p>
+</ApiLayout>

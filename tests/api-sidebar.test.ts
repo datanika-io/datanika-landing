@@ -13,6 +13,7 @@ const EXPECTED_API_SIDEBAR = [
   { label: "Overview", href: "/api" },
   { label: "API Reference", href: "/api/reference" },
   { label: "API Keys", href: "/api/keys" },
+  { label: "Versioning", href: "/api/versioning" },
 ];
 
 function getApiPages(): string[] {
@@ -60,12 +61,12 @@ describe("api sidebar consistency", () => {
   const expectedHrefs = EXPECTED_API_SIDEBAR.map((s) => s.href);
 
   it("found api pages to test", () => {
-    // Issue #105 ships the section with 3 pages: index, reference, keys.
-    expect(pages.length).toBeGreaterThanOrEqual(3);
+    // Issue #105 shipped 3 pages: index, reference, keys. Issue #174 added versioning.
+    expect(pages.length).toBeGreaterThanOrEqual(4);
   });
 
   it("EXPECTED_API_SIDEBAR has the right entry count", () => {
-    expect(EXPECTED_API_SIDEBAR.length).toBe(3);
+    expect(EXPECTED_API_SIDEBAR.length).toBe(4);
   });
 
   it("api sidebar nav is sticky and independently scrollable", () => {
@@ -108,19 +109,24 @@ describe("api sidebar consistency", () => {
     expect(indexHtml).toContain('href="/api"');
   });
 
-  it("legacy /docs/api and /docs/api-keys URLs redirect to the new location", () => {
+  it("legacy /docs/api, /docs/api-keys, /docs/api-versioning URLs redirect to the new location", () => {
     // Astro's `redirects` config emits static stubs at the source paths.
     // Check that the built HTML contains a meta refresh / canonical pointing
     // at the new URL.
     const docsApiStub = join(DIST, "..", "docs", "api", "index.html");
     const docsApiKeysStub = join(DIST, "..", "docs", "api-keys", "index.html");
+    const docsApiVersioningStub = join(DIST, "..", "docs", "api-versioning", "index.html");
     expect(existsSync(docsApiStub), "/docs/api redirect stub not built").toBe(true);
     expect(existsSync(docsApiKeysStub), "/docs/api-keys redirect stub not built").toBe(true);
+    expect(existsSync(docsApiVersioningStub), "/docs/api-versioning redirect stub not built").toBe(true);
 
     const apiHtml = readFileSync(docsApiStub, "utf-8");
     expect(apiHtml).toContain("/api/reference");
 
     const keysHtml = readFileSync(docsApiKeysStub, "utf-8");
     expect(keysHtml).toContain("/api/keys");
+
+    const versioningHtml = readFileSync(docsApiVersioningStub, "utf-8");
+    expect(versioningHtml).toContain("/api/versioning");
   });
 });
