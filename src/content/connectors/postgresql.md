@@ -65,13 +65,12 @@ Create a **dedicated read-only role** rather than reusing an existing login. Thi
    - **Database** — the database name you granted access to in Step 1.
    - **User** — `datanika_readonly`.
    - **Password** — the password from Step 1. Stored encrypted at rest with Fernet.
-   - **SSL mode** — `require` for any production database. Use `disable` only for local dev.
 4. Click **Test connection**. You should see a green ✅ within a few seconds.
 5. Click **Save**.
 
 ![Filling in the PostgreSQL connection form](/docs/connectors/postgresql/02-add-connection.png)
 
-> **Test connection fails?** Jump to [Troubleshooting](#troubleshooting) — 90% of first-run failures are a missing `pg_hba.conf` rule, a firewall, or an SSL mode mismatch.
+> **Test connection fails?** Jump to [Troubleshooting](#troubleshooting) — 90% of first-run failures are a missing `pg_hba.conf` rule, a firewall, or a TLS/SSL handshake issue on the Postgres side.
 
 ## Step 3 — Configure tables and schemas
 
@@ -125,10 +124,6 @@ Create a **dedicated read-only role** rather than reusing an existing login. Thi
 ### Connection test times out
 **Cause.** Datanika can't reach your Postgres host. Almost always a firewall or `pg_hba.conf` issue.
 **Fix.** Check, in order: (1) is the host reachable from the internet at all (`nc -zv <host> 5432`), (2) does `pg_hba.conf` have a `hostssl` rule matching `datanika_readonly` from Datanika's IPs, (3) did you reload Postgres after editing `pg_hba.conf` (`SELECT pg_reload_conf();`), (4) is your cloud firewall (AWS SG, GCP VPC, etc.) allowlisting our egress IPs.
-
-### `SSL error: certificate verify failed`
-**Cause.** SSL mode is `verify-full` but Datanika can't validate your server certificate against a trusted CA.
-**Fix.** If you're using a self-signed certificate, switch SSL mode to `require` (encryption without cert validation). For managed Postgres (RDS, Cloud SQL, Supabase, Neon) `verify-full` should just work — double-check the hostname matches the cert CN/SAN.
 
 ### Incremental run is pulling every row every time
 **Cause.** The incremental cursor column isn't actually monotonic, or the pipeline was left on `replace` instead of `merge`.
