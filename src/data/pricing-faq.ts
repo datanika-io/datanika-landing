@@ -11,6 +11,13 @@
  * Content owner: Growth. Source: https://github.com/datanika-io/datanika-landing/issues/45.
  * All answers are ≤200 characters for rich-snippet eligibility.
  * Order matters: highest-objection questions come first.
+ *
+ * DRAFT — Pricing V2 rewrite per SPEC_PRICING_V2.md §6.3. Lives on branch
+ * 182-pricing-v2-copy-draft through P1–P4 and merges at P5 cutover day.
+ * New V2 entries occupy positions 1–5 (post-pivot highest-objection), and
+ * the V1 run-based entries (#1 Free, #5 Enterprise, #6 connectors) are
+ * rewritten to the GB shape. Three entries are preserved verbatim: self-host,
+ * annual discount, change plans.
  */
 
 export interface FAQItem {
@@ -20,14 +27,34 @@ export interface FAQItem {
 
 export const pricingFaq: FAQItem[] = [
   {
-    question: "Can I use Datanika for free?",
+    question: "What does \"GB processed\" mean?",
     answer:
-      "Yes — Free tier includes 1 seat, 5 connections, 2 schedules, and 500 model runs/month. No credit card required. All 32 connectors are available on every plan.",
+      "GB processed counts the output bytes after normalization — the amplified number our infrastructure actually touches. A 1 GB JSON blob can become 3 GB of flat tables; we meter the 3 GB.",
   },
   {
-    question: "How do usage overages work?",
+    question: "What happens if I exceed my volume quota?",
     answer:
-      "Free and Pro are hard-capped — runs stop once you hit the limit. Enterprise is soft-capped: $0.01 per model run beyond 50,000/month, so pipelines never stall.",
+      "Free is hard-capped at 10 GB — runs stop. Pro and Enterprise bill overage at $0.50/GB and $0.25/GB, computed at the end of your billing cycle. No surprise mid-cycle blocks.",
+  },
+  {
+    question: "Does a dbt model re-run count as new volume?",
+    answer:
+      "Yes — re-running a dbt model re-scans the underlying tables and we meter the scan. ELT mode pushes that work to your warehouse, so most dbt re-runs on ELT pipelines don't add GB.",
+  },
+  {
+    question: "How do you meter \"processed\" — by input or output?",
+    answer:
+      "Output, after normalization. A 1 GB JSON export becomes ~3 GB of flat tables on ETL; we meter the 3 GB. ELT mode streams compressed parquet, so the same source meters ~0.8 GB.",
+  },
+  {
+    question: "How does this compare to Fivetran's MAR pricing?",
+    answer:
+      "Fivetran bills per Monthly Active Row, which penalizes wide schemas. We bill per GB — $0.50/GB on Pro, $0.25/GB on Enterprise. See /why-cheaper for a side-by-side GB calculator.",
+  },
+  {
+    question: "Can I use Datanika for free?",
+    answer:
+      "Yes — Free tier includes 1 seat, 5 connections, 2 schedules, and 10 GB/mo processed (hard-capped). No credit card required. All 32 connectors are available on every plan.",
   },
   {
     question: "Can I self-host Datanika?",
@@ -42,17 +69,12 @@ export const pricingFaq: FAQItem[] = [
   {
     question: "What's included in Enterprise?",
     answer:
-      "Everything in Pro plus SSO (SAML/OIDC), 50 connections, 50,000 model runs/month, overage billing at $0.01/run, 10 seats included, and priority support with SLA.",
+      "SSO (SAML/OIDC), 50 connections, 1 TB/mo processed with $0.25/GB overage, 10 seats included, and priority support with SLA. Everything Pro has, at volume.",
   },
   {
     question: "Do you charge per connector?",
     answer:
-      "No. Unlike Fivetran's per-connection minimums, Datanika charges by model runs only. All 32 connectors are available on every plan — including Free. Use as many as you need.",
-  },
-  {
-    question: "How does this compare to Fivetran's MAR pricing?",
-    answer:
-      "Fivetran bills per Monthly Active Row. We bill a flat $79/mo on Pro — no matter the row volume. See /why-cheaper for a public MAR calculator showing the savings at 100k, 500k, and 5M rows.",
+      "No. Unlike Fivetran's per-connection minimums, Datanika bills per GB processed only. All 32 connectors work on every plan — including Free. Use as many as you need.",
   },
   {
     question: "Can I change plans anytime?",
@@ -62,7 +84,7 @@ export const pricingFaq: FAQItem[] = [
   {
     question: "Is there a trial for Pro?",
     answer:
-      "The Free tier is effectively an unlimited trial of core features. For Pro-specific scale limits (more runs, connections, seats), contact us — we can extend Free if needed.",
+      "The Free tier (10 GB/mo) is effectively an unlimited trial of core features. For Pro-specific scale limits (100 GB included, 5 seats, 25 connections), contact us — we can extend Free.",
   },
 ];
 
