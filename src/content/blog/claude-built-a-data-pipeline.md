@@ -1,12 +1,13 @@
 ---
 title: "I Asked Claude to Build a Stripe → BigQuery Pipeline. It Did."
 description: "A hands-on walkthrough of an AI agent building a complete data pipeline end-to-end — discovery, validation, execution — with zero human code in the loop."
-date: 2026-04-16
-updatedDate: 2026-04-16
+date: 2026-05-07
+updatedDate: 2026-05-07
 author: "Datanika Team"
 category: "tutorial"
 tags: ["ai-agents", "llm", "tutorial", "api", "developer-experience"]
 heroImage: "/logo.png"
+publishedAt: 2026-05-07
 ---
 
 ## The Prompt
