@@ -1,0 +1,33 @@
+name: Daily rebuild
+
+# Fires at 06:00 UTC every day to pick up scheduled blog posts whose
+# `publishedAt` date has just crossed `now`. See
+# plans/infra/PLAN_INFRASTRUCTURE.md:221 for the decision record.
+#
+# Shape: this workflow owns only the schedule trigger + a `gh workflow run`
+# dispatch into the existing `deploy.yml`. It does NOT duplicate the build or
+# deploy logic. Keeps the cron coupling minimal — if deploy.yml changes, this
+# file stays untouched.
+#
+# GitHub Actions only honors `schedule:` triggers on the default branch
+# (`main`), so this file is inert until it lands on `main`. The 06:00 UTC
+# cron is deliberately after the 06:00 UTC content-schedule boundary that
+# Growth's post-N migration uses — see landing#193 / G6.
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  trigger-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch deploy.yml on main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run deploy.yml --ref main --repo "$GITHUB_REPOSITORY"
