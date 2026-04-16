@@ -86,6 +86,32 @@ export const pricingFaq: FAQItem[] = [
     answer:
       "The Free tier (10 GB/mo) is effectively an unlimited trial of core features. For Pro-specific scale limits (100 GB included, 5 seats, 25 connections), contact us — we can extend Free.",
   },
+  // --- GA4: V2 migration/explainer FAQ entries (added 2026-04-16) ---
+  {
+    question: "Why did you change pricing?",
+    answer:
+      "Our v1 had no volume cap. A single 1 TB customer would cost us more to serve than the $79 bill. We added a GB meter before the first paying customer, not after.",
+  },
+  {
+    question: "I read about your old per-run pricing. Is that still accurate?",
+    answer:
+      "No. V2 replaces flat run-based pricing with GB-based volume tiers. Runs still exist as a secondary fair-use limit, but GB is the primary billing dimension.",
+  },
+  {
+    question: "What happens at my 10 GB Free cap?",
+    answer:
+      "Pipelines pause until next month. No overage charges on Free — it is a hard cap. You can upgrade to Pro mid-cycle to unlock 100 GB immediately.",
+  },
+  {
+    question: "What is the difference between a GB and a row?",
+    answer:
+      "A row is one record; a GB is 1 billion bytes of data. A row can be 100 bytes or 10 KB depending on schema width. We bill per GB because it tracks our real infrastructure cost.",
+  },
+  {
+    question: "Why is ELT cheaper than ETL in your metering?",
+    answer:
+      "ELT streams compressed parquet to your warehouse — the meter counts ~0.8 GB for the same source that reads 3 GB on ETL. Same rate, fewer billable bytes. See /features/volume-pricing.",
+  },
 ];
 
 /**
