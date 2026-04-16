@@ -1,0 +1,372 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import Navbar from "../../components/Navbar.astro";
+import Footer from "../../components/Footer.astro";
+import ConversionCTA from "../../components/ConversionCTA.astro";
+
+// DRAFT — Ships on branch 182-pricing-v2-copy-draft, merges at P5 cutover day.
+// Do NOT merge before cloud volume metering is green in staging for >=14 days
+// per SPEC_PRICING_V2 §11.
+
+const tiers = [
+  {
+    name: "Free",
+    price: "$0",
+    period: "forever",
+    volume: "10 GB/mo",
+    overage: "Hard cap",
+    highlight: false,
+    features: [
+      "10 GB processed per month",
+      "500 model runs",
+      "1 team member",
+      "5 connections",
+      "2 schedules",
+      "All 32 connectors",
+    ],
+  },
+  {
+    name: "Pro",
+    price: "$79",
+    period: "/mo",
+    volume: "100 GB/mo",
+    overage: "$0.50/GB",
+    highlight: true,
+    features: [
+      "100 GB processed per month",
+      "$0.50 per extra GB",
+      "15,000 model runs",
+      "5 team members",
+      "25 connections",
+      "Unlimited schedules",
+      "Priority support",
+    ],
+  },
+  {
+    name: "Enterprise",
+    price: "From $399",
+    period: "/mo",
+    volume: "1 TB/mo",
+    overage: "$0.25/GB",
+    highlight: false,
+    features: [
+      "1 TB processed per month",
+      "$0.25 per extra GB",
+      "50,000 model runs",
+      "10 team members (+$25/seat)",
+      "50 connections",
+      "Unlimited schedules",
+      "SSO (SAML/OIDC)",
+      "Priority support with SLA",
+    ],
+  },
+];
+
+const faq = [
+  {
+    q: "What counts as a \"GB processed\"?",
+    a: "Total output volume after normalization, in gigabytes, that moves through our ingestion or transformation layer per billing period. We count post-normalization bytes — the amplified number — because that is what our infrastructure actually touches.",
+  },
+  {
+    q: "Why is ELT cheaper than ETL?",
+    a: "ELT streams compressed parquet directly to your warehouse, bypassing our normalization layer. A 1 GB JSON export becomes ~0.8 GB of parquet on ELT versus ~3 GB of flat tables on ETL. Same data, same source, 3–5× fewer billable gigabytes.",
+  },
+  {
+    q: "What happens when I exceed my included volume?",
+    a: "On Free: hard cap — your pipeline pauses until next month. On Pro: $0.50 per extra GB, billed at the end of the billing period. On Enterprise: $0.25 per extra GB. The UI shows predicted overage cost before every run.",
+  },
+  {
+    q: "Can I see my cost before I run a pipeline?",
+    a: "Yes. Pro and Enterprise pipelines display a pre-run estimate based on a moving average of your last 5 runs or an inspection of source-table size for first runs. No surprises.",
+  },
+  {
+    q: "How does this compare to Fivetran's MAR pricing?",
+    a: "Fivetran charges by monthly active rows (MAR). MAR re-counts edits and punishes wide schemas. At 100 GB, Fivetran Starter costs roughly $3,800/mo; Datanika Pro costs $79. Use our calculator at /why-cheaper/ for a side-by-side comparison.",
+  },
+  {
+    q: "Do I still get all 32 connectors on Free?",
+    a: "Yes. We never gate connectors by plan. Free, Pro, and Enterprise all have access to all 32 sources and destinations. We gate on volume, not capabilities.",
+  },
+];
+---
+
+<Layout
+  title="Volume-Based Pricing — Pay for Bytes, Not Tables | Datanika"
+  description="Datanika prices by GB processed, not rows or tables. 10 GB free, $0.50/GB on Pro, $0.25/GB on Enterprise. Pick ELT, pay less. See the math."
+  breadcrumbs={[
+    { name: "Home", url: "/" },
+    { name: "Features", url: "/features/volume-pricing" },
+    { name: "Volume Pricing", url: "/features/volume-pricing" },
+  ]}
+  ogCollection="pages"
+  ogSlug="volume-pricing"
+>
+  <Navbar />
+
+  <!-- Hero -->
+  <section class="relative pt-32 pb-20 overflow-hidden">
+    <div class="glow bg-emerald-600 -top-40 -left-40"></div>
+    <div class="glow bg-cyan-600 -bottom-40 -right-40"></div>
+    <div class="relative max-w-5xl mx-auto px-6 text-center">
+      <div class="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 text-sm text-emerald-300 mb-6">
+        <span>Pricing V2</span>
+        <span class="text-emerald-500">|</span>
+        <span>You pay for bytes, not tables</span>
+      </div>
+      <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-6">
+        <span class="gradient-text">Volume-Based Pricing</span><br />
+        Start Free with 10 GB
+      </h1>
+      <p class="text-lg sm:text-xl text-slate-400 max-w-3xl mx-auto leading-relaxed mb-8">
+        One meter: gigabytes processed. No per-row surprises, no table-count gating, no MAR conversion math.
+        Pick ELT mode and the meter reads 3–5× less for the same source data.
+      </p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <ConversionCTA href="https://app.datanika.io" class="btn-primary">Start Free — 10 GB/mo</ConversionCTA>
+        <a href="/why-cheaper/" class="btn-secondary">
+          See the Calculator
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tier Cards -->
+  <section class="py-20 border-t border-slate-800">
+    <div class="max-w-6xl mx-auto px-6">
+      <h2 class="text-3xl font-bold text-center mb-4">Three tiers, one meter</h2>
+      <p class="text-slate-400 text-center max-w-2xl mx-auto mb-12">
+        Every plan includes a volume allowance. Go over on Pro or Enterprise and you pay a flat per-GB overage — predictable and visible before every run.
+      </p>
+      <div class="grid md:grid-cols-3 gap-8">
+        {tiers.map((tier) => (
+          <div class={`rounded-2xl p-8 ${tier.highlight ? "bg-emerald-950/40 border-2 border-emerald-500/40 ring-1 ring-emerald-500/20" : "bg-slate-800/50 border border-slate-700"}`}>
+            <div class="mb-6">
+              <h3 class="text-xl font-bold mb-1">{tier.name}</h3>
+              <div class="flex items-baseline gap-1">
+                <span class="text-3xl font-extrabold">{tier.price}</span>
+                <span class="text-slate-400">{tier.period}</span>
+              </div>
+            </div>
+            <div class="mb-6 p-4 rounded-lg bg-slate-900/50 border border-slate-700">
+              <div class="text-sm text-slate-400 mb-1">Included volume</div>
+              <div class="text-2xl font-bold text-emerald-400">{tier.volume}</div>
+              <div class="text-sm text-slate-500 mt-1">Overage: {tier.overage}</div>
+            </div>
+            <ul class="space-y-3">
+              {tier.features.map((f) => (
+                <li class="flex items-start gap-2 text-sm text-slate-300">
+                  <svg class="w-4 h-4 mt-0.5 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                  {f}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Pick ELT, Pay Less -->
+  <section class="py-20 border-t border-slate-800">
+    <div class="max-w-5xl mx-auto px-6">
+      <h2 class="text-3xl font-bold text-center mb-4">Pick ELT, pay less</h2>
+      <p class="text-slate-400 text-center max-w-2xl mx-auto mb-12">
+        The meter reads what hits our disk. ELT streams compressed parquet directly to your warehouse — the meter counts less, so you pay less. Same source, same data.
+      </p>
+      <div class="grid md:grid-cols-2 gap-8">
+        <!-- ETL column -->
+        <div class="rounded-2xl bg-slate-800/50 border border-slate-700 p-8">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center">
+              <span class="text-orange-400 font-bold text-lg">E</span>
+            </div>
+            <h3 class="text-xl font-bold">ETL Mode</h3>
+          </div>
+          <p class="text-slate-400 mb-6">Data is normalized on our side. Nested JSON flattens into wide tables before loading.</p>
+          <div class="space-y-4">
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-400">1 GB JSON export</span>
+              <span class="text-orange-400 font-mono">→ ~3 GB metered</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-400">Pro overage per run</span>
+              <span class="text-orange-400 font-mono">$1.50</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-400">30 nightly runs/mo</span>
+              <span class="text-orange-400 font-mono">$45 overage</span>
+            </div>
+          </div>
+        </div>
+        <!-- ELT column -->
+        <div class="rounded-2xl bg-emerald-950/30 border-2 border-emerald-500/30 p-8">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+              <span class="text-emerald-400 font-bold text-lg">E</span>
+            </div>
+            <h3 class="text-xl font-bold">ELT Mode</h3>
+            <span class="text-xs bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full">Recommended</span>
+          </div>
+          <p class="text-slate-400 mb-6">Data streams as compressed parquet to your warehouse. Normalized there with SQL.</p>
+          <div class="space-y-4">
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-400">1 GB JSON export</span>
+              <span class="text-emerald-400 font-mono">→ ~0.8 GB metered</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-400">Pro overage per run</span>
+              <span class="text-emerald-400 font-mono">$0.40</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-400">30 nightly runs/mo</span>
+              <span class="text-emerald-400 font-mono">$12 overage</span>
+            </div>
+          </div>
+          <div class="mt-6 pt-4 border-t border-emerald-500/20 text-center">
+            <span class="text-emerald-400 font-bold text-lg">3.75× lower bill</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GB Metering Transparency -->
+  <section class="py-20 border-t border-slate-800">
+    <div class="max-w-4xl mx-auto px-6">
+      <h2 class="text-3xl font-bold text-center mb-4">Transparent metering</h2>
+      <p class="text-slate-400 text-center max-w-2xl mx-auto mb-12">
+        We count post-normalization output bytes — the bigger number — because that is what our infrastructure actually processes. No hidden multipliers.
+      </p>
+      <div class="space-y-6">
+        <div class="rounded-xl bg-slate-800/50 border border-slate-700 p-6">
+          <h3 class="font-bold mb-3">Worked example</h3>
+          <div class="space-y-2 text-sm text-slate-300">
+            <div class="flex items-center gap-3">
+              <span class="w-24 text-slate-500 shrink-0">Source</span>
+              <span>1 GB HubSpot JSON export</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="w-24 text-slate-500 shrink-0">Normalize</span>
+              <span>Flattens nested objects → ~3 GB wide table</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="w-24 text-slate-500 shrink-0">Transform</span>
+              <span>dbt aggregation → 100 MB summary</span>
+            </div>
+            <div class="flex items-center gap-3 pt-2 border-t border-slate-700">
+              <span class="w-24 text-slate-500 shrink-0 font-bold">Metered</span>
+              <span class="text-emerald-400 font-bold">3.1 GB counted against your quota</span>
+            </div>
+          </div>
+        </div>
+        <div class="rounded-xl bg-slate-800/50 border border-slate-700 p-6">
+          <h3 class="font-bold mb-3">Pre-run cost estimate</h3>
+          <p class="text-sm text-slate-300">
+            Pro and Enterprise pipelines show a <code class="text-emerald-300 bg-slate-900 px-1 py-0.5 rounded text-xs">predicted_bytes</code> estimate
+            based on a moving average of your last 5 runs. If the predicted volume would push you past your included quota,
+            the UI shows the expected overage cost <strong>before</strong> you click "Run."
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Competitor Comparison -->
+  <section class="py-20 border-t border-slate-800">
+    <div class="max-w-5xl mx-auto px-6">
+      <h2 class="text-3xl font-bold text-center mb-4">How we compare</h2>
+      <p class="text-slate-400 text-center max-w-2xl mx-auto mb-12">
+        At the volumes that matter, Datanika is 10–100× cheaper than MAR-based pricing.
+      </p>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-slate-700 text-left">
+              <th class="pb-3 pr-4 text-slate-400 font-medium">Volume</th>
+              <th class="pb-3 pr-4 text-emerald-400 font-medium">Datanika</th>
+              <th class="pb-3 pr-4 text-slate-400 font-medium">Fivetran</th>
+              <th class="pb-3 pr-4 text-slate-400 font-medium">Airbyte</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800">
+            <tr>
+              <td class="py-3 pr-4 text-slate-300">10 GB/mo</td>
+              <td class="py-3 pr-4 text-emerald-400 font-bold">$0 (Free)</td>
+              <td class="py-3 pr-4 text-slate-400">~$600</td>
+              <td class="py-3 pr-4 text-slate-400">~$200</td>
+            </tr>
+            <tr>
+              <td class="py-3 pr-4 text-slate-300">100 GB/mo</td>
+              <td class="py-3 pr-4 text-emerald-400 font-bold">$79 (Pro)</td>
+              <td class="py-3 pr-4 text-slate-400">~$3,800</td>
+              <td class="py-3 pr-4 text-slate-400">~$1,500</td>
+            </tr>
+            <tr>
+              <td class="py-3 pr-4 text-slate-300">1 TB/mo</td>
+              <td class="py-3 pr-4 text-emerald-400 font-bold">$399 (Enterprise)</td>
+              <td class="py-3 pr-4 text-slate-400">~$22,000</td>
+              <td class="py-3 pr-4 text-slate-400">~$12,000</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="text-xs text-slate-500 mt-4">
+        Competitor estimates from published pricing pages (2026). Fivetran: Starter tier with MAR→GB conversion at ~200K rows/GB.
+        Airbyte: Cloud tier. See <a href="/why-cheaper/" class="text-emerald-400 hover:underline">/why-cheaper/</a> for the full methodology.
+      </p>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="py-20 border-t border-slate-800">
+    <div class="max-w-3xl mx-auto px-6">
+      <h2 class="text-3xl font-bold text-center mb-12">Frequently asked questions</h2>
+      <div class="space-y-6">
+        {faq.map((item) => (
+          <div class="rounded-xl bg-slate-800/50 border border-slate-700 p-6">
+            <h3 class="font-bold mb-2">{item.q}</h3>
+            <p class="text-sm text-slate-400 leading-relaxed">{item.a}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Self-host callout -->
+  <section class="py-20 border-t border-slate-800">
+    <div class="max-w-4xl mx-auto px-6 text-center">
+      <h2 class="text-3xl font-bold mb-4">Prefer to self-host?</h2>
+      <p class="text-slate-400 max-w-2xl mx-auto mb-8">
+        The AGPL-3.0 open-source core has zero pricing dimensions. Run it on your own hardware,
+        ingest 10 TB/mo, pay us nothing. Volume pricing applies only to the managed SaaS at
+        <code class="text-emerald-300 bg-slate-800 px-1.5 py-0.5 rounded text-sm">app.datanika.io</code>.
+      </p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <ConversionCTA href="https://app.datanika.io" class="btn-primary">Start Free — 10 GB/mo</ConversionCTA>
+        <a href="/docs/self-hosting/" class="btn-secondary">Self-Hosting Guide</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Cross-links -->
+  <section class="py-12 border-t border-slate-800">
+    <div class="max-w-4xl mx-auto px-6">
+      <div class="grid sm:grid-cols-3 gap-4">
+        <a href="/why-cheaper/" class="rounded-lg bg-slate-800/50 border border-slate-700 p-4 hover:border-emerald-500/40 transition-colors">
+          <h3 class="font-bold text-sm mb-1">Cost Calculator</h3>
+          <p class="text-xs text-slate-400">Drag a slider from 1 GB to 10 TB and see the cost side-by-side with Fivetran.</p>
+        </a>
+        <a href="/compare/fivetran/" class="rounded-lg bg-slate-800/50 border border-slate-700 p-4 hover:border-emerald-500/40 transition-colors">
+          <h3 class="font-bold text-sm mb-1">Datanika vs Fivetran</h3>
+          <p class="text-xs text-slate-400">GB-normalized pricing tables at 10, 100, and 1,000 GB.</p>
+        </a>
+        <a href="/compare/airbyte/" class="rounded-lg bg-slate-800/50 border border-slate-700 p-4 hover:border-emerald-500/40 transition-colors">
+          <h3 class="font-bold text-sm mb-1">Datanika vs Airbyte</h3>
+          <p class="text-xs text-slate-400">Open-source comparison with volume-based pricing breakdown.</p>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <Footer />
+</Layout>
