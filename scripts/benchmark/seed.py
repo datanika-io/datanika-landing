@@ -5,7 +5,7 @@ Schema: customers (100k) → orders (2M) → line_items (8M) = ~10M total rows.
 Deterministic — same seed always produces the same data.
 
 Usage:
-    python seed.py [--conn postgres://bench:bench@localhost:15432/benchmark]
+    python seed.py [--conn postgresql://bench:bench@localhost:15432/benchmark]
 """
 
 import argparse
@@ -157,7 +157,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--conn",
-        default="postgres://bench:bench@localhost:15432/benchmark",
+        default="postgresql://bench:bench@localhost:15432/benchmark",
         help="PostgreSQL connection string",
     )
     args = parser.parse_args()
