@@ -1,0 +1,19 @@
+services:
+  postgres-source:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: benchmark
+      POSTGRES_USER: bench
+      POSTGRES_PASSWORD: bench
+    ports:
+      - "15432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bench -d benchmark"]
+      interval: 2s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:
