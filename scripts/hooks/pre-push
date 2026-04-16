@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# pre-push hook — runs build + tests before every push.
+# Mirrors the CI gate (astro build, vitest).
+# Install: git config core.hooksPath scripts/hooks
+set -e
+
+REPO_ROOT=$(git rev-parse --show-toplevel)
+cd "$REPO_ROOT"
+
+echo "pre-push: npm run build"
+npm run build
+echo "pre-push: npm test"
+npm test
+echo "pre-push: all checks passed"
