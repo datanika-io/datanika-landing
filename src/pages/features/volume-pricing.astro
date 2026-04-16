@@ -332,6 +332,76 @@ const faq = [
     </div>
   </section>
 
+  <!-- Real-world performance -->
+  <section class="py-20 border-t border-slate-800">
+    <div class="max-w-5xl mx-auto px-6">
+      <h2 class="text-3xl font-bold text-center mb-4">Measured on production workloads</h2>
+      <p class="text-slate-400 text-center max-w-2xl mx-auto mb-12">
+        The architecture behind "Pick ELT, pay less" was proven on real data before Datanika existed.
+        These numbers are from production pipelines the founding team ran at a previous company.
+      </p>
+      <div class="grid md:grid-cols-2 gap-8">
+        <div class="rounded-2xl bg-slate-800/50 border border-slate-700 p-8">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+              <span class="text-emerald-400 font-bold text-sm">SQL</span>
+            </div>
+            <h3 class="text-xl font-bold">MySQL: 54M rows</h3>
+          </div>
+          <div class="space-y-3 mb-6">
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-400">Legacy custom operators</span>
+              <span class="text-slate-300 font-mono">99 min</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-400">DLT + JSON normalization</span>
+              <span class="text-orange-400 font-mono">174 min</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-400">DLT + Arrow (ELT path)</span>
+              <span class="text-emerald-400 font-mono font-bold">17 min</span>
+            </div>
+          </div>
+          <div class="pt-4 border-t border-slate-700 text-center">
+            <span class="text-emerald-400 font-bold text-lg">5.8x faster</span>
+            <span class="text-slate-500 text-sm block">than legacy operators</span>
+          </div>
+        </div>
+        <div class="rounded-2xl bg-slate-800/50 border border-slate-700 p-8">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+              <span class="text-emerald-400 font-bold text-xs">DOC</span>
+            </div>
+            <h3 class="text-xl font-bold">MongoDB: 8.6M docs</h3>
+          </div>
+          <div class="space-y-3 mb-6">
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-400">Legacy custom operators</span>
+              <span class="text-slate-300 font-mono">49 min</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-400">DLT + JSON normalization</span>
+              <span class="text-orange-400 font-mono">23.5 min</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-400">DLT + Arrow (ELT path)</span>
+              <span class="text-emerald-400 font-mono font-bold">4 min</span>
+            </div>
+          </div>
+          <div class="pt-4 border-t border-slate-700 text-center">
+            <span class="text-emerald-400 font-bold text-lg">3.5x faster</span>
+            <span class="text-slate-500 text-sm block">per million rows, normalized</span>
+          </div>
+        </div>
+      </div>
+      <p class="text-xs text-slate-500 mt-6 text-center">
+        Arrow mode bypasses JSON normalization entirely — data flows as columnar Parquet directly to the destination.
+        The same architecture powers Datanika's ELT mode, which is why the meter reads fewer bytes.
+        <a href="/blog/dlt-arrow-5x-faster-pipeline/" class="text-emerald-400 hover:underline">Full technical deep-dive</a>.
+      </p>
+    </div>
+  </section>
+
   <!-- Self-host callout -->
   <section class="py-20 border-t border-slate-800">
     <div class="max-w-4xl mx-auto px-6 text-center">
