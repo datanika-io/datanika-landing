@@ -53,15 +53,15 @@ The difference isn't that Datanika is faster at any single step. It's that there
 
 | Stack | Full sync (10M rows) | Throughput |
 |-------|---------------------|------------|
-| **Datanika (dlt → DuckDB)** | **~45–90s** (p95) | **~110k–220k rows/s** |
+| **Datanika (dlt → DuckDB)** | **571s** (p95, measured) | **17,704 rows/s** |
 | Fivetran → Snowflake | 5–15 min (estimated) | ~11k–33k rows/s |
 | Airbyte Cloud → BigQuery | 3–8 min (estimated) | ~21k–55k rows/s |
 
-The Datanika numbers are from the benchmark script running on a single 4-vCPU machine (Hetzner CPX31, €12/mo). DuckDB as the destination removes warehouse variability — what you're measuring is pure ELT throughput.
+The Datanika numbers are measured on a Hetzner CPX32 (4 vCPU, 8 GB RAM, €13/mo). The full pipeline — extract from Postgres, normalize 10.1M rows, load into DuckDB — completes in ~571s (p95 across 3 runs: 569.9s, 570.5s, 571.4s). DuckDB as the destination removes warehouse variability — what you're measuring is the full dlt extract + normalize + load pipeline. [Benchmark log](/scripts/benchmark/results/cpx32-2026-04-16.md).
 
 The Fivetran and Airbyte numbers are estimates based on published performance reports and community benchmarks. Fivetran's architecture (SaaS extraction → cloud staging → warehouse COPY) adds network hops that don't exist in a local dlt pipeline. That's not a criticism — it's a design trade-off. Fivetran trades latency for managed infrastructure. The question is whether that trade-off is worth $500+/mo.
 
-**Incremental syncs** (100k changed rows out of 2M orders) complete in under 10 seconds on Datanika. This is the metric that matters for hourly schedules — if your incremental sync takes 5 minutes, your hourly schedule has a 5-minute blind spot.
+**Incremental syncs** (100k changed rows out of 2M orders) complete in ~11 seconds on Datanika (p50 across 3 runs; first run was 187s due to cold pipeline state). This is the metric that matters for hourly schedules — if your incremental sync takes 5 minutes, your hourly schedule has a 5-minute blind spot.
 
 ### Monthly cost: $12–$79 vs $1,400+
 

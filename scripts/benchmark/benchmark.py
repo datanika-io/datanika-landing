@@ -7,7 +7,7 @@ Measures:
   - Rows per second throughput
 
 Usage:
-    python benchmark.py [--pg postgres://bench:bench@localhost:15432/benchmark]
+    python benchmark.py [--pg postgresql://bench:bench@localhost:15432/benchmark]
                         [--runs 5]
                         [--output results.md]
 """
@@ -26,7 +26,14 @@ def run_full_sync(pg_conn: str, dest_path: str) -> tuple[float, int]:
     """Run a full sync and return (elapsed_seconds, row_count)."""
     # Clean destination for a fresh full sync
     if os.path.exists(dest_path):
-        shutil.rmtree(dest_path)
+        if os.path.isdir(dest_path):
+            shutil.rmtree(dest_path)
+        else:
+            os.remove(dest_path)
+    # Also remove WAL file if it exists
+    wal_path = dest_path + ".wal"
+    if os.path.exists(wal_path):
+        os.remove(wal_path)
 
     pipeline = dlt.pipeline(
         pipeline_name="bench_full",
@@ -45,10 +52,14 @@ def run_full_sync(pg_conn: str, dest_path: str) -> tuple[float, int]:
     info = pipeline.run(source, write_disposition="replace")
     elapsed = time.perf_counter() - t0
 
-    row_count = sum(
-        pkg.jobs_count
-        for pkg in (info.load_packages or [])
-    ) if info.load_packages else 0
+    row_count = 0
+    try:
+        row_count = sum(
+            pkg.jobs_count
+            for pkg in (info.load_packages or [])
+        ) if info.load_packages else 0
+    except AttributeError:
+        pass
 
     # Fallback: count rows in DuckDB directly
     if row_count == 0:
@@ -135,7 +146,7 @@ def main():
     parser = argparse.ArgumentParser(description="Datanika benchmark: Postgres → DuckDB")
     parser.add_argument(
         "--pg",
-        default="postgres://bench:bench@localhost:15432/benchmark",
+        default="postgresql://bench:bench@localhost:15432/benchmark",
         help="Source Postgres connection string",
     )
     parser.add_argument("--runs", type=int, default=5, help="Number of benchmark runs")
