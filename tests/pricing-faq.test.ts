@@ -20,8 +20,8 @@ function escapeRegex(s: string): string {
 // ---------------------------------------------------------------------------
 
 describe("pricing-faq source data", () => {
-  it("has exactly 12 entries (V2 shape: 5 new GB entries + 7 retained/rewritten V1 entries)", () => {
-    expect(pricingFaq.length).toBe(12);
+  it("has exactly 17 entries (V2 shape: 5 GB + 7 V1 rewritten + 5 GA4 migration/explainer)", () => {
+    expect(pricingFaq.length).toBe(17);
   });
 
   it("every answer is <= 200 characters (rich-snippet budget)", () => {
@@ -55,7 +55,7 @@ describe("buildFaqPageJsonLd", () => {
     };
     expect(ld["@context"]).toBe("https://schema.org");
     expect(ld["@type"]).toBe("FAQPage");
-    expect(ld.mainEntity.length).toBe(12);
+    expect(ld.mainEntity.length).toBe(17);
     for (const q of ld.mainEntity) {
       expect(q["@type"]).toBe("Question");
       expect(q.acceptedAnswer["@type"]).toBe("Answer");
