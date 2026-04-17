@@ -66,9 +66,10 @@ Create a **dedicated loader user** rather than reusing the `default` admin accou
    - **Database** — the target database, e.g. `raw_data`.
    - **User** — `datanika_loader` (or `default` for ClickHouse Cloud).
    - **Password** — the password from Step 1. Stored encrypted at rest with Fernet.
-   - **Secure** — enable for ClickHouse Cloud and any TLS-enabled instance. Disable only for local dev.
 4. Click **Test connection**. Datanika runs a `SELECT 1` to verify connectivity. You should see a green checkmark.
 5. Click **Save**.
+
+> **ClickHouse Cloud (TLS) users.** TLS-only instances on port `8443` are not yet supported end-to-end via the structured connection form — the Test Connection button may fail even with correct credentials. Track [datanika-core#157 CORE-7](https://github.com/datanika-io/datanika-core/issues/157). Self-hosted ClickHouse on the plain HTTP port `8123` works without qualification.
 
 ![Adding ClickHouse as a destination in Datanika](/docs/connectors/clickhouse/02-add-connection.png)
 
