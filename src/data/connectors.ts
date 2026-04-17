@@ -717,7 +717,6 @@ export const connectors: Connector[] = [
       { name: "bootstrap_servers", description: "Comma-separated list of Kafka brokers" },
       { name: "topics", description: "Comma-separated list of topics to consume" },
       { name: "group_id", description: "Consumer group ID" },
-      { name: "security_protocol", description: "Security protocol (PLAINTEXT, SSL, SASL_SSL)" },
     ],
     related: ["clickhouse", "bigquery", "postgresql", "s3"],
     seoTitle: "Kafka to Warehouse — Streaming Ingestion | Datanika",
