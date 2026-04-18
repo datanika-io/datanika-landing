@@ -1,6 +1,6 @@
 ---
 title: "I Integrated a Payment Provider, Then Ripped It Out and Switched to Another"
-description: "Built the entire billing system on LemonSqueezy, then discovered it couldn't pay out to my country. Migrated to Paddle — here's why the plugin architecture made it survivable."
+description: "Built the entire billing system on LemonSqueezy, then discovered its payout coverage didn't fit our setup. Migrated to Paddle — here's why the plugin architecture made it survivable."
 date: 2026-04-18
 publishedAt: 2026-04-18
 author: "Datanika Team"
@@ -8,7 +8,7 @@ category: "engineering"
 tags: ["billing", "paddle", "migration", "open-core", "engineering"]
 ---
 
-I built the entire billing system on LemonSqueezy. Models, API client, webhook handler, 51 tests. Then I learned LemonSqueezy doesn't support payouts to my bank's country.
+I built the entire billing system on LemonSqueezy. Models, API client, webhook handler, 51 tests. Then I hit a wall: LemonSqueezy's payout coverage didn't fit our business setup.
 
 Switched to Paddle. The migration was surprisingly manageable — but only because of one architectural decision I made early.
 
