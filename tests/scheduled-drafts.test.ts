@@ -86,11 +86,22 @@ describe("published scheduled posts have draft: false", () => {
 });
 
 describe("future-dated posts are NOT in the built blog index", () => {
-  it("blog index does not contain scheduled post titles", () => {
+  // Date-aware: only assert absence for posts whose publishedAt is still
+  // in the future. On the publish day itself (publishedAt == today), the
+  // post correctly appears in the index and must be excluded from the
+  // not-in-index check. Mirrors the isPostVisible helper logic.
+  const today = new Date().toISOString().slice(0, 10);
+  const futureDrafts = scheduledPosts.filter((p) => p.publishedAt > today);
+
+  it(`blog index does not contain scheduled post titles (${futureDrafts.length} still future)`, () => {
     const indexFile = resolve(__dirname, "../dist/blog/index.html");
     if (!existsSync(indexFile)) return; // skip if dist not built
     const html = readFileSync(indexFile, "utf-8");
-    expect(html).not.toContain("Payment Provider, Then Ripped");
-    expect(html).not.toContain("Silently Filled My Disk");
+    for (const post of futureDrafts) {
+      expect(
+        html,
+        `${post.file} (publishedAt ${post.publishedAt}) should not be in blog index yet`,
+      ).not.toContain(post.titleContains);
+    }
   });
 });
