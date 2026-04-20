@@ -16,6 +16,11 @@
 /blog/ai-agent-native/|text/html|
 /templates/stripe-to-postgres/|text/html|
 /pricing/|text/html|$79
+/pricing/|text/html|$0.50/GB
+/pricing/|text/html|$0.25/GB
+/why-cheaper/|text/html|$0.50/GB
+/features/volume-pricing/|text/html|
+/blog/pricing-v2-math-and-why/|text/html|
 /docs/getting-started/|text/html|
 /compare/airbyte/|text/html|
 /compare/fivetran/|text/html|

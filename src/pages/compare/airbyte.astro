@@ -32,6 +32,38 @@ const chooseAirbyte = [
   "You already have a separate transformation tool (dbt Cloud, etc.)",
   "You need a mature ecosystem with a large community",
 ];
+
+// DRAFT — Pricing V2 GB-normalized comparison table per SPEC_PRICING_V2.md §6.1.
+// Lives on branch 182-pricing-v2-copy-draft through P1–P4 and merges at P5 cutover.
+// Airbyte Cloud numbers are illustrative estimates at ~$10–15/GB range
+// (SPEC §3). Airbyte Cloud measures "rows replicated," not GB — hit their
+// pricing page for a binding number on your specific sources.
+const gbPricingRows = [
+  {
+    volume: "10 GB / mo",
+    note: "Evaluation or side project",
+    datanika: "$0",
+    datanikaPerGB: "Free tier",
+    competitor: "~$200",
+    competitorPerGB: "~$20 / GB",
+  },
+  {
+    volume: "100 GB / mo",
+    note: "A real production pipeline",
+    datanika: "$79",
+    datanikaPerGB: "$0.79 / GB",
+    competitor: "~$1,500",
+    competitorPerGB: "~$15 / GB",
+  },
+  {
+    volume: "1 TB / mo",
+    note: "Multi-pipeline data team",
+    datanika: "$399",
+    datanikaPerGB: "$0.39 / GB",
+    competitor: "~$12,000",
+    competitorPerGB: "~$12 / GB",
+  },
+];
 ---
 
 <Layout
@@ -101,6 +133,48 @@ const chooseAirbyte = [
     </div>
   </section>
 
+  <!-- GB-normalized pricing -->
+  <section class="py-20">
+    <div class="max-w-5xl mx-auto px-6">
+      <h2 class="text-3xl font-bold text-center mb-3">GB-normalized pricing</h2>
+      <p class="text-sm text-slate-500 text-center mb-10 max-w-2xl mx-auto">
+        How the bill looks at three common volumes. Airbyte Cloud numbers are illustrative estimates — open <a href="/why-cheaper" class="text-violet-400 underline hover:text-violet-300">/why-cheaper</a> for the live GB calculator and the honesty disclosure, or hit <a href="https://airbyte.com/pricing" class="text-slate-400 underline hover:text-slate-300" rel="nofollow">Airbyte&rsquo;s pricing page</a> for a binding number on your specific sources.
+      </p>
+      <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur p-8 overflow-x-auto">
+        <table class="w-full text-left">
+          <thead>
+            <tr class="border-b border-slate-700">
+              <th class="pb-4 pr-4 text-sm font-medium text-slate-400">Monthly volume</th>
+              <th class="pb-4 px-4 text-sm font-medium text-violet-400 text-center">Datanika</th>
+              <th class="pb-4 pl-4 text-sm font-medium text-slate-400 text-center">Airbyte Cloud</th>
+            </tr>
+          </thead>
+          <tbody>
+            {gbPricingRows.map((row) => (
+              <tr class="border-b border-slate-800/60">
+                <td class="py-4 pr-4 text-sm text-slate-300">
+                  <strong class="text-white">{row.volume}</strong>
+                  <br /><span class="text-xs text-slate-500">{row.note}</span>
+                </td>
+                <td class="py-4 px-4 text-center text-sm">
+                  <span class="text-white font-mono">{row.datanika}</span>
+                  <br /><span class="text-xs text-emerald-400">{row.datanikaPerGB}</span>
+                </td>
+                <td class="py-4 pl-4 text-center text-sm">
+                  <span class="text-slate-300 font-mono">{row.competitor}</span>
+                  <br /><span class="text-xs text-slate-500">{row.competitorPerGB}</span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p class="text-xs text-slate-600 mt-6 text-center">
+        Datanika Free caps at 10 GB/mo. Pro includes 100 GB, $0.50/GB after. Enterprise includes 1 TB, $0.25/GB after. Airbyte self-host is $0 at any volume; Datanika self-host (AGPL-3.0) is $0 at any volume too — the comparison above is the managed paths only.
+      </p>
+    </div>
+  </section>
+
   <!-- When to Choose -->
   <section class="py-20">
     <div class="max-w-5xl mx-auto px-6 grid md:grid-cols-2 gap-8">
@@ -150,7 +224,7 @@ const chooseAirbyte = [
             <li><span class="text-slate-500 font-medium">Self-hosting:</span> Single Docker Compose</li>
             <li><span class="text-slate-500 font-medium">License:</span> AGPL-3.0 (truly open source)</li>
             <li><span class="text-slate-500 font-medium">Stack:</span> Python (Reflex), dlt, dbt-core</li>
-            <li><span class="text-slate-500 font-medium">Pricing:</span> Free $0 / Pro $79/mo / Enterprise from $399/mo</li>
+            <li><span class="text-slate-500 font-medium">Pricing:</span> Free $0 (10 GB/mo) · Pro $79 (100 GB + $0.50/GB) · Ent. from $399 (1 TB + $0.25/GB)</li>
           </ul>
         </div>
         <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur p-8">
@@ -203,6 +277,15 @@ const chooseAirbyte = [
           <a href="https://github.com/datanika-io/datanika-core" class="btn-secondary">View on GitHub</a>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- Volume pricing cross-link -->
+  <section class="py-8 border-t border-slate-800">
+    <div class="max-w-4xl mx-auto px-6 text-center">
+      <a href="/features/volume-pricing/" class="text-emerald-400 hover:underline text-sm">
+        How our volume-based pricing works — 10 GB free, ETL vs ELT metering, full FAQ →
+      </a>
     </div>
   </section>
 

@@ -4,24 +4,59 @@ import Navbar from "../components/Navbar.astro";
 import Footer from "../components/Footer.astro";
 import ConversionCTA from "../components/ConversionCTA.astro";
 
-// Illustrative Fivetran Starter-tier estimates derived from fivetran.com/pricing
-// (public calculator). Disclosure block at the bottom of the page tells visitors
-// to hit Fivetran's own calculator for their specific destination + sync frequency.
-// Numbers are conservative — point of the calculator is the shape of the curve,
-// not a precise line-item of Fivetran's bill.
-const presets = [
-  { mar: 100_000, label: "100k", fivetran: 120 },
-  { mar: 500_000, label: "500k", fivetran: 250 },
-  { mar: 1_000_000, label: "1M", fivetran: 400 },
-  { mar: 5_000_000, label: "5M", fivetran: 1200 },
-  { mar: 10_000_000, label: "10M", fivetran: 2200 },
-  { mar: 25_000_000, label: "25M", fivetran: 4500 },
+// DRAFT — Pricing V2 rewrite per SPEC_PRICING_V2.md §7. Lives on branch
+// 182-pricing-v2-copy-draft through P1-P4 and merges at P5 cutover day
+// alongside cloud's Paddle meter flip. Do NOT merge before cloud volume
+// metering has been green in staging for >=14 days.
+
+// Fivetran Starter-tier anchor points (MAR -> monthly cost). Same illustrative
+// curve as the landing#160 launch; the disclosure block below tells visitors
+// to run Fivetran's own calculator for their specific destination + sync
+// frequency. Point of these numbers is the shape of the curve, not a precise
+// line-item of Fivetran's bill.
+const fivetranAnchors = [
+  { mar: 100_000, cost: 120 },
+  { mar: 500_000, cost: 250 },
+  { mar: 1_000_000, cost: 400 },
+  { mar: 5_000_000, cost: 1200 },
+  { mar: 10_000_000, cost: 2200 },
+  { mar: 25_000_000, cost: 4500 },
 ];
 
-const datanikaProMonthly = 79;
+// Mid-range 5 KB/row means 1 GB ~= 200k rows. This is the pinned conversion
+// explained on the page in the "Row sizes used here" section — the honest
+// answer to "rows and gigabytes aren't the same thing."
+const marPerGB = 200_000;
 
-// Why MAR pricing hurts — the four canonical complaints we hear from the
-// /compare/fivetran funnel and in r/dataengineering threads.
+// Datanika V2 pricing shape. Free caps hard at 10 GB (no overage).
+// Pro and Enterprise charge per-GB overage past their included quota.
+// Crossover where Enterprise beats Pro+overage: ~740 GB.
+const pricing = {
+  freeIncludedGB: 10,
+  proBase: 79,
+  proIncludedGB: 100,
+  proOverage: 0.5,
+  entBase: 399,
+  entIncludedGB: 1024,
+  entOverage: 0.25,
+};
+
+// 7 preset buttons spanning the pricing-relevant range. 10 GB is visually
+// marked as the Free cap; 100 GB is Pro's included quota; 1 TB is
+// Enterprise's included quota. These three markers are where paying starts,
+// overage kicks in, and the crossover to Enterprise flat sits.
+const presets = [
+  { gb: 1, label: "1 GB" },
+  { gb: 10, label: "10 GB", hint: "Free cap" },
+  { gb: 50, label: "50 GB" },
+  { gb: 100, label: "100 GB", hint: "Pro quota" },
+  { gb: 500, label: "500 GB" },
+  { gb: 1024, label: "1 TB", hint: "Enterprise quota" },
+  { gb: 10240, label: "10 TB" },
+];
+
+// Why MAR pricing hurts — unchanged from V1. The criticism is independent of
+// whether our pricing is flat or volume-aware.
 const marPains = [
   {
     title: "Growth penalty",
@@ -41,14 +76,17 @@ const marPains = [
   },
 ];
 
+// datanikaWins rewritten for V2 per SPEC §7.3. Two entries change (flat
+// monthly -> subscription + honest overage; runs-not-rows -> bytes-not-rows)
+// and two stay (self-host, 32 connectors on every tier).
 const datanikaWins = [
   {
-    title: "Flat monthly bill",
-    body: "Pro is $79/mo. It stays $79/mo whether you move 10,000 rows or 10 million. The only thing that changes the bill is seats or plan tier.",
+    title: "Subscription + honest per-GB overage",
+    body: "Pro is $79/mo with 100 GB included and $0.50/GB after. Enterprise is from $399/mo with 1 TB included and $0.25/GB after. The overage rate is visible, the math is in the calculator, and your bill moves with the bytes your pipelines actually touch — not with your schema choices.",
   },
   {
-    title: "We charge for runs, not rows",
-    body: "Pro includes 15,000 model runs per month. A run can process 10 rows or 10 billion — same cost. Volume is free; orchestration is the thing you pay for.",
+    title: "We charge for bytes processed, not rows inserted",
+    body: "A 1M-row narrow table and a 1k-row wide JSON blob can land on the same disk for the same price. MAR tips the bill against wider schemas; GB doesn't care. A row can be 100 bytes or 10 KB, and you pay for the bytes we actually store and move — not for the shape of your source.",
   },
   {
     title: "Self-host if you want",
@@ -60,9 +98,26 @@ const datanikaWins = [
   },
 ];
 
-const pageTitle = "Why Datanika is cheaper than Fivetran — MAR Calculator";
+// "When Datanika is NOT cheaper" — honest section converting skeptics per
+// SPEC §3.2. Cross-references the spec's "NOT cheaper" language (v3 edit).
+const notCheaperCases = [
+  {
+    title: "True hobby scale (<1 GB/mo, <500K events)",
+    body: "Fivetran Free (500K MAR) and Hevo Free (1M events) also cost $0. Our 10 GB Free tier covers the same case with more headroom, but we don't beat free — we tie.",
+  },
+  {
+    title: "Pure-dbt, no extract-and-load work",
+    body: "If you already have a warehouse with raw data in it and you just want a dbt orchestrator, dbt Cloud's free tier or a lightweight scheduler will be cheaper than our full platform. We include dbt, but we're priced for teams that need the extract-and-load side too.",
+  },
+  {
+    title: "You need 500+ connectors",
+    body: "We have 32 connectors covering the top of the long tail. If your stack depends on a niche SaaS that only Fivetran supports, we're not a drop-in replacement yet — though we ship roughly 2 new connectors per month and take requests seriously.",
+  },
+];
+
+const pageTitle = "Why Datanika is cheaper than Fivetran — GB Pricing Calculator";
 const pageDescription =
-  "Fivetran charges per Monthly Active Row (MAR). Datanika is flat $79/mo. See the savings at 100k, 500k, and 5M rows with our public calculator.";
+  "Fivetran charges per Monthly Active Row. Datanika charges per GB processed, with honest overage. See the side-by-side bill at 1 GB, 100 GB, and 1 TB.";
 ---
 
 <Layout
@@ -82,14 +137,26 @@ const pageDescription =
     <div class="relative max-w-4xl mx-auto px-6 text-center">
       <p class="text-sm uppercase tracking-widest text-violet-400 mb-4">Pricing Deep Dive</p>
       <h1 class="text-4xl md:text-6xl font-extrabold tracking-tight mb-6">
-        Why Datanika is <span class="gradient-text">cheaper than Fivetran</span>
+        You pay for <span class="gradient-text">bytes, not tables</span>
       </h1>
       <p class="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-4">
-        Fivetran charges per Monthly Active Row. We don&rsquo;t. One&nbsp;flat&nbsp;$79/mo plan covers any realistic pipeline volume.
+        Fivetran charges per Monthly Active Row. Datanika charges per GB processed — $0.50/GB on Pro, $0.25/GB on Enterprise, with 100 GB and 1 TB included.
       </p>
       <p class="text-sm text-slate-500 max-w-xl mx-auto">
-        Punch your row count into the calculator below and see what MAR pricing costs at scale.
+        Punch in a monthly volume below and see what MAR pricing costs at the same scale.
       </p>
+    </div>
+  </section>
+
+  <!-- Honesty disclosure (near hero) -->
+  <section class="pb-4">
+    <div class="max-w-3xl mx-auto px-6">
+      <div class="rounded-xl border border-amber-500/30 bg-amber-500/5 p-5 text-sm text-amber-100/90 leading-relaxed">
+        <p class="font-semibold text-amber-300 mb-1">A note on the comparison</p>
+        <p>
+          This page compares Datanika's per-GB pricing against Fivetran's MAR pricing. Rows and gigabytes aren't the same thing — a row can be 100 bytes or 10 KB. We use a mid-range 5 KB/row conversion to map your GB volume into Fivetran-equivalent MAR; your actual Fivetran bill will sit somewhere in the range the calculator shows. The Datanika side is exact — $0.50/GB is $0.50/GB.
+        </p>
+      </div>
     </div>
   </section>
 
@@ -99,16 +166,16 @@ const pageDescription =
       <div class="grid md:grid-cols-2 gap-6">
         <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur p-8">
           <h3 class="text-sm font-semibold uppercase tracking-widest text-slate-500 mb-3">Fivetran charges for</h3>
-          <p class="text-2xl font-bold text-white mb-2">Rows moved</p>
+          <p class="text-2xl font-bold text-white mb-2">Rows moved (MAR)</p>
           <p class="text-sm text-slate-400">
-            MAR = every unique row touched by a sync in a billing month. The more data you move, the higher the bill &mdash; and every new source compounds it.
+            Every unique row touched by a sync in a billing month. The wider your schemas and the more frequent your syncs, the higher the MAR count — and every new source compounds it.
           </p>
         </div>
         <div class="rounded-2xl border border-violet-500/40 bg-slate-900/50 backdrop-blur p-8">
           <h3 class="text-sm font-semibold uppercase tracking-widest text-violet-400 mb-3">Datanika charges for</h3>
-          <p class="text-2xl font-bold text-white mb-2">Model runs</p>
+          <p class="text-2xl font-bold text-white mb-2">Bytes processed (GB)</p>
           <p class="text-sm text-slate-400">
-            One run = one scheduled execution. Processing 10 rows or 10&nbsp;million rows counts the same. Pro includes 15,000 runs/mo &mdash; enough for hourly syncs across 20+ pipelines.
+            The actual output bytes our infrastructure touches. A 1M-row narrow table and a 1k-row wide JSON blob land on the same disk for the same price — your schema doesn't get punished.
           </p>
         </div>
       </div>
@@ -119,85 +186,140 @@ const pageDescription =
   <section id="calculator" class="py-16">
     <div class="max-w-5xl mx-auto px-6">
       <div class="text-center mb-10">
-        <h2 class="text-3xl font-bold text-white mb-3">MAR Pricing Calculator</h2>
+        <h2 class="text-3xl font-bold text-white mb-3">GB Pricing Calculator</h2>
         <p class="text-slate-400 max-w-xl mx-auto text-sm">
-          Pick a row count or type one in. All Datanika figures use the <a href="/pricing" class="text-violet-400 hover:text-violet-300 underline">$79/mo Pro</a> plan. Fivetran figures are illustrative Starter-tier estimates &mdash; see the disclosure below.
+          Pick a monthly GB volume or type one in. The Datanika card auto-picks whichever tier (<a href="/pricing" class="text-violet-400 hover:text-violet-300 underline">Pro</a> or Enterprise) would be cheaper for your volume.
         </p>
       </div>
 
       <div class="rounded-2xl border border-slate-800 bg-slate-900/60 backdrop-blur p-6 md:p-10">
         <!-- Preset buttons -->
-        <div class="flex flex-wrap justify-center gap-2 mb-8" id="mar-presets">
+        <div class="flex flex-wrap justify-center gap-2 mb-8" id="gb-presets">
           {presets.map((preset) => (
             <button
               type="button"
               class="px-4 py-2 rounded-full border border-slate-700 text-sm text-slate-300 hover:border-violet-500/50 hover:text-white transition-colors"
-              data-mar={preset.mar}
-              data-fivetran={preset.fivetran}
+              data-gb={preset.gb}
             >
-              {preset.label} rows
+              {preset.label}
+              {preset.hint && (
+                <span class="ml-1 text-[10px] uppercase tracking-wider text-violet-400">{preset.hint}</span>
+              )}
             </button>
           ))}
         </div>
 
-        <!-- Custom input -->
-        <div class="max-w-sm mx-auto mb-10">
-          <label class="block text-xs uppercase tracking-widest text-slate-500 mb-2 text-center">
-            Or type a monthly row count
+        <!-- Custom input + slider -->
+        <div class="max-w-md mx-auto mb-10 space-y-4">
+          <label class="block text-xs uppercase tracking-widest text-slate-500 text-center">
+            Monthly volume processed
           </label>
           <div class="flex items-center gap-2">
             <input
-              id="mar-input"
+              id="gb-input"
               type="number"
-              min="0"
-              step="100000"
-              value="500000"
+              min="1"
+              step="1"
+              value="100"
               class="flex-1 rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white text-center font-mono focus:border-violet-500 focus:outline-none"
             />
-            <span class="text-slate-500 text-sm">rows/mo</span>
+            <span class="text-slate-500 text-sm">GB/mo</span>
           </div>
+          <input
+            id="gb-slider"
+            type="range"
+            min="0"
+            max="100"
+            step="1"
+            value="50"
+            class="w-full accent-violet-500"
+            aria-label="Monthly GB volume (logarithmic slider)"
+          />
+          <p class="text-center text-[10px] uppercase tracking-wider text-slate-600">
+            <span>1 GB</span> <span class="mx-2">·</span> <span>log scale</span> <span class="mx-2">·</span> <span>10 TB</span>
+          </p>
         </div>
 
-        <!-- Result cards -->
+        <!-- Result cards (side-by-side, equal visual weight, no winner badge) -->
         <div class="grid md:grid-cols-2 gap-6">
+          <!-- Fivetran card -->
           <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-6 text-center">
-            <p class="text-xs uppercase tracking-widest text-slate-500 mb-2">Fivetran</p>
+            <p class="text-xs uppercase tracking-widest text-slate-500 mb-2">Fivetran Starter</p>
             <p class="text-5xl font-bold text-slate-300 mb-1">
-              <span class="text-2xl align-top">~$</span><span id="result-fivetran">250</span>
+              <span class="text-2xl align-top">~$</span><span id="result-fivetran">500</span>
             </p>
             <p class="text-sm text-slate-500">per month</p>
-            <p class="mt-4 text-xs text-slate-600">
-              <span id="result-fivetran-annual">$3,000</span>/yr
+            <p class="mt-4 text-xs text-slate-500 leading-relaxed">
+              Based on <span id="result-fivetran-mar">~20M</span> MAR at your volume<br />
+              (using mid-range 5 KB/row conversion)
+            </p>
+            <p class="mt-4 text-[11px] text-slate-600">
+              <a href="https://www.fivetran.com/pricing" class="underline hover:text-slate-400" rel="nofollow">→ Fivetran's own calculator</a>
             </p>
           </div>
-          <div class="rounded-xl border border-violet-500/50 bg-slate-950/60 p-6 text-center relative">
-            <div class="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-violet-500 to-cyan-400 px-3 py-0.5 text-[10px] font-bold text-white uppercase tracking-wider">
-              Flat
-            </div>
-            <p class="text-xs uppercase tracking-widest text-violet-400 mb-2">Datanika Pro</p>
+
+          <!-- Datanika card -->
+          <div class="rounded-xl border border-violet-500/50 bg-slate-950/60 p-6 text-center">
+            <p class="text-xs uppercase tracking-widest text-violet-400 mb-2">
+              <span id="result-datanika-tier">Datanika Pro</span>
+            </p>
             <p class="text-5xl font-bold text-white mb-1">
-              <span class="text-2xl align-top">$</span>79
+              <span class="text-2xl align-top">$</span><span id="result-datanika">79</span>
             </p>
             <p class="text-sm text-slate-400">per month</p>
-            <p class="mt-4 text-xs text-slate-500">
-              $948/yr
+            <p class="mt-4 text-xs text-slate-400 leading-relaxed font-mono">
+              <span id="result-datanika-breakdown">$79 base + 0 GB × $0.50 = $79</span>
+            </p>
+            <p class="mt-4 text-xs text-emerald-400">
+              You'd save <span id="result-savings">$421</span>/mo vs Fivetran
             </p>
           </div>
-        </div>
-
-        <!-- Savings callout -->
-        <div class="mt-8 text-center">
-          <p class="text-sm text-slate-400">
-            You save <span id="result-savings-yearly" class="text-emerald-400 font-bold text-lg">$2,052</span>/year &mdash;
-            that&rsquo;s <span id="result-savings-ratio" class="text-violet-400 font-semibold">3.2&times;</span> cheaper
-          </p>
         </div>
 
         <!-- CTA -->
         <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
-          <ConversionCTA href="https://app.datanika.io" class="btn-primary">Start Free</ConversionCTA>
+          <ConversionCTA href="https://app.datanika.io" class="btn-primary">Start Free (10 GB)</ConversionCTA>
           <a href="/pricing" class="btn-secondary">See full pricing</a>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pick ELT, pay even less -->
+  <section class="py-16">
+    <div class="max-w-5xl mx-auto px-6">
+      <div class="rounded-2xl border border-violet-500/30 bg-gradient-to-br from-violet-500/5 to-cyan-500/5 backdrop-blur p-8 md:p-12">
+        <h2 class="text-3xl font-bold text-white mb-4">Pick ELT, pay even less</h2>
+        <p class="text-slate-300 mb-6 leading-relaxed">
+          Our meter reads what hits our disk. In <strong class="text-white">ETL mode</strong> (the dlt path), your data is normalized on our side — a 1 GB JSON export becomes ~3 GB of flat tables. The meter counts 3 GB.
+        </p>
+        <p class="text-slate-300 mb-6 leading-relaxed">
+          In <strong class="text-white">ELT mode</strong> (the dbt path with our new IR layer), your data is streamed as compressed parquet directly to your warehouse's raw schema and normalized there with SQL. A 1 GB JSON export becomes ~0.8 GB of parquet on the wire. The meter counts 0.8 GB.
+        </p>
+        <p class="text-slate-300 mb-6 leading-relaxed">
+          Same source. Same data. <strong class="text-violet-300">3.75× lower bill.</strong>
+        </p>
+
+        <div class="grid md:grid-cols-2 gap-4 mt-8">
+          <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-5">
+            <p class="text-xs uppercase tracking-widest text-slate-500 mb-2">ETL mode</p>
+            <p class="text-sm text-slate-300 leading-relaxed">
+              1 GB HubSpot JSON → ~3 GB of normalized tables.<br />
+              Over Pro's 100 GB quota: <span class="text-white font-mono">$1.50</span> overage per run.
+            </p>
+          </div>
+          <div class="rounded-xl border border-violet-500/50 bg-slate-950/60 p-5">
+            <p class="text-xs uppercase tracking-widest text-violet-400 mb-2">ELT mode</p>
+            <p class="text-sm text-slate-300 leading-relaxed">
+              1 GB HubSpot JSON → ~0.8 GB of parquet on the wire.<br />
+              Over Pro's 100 GB quota: <span class="text-white font-mono">$0.40</span> overage per run.
+            </p>
+          </div>
+        </div>
+
+        <p class="text-xs text-slate-500 mt-6 leading-relaxed">
+          The mode selector lives on every pipeline — it's the first switch in the UI when you create a new one. Existing pipelines can flip modes with a migrate button. See <a href="/blog/real-cost-modern-data-stack" class="text-violet-400 underline hover:text-violet-300">the dedicated post</a> on when to pick which mode.
+        </p>
       </div>
     </div>
   </section>
@@ -220,7 +342,7 @@ const pageDescription =
   <!-- Why Datanika is different -->
   <section class="py-16">
     <div class="max-w-5xl mx-auto px-6">
-      <h2 class="text-3xl font-bold text-white text-center mb-12">How Datanika&rsquo;s model is different</h2>
+      <h2 class="text-3xl font-bold text-white text-center mb-12">How Datanika's model is different</h2>
       <div class="grid md:grid-cols-2 gap-6">
         {datanikaWins.map((win) => (
           <div class="rounded-2xl border border-violet-800/40 bg-slate-900/50 backdrop-blur p-6">
@@ -232,13 +354,51 @@ const pageDescription =
     </div>
   </section>
 
-  <!-- Disclosure -->
+  <!-- Row sizes pinned -->
+  <section class="py-10">
+    <div class="max-w-3xl mx-auto px-6">
+      <div class="rounded-xl border border-slate-800/80 bg-slate-950/40 p-6 text-sm text-slate-400 leading-relaxed">
+        <p class="font-semibold text-slate-300 mb-3">Row sizes used here</p>
+        <p class="mb-3">
+          The calculator maps GB to Fivetran-equivalent MAR using typical SaaS data shapes:
+        </p>
+        <ul class="list-disc pl-6 space-y-1 text-xs">
+          <li>Narrow transactional rows (e.g. Stripe <code class="bg-slate-800 px-1 rounded text-violet-300">charges</code>) — ~1 KB/row → 1M rows ≈ 1 GB</li>
+          <li>Wide denormalized rows (e.g. Segment <code class="bg-slate-800 px-1 rounded text-violet-300">identifies</code>) — ~5–10 KB/row → 1M rows ≈ 5–10 GB</li>
+          <li>Document-style (e.g. HubSpot contact + associations) — ~15–30 KB/row → 1M rows ≈ 15–30 GB</li>
+        </ul>
+        <p class="mt-3 text-xs">
+          Mid-range 5 KB/row is used for the Fivetran estimate above. Your pipeline may be higher or lower. The Datanika number is exact at any GB.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- When Datanika is NOT cheaper -->
+  <section class="py-10">
+    <div class="max-w-5xl mx-auto px-6">
+      <h2 class="text-2xl font-bold text-white text-center mb-3">When Datanika is <em>not</em> cheaper</h2>
+      <p class="text-sm text-slate-500 text-center mb-10 max-w-2xl mx-auto">
+        Three cases where a different tool will save you money. We'd rather you know up front than sign up and churn.
+      </p>
+      <div class="grid md:grid-cols-3 gap-6">
+        {notCheaperCases.map((c) => (
+          <div class="rounded-2xl border border-slate-800 bg-slate-900/40 backdrop-blur p-6">
+            <h3 class="text-base font-semibold text-white mb-2">{c.title}</h3>
+            <p class="text-sm text-slate-400">{c.body}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Fivetran disclosure (unchanged from V1) -->
   <section class="py-10">
     <div class="max-w-3xl mx-auto px-6">
       <div class="rounded-xl border border-slate-800/80 bg-slate-950/40 p-6 text-xs text-slate-500 leading-relaxed">
         <p class="font-semibold text-slate-400 mb-2">About the Fivetran numbers</p>
         <p>
-          Fivetran figures above are illustrative Starter-tier estimates. Actual Fivetran pricing depends on destination, sync frequency, change data capture, historical backfills, and deduplication rules, and changes over time. Run your specific pipeline through <a href="https://www.fivetran.com/pricing" class="text-slate-400 underline hover:text-slate-300" rel="nofollow">Fivetran&rsquo;s own pricing calculator</a> for a binding number. Datanika Pro&rsquo;s $79/mo figure is binding and covers any realistic MAR volume &mdash; we price on model runs, not rows moved.
+          Fivetran figures above are illustrative Starter-tier estimates. Actual Fivetran pricing depends on destination, sync frequency, change data capture, historical backfills, and deduplication rules, and changes over time. Run your specific pipeline through <a href="https://www.fivetran.com/pricing" class="text-slate-400 underline hover:text-slate-300" rel="nofollow">Fivetran's own pricing calculator</a> for a binding number. Datanika's per-GB rate is exact — $0.50/GB on Pro, $0.25/GB on Enterprise, with 100 GB and 1 TB included respectively.
         </p>
       </div>
     </div>
@@ -249,7 +409,7 @@ const pageDescription =
     <div class="max-w-3xl mx-auto px-6 text-center">
       <h2 class="text-3xl font-bold text-white mb-4">Stop paying per row</h2>
       <p class="text-slate-400 mb-8">
-        Free tier is $0 forever. Pro is $79/mo flat. Self-host for $0. Pick the one that fits.
+        Free tier is $0 forever, 10 GB included. Pro is $79/mo, 100 GB included, $0.50/GB after. Self-host for $0 at any volume.
       </p>
       <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
         <ConversionCTA href="https://app.datanika.io" class="btn-primary">Try Datanika Free</ConversionCTA>
@@ -258,42 +418,84 @@ const pageDescription =
     </div>
   </section>
 
+  <!-- Real-world performance -->
+  <section class="py-16 border-t border-slate-800">
+    <div class="max-w-4xl mx-auto px-6">
+      <h2 class="text-2xl font-bold text-center mb-3">The ELT speedup is measured, not theoretical</h2>
+      <p class="text-slate-400 text-center max-w-2xl mx-auto mb-8 text-sm">
+        Before Datanika, the founding team ran production pipelines on the same DLT + Arrow architecture.
+      </p>
+      <div class="grid sm:grid-cols-2 gap-6">
+        <div class="rounded-xl bg-slate-800/50 border border-slate-700 p-6 text-center">
+          <p class="text-3xl font-extrabold text-emerald-400 mb-1">5.8x</p>
+          <p class="text-sm text-slate-300 mb-2">faster on 54M MySQL rows</p>
+          <p class="text-xs text-slate-500">17 min (Arrow) vs 99 min (legacy)</p>
+        </div>
+        <div class="rounded-xl bg-slate-800/50 border border-slate-700 p-6 text-center">
+          <p class="text-3xl font-extrabold text-emerald-400 mb-1">3.5x</p>
+          <p class="text-sm text-slate-300 mb-2">faster on 8.6M MongoDB docs</p>
+          <p class="text-xs text-slate-500">4 min (Arrow) vs 23.5 min (JSON)</p>
+        </div>
+      </div>
+      <p class="text-xs text-slate-500 mt-4 text-center">
+        Arrow mode skips JSON normalization — fewer bytes through our infrastructure, lower bill at the same per-GB rate.
+        <a href="/blog/dlt-arrow-5x-faster-pipeline/" class="text-emerald-400 hover:underline">Read the technical deep-dive</a>.
+      </p>
+    </div>
+  </section>
+
+  <!-- Volume pricing cross-link -->
+  <section class="py-8 border-t border-slate-800">
+    <div class="max-w-4xl mx-auto px-6 text-center">
+      <a href="/features/volume-pricing/" class="text-emerald-400 hover:underline text-sm">
+        How volume-based pricing works — tier breakdown, ETL vs ELT metering, FAQ →
+      </a>
+    </div>
+  </section>
+
   <Footer />
 </Layout>
 
-<script define:vars={{ datanikaProMonthly }}>
-  function initMarCalculator() {
-    const input = document.getElementById("mar-input");
-    const presetButtons = document.querySelectorAll("#mar-presets button");
+<script define:vars={{ fivetranAnchors, marPerGB, pricing }}>
+  function initGbCalculator() {
+    const input = document.getElementById("gb-input");
+    const slider = document.getElementById("gb-slider");
+    const presetButtons = document.querySelectorAll("#gb-presets button");
     const fivetranEl = document.getElementById("result-fivetran");
-    const fivetranAnnualEl = document.getElementById("result-fivetran-annual");
-    const savingsYearlyEl = document.getElementById("result-savings-yearly");
-    const savingsRatioEl = document.getElementById("result-savings-ratio");
+    const fivetranMarEl = document.getElementById("result-fivetran-mar");
+    const datanikaEl = document.getElementById("result-datanika");
+    const datanikaTierEl = document.getElementById("result-datanika-tier");
+    const datanikaBreakdownEl = document.getElementById("result-datanika-breakdown");
+    const savingsEl = document.getElementById("result-savings");
 
-    if (!input || !fivetranEl) return;
+    if (!input || !slider || !fivetranEl) return;
 
-    // Preset curve points, kept in sync with src/pages/why-cheaper.astro `presets`.
-    // We interpolate Fivetran cost between anchor points in log-log space so the
-    // custom-input experience stays smooth rather than snapping between tiers.
-    const anchors = [
-      { mar: 100_000, cost: 120 },
-      { mar: 500_000, cost: 250 },
-      { mar: 1_000_000, cost: 400 },
-      { mar: 5_000_000, cost: 1200 },
-      { mar: 10_000_000, cost: 2200 },
-      { mar: 25_000_000, cost: 4500 },
-    ];
+    const MIN_GB = 1;
+    const MAX_GB = 10240;
+    const LN_MAX = Math.log(MAX_GB);
 
-    function fivetranCost(mar) {
+    // Log-scale mapping: slider (0..100) <-> GB (1..10240). A linear slider
+    // wastes 99% of its real estate on sub-100-GB volumes; customers live
+    // across 4 orders of magnitude.
+    function gbToSlider(gb) {
+      const clamped = Math.min(MAX_GB, Math.max(MIN_GB, gb));
+      return Math.round((Math.log(clamped) / LN_MAX) * 100);
+    }
+    function sliderToGb(pos) {
+      const frac = Math.max(0, Math.min(100, pos)) / 100;
+      return Math.round(Math.exp(frac * LN_MAX));
+    }
+
+    // Log-log interpolation across the Fivetran anchor curve. Smooth between
+    // tiers rather than snapping.
+    function fivetranCostFromMar(mar) {
       if (mar <= 0) return 0;
-      if (mar <= anchors[0].mar) {
-        // Under the smallest tier — linear ramp from 0 to first anchor
-        return Math.round((mar / anchors[0].mar) * anchors[0].cost);
+      if (mar <= fivetranAnchors[0].mar) {
+        return Math.round((mar / fivetranAnchors[0].mar) * fivetranAnchors[0].cost);
       }
-      if (mar >= anchors[anchors.length - 1].mar) {
-        // Beyond the largest anchor — extrapolate from the last segment slope
-        const a = anchors[anchors.length - 2];
-        const b = anchors[anchors.length - 1];
+      if (mar >= fivetranAnchors[fivetranAnchors.length - 1].mar) {
+        const a = fivetranAnchors[fivetranAnchors.length - 2];
+        const b = fivetranAnchors[fivetranAnchors.length - 1];
         const logSlope =
           (Math.log(b.cost) - Math.log(a.cost)) /
           (Math.log(b.mar) - Math.log(a.mar));
@@ -301,10 +503,9 @@ const pageDescription =
           Math.log(b.cost) + logSlope * (Math.log(mar) - Math.log(b.mar));
         return Math.round(Math.exp(logCost));
       }
-      // Between two anchors — log-log interpolation
-      for (let i = 0; i < anchors.length - 1; i++) {
-        const a = anchors[i];
-        const b = anchors[i + 1];
+      for (let i = 0; i < fivetranAnchors.length - 1; i++) {
+        const a = fivetranAnchors[i];
+        const b = fivetranAnchors[i + 1];
         if (mar >= a.mar && mar <= b.mar) {
           const logSlope =
             (Math.log(b.cost) - Math.log(a.cost)) /
@@ -317,43 +518,88 @@ const pageDescription =
       return 0;
     }
 
-    function formatCurrency(n) {
-      return n.toLocaleString("en-US");
+    function datanikaBill(gb) {
+      const proOver = Math.max(0, gb - pricing.proIncludedGB);
+      const entOver = Math.max(0, gb - pricing.entIncludedGB);
+      const proTotal = pricing.proBase + proOver * pricing.proOverage;
+      const entTotal = pricing.entBase + entOver * pricing.entOverage;
+
+      if (proTotal <= entTotal) {
+        return {
+          tier: "Datanika Pro",
+          total: proTotal,
+          breakdown:
+            "$" + pricing.proBase + " base + " +
+            formatNum(proOver) + " GB × $" + pricing.proOverage.toFixed(2) +
+            " = $" + formatNum(Math.round(proTotal)),
+        };
+      }
+      return {
+        tier: "Datanika Enterprise",
+        total: entTotal,
+        breakdown:
+          "$" + pricing.entBase + " base + " +
+          formatNum(entOver) + " GB × $" + pricing.entOverage.toFixed(2) +
+          " = $" + formatNum(Math.round(entTotal)),
+      };
     }
 
-    function update() {
-      const mar = Math.max(0, parseInt(input.value, 10) || 0);
-      const fivetranMonthly = fivetranCost(mar);
-      const fivetranAnnual = fivetranMonthly * 12;
-      const datanikaAnnual = datanikaProMonthly * 12;
-      const savingsYearly = Math.max(0, fivetranAnnual - datanikaAnnual);
-      const ratio = datanikaProMonthly > 0 ? fivetranMonthly / datanikaProMonthly : 0;
+    function formatNum(n) {
+      return Math.round(n).toLocaleString("en-US");
+    }
 
-      fivetranEl.textContent = formatCurrency(fivetranMonthly);
-      fivetranAnnualEl.textContent = "$" + formatCurrency(fivetranAnnual);
-      savingsYearlyEl.textContent = "$" + formatCurrency(savingsYearly);
+    function formatMar(mar) {
+      if (mar >= 1_000_000) return "~" + (mar / 1_000_000).toFixed(1) + "M";
+      if (mar >= 1_000) return "~" + Math.round(mar / 1_000) + "K";
+      return "~" + mar;
+    }
 
-      if (fivetranMonthly <= datanikaProMonthly) {
-        savingsRatioEl.textContent = "on par";
+    // source: "input" | "slider" | "preset"
+    function update(source) {
+      let gb = Math.max(MIN_GB, parseInt(input.value, 10) || 0);
+      if (gb > MAX_GB) gb = MAX_GB;
+
+      // Keep slider and numeric input synced without firing events in a loop.
+      if (source !== "slider") slider.value = String(gbToSlider(gb));
+      if (source !== "input") input.value = String(gb);
+
+      const mar = gb * marPerGB;
+      const fivetranMonthly = fivetranCostFromMar(mar);
+      const bill = datanikaBill(gb);
+      const savings = Math.max(0, fivetranMonthly - bill.total);
+
+      fivetranEl.textContent = formatNum(fivetranMonthly);
+      fivetranMarEl.textContent = formatMar(mar);
+      datanikaEl.textContent = formatNum(Math.round(bill.total));
+      datanikaTierEl.textContent = bill.tier;
+      datanikaBreakdownEl.textContent = bill.breakdown;
+
+      if (fivetranMonthly <= bill.total) {
+        savingsEl.textContent = "on par with";
       } else {
-        savingsRatioEl.textContent = ratio.toFixed(1) + "\u00d7";
+        savingsEl.textContent = "$" + formatNum(savings);
       }
     }
 
     presetButtons.forEach((btn) => {
       btn.addEventListener("click", () => {
-        const mar = btn.getAttribute("data-mar");
-        if (mar) {
-          input.value = mar;
-          update();
+        const gb = btn.getAttribute("data-gb");
+        if (gb) {
+          input.value = gb;
+          update("preset");
         }
       });
     });
 
-    input.addEventListener("input", update);
-    update();
+    input.addEventListener("input", () => update("input"));
+    slider.addEventListener("input", () => {
+      input.value = String(sliderToGb(parseInt(slider.value, 10) || 0));
+      update("slider");
+    });
+
+    update("preset");
   }
 
-  initMarCalculator();
-  document.addEventListener("astro:page-load", initMarCalculator);
+  initGbCalculator();
+  document.addEventListener("astro:page-load", initGbCalculator);
 </script>
