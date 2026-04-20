@@ -1,18 +1,12 @@
 ---
 title: "We're Adding a Volume Dimension to Our Pricing. Here's the Math, and Here's Why."
 description: "Our v1 pricing had a hole big enough to lose money on the first real customer. We're closing it before that customer arrives. Here's the volume math, the mode trade-off, and what you actually pay per GB."
-date: 2026-05-15
-draft: true
+date: 2026-04-20
+publishedAt: 2026-04-20
 author: "Datanika Team"
 category: "business"
 tags: ["pricing", "unit-economics", "volume-pricing", "elt", "open-core"]
 ---
-
-<!--
-Cutover-day final step: flip frontmatter `draft: true` → `draft: false`,
-update `date:` to cutover day, add `publishedAt: <cutover_date>`.
-All GA2 placeholders were filled in the branch's 7th commit.
--->
 
 Our v1 pricing had a known hole. We're closing it now.
 
