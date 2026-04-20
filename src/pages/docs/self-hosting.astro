@@ -1,9 +1,14 @@
 ---
 import DocsLayout from "../../layouts/DocsLayout.astro";
 ---
-<DocsLayout title="Self-Hosting" description="Deploy Datanika on your own infrastructure with Docker Compose.">
+<DocsLayout title="Self-Hosted ELT — Deploy Datanika on Your Infrastructure" description="Self-hosted ELT with dlt + dbt-core on Docker Compose or Helm. No row-based billing, no GB meter — self-host is $0 forever. Full control, no vendor lock-in.">
   <h1>Self-Hosting</h1>
   <p class="text-lg text-slate-400">Deploy Datanika on your own infrastructure — full control, no vendor lock-in.</p>
+
+  <div role="note" class="not-prose my-6 rounded-lg border border-emerald-500/40 bg-emerald-500/5 p-4 text-sm text-emerald-100">
+    <p class="font-semibold text-emerald-300">Self-host is $0 forever — the GB meter doesn't apply</p>
+    <p class="mt-2 text-emerald-100/90">The AGPL-3.0 core has zero pricing dimensions. Run it on your own hardware, ingest 10 TB/month, pay us nothing. The <a href="/pricing/" class="underline hover:text-emerald-200">per-GB overage pricing</a> and the <a href="/why-cheaper/" class="underline hover:text-emerald-200">cost calculator</a> only apply to our managed SaaS at <code class="bg-emerald-500/10 px-1 py-0.5 rounded text-emerald-200">app.datanika.io</code>.</p>
+  </div>
 
   <h2>Prerequisites</h2>
   <ul>
