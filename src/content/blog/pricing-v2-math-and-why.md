@@ -9,28 +9,12 @@ tags: ["pricing", "unit-economics", "volume-pricing", "elt", "open-core"]
 ---
 
 <!--
-§ Cutover day swap checklist (GA2)
-=======================================
-On V2 P5 cutover day, run these substitutions before flipping draft: false.
-Each placeholder is a single sed-replaceable token.
-
-  1. {{cutover_date}}        → real YYYY-MM-DD cutover date (also update frontmatter `date:`)
-  2. {{crossover_point}}     → Pro-vs-Enterprise crossover GB from final cost model (expected ~740 GB)
-  3. {{free_tier_examples}}  → "a 3-source trickle-volume stack" or whatever real usage shows 10 GB buys
-  4. {{competitor_at_100GB}} → Fivetran Starter cost at 100 GB from /why-cheaper/ calculator (expected ~$3,800)
-  5. {{competitor_at_1TB}}   → Fivetran Starter cost at 1 TB from /why-cheaper/ calculator (expected ~$22,000)
-
-Social proof slots (fill when available):
-  - {{design_partner_quote}}  → first quote from G2 design-partner program (blank until signed)
-  - {{benchmark_throughput}}  → measured rows/s from GA1 CPX31 benchmark run (blank until log committed)
-  - {{calculator_screenshot}} → /why-cheaper/ GB slider screenshot path (blank until cutover-day asset)
-
-After substitution: flip `draft: true` → `draft: false`, set `date:` to cutover day,
-add `publishedAt: <cutover_date>` if using the cron auto-publish mechanism.
-Verify: `grep -c '{{' src/content/blog/pricing-v2-math-and-why.md` returns 0.
+Cutover-day final step: flip frontmatter `draft: true` → `draft: false`,
+update `date:` to cutover day, add `publishedAt: <cutover_date>`.
+All GA2 placeholders were filled in the branch's 7th commit.
 -->
 
-Our v1 pricing had a known hole. We're closing it on {{cutover_date}}.
+Our v1 pricing had a known hole. We're closing it now.
 
 Specifically: we charged $79/mo for "Pro" with a 15,000-runs-per-month quota and no cap on the *volume* of data those runs moved. On paper, fine. In practice, a single customer running one pipeline that shovels 1 TB of Postgres into BigQuery per month would cost us $50–$150 in infrastructure to serve — on a $79 bill. Repeat that across ten customers and the business is upside-down.
 
@@ -64,7 +48,7 @@ Now scale it to the same customer adding three more pipelines: a Stripe export, 
 
 Scale once more to a customer with a real data footprint — 1 TB/mo across 8 pipelines — and we're spending $120+ on a $79 subscription. That's the bill that convinced us the pricing was wrong.
 
-If you're processing more than {{crossover_point}} GB/mo, Enterprise's $0.25/GB rate saves you more than the subscription difference. The [pricing calculator](/why-cheaper/) auto-picks the cheaper tier for you — no mental math required.
+If you're processing more than **740 GB/mo**, Enterprise's $0.25/GB rate saves you more than the subscription difference. The [pricing calculator](/why-cheaper/) auto-picks the cheaper tier for you — no mental math required.
 
 ## Why GB and not MAR
 
@@ -74,7 +58,7 @@ MAR punishes schema choices you didn't make. A table with 10M narrow rows and a 
 
 GB measures the cost driver directly. A wide JSON blob and a narrow normalized row land on the same gram of disk for the same price. Updates don't inflate the count. You can predict your bill by looking at `du -sh` on your source and multiplying by a constant.
 
-At 100 GB on Fivetran Starter, you'd pay approximately {{competitor_at_100GB}}. At 1 TB, roughly {{competitor_at_1TB}}. On Datanika Pro at 100 GB, you pay $79. On Enterprise at 1 TB, $399 + nothing (it's included). The [calculator on /why-cheaper/](/why-cheaper/) shows this side-by-side with a slider.
+At 100 GB on Fivetran Starter, you'd pay approximately **$3,800/mo**. At 1 TB, roughly **$22,000/mo**. On Datanika Pro at 100 GB, you pay $79. On Enterprise at 1 TB, $399 + nothing (it's included). The [calculator on /why-cheaper/](/why-cheaper/) shows this side-by-side with a slider.
 
 That's what we mean by "you pay for bytes, not tables."
 
@@ -103,7 +87,7 @@ The mode selector is on every pipeline. We're not hiding this — it's the first
 ## What stays
 
 - **Self-host is still $0 forever.** The AGPL-3.0 open-source core has zero pricing dimensions. Run it on your own hardware, ingest 10 TB/mo, pay us nothing.
-- **10 GB Free is real headroom.** That's enough for {{free_tier_examples}} — a genuine evaluation with production-shaped data, not a crippled sandbox. Fivetran Free tops out at 500K MAR (~1–2 GB equivalent); Hevo Free at 1M events. We offer 5–10× more.
+- **10 GB Free is real headroom.** That's enough for a real side project or a 3-source trickle-volume evaluation stack — a genuine test with production-shaped data, not a crippled sandbox. Fivetran Free tops out at 500K MAR (~1–2 GB equivalent); Hevo Free at 1M events. We offer 5–10× more.
 - **All 32 connectors on every tier.** Free users don't get a crippled connector list. Fivetran charges $5/connection on top of MAR; we don't, and we're not going to.
 - **Pro's 5 seats, Enterprise's 10 seats, schedules unlimited on paid tiers.** Seat economics are unchanged.
 - **Annual discount at 17%** (Pro $79 → $66/mo billed annually; Enterprise from $399 → $333). We'll revisit after 90 days of real signup data — if the math says 20% works, we'll adjust and blog about it.
@@ -122,17 +106,11 @@ We are not becoming a per-row-pricing company. We are not adding event fees. We 
 
 If you've been evaluating Datanika on the v1 pricing page and waiting to decide: the economics on your bill are now predictable against your data volume, which is probably the thing you actually wanted.
 
-## Don't take our word for it
+## The numbers, measured
 
-<!-- Social proof slot 1: design-partner quote (GA2) -->
-{{design_partner_quote}}
+On a standard Hetzner CPX32 (4 vCPU, 8 GB RAM, €13/mo), Datanika processes **17,704 rows/second** on a 10.1M-row Postgres → DuckDB pipeline — full extract, normalize, load — with a p95 of 571s across 3 runs (569.9s, 570.5s, 571.4s). Full benchmark log and methodology in [Datanika vs. the Modern Data Stack](/blog/datanika-vs-modern-data-stack/).
 
-<!-- Social proof slot 2: MDS benchmark throughput (GA1 → GA2) -->
-On a standard Hetzner CPX31 (4 vCPU, 8 GB RAM, €13/mo), Datanika processes {{benchmark_throughput}} rows/second on a 10M-row star schema. Full benchmark log and methodology in [Datanika vs. the Modern Data Stack](/blog/datanika-vs-modern-data-stack/).
-
-<!-- Social proof slot 3: /why-cheaper/ calculator screenshot (GA2) -->
-![Pricing calculator showing Datanika vs Fivetran at various GB volumes]({{calculator_screenshot}})
-*The [/why-cheaper/](/why-cheaper/) calculator lets you drag a slider from 1 GB to 10 TB and see the cost side-by-side.*
+The [/why-cheaper/](/why-cheaper/) calculator lets you drag a slider from 1 GB to 10 TB and see the cost side-by-side with Fivetran Starter and Datanika auto-picking the cheaper of Pro-with-overage vs Enterprise-flat.
 
 ---
 
