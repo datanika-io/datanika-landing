@@ -146,10 +146,10 @@ const tiers = [
           {tier.ctaHref ? (
             <a
               href={tier.ctaHref}
+              data-plausible-event="Pricing: Contact sales"
               class:list={[
                 "mt-8 block w-full rounded-lg py-3 text-center text-sm font-semibold transition-colors",
                 tier.highlighted ? "btn-primary" : "btn-secondary",
-                "plausible-event-name=Pricing:+Contact+sales",
               ]}
             >
               {tier.cta}
@@ -157,10 +157,10 @@ const tiers = [
           ) : (
             <ConversionCTA
               href="https://app.datanika.io"
+              plausibleEvent="Pricing: Start free"
               class:list={[
                 "mt-8 block w-full rounded-lg py-3 text-center text-sm font-semibold transition-colors",
                 tier.highlighted ? "btn-primary" : "btn-secondary",
-                "plausible-event-name=Pricing:+Start+free",
               ]}
             >
               {tier.cta}
