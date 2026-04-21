@@ -53,6 +53,9 @@ describe("ConversionCTA component", () => {
   });
 
   it("emits a gtag conversion event on click when label is set", () => {
+    // gtag fires from the component's inline <script> block (post-#212
+    // sendBeacon refactor) rather than an onclick attribute — the check
+    // is the same either way.
     expect(source).toMatch(/gtag\(['"]event['"],\s*['"]conversion['"]/);
   });
 
@@ -60,11 +63,26 @@ describe("ConversionCTA component", () => {
     expect(source).toContain("AW-18081528527");
   });
 
-  it("falls back to plain anchor when label is unset (no onclick)", () => {
-    // Confirms the conditional — we don't want a JS error when the env
-    // var is missing in local builds without the secret.
-    expect(source).toMatch(/\?\s*`gtag/);
-    expect(source).toMatch(/:\s*undefined/);
+  it("falls back to plain anchor when label is unset (no data-gtag-send-to attribute)", () => {
+    // Post-#212 pattern: data-gtag-send-to={sendTo || undefined} on the
+    // rendered <a>. Astro omits attributes whose value is undefined, so
+    // when PUBLIC_GOOGLE_ADS_CONVERSION_LABEL is unset the anchor has no
+    // send-to and the script's sendGtag() short-circuits. No JS error.
+    expect(source).toMatch(/sendTo\s*\|\|\s*undefined/);
+  });
+
+  it("uses navigator.sendBeacon for Plausible events (race-free vs XHR — #212)", () => {
+    // sendBeacon survives navigation; Plausible's own script.tagged-events.js
+    // used XHR+setTimeout which could lose events on click-then-navigate.
+    expect(source).toContain("navigator.sendBeacon");
+    expect(source).toContain("plausible.datanika.io/api/event");
+  });
+
+  it("blocks Plausible's own auto-handler via stopImmediatePropagation", () => {
+    // Our capture-phase listener must stop the bubble/target chain so
+    // Plausible's script.tagged-events.js click handler does not also
+    // fire and double-count the event.
+    expect(source).toContain("stopImmediatePropagation");
   });
 
   it("passes through arbitrary props via {...rest}", () => {
