@@ -1,34 +1,115 @@
 ---
-// Drop-in replacement for `<a>` that fires the Google Ads conversion
-// event on click. Renders a plain anchor when PUBLIC_GOOGLE_ADS_CONVERSION_LABEL
-// is unset (so local builds without the secret still work).
+// Drop-in replacement for `<a>` that fires Google Ads conversion tracking +
+// optional Plausible custom event on click. Uses navigator.sendBeacon() for
+// Plausible — survives navigation unlike the XHR+setTimeout path in
+// script.tagged-events.js that was losing events on click-then-navigate
+// (see landing#212). gtag and Plausible fire from the same inline handler
+// for consistent ordering; onclick-attr-based gtag was removed so a single
+// script owns the CTA event lifecycle.
 //
 // Usage:
-//   <ConversionCTA href="https://app.datanika.io" class="btn-primary">
-//     Get Started Free
+//   <ConversionCTA href="..." class="btn-primary">Start Free</ConversionCTA>
+//   <ConversionCTA href="..." class="btn-primary" plausibleEvent="Pricing: Start free">
+//     Start Free
 //   </ConversionCTA>
 //
-// All other props (id, target, rel, aria-*, data-*, etc.) pass through.
+// Renders a plain <a> when PUBLIC_GOOGLE_ADS_CONVERSION_LABEL is unset
+// (local builds without the secret). The script still handles Plausible
+// events in that case as long as plausibleEvent is supplied.
 //
-// Why a component instead of a global click listener: a CTA-specific
-// gtag fires only on the conversion-eligible CTAs we care about, not
-// on every link in the site. Body-text mentions of /signup don't get
-// counted as conversions.
-//
-// Account ID `AW-18081528527` is hardcoded — it's already public in
-// `src/layouts/Layout.astro`'s gtag config block, so this isn't a
-// secret. Only the per-conversion label is sensitive enough to keep
-// in env vars.
+// Non-ConversionCTA anchors that want Plausible-only tracking (no gtag) can
+// just set `data-plausible-event="Event Name"` — the script matches any
+// `a[data-plausible-event]`, not only CTAs rendered by this component.
+
+interface Props {
+  href: string;
+  class?: string;
+  plausibleEvent?: string;
+  [key: string]: any;
+}
 
 const conversionLabel = import.meta.env.PUBLIC_GOOGLE_ADS_CONVERSION_LABEL;
 const sendTo = conversionLabel ? `AW-18081528527/${conversionLabel}` : null;
-const onClick = sendTo
-  ? `gtag('event', 'conversion', {'send_to': '${sendTo}', 'value': 1.0, 'currency': 'EUR'});`
-  : undefined;
-
-const { href, class: className, ...rest } = Astro.props;
+const { href, class: className, plausibleEvent, ...rest } = Astro.props;
 ---
 
-<a href={href} class={className} onclick={onClick} {...rest}>
+<a
+  href={href}
+  class={className}
+  data-plausible-event={plausibleEvent || undefined}
+  data-gtag-send-to={sendTo || undefined}
+  {...rest}
+>
   <slot />
 </a>
+
+<script>
+  document.addEventListener(
+    "click",
+    (e) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      const link = target.closest?.(
+        "a[data-plausible-event], a[data-gtag-send-to]",
+      ) as HTMLAnchorElement | null;
+      if (!link) return;
+
+      const href = link.getAttribute("href");
+      const eventName = link.getAttribute("data-plausible-event");
+      const sendTo = link.getAttribute("data-gtag-send-to");
+
+      const sendPlausible = () => {
+        if (!eventName || !navigator.sendBeacon) return;
+        try {
+          navigator.sendBeacon(
+            "https://plausible.datanika.io/api/event",
+            JSON.stringify({
+              n: eventName,
+              u: window.location.href,
+              d: "datanika.io",
+              r: document.referrer || null,
+            }),
+          );
+        } catch (_) {
+          /* sendBeacon rejected (CSP, quota, extension) — silent. */
+        }
+      };
+      const sendGtag = () => {
+        const gtag = (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag;
+        if (!sendTo || typeof gtag !== "function") return;
+        try {
+          gtag("event", "conversion", {
+            send_to: sendTo,
+            value: 1.0,
+            currency: "EUR",
+          });
+        } catch (_) {
+          /* gtag threw — silent. */
+        }
+      };
+
+      const me = e as MouseEvent;
+      const isModifierClick =
+        me.ctrlKey ||
+        me.metaKey ||
+        me.shiftKey ||
+        (me.button !== undefined && me.button !== 0);
+
+      if (isModifierClick) {
+        e.stopImmediatePropagation();
+        sendPlausible();
+        sendGtag();
+        return;
+      }
+
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      sendPlausible();
+      sendGtag();
+      if (href) setTimeout(() => {
+        window.location.href = href;
+      }, 50);
+    },
+    true,
+  );
+</script>
