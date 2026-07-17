@@ -17,7 +17,7 @@ interface Props {
   connectors: Connector[];
   // Optional anchor id for deep-linking from other docs pages.
   id?: string;
-  // When true, append a "Browse all 32 connectors →" footer link.
+  // When true, append a "Browse all 36 connectors →" footer link.
   showAllLink?: boolean;
 }
 
@@ -48,6 +48,6 @@ function shortDescription(full: string): string {
 </ul>
 {showAllLink && (
   <p>
-    <a href="/connectors">Browse all 32 connectors →</a>
+    <a href="/connectors">Browse all 36 connectors →</a>
   </p>
 )}
