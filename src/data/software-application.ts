@@ -42,7 +42,7 @@ export const PLAN_OFFERS: OfferData[] = [
     priceCurrency: "USD",
     billingDuration: "P1M",
     description:
-      "1 seat, 5 connections, 2 schedules, 500 model runs per month. All 32 connectors included.",
+      "1 seat, 5 connections, 2 schedules, 500 model runs per month. All 36 connectors included.",
   },
   {
     name: "Pro (monthly)",
