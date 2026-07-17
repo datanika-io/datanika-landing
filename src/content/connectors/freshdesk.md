@@ -4,8 +4,8 @@ description: "Step-by-step guide to sync Freshdesk tickets into your warehouse w
 source: "freshdesk"
 source_name: "Freshdesk"
 category: "saas"
-verified_by: "draft-pending-verification"
-verified_date: null
+verified_by: "product-ui"
+verified_date: "2026-07-17"
 related_use_cases: []
 related_comparisons:
   - "airbyte"
@@ -22,7 +22,7 @@ Freshdesk is the system of record for customer support — tickets, conversation
 - A **Datanika account** with permission to create connections (Admin or Editor role).
 - A **destination warehouse** already connected in Datanika. Freshdesk is **source-only**.
 - A **Freshdesk account** with an agent whose API key you can use. An admin agent sees all tickets; a scoped agent sees only its groups.
-- Your **Freshdesk subdomain** — the `yourcompany` part of `https://yourcompany.freshdesk.com`.
+- Your **Freshdesk domain** — the `yourcompany` part of `https://yourcompany.freshdesk.com` (just the subdomain, not the full URL). You'll enter this in the **Freshdesk Domain** field.
 
 ## Step 1 — Get your API key in Freshdesk
 
@@ -34,19 +34,17 @@ Every Freshdesk agent has a personal API key. Authentication is HTTP Basic: the 
 
 > **Least privilege.** The API key inherits the agent's ticket scope and role. For a full-instance sync, use an **account admin** agent. For a limited sync, use an agent restricted to specific groups.
 
-![Finding the Freshdesk API key](/docs/connectors/freshdesk/01-credentials.png)
-
 ## Step 2 — Add the connection in Datanika
 
 1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page.
-2. From the **type dropdown**, pick **Freshdesk**.
+2. From the **type dropdown**, pick **`freshdesk`**.
 3. Fill in:
-   - **Connection Name** — e.g. `freshdesk-support` or `freshdesk-prod`.
-   - **Freshdesk subdomain** — just the subdomain, not the full URL. If your Freshdesk is at `acme.freshdesk.com`, enter `acme`.
-   - **API key** — paste the key from Step 1. Stored encrypted at rest with Fernet.
+   - **Connection Name** — a label for this connection, e.g. `freshdesksupport`.
+   - **Freshdesk Domain** — just the subdomain, not the full URL. If your Freshdesk is at `acme.freshdesk.com`, enter `acme`.
+   - **API Key** — paste the key from Step 1. (The field is labelled *API Key (optional)*, but Freshdesk needs it.) Stored encrypted at rest with Fernet.
 4. Click **Create Connection**.
 
-> **No "Test connection" button.** Freshdesk is an HTTP-API source — the credential is validated on the first run.
+> **Test Connection doesn't apply here.** Freshdesk is an HTTP-API source; clicking **Test Connection** shows *"Test not applicable for this type."* The credential is validated on the first run instead.
 
 ![Adding Freshdesk in Datanika](/docs/connectors/freshdesk/02-add-connection.png)
 
@@ -76,8 +74,6 @@ Every Freshdesk agent has a personal API key. Authentication is HTTP Basic: the 
 3. If the subdomain or key is wrong, the run fails with `401 Unauthorized`.
 4. When finished, open **Catalog → `raw_freshdesk`** and browse the tables.
 
-![First Freshdesk run](/docs/connectors/freshdesk/04-first-run.png)
-
 ## Step 5 — Schedule it
 
 1. On the pipeline page, click **Schedule**.
@@ -91,8 +87,8 @@ Every Freshdesk agent has a personal API key. Authentication is HTTP Basic: the 
 ## Troubleshooting
 
 ### `401 Unauthorized`
-**Cause.** The subdomain or API key is wrong — commonly the full URL was entered instead of just the subdomain, or the key was regenerated in Freshdesk.
-**Fix.** Verify the subdomain and re-copy the key from **Profile settings**.
+**Cause.** The **Freshdesk Domain** or API key is wrong — commonly the full URL was entered instead of just the subdomain, or the key was regenerated in Freshdesk.
+**Fix.** Confirm the **Freshdesk Domain** is just the subdomain (e.g. `acme`, not `acme.freshdesk.com`) and re-copy the key from **Profile settings**.
 
 ### Some tickets or fields are missing
 **Cause.** The API key's agent only sees tickets in its assigned groups, and restricted agents can't read certain fields.

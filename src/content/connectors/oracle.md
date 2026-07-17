@@ -4,8 +4,8 @@ description: "Step-by-step guide to sync Oracle Database with Datanika — creat
 source: "oracle"
 source_name: "Oracle"
 category: "database"
-verified_by: "draft-pending-verification"
-verified_date: null
+verified_by: "product-ui"
+verified_date: "2026-07-17"
 related_use_cases: []
 related_comparisons:
   - "airbyte"
@@ -21,9 +21,9 @@ Oracle Database is the system of record for a huge share of enterprise ERP, fina
 
 - A **Datanika account** with permission to create connections (Admin or Editor role).
 - A **destination warehouse** already connected in Datanika. Oracle is used here as a **source**.
-- **Oracle Database 12c or newer** (11g works, but service-name routing below assumes 12c+ pluggable databases) reachable from Datanika over the network.
+- **Oracle Database 11g or newer** reachable from Datanika over the network.
 - A database account with `CREATE USER` / `GRANT` privileges to provision the read-only user in Step 1.
-- Your **connection identifier**: host, port (default `1521`), and the **service name** (or SID) of the database or pluggable database (PDB) you're syncing.
+- Your **connection identifier**: host, port (default `1521`), and the **SID** (System Identifier) of the database you're syncing. Datanika connects to Oracle by SID — see the note in Step 2 if your database only exposes a *service name*.
 
 ## Step 1 — Create a read-only user in Oracle
 
@@ -41,23 +41,24 @@ GRANT SELECT ON sales.customers  TO datanika_readonly;
 -- GRANT SELECT ANY TABLE TO datanika_readonly;
 ```
 
-Copy the host, port, service name, username, and password.
+Copy the host, port, SID, username, and password.
 
 > **Least privilege.** Only grant `SELECT`. Datanika never needs write access to the source. `GRANT SELECT` covers existing tables only — re-run it when you add tables to the sync, or use `SELECT ANY TABLE` if you'd rather not maintain the list.
-
-![Creating the Oracle read-only user](/docs/connectors/oracle/01-credentials.png)
 
 ## Step 2 — Add the connection in Datanika
 
 1. In Datanika, open **`/connections`**. The New Connection form is rendered inline on the page.
-2. From the **type dropdown**, pick **Oracle**.
+2. From the **type dropdown**, pick **`oracle`**.
 3. Fill in:
-   - **Name** — e.g. `oracle-erp-readonly`.
-   - **Host / Port** — your Oracle host and listener port (default `1521`).
-   - **Service name** — the service name or SID from Step 1 (e.g. `ORCLPDB1`).
+   - **Connection Name** — a label for this connection, e.g. `oracleerp`.
+   - **Host** — your Oracle host.
+   - **Port** — the listener port (auto-fills to `1521` when you pick Oracle).
    - **User / Password** — the `datanika_readonly` account. The password is stored encrypted at rest with Fernet.
-4. Click **Test connection** — you should see a green ✅.
+   - **Database** — the database **SID** from Step 1 (e.g. `ORCLPDB1`).
+4. Click **Test Connection** — for a reachable database you'll see a success message.
 5. Click **Create Connection**.
+
+> **Datanika connects to Oracle by SID.** The **Database** field is used as the Oracle **SID**, so enter a SID here — not a service name. Databases reached only by *service name* (many 12c+ pluggable databases, RAC, and Autonomous) aren't connectable through this form yet and fail with `ORA-12505`; service-name support is on the roadmap.
 
 ![Adding Oracle in Datanika](/docs/connectors/oracle/02-add-connection.png)
 
@@ -79,8 +80,6 @@ Copy the host, port, service name, username, and password.
 2. When the run finishes, open **Catalog → `raw_oracle`** and browse the landed tables.
 3. Spot-check: `SELECT count(*) FROM raw_oracle.orders` should match `SELECT count(*) FROM sales.orders` in Oracle.
 
-![First Oracle run](/docs/connectors/oracle/04-first-run.png)
-
 ## Step 5 — Schedule it
 
 1. On the pipeline page, click **Schedule**.
@@ -90,9 +89,9 @@ Copy the host, port, service name, username, and password.
 
 ## Troubleshooting
 
-### `ORA-12514: TNS:listener does not currently know of service requested`
-**Cause.** The service name is wrong, or you supplied a SID where a service name was expected (or vice-versa).
-**Fix.** Confirm the exact service name with `SELECT value FROM v$parameter WHERE name = 'service_names';` (or ask your DBA) and re-enter it.
+### `ORA-12505: TNS:listener does not currently know of SID given in connect descriptor`
+**Cause.** The value in the **Database** field isn't a SID the listener recognizes — most often because a *service name* was entered instead (Datanika connects by SID). Many 12c+ PDBs, RAC, and Autonomous databases only expose a service name.
+**Fix.** Enter the database **SID** in the **Database** field. Find it with `SELECT instance_name FROM v$instance;` (or ask your DBA). Service-name-only databases aren't supported through this form yet.
 
 ### `ORA-01017: invalid username/password; logon denied`
 **Cause.** Wrong credentials, or the user was created in a different container/PDB than the one you're connecting to.
