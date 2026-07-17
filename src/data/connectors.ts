@@ -152,6 +152,27 @@ export const connectors: Connector[] = [
     seoDescription: "DuckDB data pipeline for embedded analytics. Use as a fast local destination or extract DuckDB data to cloud warehouses. Open source. Start free on Datanika.",
     seoH1: "DuckDB Data Pipeline",
   },
+  {
+    slug: "oracle",
+    name: "Oracle",
+    category: "Database",
+    direction: "source",
+    description: "Connect to Oracle Database 12c+ as a source and extract tables into your warehouse. Uses the oracledb thin driver — no Oracle client install required. Ideal for offloading analytics from enterprise ERP and OLTP systems.",
+    useCases: [
+      "Extract Oracle ERP and finance data into a cloud warehouse",
+      "Offload analytics from a production Oracle OLTP database",
+      "Replicate Oracle tables to BigQuery, Snowflake, or PostgreSQL",
+      "Incremental extraction of large Oracle tables",
+    ],
+    configFields: [
+      { name: "host", description: "Database hostname or IP address" },
+      { name: "port", description: "Port number (default: 1521)" },
+      { name: "service_name", description: "Oracle service name (or SID)" },
+      { name: "username", description: "Database user" },
+      { name: "password", description: "Database password (encrypted at rest)" },
+    ],
+    related: ["postgresql", "mysql", "mssql", "bigquery"],
+  },
 
   // --- Cloud Warehouses (source & destination) ---
   {
@@ -573,6 +594,60 @@ export const connectors: Connector[] = [
     seoTitle: "Notion Data Export & Pipeline | Datanika",
     seoDescription: "Export Notion databases and pages to your data warehouse. Build structured analytics from Notion workspace data with dbt transforms. Start free on Datanika.",
     seoH1: "Notion Data Export",
+  },
+  {
+    slug: "pipedrive",
+    name: "Pipedrive",
+    category: "SaaS & API",
+    direction: "source",
+    description: "Extract CRM data from Pipedrive — deals, persons, organizations, activities, and pipelines. Build sales-velocity and revenue analytics from your sales funnel.",
+    useCases: [
+      "Build sales-funnel and win-rate analytics",
+      "Track deal velocity and stage conversion",
+      "Combine Pipedrive with Stripe for closed-won-to-revenue reporting",
+      "Report on activity volume per sales rep",
+    ],
+    configFields: [
+      { name: "api_token", description: "Pipedrive API token (encrypted at rest)" },
+      { name: "company_domain", description: "Company domain — the subdomain of *.pipedrive.com (e.g., acme)" },
+    ],
+    related: ["hubspot", "salesforce", "stripe", "bigquery"],
+  },
+  {
+    slug: "freshdesk",
+    name: "Freshdesk",
+    category: "SaaS & API",
+    direction: "source",
+    description: "Extract support data from Freshdesk — tickets, contacts, companies, agents, and conversations. Analyze support performance, SLA compliance, and CSAT.",
+    useCases: [
+      "Build support-analytics dashboards",
+      "Track first-response and resolution times against SLAs",
+      "Combine Freshdesk with CRM data for customer-health scores",
+      "Analyze ticket volume and agent load",
+    ],
+    configFields: [
+      { name: "subdomain", description: "Freshdesk subdomain (e.g., acme from acme.freshdesk.com)" },
+      { name: "api_key", description: "Freshdesk API key (encrypted at rest)" },
+    ],
+    related: ["zendesk", "hubspot", "salesforce", "bigquery"],
+  },
+  {
+    slug: "asana",
+    name: "Asana",
+    category: "SaaS & API",
+    direction: "source",
+    description: "Extract project-management data from Asana — tasks, projects, sections, users, and stories. Build delivery and throughput analytics from your workspace.",
+    useCases: [
+      "Build delivery and throughput dashboards",
+      "Track cycle time and completion rate",
+      "Measure task load per assignee or team",
+      "Combine Asana with GitHub or Jira for full delivery analytics",
+    ],
+    configFields: [
+      { name: "access_token", description: "Asana personal access token (encrypted at rest)" },
+      { name: "workspace", description: "Workspace GID to sync (optional; defaults to all accessible)" },
+    ],
+    related: ["jira", "notion", "github", "bigquery"],
   },
   {
     slug: "rest-api",
