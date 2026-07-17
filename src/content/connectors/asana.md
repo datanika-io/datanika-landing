@@ -4,8 +4,8 @@ description: "Step-by-step guide to sync Asana projects and tasks into your ware
 source: "asana"
 source_name: "Asana"
 category: "saas"
-verified_by: "draft-pending-verification"
-verified_date: null
+verified_by: "product-ui"
+verified_date: "2026-07-17"
 related_use_cases: []
 related_comparisons:
   - "airbyte"
@@ -21,8 +21,7 @@ Asana is where a lot of teams run projects, tasks, and delivery workflows. This 
 
 - A **Datanika account** with permission to create connections (Admin or Editor role).
 - A **destination warehouse** already connected in Datanika. Asana is **source-only**.
-- An **Asana account** that's a member of the workspace(s) you want to sync.
-- Optionally, the **workspace GID** — Asana's internal ID for your workspace. You can sync all accessible workspaces or scope to one.
+- An **Asana account** that's a member of the workspace(s) you want to sync. Datanika syncs every workspace the token can access.
 
 ## Step 1 — Create a personal access token in Asana
 
@@ -35,19 +34,18 @@ A personal access token (PAT) authenticates as you and can read everything your 
 
 > **Least privilege.** A PAT sees exactly what its user sees. To sync a whole workspace, use a token from a member with access to all the relevant projects (or a dedicated service account). Asana PATs are read/write at the API level — Datanika only ever reads.
 
-![Creating an Asana personal access token](/docs/connectors/asana/01-credentials.png)
-
 ## Step 2 — Add the connection in Datanika
 
 1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page.
-2. From the **type dropdown**, pick **Asana**.
+2. From the **type dropdown**, pick **`asana`**.
 3. Fill in:
-   - **Connection Name** — e.g. `asana-delivery` or `asana-prod`.
-   - **Access token** — paste the PAT from Step 1. Stored encrypted at rest with Fernet.
-   - **Workspace GID** *(optional)* — the workspace to sync. Leave blank to sync every workspace your token can access.
+   - **Connection Name** — a label for this connection, e.g. `asanaprojects`.
+   - **API Key** — paste the personal access token from Step 1. (The field is labelled *API Key (optional)*, but Asana needs it.) Stored encrypted at rest with Fernet.
 4. Click **Create Connection**.
 
-> **No "Test connection" button.** Asana is an HTTP-API source — the credential is validated on the first run.
+> **All accessible workspaces sync.** There's no workspace field — Datanika syncs every workspace the token can reach. To scope the sync, use a token from a user with access to only the workspaces you want.
+>
+> **Test Connection doesn't apply here.** Asana is an HTTP-API source; clicking **Test Connection** shows *"Test not applicable for this type."* The credential is validated on the first run instead.
 
 ![Adding Asana in Datanika](/docs/connectors/asana/02-add-connection.png)
 
@@ -76,8 +74,6 @@ A personal access token (PAT) authenticates as you and can read everything your 
 2. Watch the **Runs** tab. Asana paginates results and enforces a per-minute rate limit, so large workspaces with thousands of tasks take a few minutes on the first backfill.
 3. If the token is wrong, the run fails with `401 Unauthorized`.
 4. When finished, open **Catalog → `raw_asana`** and browse the tables.
-
-![First Asana run](/docs/connectors/asana/04-first-run.png)
 
 ## Step 5 — Schedule it
 
