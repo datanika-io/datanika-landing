@@ -10,18 +10,18 @@ function readHtml(path: string): string {
   return readFileSync(file, "utf-8");
 }
 
-// All 32 connector slugs
+// All 36 connector slugs
 const connectorSlugs = [
-  "postgresql", "mysql", "mssql", "sqlite", "clickhouse", "duckdb",
+  "postgresql", "mysql", "mssql", "sqlite", "clickhouse", "duckdb", "oracle",
   "bigquery", "snowflake", "redshift", "databricks", "synapse",
   "mongodb",
   "stripe", "github", "hubspot", "salesforce", "shopify", "jira", "slack",
-  "google-analytics", "google-ads", "facebook-ads", "zendesk", "airtable", "notion", "rest-api",
+  "google-analytics", "google-ads", "facebook-ads", "zendesk", "airtable", "notion", "pipedrive", "freshdesk", "asana", "rest-api",
   "csv", "json", "parquet", "s3", "google-sheets", "kafka",
 ];
 
 describe("connector landing pages", () => {
-  it("generates all 32 connector pages", () => {
+  it("generates all 36 connector pages", () => {
     for (const slug of connectorSlugs) {
       const file = resolve(DIST, `connectors/${slug}/index.html`);
       expect(existsSync(file), `Missing: /connectors/${slug}`).toBe(true);

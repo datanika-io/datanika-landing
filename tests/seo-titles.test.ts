@@ -212,11 +212,11 @@ describe("Tier 3 SEO title/meta compliance", () => {
 // This prevents future pages from shipping with the Layout default title.
 
 const allConnectorSlugs = [
-  "postgresql", "mysql", "mssql", "sqlite", "clickhouse", "duckdb",
+  "postgresql", "mysql", "mssql", "sqlite", "clickhouse", "duckdb", "oracle",
   "bigquery", "snowflake", "redshift", "databricks", "synapse",
   "mongodb",
   "stripe", "github", "hubspot", "salesforce", "shopify", "jira", "slack",
-  "google-analytics", "google-ads", "facebook-ads", "zendesk", "airtable", "notion", "rest-api",
+  "google-analytics", "google-ads", "facebook-ads", "zendesk", "airtable", "notion", "pipedrive", "freshdesk", "asana", "rest-api",
   "csv", "json", "parquet", "s3", "google-sheets", "kafka",
 ];
 

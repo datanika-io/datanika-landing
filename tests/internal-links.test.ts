@@ -24,11 +24,11 @@ function countLinks(html: string, pattern: string): number {
 // --- Connector pages must link to use-cases ---
 
 const connectorSlugs = [
-  "postgresql", "mysql", "mssql", "sqlite", "clickhouse", "duckdb",
+  "postgresql", "mysql", "mssql", "sqlite", "clickhouse", "duckdb", "oracle",
   "bigquery", "snowflake", "redshift", "databricks", "synapse",
   "mongodb",
   "stripe", "github", "hubspot", "salesforce", "shopify", "jira", "slack",
-  "google-analytics", "google-ads", "facebook-ads", "zendesk", "airtable", "notion", "rest-api",
+  "google-analytics", "google-ads", "facebook-ads", "zendesk", "airtable", "notion", "pipedrive", "freshdesk", "asana", "rest-api",
   "csv", "json", "parquet", "s3", "google-sheets", "kafka",
 ];
 
@@ -120,13 +120,13 @@ function uniqueConnectorLinks(html: string): Set<string> {
 }
 
 describe("docs pages cross-link service connectors (#117)", () => {
-  it("/docs/connections links to all 32 connectors", () => {
+  it("/docs/connections links to all 36 connectors", () => {
     // The page groups connectors by category and renders every one. If a
     // new connector is added to src/data/connectors.ts, this count changes
     // and the test flags that the expected count needs updating.
     const html = readHtml("docs/connections/index.html");
     const links = uniqueConnectorLinks(html);
-    expect(links.size, `/docs/connections should link all 32 connectors`).toBe(32);
+    expect(links.size, `/docs/connections should link all 36 connectors`).toBe(36);
   });
 
   it("/docs/pipelines links to the 5 Pipeline Templates connectors", () => {
