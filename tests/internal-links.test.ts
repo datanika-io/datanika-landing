@@ -34,7 +34,7 @@ const connectorSlugs = [
 
 const connectorsThatHaveUseCases = [
   "postgresql", "mysql", "mongodb", "stripe", "hubspot", "salesforce",
-  "shopify", "kafka", "s3", "bigquery", "snowflake", "clickhouse",
+  "shopify", "kafka", "s3", "bigquery", "snowflake", "clickhouse", "redshift",
 ];
 
 describe("connector pages link to use-cases", () => {
@@ -63,7 +63,7 @@ const useCaseSlugs = [
   "postgresql-to-bigquery", "postgresql-to-snowflake", "mysql-to-bigquery",
   "mongodb-to-snowflake", "stripe-to-bigquery", "hubspot-to-snowflake",
   "salesforce-to-bigquery", "shopify-to-bigquery", "kafka-to-clickhouse",
-  "s3-to-snowflake",
+  "s3-to-snowflake", "postgresql-to-redshift", "stripe-to-redshift",
 ];
 
 describe("use-case pages link to connector pages", () => {
