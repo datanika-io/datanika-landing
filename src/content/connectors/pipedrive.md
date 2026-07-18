@@ -4,8 +4,8 @@ description: "Step-by-step guide to sync Pipedrive CRM into your warehouse with 
 source: "pipedrive"
 source_name: "Pipedrive"
 category: "saas"
-verified_by: "draft-pending-verification"
-verified_date: null
+verified_by: "product-ui"
+verified_date: "2026-07-17"
 related_use_cases: []
 related_comparisons:
   - "airbyte"
@@ -22,7 +22,6 @@ Pipedrive is the sales CRM of record for many SMBs — deals, pipelines, activit
 - A **Datanika account** with permission to create connections (Admin or Editor role).
 - A **destination warehouse** already connected in Datanika. Pipedrive is **source-only**.
 - A **Pipedrive account**. Any user can read their own API token, but company admins can restrict API access — check with your admin if the token is missing.
-- Your **company domain** — the `yourcompany` part of `https://yourcompany.pipedrive.com`. (Pipedrive calls this the *company domain*; it's the subdomain of `pipedrive.com`.)
 
 ## Step 1 — Get your API token in Pipedrive
 
@@ -34,19 +33,18 @@ Pipedrive personal API tokens authenticate as a specific user and inherit that u
 
 > **Least privilege.** The token sees exactly what its user sees. For a full-company sync, use a token from an admin (or a dedicated "integrations" user) with visibility to all pipelines. For a scoped sync, use a limited user.
 
-![Finding the Pipedrive API token](/docs/connectors/pipedrive/01-credentials.png)
-
 ## Step 2 — Add the connection in Datanika
 
 1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page.
-2. From the **type dropdown**, pick **Pipedrive**.
+2. From the **type dropdown**, pick **`pipedrive`**.
 3. Fill in:
-   - **Connection Name** — e.g. `pipedrive-sales` or `pipedrive-prod`.
-   - **Company domain** — just the subdomain. If your Pipedrive is at `acme.pipedrive.com`, enter `acme`.
-   - **API token** — paste the token from Step 1. Stored encrypted at rest with Fernet.
+   - **Connection Name** — a label for this connection, e.g. `pipedrivesales`.
+   - **API Key** — paste the token from Step 1. (The field is labelled *API Key (optional)*, but Pipedrive needs it.) Stored encrypted at rest with Fernet.
 4. Click **Create Connection**.
 
-> **No "Test connection" button.** Pipedrive is an HTTP-API source — the credential is validated on the first run.
+> **The token is all you need.** Datanika calls the global Pipedrive API host, so there's no company-domain field — the personal API token is already scoped to its own company.
+>
+> **Test Connection doesn't apply here.** Pipedrive is an HTTP-API source; clicking **Test Connection** shows *"Test not applicable for this type."* The credential is validated on the first run instead.
 
 ![Adding Pipedrive in Datanika](/docs/connectors/pipedrive/02-add-connection.png)
 
@@ -72,10 +70,8 @@ Pipedrive personal API tokens authenticate as a specific user and inherit that u
 
 1. Click **Run now**.
 2. Watch the **Runs** tab. Pipedrive paginates results; a few thousand deals sync in a minute or two. Large instances with heavy activity history take longer on the first backfill.
-3. If the token or company domain is wrong, the run fails with `401 Unauthorized`.
+3. If the token is wrong, the run fails with `401 Unauthorized`.
 4. When finished, open **Catalog → `raw_pipedrive`** and browse the tables.
-
-![First Pipedrive run](/docs/connectors/pipedrive/04-first-run.png)
 
 ## Step 5 — Schedule it
 
@@ -90,8 +86,8 @@ Pipedrive personal API tokens authenticate as a specific user and inherit that u
 ## Troubleshooting
 
 ### `401 Unauthorized`
-**Cause.** The API token is wrong, was regenerated in Pipedrive, or the company domain doesn't match the token's account.
-**Fix.** Re-copy the token from **Personal preferences → API** and confirm the company-domain subdomain.
+**Cause.** The API token is wrong or was regenerated in Pipedrive.
+**Fix.** Re-copy the token from **Personal preferences → API** and paste it into the connection's **API Key** field.
 
 ### A pipeline or user sees fewer deals than expected
 **Cause.** Personal API tokens only return records the token's user can see. A rep's token won't return other reps' private deals.
