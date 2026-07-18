@@ -167,7 +167,7 @@ export const connectors: Connector[] = [
     configFields: [
       { name: "host", description: "Database hostname or IP address" },
       { name: "port", description: "Port number (default: 1521)" },
-      { name: "service_name", description: "Oracle SID (service-name connections aren't supported yet — enter the database SID)" },
+      { name: "service_name", description: "Oracle service name (or SID)" },
       { name: "username", description: "Database user" },
       { name: "password", description: "Database password (encrypted at rest)" },
     ],
