@@ -4,8 +4,8 @@ description: "Step-by-step guide to sync Jira issues into your warehouse with Da
 source: "jira"
 source_name: "Jira"
 category: "saas"
-verified_by: "draft-pending-verification"
-verified_date: null
+verified_by: "product-ui"
+verified_date: "2026-07-19"
 related_use_cases: []
 related_comparisons:
   - "airbyte"
@@ -34,21 +34,18 @@ Atlassian API tokens authenticate as your user account with the same permissions
 4. Copy the token. **This is your only chance** — Atlassian doesn't show it again.
 
 > **Least privilege.** The API token inherits your Jira permissions. If you have admin access but only need to sync issues, consider creating a dedicated Jira user with read-only project access and generating the token from that account.
-
-![Creating an API token in Atlassian](/docs/connectors/jira/01-credentials.png)
-
 ## Step 2 — Add the connection in Datanika
 
 1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page — there's no separate "New Connection" button to click.
-2. From the **type dropdown** at the top of the form, pick **Jira**.
+2. From the **type dropdown** at the top of the form, pick `jira`.
 3. Fill in:
    - **Connection Name** — e.g. `jira-eng` or `jira-product`.
-   - **Jira server URL** — your Jira Cloud URL, e.g. `https://yourcompany.atlassian.net`. Include the protocol, no trailing slash.
-   - **Account email** — the email associated with the Atlassian account that owns the API token.
-   - **API token** — paste the token from Step 1. Stored encrypted at rest with Fernet.
-4. Click **Create Connection**.
+   - **Jira Domain** — just the subdomain, **not** the full URL. If your Jira is at `yourcompany.atlassian.net`, enter `yourcompany`.
+   - **Email** — the email associated with the Atlassian account that owns the API token.
+   - **API Key (optional)** — paste the API token from Step 1. Stored encrypted at rest with Fernet.
+4. Click **Test Connection** (an HTTP-API source returns *"Test not applicable for this type"*), then **Create Connection**.
 
-> **No "Test connection" button.** Jira is an HTTP-API source — credentials are validated on the first pipeline run.
+> **Credentials are validated on the first run.** Jira is an HTTP-API source, so the **Test Connection** button reports *"Test not applicable for this type"* — the domain/email/token are validated for real when the first pipeline runs.
 
 ![Adding the Jira connection in Datanika](/docs/connectors/jira/02-add-connection.png)
 
@@ -77,9 +74,6 @@ Atlassian API tokens authenticate as your user account with the same permissions
 3. If the API token or email is wrong, the run fails with `401 Unauthorized`. Double-check both in the connection settings.
 4. When finished, open **Catalog → `raw_jira`** and browse. The `issues` table contains one row per issue with columns for summary, status, assignee, reporter, priority, created, updated, story points, sprint, epic, labels, and custom fields.
 5. Spot-check: `SELECT count(*) FROM raw_jira.issues WHERE project_key = 'ENG'` should roughly match the issue count in Jira's project sidebar.
-
-![First Jira run](/docs/connectors/jira/04-first-run.png)
-
 ## Step 5 — Schedule it
 
 1. On the pipeline page, click **Schedule**.

@@ -1,25 +1,19 @@
 # Salesforce setup-guide screenshots
 
-Referenced from `src/content/connectors/salesforce.md`.
+Referenced from `src/content/connectors/salesforce.md` (source-only SaaS connector).
 
-## Required screenshots
+## Captured
 
-| Filename | Step | What to capture |
+| Filename | Step | Notes |
 |---|---|---|
-| `01-credentials.png` | Step 1 | **Setup → App Manager → New Connected App** with OAuth settings enabled, `full` scope selected. Use a sandbox or developer edition. |
-| `02-add-connection.png` | Step 2 | The **Connections → New connection** form with Salesforce selected: Access Token and Instance URL fields. **Blur the token.** |
-| `03-configure-objects.png` | Step 3 | **Configure pipeline** screen showing object selection (accounts, contacts, opportunities) with merge write disposition. |
-| `04-first-run.png` | Step 4 | **Runs** tab after a successful first run with per-object row counts. |
-| `05-schedule.png` | Step 5 | **Schedule** modal with a cadence selected. |
+| `02-add-connection.png` | Step 2 | The **New Connection** form with `salesforce` selected. Captured 2026-07-19 from a real `app.datanika.io` session in light theme (the app default for a new account). Demo values only; the Access Token field renders masked. |
 
-## Capture guidelines
+## Verification
 
-- Use a **Salesforce sandbox or Developer Edition** — no production customer data.
-- **Redact** access tokens, instance URLs with real company names, and any PII in Account/Contact previews.
-- Dark theme, 1600 px width, `pngquant --quality 80-95`.
+`verified_by: product-ui` / `verified_date: 2026-07-19` — Step-2 field labels verified against the live shipped UI (`salesforce_fields()` in `connection_config_fields.py` + `en.json` on `origin/master`). Shipped form: **Connection Name**, **Access Token**, **Instance URL**. The type dropdown shows the lowercase key **`salesforce`**. **Major drift fixed:** the draft claimed Salesforce "doesn't expose a Test Connection button" — **false** (the button renders and returns *"Test not applicable for this type"* for HTTP-API sources). Also fixed: dropdown key, added **Connection Name**, "Save" → "Create Connection".
 
-## Key verification items
+> **Cosmetic Eng bug (flagged, not documented):** the **Instance URL** label renders a doubled asterisk (`Instance URL * *`) because the i18n value already ends in ` *` and the code appends another. Same class as shopify/jira — worth a small Eng cleanup ticket.
 
-- Confirm "Salesforce connections don't expose a Test connection button" — drawn from `_NON_DB_TYPES` in `connection_service.py:88`.
-- Verify the REST API v59.0 path prefix (`services/data/v59.0/sobjects/`) resolves correctly from the instance URL.
-- Test with an expired token to confirm the error message matches the troubleshooting section.
+## Not yet captured (deferred, not embedded in the guide)
+
+- `01-credentials.png` (Salesforce Connected App) and `04/05` — need an end-to-end pipeline run to a destination warehouse.
