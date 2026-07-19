@@ -21,9 +21,9 @@ Oracle Database is the system of record for a huge share of enterprise ERP, fina
 
 - A **Datanika account** with permission to create connections (Admin or Editor role).
 - A **destination warehouse** already connected in Datanika. Oracle is used here as a **source**.
-- **Oracle Database 11g or newer** reachable from Datanika over the network.
+- **Oracle Database 12c (12.1) or newer** reachable from Datanika over the network (the `oracledb` thin driver used by Datanika requires 12.1+).
 - A database account with `CREATE USER` / `GRANT` privileges to provision the read-only user in Step 1.
-- Your **connection identifier**: host, port (default `1521`), and the **SID** (System Identifier) of the database you're syncing. Datanika connects to Oracle by SID — see the note in Step 2 if your database only exposes a *service name*.
+- Your **connection identifier**: host, port (default `1521`), and the **service name** of the database you're syncing — a pluggable database (PDB) like `XEPDB1`, or a RAC / Autonomous service. Datanika connects **by service name by default**; there's a **Connect by SID** toggle for legacy single-instance databases (see Step 2).
 
 ## Step 1 — Create a read-only user in Oracle
 
@@ -41,7 +41,7 @@ GRANT SELECT ON sales.customers  TO datanika_readonly;
 -- GRANT SELECT ANY TABLE TO datanika_readonly;
 ```
 
-Copy the host, port, SID, username, and password.
+Copy the host, port, service name, username, and password.
 
 > **Least privilege.** Only grant `SELECT`. Datanika never needs write access to the source. `GRANT SELECT` covers existing tables only — re-run it when you add tables to the sync, or use `SELECT ANY TABLE` if you'd rather not maintain the list.
 
@@ -54,11 +54,12 @@ Copy the host, port, SID, username, and password.
    - **Host** — your Oracle host.
    - **Port** — the listener port (auto-fills to `1521` when you pick Oracle).
    - **User / Password** — the `datanika_readonly` account. The password is stored encrypted at rest with Fernet.
-   - **Database** — the database **SID** from Step 1 (e.g. `ORCLPDB1`).
+   - **Database** — the Oracle **service name** from Step 1 (e.g. `ORCLPDB1` for a pluggable database, or your RAC / Autonomous service).
+   - **Connect by SID (legacy single-instance)** — leave this **unchecked** for service-name connections (the default). Only tick it if your database is a legacy single-instance addressed by SID (see the note below).
 4. Click **Test Connection** — for a reachable database you'll see a success message.
 5. Click **Create Connection**.
 
-> **Datanika connects to Oracle by SID.** The **Database** field is used as the Oracle **SID**, so enter a SID here — not a service name. Databases reached only by *service name* (many 12c+ pluggable databases, RAC, and Autonomous) aren't connectable through this form yet and fail with `ORA-12505`; service-name support is on the roadmap.
+> **Datanika connects to Oracle by service name by default.** The **Database** field is your Oracle **service name** — pluggable databases (PDBs), RAC, and Autonomous all work. For a **legacy single-instance** database addressed by SID, tick **Connect by SID (legacy single-instance)** and put the SID in the **Database** field instead.
 
 ![Adding Oracle in Datanika](/docs/connectors/oracle/02-add-connection.png)
 
@@ -90,8 +91,8 @@ Copy the host, port, SID, username, and password.
 ## Troubleshooting
 
 ### `ORA-12505: TNS:listener does not currently know of SID given in connect descriptor`
-**Cause.** The value in the **Database** field isn't a SID the listener recognizes — most often because a *service name* was entered instead (Datanika connects by SID). Many 12c+ PDBs, RAC, and Autonomous databases only expose a service name.
-**Fix.** Enter the database **SID** in the **Database** field. Find it with `SELECT instance_name FROM v$instance;` (or ask your DBA). Service-name-only databases aren't supported through this form yet.
+**Cause.** **Connect by SID** is ticked, but the value in the **Database** field isn't a SID the listener recognizes — commonly because the database is actually reached by a *service name* (most 12c+ PDBs, RAC, and Autonomous only expose a service name).
+**Fix.** Untick **Connect by SID** and put the **service name** in the **Database** field — the default path, which covers PDBs, RAC, and Autonomous. List available services with `lsnrctl status` or `SELECT name FROM v$services;`. Only use **Connect by SID** (with the SID from `SELECT instance_name FROM v$instance;`) for legacy single-instance databases.
 
 ### `ORA-01017: invalid username/password; logon denied`
 **Cause.** Wrong credentials, or the user was created in a different container/PDB than the one you're connecting to.
