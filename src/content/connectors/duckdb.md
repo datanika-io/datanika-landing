@@ -4,8 +4,8 @@ description: "Set up DuckDB as an embedded analytical warehouse in Datanika — 
 source: "duckdb"
 source_name: "DuckDB"
 category: "database"
-verified_by: "draft-pending-verification"
-verified_date: null
+verified_by: "product-ui"
+verified_date: "2026-07-18"
 related_use_cases: []
 related_comparisons:
   - "airbyte"
@@ -39,12 +39,12 @@ DuckDB stores its entire database in a single file. You just need to decide wher
 
 ## Step 2 — Add the connection in Datanika
 
-1. In Datanika, open **Connections → New connection**.
-2. Select **DuckDB** from the connector list. Filter by the **Destination** direction if the list is long.
+1. In Datanika, open `/connections`. The New Connection form is rendered inline on the page.
+2. From the type dropdown, pick `duckdb`.
 3. Fill in the form:
-   - **Name** — a label you'll recognize, e.g. `duckdb-analytics`. This is what shows up in pipeline pickers.
-   - **Path to DuckDB file** — the full path from Step 1, e.g. `/var/datanika/duckdb/analytics.duckdb`. You can also use `:memory:` for an ephemeral in-process database (data is lost when the worker exits — only useful for smoke tests).
-4. Click **Save**. DuckDB will open (or create) the file on the first pipeline run.
+   - **Connection Name** — a label you'll recognize, e.g. `duckdb-analytics`. This is what shows up in pipeline pickers.
+   - **Database Path** — the full path from Step 1, e.g. `/var/datanika/duckdb/analytics.duckdb`. You can also use `:memory:` for an ephemeral in-process database (data is lost when the worker exits — only useful for smoke tests).
+4. Click **Create Connection**. DuckDB will open (or create) the file on the first pipeline run.
 
 ![Adding the DuckDB connection in Datanika](/docs/connectors/duckdb/02-add-connection.png)
 
@@ -75,8 +75,6 @@ DuckDB supports schemas just like a full warehouse — they're namespaces inside
    docker exec -it datanika-app python -c \
      "import duckdb; con = duckdb.connect('/var/datanika/duckdb/analytics.duckdb'); print(con.execute('SHOW TABLES').fetchall())"
    ```
-
-![Inspecting the first run](/docs/connectors/duckdb/04-first-run.png)
 
 ## Step 5 — Schedule it
 

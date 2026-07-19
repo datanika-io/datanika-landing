@@ -4,8 +4,8 @@ description: "Step-by-step guide to sync MongoDB into your warehouse with Datani
 source: "mongodb"
 source_name: "MongoDB"
 category: "database"
-verified_by: "draft-pending-verification"
-verified_date: null
+verified_by: "product-ui"
+verified_date: "2026-07-18"
 related_use_cases:
   - "mongodb-to-snowflake"
 related_comparisons:
@@ -44,13 +44,12 @@ MongoDB is the most common NoSQL source our users sync into a relational warehou
 
 > **Least privilege.** The `read` role is sufficient. Datanika never writes to MongoDB.
 
-![Creating the MongoDB user](/docs/connectors/mongodb/01-credentials.png)
-
 ## Step 2 — Add the connection in Datanika
 
-1. In Datanika, open **`/connections`** and pick **MongoDB** from the type dropdown at the top of the inline New Connection form.
-2. Fill in: **Name**, **Host**, **Port** (default `27017`), **Database**, **User**, **Password**.
-3. Click **Save**.
+1. In Datanika, open **`/connections`** and pick `mongodb` from the type dropdown at the top of the inline New Connection form.
+2. Fill in: **Connection Name**, **Host**, **Port** (default `27017`), **User**, **Password**, **Database**.
+3. Click **Test Connection** — for a reachable database you'll see a success message.
+4. Click **Create Connection**.
 
 ![Adding MongoDB in Datanika](/docs/connectors/mongodb/02-add-connection.png)
 
@@ -67,8 +66,6 @@ MongoDB is the most common NoSQL source our users sync into a relational warehou
 1. Click **Run now** and watch the **Runs** tab.
 2. Browse **Catalog → `raw_mongodb`** to verify flattened tables.
 3. Check that nested fields appear as `parent__child` columns.
-
-![First run](/docs/connectors/mongodb/04-first-run.png)
 
 ## Step 5 — Schedule it
 

@@ -4,8 +4,8 @@ description: "Step-by-step guide to set up Redshift as a destination in Datanika
 source: "redshift"
 source_name: "Amazon Redshift"
 category: "database"
-verified_by: "draft-pending-verification"
-verified_date: null
+verified_by: "product-ui"
+verified_date: "2026-07-18"
 related_use_cases:
   - "postgresql-to-redshift"
   - "stripe-to-redshift"
@@ -53,22 +53,21 @@ Create a **dedicated loader user** rather than reusing an admin account. This ke
 
 > **Least privilege.** Datanika needs `CREATE` (to create tables on first run) and DML permissions on the target schema. It does not need superuser, `CREATE DATABASE`, or access to other schemas. If you're asked for an admin password, something is wrong.
 
-![Creating the loader user in Redshift](/docs/connectors/redshift/01-credentials.png)
-
 ## Step 2 — Add the connection in Datanika
 
 1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page — there's no separate "New Connection" button to click.
-2. From the **type dropdown** at the top of the form, pick **Amazon Redshift**.
+2. From the **type dropdown** at the top of the form, pick `redshift`.
 3. Fill in the form:
-   - **Name** — e.g. `redshift-prod` or `redshift-analytics`.
+   - **Connection Name** — e.g. `redshift-prod` or `redshift-analytics`.
    - **Host** — the cluster endpoint, e.g. `my-cluster.abc123.us-east-1.redshift.amazonaws.com`.
    - **Port** — `5439` (Redshift default).
    - **Database** — the database name, e.g. `dev` or `analytics`.
    - **User** — `datanika_loader`.
    - **Password** — the password from Step 1. Stored encrypted at rest with Fernet.
-   - **Schema** — the default landing schema, e.g. `raw_data`. You can override this per pipeline.
-4. Click **Test connection**. Datanika verifies it can connect and run a query against the cluster. You should see a green checkmark.
-5. Click **Save**.
+4. Click **Test Connection**. Datanika verifies it can connect and run a query against the cluster. You should see a green checkmark.
+5. Click **Create Connection**.
+
+> **No schema field on the connection.** You pick a **target schema** per pipeline in [Step 3](#step-3--configure-a-pipeline-to-redshift), so one Redshift connection can feed multiple landing schemas (`raw_postgres`, `raw_stripe`, …).
 
 ![Adding Redshift as a destination in Datanika](/docs/connectors/redshift/02-add-connection.png)
 
@@ -95,8 +94,6 @@ Create a **dedicated loader user** rather than reusing an admin account. This ke
 4. Spot-check in the Redshift query editor: `SELECT count(*) FROM raw_postgres.orders;` should match the row count Datanika reports.
 5. Check **SVL_QUERY_SUMMARY** or the Redshift Console → Query monitoring to confirm the load queries ran under the `datanika_loader` user.
 
-![First run landing data in Redshift](/docs/connectors/redshift/04-first-run.png)
-
 ## Step 5 — Schedule it
 
 1. On the pipeline page, click **Schedule**.
@@ -108,8 +105,6 @@ Create a **dedicated loader user** rather than reusing an admin account. This ke
 4. Wire up failure alerts in **Settings → Notifications** so broken runs surface before dashboards go stale.
 
 > **Cost tip.** Redshift Serverless charges per RPU-second of compute. Schedule bulk loads during predictable windows so the cluster can scale down between runs. For provisioned clusters, align schedules with your WLM queue configuration to avoid contention with analyst queries.
-
-![Configuring the schedule](/docs/connectors/redshift/05-schedule.png)
 
 ## Troubleshooting
 
