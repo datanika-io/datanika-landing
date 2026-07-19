@@ -4,8 +4,8 @@ description: "Step-by-step guide to sync HubSpot CRM into your warehouse with Da
 source: "hubspot"
 source_name: "HubSpot"
 category: "saas"
-verified_by: "draft-pending-verification"
-verified_date: null
+verified_by: "product-ui"
+verified_date: "2026-07-19"
 related_use_cases:
   - "hubspot-to-snowflake"
 related_comparisons:
@@ -35,17 +35,15 @@ HubSpot is the most common marketing + CRM source our users sync into their ware
 4. Click **Create app** and copy the **access token**. HubSpot shows it once — store it securely.
 
 > **Least privilege.** Only grant `read` scopes. Datanika never writes to HubSpot.
-
-![Creating the HubSpot private app](/docs/connectors/hubspot/01-credentials.png)
-
 ## Step 2 — Add the connection in Datanika
 
-1. In Datanika, open **`/connections`** and pick **HubSpot** from the type dropdown at the top of the inline New Connection form.
+1. In Datanika, open **`/connections`** and pick `hubspot` from the type dropdown at the top of the inline New Connection form.
 2. Fill in:
-   - **API Key** — the private app access token from Step 1. Stored encrypted.
-3. Click **Save**.
+   - **Connection Name** — a label for this connection, e.g. `hubspot-crm`.
+   - **API Key (optional)** — the private app access token from Step 1. Stored encrypted.
+3. Click **Test Connection** (an HTTP-API source returns *"Test not applicable for this type"*), then **Create Connection**.
 
-> **No "Test connection" button.** HubSpot is an HTTP-API source — credentials are validated on the first run.
+> **Credentials are validated on the first run.** HubSpot is an HTTP-API source, so the **Test Connection** button reports *"Test not applicable for this type"* — the token is validated for real when the first pipeline runs.
 
 ![Adding HubSpot in Datanika](/docs/connectors/hubspot/02-add-connection.png)
 
@@ -61,9 +59,6 @@ HubSpot is the most common marketing + CRM source our users sync into their ware
 
 1. Click **Run now**. HubSpot CRM API uses cursor-based pagination — expect 1–5 minutes for a mid-size account.
 2. Browse **Catalog → `raw_hubspot`** to verify tables.
-
-![First run](/docs/connectors/hubspot/04-first-run.png)
-
 ## Step 5 — Schedule it
 
 Every 6 hours is typical for marketing analytics. Daily for reporting.

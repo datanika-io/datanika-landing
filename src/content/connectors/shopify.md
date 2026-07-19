@@ -4,8 +4,8 @@ description: "Step-by-step guide to sync Shopify into your warehouse with Datani
 source: "shopify"
 source_name: "Shopify"
 category: "saas"
-verified_by: "draft-pending-verification"
-verified_date: null
+verified_by: "product-ui"
+verified_date: "2026-07-19"
 related_use_cases:
   - "shopify-to-bigquery"
 related_comparisons:
@@ -34,18 +34,16 @@ Shopify is the go-to e-commerce source for teams building revenue analytics, inv
 4. Click **Install app** and copy the **Admin API access token**. This is shown only once.
 
 > **Least privilege.** Only grant `read_*` scopes. Datanika never writes to Shopify.
-
-![Creating the Shopify custom app](/docs/connectors/shopify/01-credentials.png)
-
 ## Step 2 — Add the connection in Datanika
 
-1. In Datanika, open **`/connections`** and pick **Shopify** from the type dropdown at the top of the inline New Connection form.
+1. In Datanika, open **`/connections`** and pick `shopify` from the type dropdown at the top of the inline New Connection form.
 2. Fill in:
-   - **API Key** — the Admin API access token from Step 1. Stored encrypted.
-   - **Store** — your Shopify store subdomain (e.g. `my-store` from `my-store.myshopify.com`). Just the subdomain, not the full URL.
-3. Click **Save**.
+   - **Connection Name** — a label for this connection, e.g. `shopify-store`.
+   - **API Key (optional)** — the Admin API access token from Step 1. Stored encrypted.
+   - **Store Name** — your Shopify store subdomain (e.g. `my-store` from `my-store.myshopify.com`). Just the subdomain, not the full URL.
+3. Click **Test Connection** (an HTTP-API source returns *"Test not applicable for this type"*), then **Create Connection**.
 
-> **No "Test connection" button.** Shopify is an HTTP-API source — credentials are validated on the first run.
+> **Credentials are validated on the first run.** Shopify is an HTTP-API source, so the **Test Connection** button reports *"Test not applicable for this type"* — the token is validated for real when the first pipeline runs.
 
 ![Adding Shopify in Datanika](/docs/connectors/shopify/02-add-connection.png)
 
@@ -61,9 +59,6 @@ Shopify is the go-to e-commerce source for teams building revenue analytics, inv
 
 1. Click **Run now**. Shopify Admin API uses cursor-based pagination — expect 1–5 minutes for a typical store.
 2. Browse **Catalog → `raw_shopify`** to verify tables landed.
-
-![First run](/docs/connectors/shopify/04-first-run.png)
-
 ## Step 5 — Schedule it
 
 Hourly or every 6 hours is typical for e-commerce analytics. Daily works for financial reporting.

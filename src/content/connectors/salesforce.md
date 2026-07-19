@@ -4,8 +4,8 @@ description: "Step-by-step guide to sync Salesforce into your warehouse with Dat
 source: "salesforce"
 source_name: "Salesforce"
 category: "saas"
-verified_by: "draft-pending-verification"
-verified_date: null
+verified_by: "product-ui"
+verified_date: "2026-07-19"
 related_use_cases:
   - "salesforce-to-bigquery"
 related_comparisons:
@@ -51,19 +51,17 @@ Salesforce uses OAuth 2.0 for API access. The simplest path for server-to-server
    The response contains `access_token` and `instance_url`. Copy both.
 
 > **Security tip.** For production, use the Client Credentials flow or a dedicated integration user with a non-expiring token. The password grant shown above is quick for testing but ties the credential to your personal account.
-
-![Creating the Connected App in Salesforce Setup](/docs/connectors/salesforce/01-credentials.png)
-
 ## Step 2 — Add the connection in Datanika
 
 1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page — there's no separate "New Connection" button to click.
-2. From the **type dropdown** at the top of the form, pick **Salesforce**.
+2. From the **type dropdown** at the top of the form, pick `salesforce`.
 3. Fill in the form:
+   - **Connection Name** — a label for this connection, e.g. `salesforce-crm`.
    - **Access Token** — the OAuth access token from Step 1. Stored encrypted at rest with Fernet.
    - **Instance URL** — your Salesforce instance URL, e.g. `https://yourcompany.my.salesforce.com`.
-4. Click **Save**.
+4. Click **Create Connection**.
 
-> **Salesforce connections don't expose a "Test connection" button.** Salesforce is an HTTP-API source — the credential is validated on the first pipeline run, not at save time. If the token is expired or invalid, the run fails immediately with a clear Salesforce API error.
+> **Test Connection for Salesforce.** The **Test Connection** button is present, but because Salesforce is an HTTP-API source it returns *"Test not applicable for this type"* — the token is validated for real on the first pipeline run, not at save time. If it's expired or invalid, the run fails immediately with a clear Salesforce API error.
 
 ![Adding the Salesforce connection in Datanika](/docs/connectors/salesforce/02-add-connection.png)
 
@@ -89,9 +87,6 @@ Salesforce uses OAuth 2.0 for API access. The simplest path for server-to-server
 3. If the access token is expired or missing permissions, the run fails immediately — jump to [Troubleshooting](#troubleshooting).
 4. When done, open **Catalog → `<warehouse>` → `raw_salesforce`** and browse.
 5. Spot-check: `SELECT count(*) FROM raw_salesforce.accounts;` should roughly match the Account count in Salesforce (Reports → Accounts).
-
-![First run in the Runs tab](/docs/connectors/salesforce/04-first-run.png)
-
 ## Step 5 — Schedule it
 
 1. On the pipeline page, click **Schedule**.
@@ -103,9 +98,6 @@ Salesforce uses OAuth 2.0 for API access. The simplest path for server-to-server
 4. Save and wire up failure alerts in **Settings → Notifications**.
 
 > **Token expiration.** Salesforce access tokens expire (typically after 2 hours for session tokens). For scheduled pipelines, use a refresh token flow or a Connected App with the Client Credentials grant — these auto-renew without manual intervention. If your token expires between runs, the run will fail and you'll need to regenerate it.
-
-![Configuring the schedule](/docs/connectors/salesforce/05-schedule.png)
-
 ## Troubleshooting
 
 ### `Salesforce source requires 'access_token' and 'instance_url'`

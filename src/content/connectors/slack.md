@@ -4,8 +4,8 @@ description: "Step-by-step guide to sync Slack messages and channels into your w
 source: "slack"
 source_name: "Slack"
 category: "saas"
-verified_by: "draft-pending-verification"
-verified_date: null
+verified_by: "product-ui"
+verified_date: "2026-07-19"
 related_use_cases: []
 related_comparisons:
   - "airbyte"
@@ -48,19 +48,16 @@ The bot automatically sees all public channels. For private channels, you must e
 
 1. Open the private channel in Slack.
 2. Type `/invite @Datanika Reader`.
-
-![Creating a Slack app](/docs/connectors/slack/01-credentials.png)
-
 ## Step 2 — Add the connection in Datanika
 
 1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page — there's no separate "New Connection" button to click.
-2. From the **type dropdown** at the top of the form, pick **Slack**.
+2. From the **type dropdown** at the top of the form, pick `slack`.
 3. Fill in:
    - **Connection Name** — e.g. `slack-workspace` or `slack-eng-team`.
-   - **Slack bot token** — paste the `xoxb-…` token from Step 1. Stored encrypted at rest with Fernet.
-4. Click **Create Connection**.
+   - **API Key (optional)** — paste the `xoxb-…` bot token from Step 1. Stored encrypted at rest with Fernet.
+4. Click **Test Connection** (an HTTP-API source returns *"Test not applicable for this type"*), then **Create Connection**.
 
-> **No "Test connection" button.** Slack is an HTTP-API source — the token is validated on the first run.
+> **Credentials are validated on the first run.** Slack is an HTTP-API source, so the **Test Connection** button reports *"Test not applicable for this type"* — the token is validated for real when the first pipeline runs.
 
 ![Adding the Slack connection in Datanika](/docs/connectors/slack/02-add-connection.png)
 
@@ -85,9 +82,6 @@ The bot automatically sees all public channels. For private channels, you must e
 2. Watch the **Runs** tab. Slack's API paginates at 200 messages per request. A channel with 50k messages takes a few minutes; workspace-wide syncs of very active workspaces can take longer.
 3. If the bot token is invalid, the run fails with `invalid_auth`. Check the token in **OAuth & Permissions** on [api.slack.com/apps](https://api.slack.com/apps).
 4. When finished, open **Catalog → `raw_slack`** and browse. The `messages` table contains one row per message with columns for channel, user, text, timestamp, thread parent, and reactions.
-
-![First Slack run](/docs/connectors/slack/04-first-run.png)
-
 ## Step 5 — Schedule it
 
 1. On the pipeline page, click **Schedule**.

@@ -4,8 +4,8 @@ description: "Step-by-step guide to sync Notion databases into your warehouse wi
 source: "notion"
 source_name: "Notion"
 category: "saas"
-verified_by: "draft-pending-verification"
-verified_date: null
+verified_by: "product-ui"
+verified_date: "2026-07-19"
 related_use_cases: []
 related_comparisons:
   - "airbyte"
@@ -38,19 +38,16 @@ Notion uses "internal integrations" for programmatic access. Each integration ge
 5. **Share each database with the integration.** Open the database page in Notion, click the `•••` menu in the top-right → **Connections → Connect to → `datanika-readonly`**. Repeat for every database you want to sync. Databases not explicitly shared are invisible to the integration.
 
 > **Least privilege.** Only enable "Read content." The integration cannot access any database you haven't explicitly shared with it, so even an overly broad read permission is effectively scoped by sharing.
-
-![Creating an internal integration in Notion](/docs/connectors/notion/01-credentials.png)
-
 ## Step 2 — Add the connection in Datanika
 
 1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page — there's no separate "New Connection" button to click.
-2. From the **type dropdown** at the top of the form, pick **Notion**.
+2. From the **type dropdown** at the top of the form, pick `notion`.
 3. Fill in:
    - **Connection Name** — a label you'll recognize, e.g. `notion-workspace` or `notion-product-team`.
-   - **Notion integration token** — paste the secret from Step 1 (`ntn_…`). Stored encrypted at rest with Fernet.
-4. Click **Create Connection**.
+   - **API Key (optional)** — paste the integration secret from Step 1 (`ntn_…`). Stored encrypted at rest with Fernet.
+4. Click **Test Connection** (an HTTP-API source returns *"Test not applicable for this type"*), then **Create Connection**.
 
-> **No "Test connection" button.** Notion is an HTTP-API source — the token is validated on the first pipeline run, not at save time.
+> **Credentials are validated on the first run.** Notion is an HTTP-API source, so the **Test Connection** button reports *"Test not applicable for this type"* — the token is validated for real when the first pipeline runs.
 
 ![Adding the Notion connection in Datanika](/docs/connectors/notion/02-add-connection.png)
 
@@ -73,9 +70,6 @@ Notion uses "internal integrations" for programmatic access. Each integration ge
 3. If a database wasn't shared with the integration (Step 1.5), it won't appear in the results — no error, just missing data. Go back to Notion and share it.
 4. When the run finishes, open **Catalog → `<your warehouse>` → `raw_notion`** and browse the tables. One table per database.
 5. Spot-check: compare row counts against the record count in Notion's database view.
-
-![First Notion run](/docs/connectors/notion/04-first-run.png)
-
 ## Step 5 — Schedule it
 
 1. On the pipeline page, click **Schedule**.
