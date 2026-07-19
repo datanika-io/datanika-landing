@@ -4,8 +4,8 @@ description: "Step-by-step guide to set up BigQuery as a destination in Datanika
 source: "bigquery"
 source_name: "BigQuery"
 category: "database"
-verified_by: "draft-pending-verification"
-verified_date: null
+verified_by: "product-ui"
+verified_date: "2026-07-19"
 related_use_cases:
   - "postgresql-to-bigquery"
   - "stripe-to-bigquery"
@@ -44,19 +44,17 @@ Create a **dedicated service account** rather than reusing a personal account or
 
 > **Least privilege.** `BigQuery Data Editor` + `BigQuery Job User` is the minimum set. Do not grant `BigQuery Admin` — Datanika doesn't need to delete datasets or manage access policies.
 
-![Creating the service account in GCP](/docs/connectors/bigquery/01-credentials.png)
-
 ## Step 2 — Add the connection in Datanika
 
 1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page — there's no separate "New Connection" button to click.
-2. From the **type dropdown** at the top of the form, pick **BigQuery**.
+2. From the **type dropdown** at the top of the form, pick `bigquery`.
 3. Fill in the form:
-   - **Name** — e.g. `bigquery-prod` or `bigquery-analytics`.
-   - **GCP Project** — the project ID (not the display name). Find it in the GCP Console → Dashboard → Project info, e.g. `my-company-prod-12345`.
+   - **Connection Name** — e.g. `bigquery-prod` or `bigquery-analytics`.
+   - **GCP Project ID** — the project ID (not the display name). Find it in the GCP Console → Dashboard → Project info, e.g. `my-company-prod-12345`.
    - **Dataset** — the BigQuery dataset where tables will be created (e.g. `raw_data`). Datanika creates it if it doesn't exist yet.
    - **Service Account JSON** (optional) — paste the entire contents of the JSON key file from Step 1. If you leave this empty, Datanika falls back to Application Default Credentials (ADC) — useful when running self-hosted Datanika on a GCE instance with the service account attached directly.
-4. Click **Test connection**. Datanika verifies it can reach BigQuery with the provided credentials. You should see a green ✅.
-5. Click **Save**.
+4. Click **Test Connection**. Datanika verifies it can reach BigQuery with the provided credentials. You should see a green ✅.
+5. Click **Create Connection**.
 
 ![Adding BigQuery as a destination in Datanika](/docs/connectors/bigquery/02-add-connection.png)
 
@@ -83,8 +81,6 @@ Create a **dedicated service account** rather than reusing a personal account or
 4. Spot-check in the BigQuery Console: `SELECT count(*) FROM \`<project>.<dataset>.<table>\`;` should match the row count Datanika reports.
 5. Check the BigQuery Console → **Job history** to confirm the load jobs ran under the `datanika-loader` service account.
 
-![First run landing data in BigQuery](/docs/connectors/bigquery/04-first-run.png)
-
 ## Step 5 — Schedule it
 
 1. On the pipeline page, click **Schedule**.
@@ -96,8 +92,6 @@ Create a **dedicated service account** rather than reusing a personal account or
 4. Wire up failure alerts in **Settings → Notifications** so broken runs surface before dashboards go stale.
 
 > **Cost tip.** If you're on BigQuery on-demand pricing, schedule bulk loads during off-peak hours and use `merge` for incremental tables. This minimizes the bytes processed by downstream queries that scan the latest partition.
-
-![Configuring the schedule](/docs/connectors/bigquery/05-schedule.png)
 
 ## Troubleshooting
 

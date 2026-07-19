@@ -4,8 +4,8 @@ description: "Step-by-step guide to set up Snowflake as a destination in Datanik
 source: "snowflake"
 source_name: "Snowflake"
 category: "database"
-verified_by: "draft-pending-verification"
-verified_date: null
+verified_by: "product-ui"
+verified_date: "2026-07-19"
 related_use_cases:
   - "postgresql-to-snowflake"
   - "mongodb-to-snowflake"
@@ -67,13 +67,12 @@ Create a **dedicated user and role** rather than reusing a personal login. This 
 
 > **Least privilege.** `USAGE` on the warehouse + `CREATE SCHEMA` on the database is the minimum set. Datanika creates schemas and tables dynamically per pipeline. Do not grant `ACCOUNTADMIN` — Datanika never needs account-level operations.
 
-![Creating the user and role in Snowsight](/docs/connectors/snowflake/01-credentials.png)
-
 ## Step 2 — Add the connection in Datanika
 
 1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page — there's no separate "New Connection" button to click.
-2. From the **type dropdown** at the top of the form, pick **Snowflake**.
+2. From the **type dropdown** at the top of the form, pick `snowflake`.
 3. Fill in the form:
+   - **Connection Name** — a label for this connection, e.g. `snowflake-analytics`.
    - **Account** — the Snowflake account identifier, e.g. `xy12345.us-east-1`.
    - **User** — `DATANIKA_USER` (or whatever you named it).
    - **Password** — the password from Step 1. Stored encrypted at rest with Fernet.
@@ -81,8 +80,8 @@ Create a **dedicated user and role** rather than reusing a personal login. This 
    - **Warehouse** — the compute warehouse, e.g. `DATANIKA_WH`. If left empty, the user's default warehouse is used.
    - **Role** — the Snowflake role, e.g. `DATANIKA_LOADER`. If left empty, the user's default role is used.
    - **Schema** — optional; most users leave this empty and let Datanika create schemas per pipeline (e.g., `raw_postgres`, `raw_stripe`).
-4. Click **Test connection**. Datanika opens a real Snowflake session and verifies connectivity. You should see a green ✅.
-5. Click **Save**.
+4. Click **Test Connection**. Datanika opens a real Snowflake session and verifies connectivity. You should see a green ✅.
+5. Click **Create Connection**.
 
 ![Adding Snowflake as a destination in Datanika](/docs/connectors/snowflake/02-add-connection.png)
 
@@ -107,8 +106,6 @@ Create a **dedicated user and role** rather than reusing a personal login. This 
 4. Spot-check: in Snowsight, run `SELECT count(*) FROM RAW.RAW_POSTGRES.<table>;` and compare to the source row count.
 5. Check **Query History** in Snowsight to confirm queries ran under the `DATANIKA_LOADER` role and `DATANIKA_WH` warehouse.
 
-![First run landing data in Snowflake](/docs/connectors/snowflake/04-first-run.png)
-
 ## Step 5 — Schedule it
 
 1. On the pipeline page, click **Schedule**.
@@ -120,8 +117,6 @@ Create a **dedicated user and role** rather than reusing a personal login. This 
 4. Wire up failure alerts in **Settings → Notifications**.
 
 > **Warehouse auto-suspend matters.** If your schedule runs every 6 hours and your warehouse auto-suspends after 60 seconds, you'll pay for ~2 minutes of compute per run (spin-up + load + suspend). This is significantly cheaper than leaving a warehouse running 24/7.
-
-![Configuring the schedule](/docs/connectors/snowflake/05-schedule.png)
 
 ## Troubleshooting
 
