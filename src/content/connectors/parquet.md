@@ -4,8 +4,8 @@ description: "Upload Parquet files into your warehouse with Datanika — drag an
 source: "parquet"
 source_name: "Parquet"
 category: "file"
-verified_by: "draft-pending-verification"
-verified_date: null
+verified_by: "product-ui"
+verified_date: "2026-07-19"
 related_use_cases: []
 related_comparisons:
   - "airbyte"
@@ -29,18 +29,17 @@ Apache Parquet is the "production-grade CSV" — a columnar file format with str
 ## Step 1a — Upload a file through the UI (the common case)
 
 1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page.
-2. From the **type dropdown**, pick **Parquet** (under the **File** category).
-3. In the **Upload File** section, drag your `.parquet` file into the upload area, or click the **Upload File** button to browse.
-4. Datanika reads the file's **footer metadata** (the last few KB of the file, where Parquet stores its schema) and you get:
-   - **Column names and types** — read directly from the file, not inferred. A column declared `INT64` is `INT64`, full stop.
-   - **Row group layout** — number of row groups and rows per group. Used later for parallel reads on large files.
-   - **Compression** — detected per row group (usually `SNAPPY` or `ZSTD`); decoded transparently.
-   - **Nested structures** — Parquet's `LIST` and `STRUCT` types are detected and flattened with the same rules as [JSON](/docs/connectors/json) (structs → `parent__child`, object arrays → child tables).
-5. Preview the first 20 rows in the form. Notice that types are already correct — there's no "sniff the first N rows and guess" step here.
-6. **Name** the connection, e.g. `spark-exports-2026-04` or `dbt-snapshot-customers`.
-7. Click **Create Connection**.
+2. From the **type dropdown**, pick `parquet` (under the **File** category).
+3. **Connection Name** — give it a label, e.g. `spark-exports-2026-04` or `dbt-snapshot-customers`.
+4. In the **Upload File** section, drag your `.parquet` file into the upload area, or click the **Upload File** button to browse. (There's no in-form preview — the file is read when the pipeline runs.)
+5. Click **Test Connection**, then **Create Connection**.
 
-![Dragging a Parquet file into Datanika](/docs/connectors/parquet/01a-upload-ui.png)
+![Adding the Parquet connection in Datanika](/docs/connectors/parquet/02-add-connection.png)
+
+> **How Datanika reads Parquet at load time.** When the pipeline runs, Datanika reads the file's **footer metadata** (where Parquet stores its schema) — none of this is configured on the form:
+> - **Column names and types** — read directly from the file, not inferred. A column declared `INT64` is `INT64`, full stop.
+> - **Compression** — detected per row group (usually `SNAPPY` or `ZSTD`) and decoded transparently.
+> - **Nested structures** — Parquet's `LIST` and `STRUCT` types are flattened with the same rules as [JSON](/docs/connectors/json) (structs → `parent__child`, object arrays → child tables).
 
 > **Size.** The UI uploader handles Parquet files up to ~500 MB. Parquet compresses well (3–10× typical), so 500 MB on disk can easily represent 2–5 GB of raw data. For larger files, use the directory-watcher flow (Step 1b), or pull directly from S3 via the [S3 connector](/docs/connectors/s3).
 
@@ -56,9 +55,9 @@ Use this for landing-zone patterns: a data lake, an hourly Spark export, a night
          - /opt/datalake/raw:/var/datanika/parquet-lake:ro
    ```
 2. Restart the container.
-3. In Datanika, open **`/connections`**, pick **Parquet** from the type dropdown.
-4. Skip the file upload area. Below it, you'll see a **file path** input — enter the path to the directory inside the container:
-   - **File path** — `/var/datanika/parquet-lake` (or a glob like `/var/datanika/parquet-lake/*.parquet`).
+3. In Datanika, open **`/connections`**, pick `parquet` from the type dropdown.
+4. Skip the file upload area. Below it, you'll see the **Or enter file path** input — enter the path to the directory inside the container:
+   - **Or enter file path** — `/var/datanika/parquet-lake` (or a glob like `/var/datanika/parquet-lake/*.parquet`).
 5. Click **Test Connection**. Datanika opens the first matching file, reads the footer, and shows you the schema.
 6. Click **Create Connection**.
 
@@ -77,7 +76,7 @@ Parquet config is the simplest of the three file formats because type inference 
      - `merge` — upsert on primary key. Use when the same record ID can appear in multiple files with updated values (e.g., CDC Parquet drops).
 4. Save the pipeline configuration.
 
-> **Type mapping tip.** Parquet has types that don't exist in every warehouse — `INT96` timestamps, `FIXED_LEN_BYTE_ARRAY` with arbitrary lengths, decimal logical types with large precision. Datanika picks the closest destination type (e.g., `INT96` → `TIMESTAMP`) but you can override per column in the **Schema** panel. Warehouses with weak type systems (SQLite, older MySQL) will lose some fidelity. Warehouses with strong type systems (BigQuery, Snowflake, DuckDB) preserve everything.
+> **Type mapping tip.** Parquet has types that don't exist in every warehouse — `INT96` timestamps, `FIXED_LEN_BYTE_ARRAY` with arbitrary lengths, decimal logical types with large precision. Datanika picks the closest destination type (e.g., `INT96` → `TIMESTAMP`); if you need a different mapping, cast the column downstream in a dbt model. Warehouses with weak type systems (SQLite, older MySQL) will lose some fidelity. Warehouses with strong type systems (BigQuery, Snowflake, DuckDB) preserve everything.
 
 ## Step 3 — First run
 
@@ -85,8 +84,6 @@ Parquet config is the simplest of the three file formats because type inference 
 2. Parquet loads are **fast and memory-efficient** because Datanika streams row groups sequentially — a 2 GB compressed Parquet file (~8 GB raw) typically lands in under a minute, in under 500 MB of RAM.
 3. Check the **Runs** tab for per-row-group progress. You'll see row counts stream in as each group is decoded and written to the destination.
 4. When the run finishes, open **Catalog → `<your warehouse>` → `raw_parquet`** and browse the landed table. Spot-check by comparing `count(*)` against the Parquet footer's `num_rows` — they should match exactly, with no coercion losses.
-
-![First run landing the Parquet](/docs/connectors/parquet/03-first-run.png)
 
 ## Step 4 — Schedule it (directory watchers only)
 
