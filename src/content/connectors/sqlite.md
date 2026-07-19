@@ -4,8 +4,8 @@ description: "Sync a SQLite database file into your warehouse with Datanika — 
 source: "sqlite"
 source_name: "SQLite"
 category: "database"
-verified_by: "draft-pending-verification"
-verified_date: null
+verified_by: "product-ui"
+verified_date: "2026-07-18"
 related_use_cases: []
 related_comparisons:
   - "airbyte"
@@ -57,7 +57,7 @@ Then use `/mnt/myapp/app.sqlite` as the path in Step 2. Read-only is enough — 
 ## Step 2 — Add the connection in Datanika
 
 1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page — there's no separate "New Connection" button to click.
-2. From the **type dropdown** at the top of the form, pick **SQLite**. The form reshapes itself to show the SQLite-specific fields.
+2. From the **type dropdown** at the top of the form, pick `sqlite`. The form reshapes itself to show the SQLite-specific fields.
 3. Fill in:
    - **Connection Name** — a label you'll recognize, e.g. `sqlite-myapp`.
    - **Database Path** — the full path from Step 1. Include the extension. Examples: `/var/datanika/sources/app.sqlite`, `/mnt/myapp/data.db`.
@@ -88,8 +88,6 @@ Then use `/mnt/myapp/app.sqlite` as the path in Step 2. Read-only is enough — 
 2. Watch the **Runs** tab. SQLite reads are **very fast** because everything is local: tens of thousands of rows per second even on modest hardware.
 3. When the run finishes, open **Catalog → `<your warehouse>` → `raw_sqlite`** and browse the landed tables.
 4. Spot-check row counts: `SELECT count(*) FROM <table>;` in both the `sqlite3` CLI (against the source file) and the warehouse should match.
-
-![Inspecting the first run](/docs/connectors/sqlite/04-first-run.png)
 
 ## Step 5 — Schedule it
 

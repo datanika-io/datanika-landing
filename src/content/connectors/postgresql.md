@@ -4,8 +4,8 @@ description: "Step-by-step guide to sync PostgreSQL into your warehouse with Dat
 source: "postgresql"
 source_name: "PostgreSQL"
 category: "database"
-verified_by: "draft-pending-verification"
-verified_date: null
+verified_by: "product-ui"
+verified_date: "2026-07-18"
 related_use_cases:
   - "postgresql-to-bigquery"
   - "postgresql-to-snowflake"
@@ -52,21 +52,19 @@ Create a **dedicated read-only role** rather than reusing an existing login. Thi
 
 > **Least privilege.** Datanika never needs `INSERT`, `UPDATE`, `DELETE`, or DDL on your source. If you're asked for a password with higher privileges, something is wrong — [open a support ticket](mailto:support@datanika.io) before granting it.
 
-![Creating the read-only role in psql](/docs/connectors/postgresql/01-credentials.png)
-
 ## Step 2 — Add the connection in Datanika
 
 1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page — there's no separate "New Connection" button to click.
-2. From the **type dropdown** at the top of the form, pick **PostgreSQL**.
+2. From the **type dropdown** at the top of the form, pick `postgres`.
 3. Fill in the form:
-   - **Name** — a label you'll recognize later, e.g. `postgres-prod-readonly`.
+   - **Connection Name** — a label you'll recognize later, e.g. `postgres-prod-readonly`.
    - **Host** — the hostname or IP of your Postgres server.
    - **Port** — usually `5432`.
    - **Database** — the database name you granted access to in Step 1.
    - **User** — `datanika_readonly`.
    - **Password** — the password from Step 1. Stored encrypted at rest with Fernet.
 4. Click **Test connection**. You should see a green ✅ within a few seconds.
-5. Click **Save**.
+5. Click **Create Connection**.
 
 ![Filling in the PostgreSQL connection form](/docs/connectors/postgresql/02-add-connection.png)
 
@@ -86,8 +84,6 @@ Create a **dedicated read-only role** rather than reusing an existing login. Thi
 
 > **Tip.** Start with 1–2 small tables to validate the flow end-to-end before enabling the full sync. A failed 8-hour run is much more expensive to debug than a failed 30-second one.
 
-![Selecting tables and load modes](/docs/connectors/postgresql/03-configure-tables.png)
-
 ## Step 4 — First run
 
 1. From the pipeline page, click **Run now**.
@@ -95,8 +91,6 @@ Create a **dedicated read-only role** rather than reusing an existing login. Thi
 3. A typical first run takes minutes for small OLTP databases and hours for databases in the hundreds of GB. Subsequent incremental runs are much faster because only new/changed rows move.
 4. When the run finishes, open **Catalog → `<your warehouse>` → `raw_postgres`** and browse the landed tables.
 5. Spot-check row counts against the source: `SELECT count(*) FROM <schema>.<table>;` on both sides should match (or differ by exactly the rows written during the sync window for incremental loads).
-
-![First run in the Runs tab](/docs/connectors/postgresql/04-first-run.png)
 
 ## Step 5 — Schedule it
 
@@ -108,8 +102,6 @@ Create a **dedicated read-only role** rather than reusing an existing login. Thi
 3. Choose a **timezone** — this matters when your cadence is daily or weekly. Datanika stores the schedule in the selected timezone, including DST rules.
 4. Save. The next scheduled run shows up immediately in the **Runs** tab.
 5. Wire up failure alerts in **Settings → Notifications** so you hear about broken runs before your stakeholders do. Slack, email, and webhooks are supported.
-
-![Configuring the schedule](/docs/connectors/postgresql/05-schedule.png)
 
 ## Troubleshooting
 

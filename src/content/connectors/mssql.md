@@ -4,8 +4,8 @@ description: "Step-by-step guide to use Microsoft SQL Server as a source or dest
 source: "mssql"
 source_name: "SQL Server"
 category: "database"
-verified_by: "draft-pending-verification"
-verified_date: null
+verified_by: "product-ui"
+verified_date: "2026-07-18"
 related_use_cases: []
 related_comparisons:
   - "airbyte"
@@ -56,18 +56,16 @@ Create a **dedicated read-only login** rather than reusing an existing account. 
 
 > **Windows Authentication caveat.** Datanika connects via `pymssql` which uses SQL Server Authentication (username + password). Windows Authentication / Integrated Security is not supported. Make sure your SQL Server instance has **Mixed Mode authentication** enabled (Server Properties → Security → SQL Server and Windows Authentication mode).
 
-![Creating the read-only login in SSMS](/docs/connectors/mssql/01-credentials.png)
-
 ### Step 2 — Add the connection in Datanika
 
 1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page.
-2. From the **type dropdown** at the top, pick **SQL Server**.
+2. From the **type dropdown** at the top, pick `mssql`.
 3. Fill in:
    - **Connection Name** — e.g. `mssql-erp-readonly` or `sqlserver-prod`.
-   - **SQL Server hostname** — the hostname or IP address. For Azure SQL, use `<server>.database.windows.net`.
-   - **Port number** — default `1433`. Change only if your instance uses a non-standard port.
-   - **Database name** — the database to extract from, e.g. `erp_prod` or `sales`.
-   - **Username** — `datanika_readonly` (from Step 1).
+   - **Host** — the hostname or IP address. For Azure SQL, use `<server>.database.windows.net`.
+   - **Port** — default `1433`. Change only if your instance uses a non-standard port.
+   - **Database** — the database to extract from, e.g. `erp_prod` or `sales`.
+   - **User** — `datanika_readonly` (from Step 1).
    - **Password** — the password for the login. Stored encrypted at rest with Fernet.
 4. Click **Test Connection**. You should see a green success message.
 5. Click **Create Connection**.
@@ -90,8 +88,6 @@ Create a **dedicated read-only login** rather than reusing an existing account. 
 
 > **Tip.** Start with 1–2 small tables to validate end-to-end before enabling the full sync.
 
-![Selecting tables and load modes](/docs/connectors/mssql/03-configure-tables.png)
-
 ### Step 4 — First run
 
 1. From the pipeline page, click **Run now**.
@@ -99,8 +95,6 @@ Create a **dedicated read-only login** rather than reusing an existing account. 
 3. A typical first run takes minutes for small OLTP databases and hours for databases in the hundreds of GB. Subsequent incremental runs are much faster.
 4. When the run finishes, open **Catalog → `<your warehouse>` → `raw_mssql`** and browse the landed tables.
 5. Spot-check row counts against the source: `SELECT COUNT(*) FROM <schema>.<table>` on both sides should match.
-
-![First source run from SQL Server](/docs/connectors/mssql/04-first-run.png)
 
 ### Step 5 — Schedule it
 
@@ -111,8 +105,6 @@ Create a **dedicated read-only login** rather than reusing an existing account. 
    - **Daily at 03:00** — batch warehouse loads.
 3. Choose a **timezone** and save.
 4. Wire up failure alerts in **Settings → Notifications** so you hear about broken runs before your stakeholders do.
-
-![Configuring the schedule](/docs/connectors/mssql/05-schedule.png)
 
 ---
 
