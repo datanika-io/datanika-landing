@@ -140,7 +140,7 @@ The most-asked-for chart: how much did we actually collect, by month? Paid invoi
 {{ config(materialized='table') }}
 
 select
-    date_trunc(period_start, month)  as month,   -- BigQuery; Postgres: date_trunc('month', period_start)
+    timestamp_trunc(period_start, month) as month,  -- BigQuery TIMESTAMP_TRUNC; Postgres: date_trunc('month', period_start)
     currency,
     count(distinct invoice_id)       as invoices_paid,
     count(distinct customer_id)      as paying_customers,
@@ -166,14 +166,14 @@ with subs as (
 ),
 
 started as (
-    select date_trunc(created_at, month) as month,
+    select timestamp_trunc(created_at, month) as month,
            count(*) as new_subscriptions
     from subs
     group by 1
 ),
 
 churned as (
-    select date_trunc(canceled_at, month) as month,
+    select timestamp_trunc(canceled_at, month) as month,
            count(*) as churned_subscriptions
     from subs
     where canceled_at is not null
