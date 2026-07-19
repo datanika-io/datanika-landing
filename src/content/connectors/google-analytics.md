@@ -4,8 +4,8 @@ description: "Step-by-step guide to sync Google Analytics 4 into your warehouse 
 source: "google-analytics"
 source_name: "Google Analytics"
 category: "saas"
-verified_by: "draft-pending-verification"
-verified_date: null
+verified_by: "product-ui"
+verified_date: "2026-07-19"
 related_use_cases:
   - "google-analytics-to-bigquery"
   - "google-analytics-to-snowflake"
@@ -46,20 +46,17 @@ Google Analytics is the highest-volume marketing source our users sync — landi
 3. You still need the JSON key file from GCP — ask the service account owner to share it.
 
 > **Least privilege.** The Viewer role lets Datanika read reports and metadata. It cannot modify property settings, create audiences, or access raw event-level data beyond what the GA4 Data API exposes. Never grant Editor or Admin.
-
-![Granting the service account Viewer access in GA4](/docs/connectors/google-analytics/01-credentials.png)
-
 ## Step 2 — Add the connection in Datanika
 
 1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page — there's no separate "New Connection" button to click.
-2. From the **type dropdown** at the top of the form, pick **Google Analytics**.
+2. From the **type dropdown** at the top of the form, pick `google_analytics`.
 3. Fill in the form:
-   - **Name** — e.g. `ga4-prod` or `ga4-marketing`.
+   - **Connection Name** — e.g. `ga4-prod` or `ga4-marketing`.
    - **Property ID** — the GA4 property ID (numeric), e.g. `123456789`.
-   - **Service Account JSON** — paste the entire contents of the JSON key file from Step 1. Stored encrypted at rest with Fernet.
-4. Click **Save**.
+   - **Service Account JSON (optional)** — paste the entire contents of the JSON key file from Step 1. Stored encrypted at rest with Fernet.
+4. Click **Create Connection**.
 
-> **Google Analytics connections don't have a "Test connection" button.** The GA4 Data API doesn't expose a lightweight health-check endpoint. The credential is validated on the first pipeline run. If the service account lacks Viewer access, the run fails immediately with a clear permission error.
+> **Test Connection for Google Analytics.** The **Test Connection** button is present, but because GA4 is an HTTP-API source it returns *"Test not applicable for this type"* — the credential is validated on the first pipeline run. If the service account lacks Viewer access, the run fails immediately with a clear permission error.
 
 ![Adding the Google Analytics connection in Datanika](/docs/connectors/google-analytics/02-add-connection.png)
 
@@ -86,9 +83,6 @@ Google Analytics is the highest-volume marketing source our users sync — landi
 2. Open the **Runs** tab to watch progress. dlt calls the GA4 Data API in batches of 100,000 rows per request. A typical first run against 12 months of data takes 2–10 minutes depending on traffic volume.
 3. When the run finishes, open **Catalog → `<your warehouse>` → `raw_ga4`** to browse the landed tables. You should see one table per report — `pages`, `traffic_sources`, etc.
 4. Spot-check: compare a known metric (e.g., total sessions last week) between the warehouse and the GA4 interface. Small discrepancies (< 2%) are normal due to sampling and processing lag.
-
-![First run in the Runs tab](/docs/connectors/google-analytics/04-first-run.png)
-
 ## Step 5 — Schedule it
 
 1. On the pipeline page, click **Schedule**.
@@ -100,9 +94,6 @@ Google Analytics is the highest-volume marketing source our users sync — landi
 4. Wire up failure alerts in **Settings → Notifications** so broken runs surface before dashboards go stale.
 
 > **Why daily and not hourly?** GA4's Data API has a daily quota of 200,000 tokens per property. Each report request costs tokens proportional to the dimensions and date range queried. Hourly runs against a large property can exhaust the quota by midday. Daily at 06:00 is the safest default.
-
-![Configuring the schedule](/docs/connectors/google-analytics/05-schedule.png)
-
 ## Troubleshooting
 
 ### `403: User does not have sufficient permissions for this property`

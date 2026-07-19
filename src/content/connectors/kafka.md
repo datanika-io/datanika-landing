@@ -4,8 +4,8 @@ description: "Step-by-step guide to sync Kafka topics into your warehouse with D
 source: "kafka"
 source_name: "Apache Kafka"
 category: "api"
-verified_by: "draft-pending-verification"
-verified_date: null
+verified_by: "product-ui"
+verified_date: "2026-07-19"
 related_use_cases:
   - "kafka-to-bigquery"
   - "kafka-to-clickhouse"
@@ -40,20 +40,17 @@ You don't need to generate API keys or certificates for the structured flow — 
 3. **ACLs** — ensure your broker allows the anonymous principal (or whichever principal Datanika connects as) to `READ` the target topics and the consumer group prefix you'll use.
 
 > **Least privilege.** Datanika only needs `READ` on topics and the consumer group — it never needs `WRITE`, `CREATE`, `DELETE`, or `ALTER`.
-
-![Noting bootstrap servers and topic names from your Kafka cluster](/docs/connectors/kafka/01-credentials.png)
-
 ## Step 2 — Add the connection in Datanika
 
 1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page — there's no separate "New Connection" button to click.
-2. From the **type dropdown** at the top of the form, pick **Apache Kafka**.
+2. From the **type dropdown** at the top of the form, pick `kafka`.
 3. Fill in the form:
-   - **Name** — e.g. `kafka-prod` or `kafka-events`.
+   - **Connection Name** — e.g. `kafka-prod` or `kafka-events`.
    - **Bootstrap Servers** *(required)* — comma-separated list of broker addresses. Example: `broker1:9092, broker2:9092`.
    - **Topics (comma-separated)** *(required)* — the topics you want to sync. Example: `events, orders`.
-   - **Consumer Group ID** *(required)* — a group identifier Datanika uses to track consumption offsets. Example: `datanika-consumer`.
-4. Click **Test connection**. Datanika attempts to reach the bootstrap servers and enumerate the topics. You should see a green checkmark.
-5. Click **Save**.
+   - **Consumer Group ID** *(optional)* — a group identifier Datanika uses to track consumption offsets. Example: `datanika-consumer`. Leave blank to use the default.
+4. Click **Test Connection**. For a reachable PLAINTEXT broker this checks connectivity; the real connection (and any SASL/SSL supplied via raw JSON) is made on the first pipeline run.
+5. Click **Create Connection**.
 
 ![Adding the Kafka connection in Datanika — three fields only](/docs/connectors/kafka/02-add-connection.png)
 
@@ -76,9 +73,6 @@ You don't need to generate API keys or certificates for the structured flow — 
 3. A first run against a topic with millions of messages can take 10–60 minutes depending on message size and network throughput. Subsequent runs only read new messages from the last committed offset.
 4. When the run finishes, open **Catalog → `<your warehouse>` → `raw_kafka`** to browse the landed tables. You should see one table per topic.
 5. Spot-check: compare the table's row count against the topic's message count in your Kafka admin tool or Confluent Cloud metrics.
-
-![First run in the Runs tab](/docs/connectors/kafka/04-first-run.png)
-
 ## Step 5 — Schedule it
 
 1. On the pipeline page, click **Schedule**.
@@ -90,9 +84,6 @@ You don't need to generate API keys or certificates for the structured flow — 
 4. Wire up failure alerts in **Settings → Notifications** so broken runs surface before downstream consumers notice stale data.
 
 > **Note on latency vs. cost.** Datanika reads Kafka in batch, not as a continuous consumer. Each scheduled run consumes from the last committed offset, loads into the warehouse, and stops. This is by design — it's cost-efficient and warehouse-friendly. For true sub-second streaming, use Kafka Streams or Flink and point Datanika at the resulting tables.
-
-![Configuring the schedule](/docs/connectors/kafka/05-schedule.png)
-
 ## Troubleshooting
 
 ### `Test connection failed: DNS resolution failed for broker`

@@ -4,8 +4,8 @@ description: "Step-by-step guide to sync Google Sheets into your warehouse with 
 source: "google_sheets"
 source_name: "Google Sheets"
 category: "saas"
-verified_by: "draft-pending-verification"
-verified_date: null
+verified_by: "product-ui"
+verified_date: "2026-07-19"
 related_use_cases: []
 related_comparisons:
   - "airbyte"
@@ -38,9 +38,6 @@ If you already have a service account from setting up BigQuery or Google Analyti
 7. Enable the **Google Sheets API** for your project: go to **APIs & Services → Enable APIs → search "Google Sheets API" → Enable**.
 
 > **The service account email looks like `datanika-sheets-reader@your-project.iam.gserviceaccount.com`.** You'll need this in the next step.
-
-![Creating a service account](/docs/connectors/google-sheets/01-credentials.png)
-
 ### Step 1.5 — Share the spreadsheet with the service account
 
 This is the step most people forget. The service account can only read spreadsheets explicitly shared with it.
@@ -56,14 +53,14 @@ Repeat for every spreadsheet you want to sync with this connection.
 ## Step 2 — Add the connection in Datanika
 
 1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page — there's no separate "New Connection" button to click.
-2. From the **type dropdown** at the top of the form, pick **Google Sheets**.
+2. From the **type dropdown** at the top of the form, pick `google_sheets`.
 3. Fill in:
    - **Connection Name** — a label you'll recognize, e.g. `gsheets-marketing-budget` or `gsheets-ops-tracker`.
-   - **Spreadsheet ID** — the ID from the sheet URL (between `/d/` and `/edit`).
-   - **Service account JSON** — paste the full contents of the JSON key file from Step 1. Stored encrypted at rest with Fernet.
-4. Click **Create Connection**.
+   - **Spreadsheet URL** — paste the **full** spreadsheet URL (e.g. `https://docs.google.com/spreadsheets/d/<ID>/edit`), not just the ID.
+   - **Service Account JSON** — paste the full contents of the JSON key file from Step 1. Stored encrypted at rest with Fernet.
+4. Click **Test Connection** (an HTTP-API source returns *"Test not applicable for this type"*), then **Create Connection**.
 
-> **No "Test connection" button.** Google Sheets is an HTTP-API source — the credential and sharing permission are validated on the first run.
+> **Credentials are validated on the first run.** Google Sheets is an HTTP-API source, so the **Test Connection** button reports *"Test not applicable for this type"* — the credential and sharing permission are validated when the first pipeline runs.
 
 ![Adding Google Sheets in Datanika](/docs/connectors/google-sheets/02-add-connection.png)
 
@@ -87,9 +84,6 @@ Repeat for every spreadsheet you want to sync with this connection.
 3. If the service account doesn't have Viewer access to the spreadsheet, the run fails with a `403 Forbidden` or `The caller does not have permission` error. Go back to Step 1.5 and share the sheet.
 4. When the run finishes, open **Catalog → `<your warehouse>` → `raw_gsheets`** and browse. One table per worksheet tab.
 5. Spot-check: row counts should match the sheet minus the header row.
-
-![First Google Sheets run](/docs/connectors/google-sheets/04-first-run.png)
-
 ## Step 5 — Schedule it
 
 1. On the pipeline page, click **Schedule**.

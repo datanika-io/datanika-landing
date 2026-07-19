@@ -4,8 +4,8 @@ description: "Step-by-step guide to sync GitHub repo activity into your warehous
 source: "github"
 source_name: "GitHub"
 category: "saas"
-verified_by: "draft-pending-verification"
-verified_date: null
+verified_by: "product-ui"
+verified_date: "2026-07-19"
 related_use_cases: []
 related_comparisons:
   - "airbyte"
@@ -46,28 +46,24 @@ GitHub has two kinds of tokens: **classic** PATs (broad, all-or-nothing scopes) 
 1. Open **Settings → Developer settings → Personal access tokens → Tokens (classic)** → **Generate new token (classic)**.
 2. Check the `repo` scope (for private repos) or `public_repo` (for public repos only).
 3. Set an expiration and generate.
-
-![Creating the PAT in GitHub](/docs/connectors/github/01-credentials.png)
-
 > **Least privilege.** Don't grant `write` scopes. Datanika only reads. If GitHub asks you to approve a scope you didn't select, something is wrong — cancel, inspect, and file a ticket at [support@datanika.io](mailto:support@datanika.io).
 
 ## Step 2 — Add the connection in Datanika
 
-1. In Datanika, open **Connections → New connection**.
-2. Select **GitHub** from the connector list (filter by **SaaS** if the list is long).
+1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page — there's no separate "New Connection" button to click.
+2. From the **type dropdown** at the top of the form, pick `github`.
 3. Fill in the form:
-   - **Name** — a label you'll recognize, e.g. `github-datanika-io`.
+   - **Connection Name** — a label you'll recognize, e.g. `github-datanika-io`.
    - **Access Token** — paste the PAT from Step 1. Stored encrypted at rest with Fernet.
    - **Owner / Organization** — the GitHub user or organization that owns the repo, e.g. `datanika-io` or `octocat`.
    - **Repository** — the repository name, e.g. `datanika-core` or `hello-world`.
-4. Click **Test Connection**. Datanika calls the GitHub API to verify the token and checks access to the specified repo. You should see a green success message within a few seconds.
-5. Click **Create Connection**.
+4. Click **Test Connection** (an HTTP-API source returns *"Test not applicable for this type"*), then **Create Connection**.
 
 > **Multiple repos?** Create one connection per repository. Each connection targets a single `owner/repo` pair. If you need to sync several repos from the same org, create one connection per repo and wire each into its own pipeline (or combine them into a single pipeline with multiple sources).
 
 ![Adding the GitHub connection in Datanika](/docs/connectors/github/02-add-connection.png)
 
-> **No token at all?** You can connect to public repos without a token — leave the **Access token** field blank. GitHub's unauthenticated rate limit is 60 requests per hour, which is enough to sync a single small repo but will block almost immediately on anything active. Always use a PAT for real loads.
+> **All three fields are required.** The shipped form requires **Access Token**, **Owner / Organization**, and **Repository** — there's no anonymous/public-repo mode in the structured form. Always use a PAT.
 
 ## Step 3 — Configure resources and schemas
 
@@ -97,9 +93,6 @@ GitHub exposes many resource types. For each repo you connect, you can pick whic
 2. Watch the **Runs** tab. First runs on a medium-activity repo (say, 1k issues, 500 PRs, 10k commits) typically take 5–15 minutes, dominated by commit fetching. Subsequent incremental runs take seconds.
 3. When the run finishes, open **Catalog → `<your warehouse>` → `raw_github`** and browse the landed tables. There's one table per resource plus child tables for nested structures like PR reviews and issue comments.
 4. Spot-check: `SELECT count(*) FROM raw_github.issues WHERE repository = 'owner/repo'` should match the issue count shown in the GitHub UI (minus any issues deleted since the last sync, which GitHub does not surface via the API).
-
-![Inspecting the first run](/docs/connectors/github/04-first-run.png)
-
 ## Step 5 — Schedule it
 
 1. On the pipeline page, click **Schedule**.
@@ -128,7 +121,7 @@ GitHub exposes many resource types. For each repo you connect, you can pick whic
 
 ### `commits` table has fewer rows than `git log` shows locally
 **Cause.** Datanika fetches commits on the **default branch only** by default. Commits that only exist on other branches aren't included.
-**Fix.** Override the branch in the connection form's **Branches to sync** field, or leave it as default-branch-only and rely on dbt downstream to unify across branches if needed.
+**Fix.** Datanika syncs the **default branch only** — there's no per-branch selector on the connection form. To include other branches, reconcile them downstream in dbt, or sync each branch via a separate mechanism.
 
 ### Issues and PRs appear merged into one table
 **Cause.** This isn't a bug — GitHub's REST API returns PRs inside the `issues` endpoint. Every pull request has a corresponding issue with `pull_request` populated.
