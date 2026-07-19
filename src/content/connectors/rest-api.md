@@ -4,8 +4,8 @@ description: "Step-by-step guide to sync data from any REST API into your wareho
 source: "rest_api"
 source_name: "REST API"
 category: "api"
-verified_by: "draft-pending-verification"
-verified_date: null
+verified_by: "product-ui"
+verified_date: "2026-07-19"
 related_use_cases: []
 related_comparisons:
   - "airbyte"
@@ -50,21 +50,15 @@ Some public APIs (government data, open datasets) require no authentication at a
 ## Step 2 — Add the connection in Datanika
 
 1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page — there's no separate "New Connection" button to click.
-2. From the **type dropdown** at the top of the form, pick **REST API**.
+2. From the **type dropdown** at the top of the form, pick `rest_api`.
 3. Fill in:
    - **Connection Name** — a label you'll recognize, e.g. `internal-users-api` or `weather-data`.
-   - **API base URL** — the root URL all endpoints share, e.g. `https://api.example.com/v1`. Include the protocol and version prefix if applicable. No trailing slash.
-   - **Authentication type** — pick one of:
-     - `none` — no authentication
-     - `bearer` — sends `Authorization: Bearer <token>`
-     - `api_key` — sends the token as a query parameter or header
-     - `basic` — sends `Authorization: Basic <base64(user:pass)>`
-   - **Auth token** — for `bearer` or `api_key` auth types. Stored encrypted at rest with Fernet.
-   - **Username** — for `basic` auth.
-   - **Password** — for `basic` auth. Stored encrypted at rest with Fernet.
-4. Click **Create Connection**.
+   - **Base URL** — the root URL all endpoints share, e.g. `https://api.example.com/v1`. Include the protocol and version prefix if applicable.
+   - **API Key (optional)** — a bearer / API-key token, sent on the `Authorization` header. Leave blank for unauthenticated APIs. Stored encrypted at rest with Fernet.
+   - **Extra Headers (optional, JSON)** — any additional request headers as a JSON object, e.g. `{"X-Custom-Header": "value"}`. Use this for API-key-in-custom-header schemes or extra auth headers.
+4. Click **Test Connection** (an HTTP-API source returns *"Test not applicable for this type"*), then **Create Connection**.
 
-> **No "Test connection" button.** The REST API connector is generic — it validates credentials on the first run by hitting the configured endpoints.
+> **The structured form is intentionally minimal.** It ships **three** fields — **Base URL**, **API Key (optional)**, and **Extra Headers (optional, JSON)** — not a per-auth-type builder. Bearer / API-key auth goes in **API Key**; anything more exotic (basic auth, custom header names, query-param keys) goes in **Extra Headers** as JSON, or use the **Use raw JSON config** escape hatch. Credentials are validated on the first pipeline run.
 
 ![Adding a REST API connection in Datanika](/docs/connectors/rest-api/02-add-connection.png)
 
@@ -92,9 +86,6 @@ Some public APIs (government data, open datasets) require no authentication at a
    - `404 Not Found` — wrong base URL or endpoint path.
    - `JSONDecodeError` — the API returned HTML or XML instead of JSON (wrong URL, auth redirect, or the API isn't JSON-based).
 4. When finished, open **Catalog → `raw_api`** and browse. One table per endpoint.
-
-![First REST API run](/docs/connectors/rest-api/04-first-run.png)
-
 ## Step 5 — Schedule it
 
 1. On the pipeline page, click **Schedule**.

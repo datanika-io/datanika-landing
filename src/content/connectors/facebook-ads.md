@@ -4,8 +4,8 @@ description: "Step-by-step guide to sync Facebook Ads campaigns into your wareho
 source: "facebook_ads"
 source_name: "Facebook Ads"
 category: "saas"
-verified_by: "draft-pending-verification"
-verified_date: null
+verified_by: "product-ui"
+verified_date: "2026-07-19"
 related_use_cases: []
 related_comparisons:
   - "airbyte"
@@ -41,20 +41,17 @@ Facebook's Marketing API uses access tokens scoped to specific ad accounts and p
 8. **Assign ad account access:** on the system user page, click **Assign assets → Ad accounts** → select the ad account → grant **View performance** access.
 
 > **Least privilege.** Only grant `ads_read` + `read_insights`. Never grant `ads_management` — Datanika never creates or modifies campaigns.
-
-![Creating a system user token](/docs/connectors/facebook-ads/01-credentials.png)
-
 ## Step 2 — Add the connection in Datanika
 
 1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page — there's no separate "New Connection" button to click.
-2. From the **type dropdown** at the top of the form, pick **Facebook Ads**.
+2. From the **type dropdown** at the top of the form, pick `facebook_ads`.
 3. Fill in:
    - **Connection Name** — e.g. `facebook-ads-prod` or `meta-ads-acme`.
-   - **Marketing API access token** — paste the system user token from Step 1. Stored encrypted at rest with Fernet.
-   - **Ad account ID** — the numeric ID without the `act_` prefix, e.g. `1234567890`.
-4. Click **Create Connection**.
+   - **Access Token** — paste the Marketing API system-user token from Step 1. Stored encrypted at rest with Fernet.
+   - **Ad Account ID** — your ad account ID, e.g. `act_1234567890`.
+4. Click **Test Connection** (an HTTP-API source returns *"Test not applicable for this type"*), then **Create Connection**.
 
-> **No "Test connection" button.** Facebook Ads is an HTTP-API source — the token and ad account access are validated on the first run.
+> **Credentials are validated on the first run.** Facebook Ads is an HTTP-API source, so the **Test Connection** button reports *"Test not applicable for this type"* — the token and ad-account access are validated when the first pipeline runs.
 
 ![Adding Facebook Ads in Datanika](/docs/connectors/facebook-ads/02-add-connection.png)
 
@@ -82,9 +79,6 @@ Facebook's Marketing API uses access tokens scoped to specific ad accounts and p
 3. If the token doesn't have access to the ad account, the run fails with `(#100) Missing permissions` or `Error validating access token`.
 4. When finished, open **Catalog → `raw_facebook_ads`** and browse. The `campaigns` table has one row per campaign per day with columns for spend, impressions, clicks, reach, frequency, CPM, CPC, and conversions.
 5. Spot-check: compare yesterday's total spend against Ads Manager.
-
-![First Facebook Ads run](/docs/connectors/facebook-ads/04-first-run.png)
-
 ## Step 5 — Schedule it
 
 1. On the pipeline page, click **Schedule**.

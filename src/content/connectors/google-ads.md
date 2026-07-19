@@ -4,8 +4,8 @@ description: "Step-by-step guide to sync Google Ads campaigns into your warehous
 source: "google_ads"
 source_name: "Google Ads"
 category: "saas"
-verified_by: "draft-pending-verification"
-verified_date: null
+verified_by: "product-ui"
+verified_date: "2026-07-19"
 related_use_cases: []
 related_comparisons:
   - "airbyte"
@@ -38,20 +38,17 @@ If you already have a GCP service account from setting up BigQuery or Google Ana
    - If you don't use an MCC: you'll need domain-wide delegation. See [Google's service account guide](https://developers.google.com/google-ads/api/docs/oauth/service-accounts) for the domain-wide delegation flow.
 
 > **Least privilege.** Grant **Read only** access. Datanika never modifies campaigns, budgets, or ad groups.
-
-![Creating a service account for Google Ads](/docs/connectors/google-ads/01-credentials.png)
-
 ## Step 2 — Add the connection in Datanika
 
 1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page — there's no separate "New Connection" button to click.
-2. From the **type dropdown** at the top of the form, pick **Google Ads**.
+2. From the **type dropdown** at the top of the form, pick `google_ads`.
 3. Fill in:
    - **Connection Name** — e.g. `google-ads-prod` or `google-ads-acme`.
-   - **Google Ads customer ID** — the 10-digit ID without hyphens, e.g. `1234567890`.
-   - **Service account JSON** — paste the full contents of the JSON key file. Stored encrypted at rest with Fernet.
-4. Click **Create Connection**.
+   - **Customer ID** — your 10-digit Google Ads customer ID, e.g. `123-456-7890`.
+   - **Service Account JSON (optional)** — paste the full contents of the JSON key file. Stored encrypted at rest with Fernet.
+4. Click **Test Connection** (an HTTP-API source returns *"Test not applicable for this type"*), then **Create Connection**.
 
-> **No "Test connection" button.** Google Ads is an HTTP-API source — credentials and access are validated on the first run.
+> **Credentials are validated on the first run.** Google Ads is an HTTP-API source, so the **Test Connection** button reports *"Test not applicable for this type"* — the credentials and access are validated when the first pipeline runs.
 
 ![Adding Google Ads in Datanika](/docs/connectors/google-ads/02-add-connection.png)
 
@@ -77,12 +74,9 @@ If you already have a GCP service account from setting up BigQuery or Google Ana
 
 1. Click **Run now**.
 2. Watch the **Runs** tab. Google Ads reports are pre-aggregated on Google's side, so even large accounts with millions of clicks sync in a few minutes.
-3. If the service account doesn't have access to the Google Ads customer ID, the run fails with `PERMISSION_DENIED` or `USER_PERMISSION_DENIED`. Check the access grant in Step 1.5.
+3. If the service account doesn't have access to the Google Ads customer ID, the run fails with `PERMISSION_DENIED` or `USER_PERMISSION_DENIED`. Check the access grant in Step 1 (bullet 5).
 4. When finished, open **Catalog → `raw_google_ads`** and browse. The `campaigns` table has one row per campaign per day with columns for impressions, clicks, cost (in micros — divide by 1,000,000 for the dollar amount), conversions, and conversion value.
 5. Spot-check: compare yesterday's total cost against the Google Ads UI dashboard.
-
-![First Google Ads run](/docs/connectors/google-ads/04-first-run.png)
-
 ## Step 5 — Schedule it
 
 1. On the pipeline page, click **Schedule**.
