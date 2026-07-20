@@ -100,6 +100,17 @@ const tier3: TierSpec[] = [
   { path: "use-cases/s3-to-snowflake/index.html", primaryKeyword: "s3 to snowflake", titleMustContain: "S3 to Snowflake" },
 ];
 
+// --- Wave 1: the 4 connectors added in datanika-landing#229 (oracle/pipedrive/freshdesk/asana).
+// The regression guard (allConnectorSlugs, below) already lists them, but that only checks for a
+// non-default title. This block enforces the full ruleset — title ≤ 60 / primary keyword in title /
+// "| Datanika" suffix / meta 150–160 / non-empty H1 — so an SEO drift on these 4 fails CI. ---
+const waveOne: TierSpec[] = [
+  { path: "connectors/oracle/index.html", primaryKeyword: "oracle etl tool", titleMustContain: "Oracle ETL" },
+  { path: "connectors/pipedrive/index.html", primaryKeyword: "pipedrive etl", titleMustContain: "Pipedrive ETL" },
+  { path: "connectors/freshdesk/index.html", primaryKeyword: "freshdesk data export", titleMustContain: "Freshdesk Data Export" },
+  { path: "connectors/asana/index.html", primaryKeyword: "asana data export", titleMustContain: "Asana Data Export" },
+];
+
 describe("Tier 1 SEO title/meta compliance", () => {
   for (const spec of tier1) {
     describe(spec.path, () => {
@@ -203,6 +214,44 @@ describe("Tier 3 SEO title/meta compliance", () => {
       it("meta description is 150–160 characters", () => {
         expect(meta.length, `meta is ${meta.length} chars: "${meta}"`).toBeGreaterThanOrEqual(150);
         expect(meta.length, `meta is ${meta.length} chars: "${meta}"`).toBeLessThanOrEqual(160);
+      });
+    });
+  }
+});
+
+describe("Wave-1 connector SEO title/meta compliance", () => {
+  for (const spec of waveOne) {
+    describe(spec.path, () => {
+      const html = readHtml(spec.path);
+      const title = extractTitle(html);
+      const meta = extractMeta(html);
+
+      it("title is not the Layout default", () => {
+        expect(title).not.toBe(LAYOUT_DEFAULT_TITLE);
+      });
+
+      it("title is ≤ 60 characters", () => {
+        expect(title.length, `title is ${title.length} chars: "${title}"`).toBeLessThanOrEqual(60);
+      });
+
+      it("title contains primary keyword", () => {
+        expect(title.toLowerCase()).toContain(spec.titleMustContain.toLowerCase());
+      });
+
+      it("title ends with | Datanika", () => {
+        expect(title).toMatch(/\|\s*Datanika\s*$/);
+      });
+
+      it("meta description is 150–160 characters", () => {
+        expect(meta.length, `meta is ${meta.length} chars: "${meta}"`).toBeGreaterThanOrEqual(150);
+        expect(meta.length, `meta is ${meta.length} chars: "${meta}"`).toBeLessThanOrEqual(160);
+      });
+
+      it("visible H1 exists and is not empty", () => {
+        const h1Match = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/);
+        expect(h1Match, "no <h1> found").not.toBeNull();
+        const h1Text = h1Match![1].replace(/<[^>]*>/g, "").trim();
+        expect(h1Text.length).toBeGreaterThan(0);
       });
     });
   }
