@@ -4,8 +4,8 @@ description: "Upload JSON and JSON Lines files into your warehouse with Datanika
 source: "json"
 source_name: "JSON"
 category: "file"
-verified_by: "draft-pending-verification"
-verified_date: null
+verified_by: "product-ui"
+verified_date: "2026-07-19"
 related_use_cases: []
 related_comparisons:
   - "airbyte"
@@ -29,18 +29,17 @@ JSON is the format your APIs already speak, your logs already emit, and your Saa
 ## Step 1a — Upload a file through the UI (the common case)
 
 1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page.
-2. From the **type dropdown**, pick **JSON** (under the **File** category).
-3. In the **Upload File** section, drag your `.json` / `.jsonl` / `.ndjson` file into the upload area, or click the **Upload File** button to browse.
-4. Datanika sniffs the first few records and detects:
-   - **Format** — JSON document vs JSON Lines, based on whether the first non-whitespace character is `[` or `{`.
-   - **Record shape** — a union of keys seen across the sample. If your records have varying shapes, every key seen at least once becomes a nullable column.
-   - **Nested structure** — objects are flattened with `__` separators (e.g., `customer.address.city` → `customer__address__city`). Arrays of scalars become a single column of typed array; arrays of objects get their own child table.
-   - **Types** — taken directly from JSON values. No inference heuristics are needed, because the format already distinguishes `42` (integer), `42.0` (float), `"42"` (string), `true` (boolean), and `null`.
-5. Preview the first 20 rows in the form. Flattened column names will look a little ugly — that's expected, you fix the readable names in dbt downstream.
-6. **Name** the connection, e.g. `api-logs-2026-04` or `segment-export-q1`.
-7. Click **Create Connection**.
+2. From the **type dropdown**, pick `json` (under the **File** category).
+3. **Connection Name** — give it a label, e.g. `api-logs-2026-04` or `segment-export-q1`.
+4. In the **Upload File** section, drag your `.json` / `.jsonl` / `.ndjson` file into the upload area, or click the **Upload File** button to browse. (There's no in-form preview — the file is parsed when the pipeline runs.)
+5. Click **Test Connection**, then **Create Connection**.
 
-![Dragging a JSON file into Datanika](/docs/connectors/json/01a-upload-ui.png)
+![Adding the JSON connection in Datanika](/docs/connectors/json/02-add-connection.png)
+
+> **How Datanika parses JSON at load time.** When the pipeline runs, Datanika detects the shape and types automatically — none of this is configured on the form:
+> - **Format** — JSON document (`[...]`) vs JSON Lines (one object per line), from the first non-whitespace character.
+> - **Types** — taken directly from JSON values (`42` integer, `42.0` float, `"42"` string, `true` boolean, `null`), no inference heuristics.
+> - **Nested structure** — objects are flattened with `__` separators (`customer.address.city` → `customer__address__city`); arrays of scalars become typed array columns; arrays of objects get their own child table.
 
 > **File size guidance.** Up to ~500 MB per file on the UI uploader. Larger than that, use the directory-watcher path (Step 1b) — it streams from disk so memory never spikes.
 
@@ -56,9 +55,9 @@ The classic use case: an upstream job writes one `.jsonl` file per hour or per d
          - /opt/datanika/inbox-json:/var/datanika/inbox-json:ro
    ```
 2. Restart the container to pick up the mount.
-3. In Datanika, open **`/connections`**, pick **JSON** from the type dropdown.
-4. Skip the file upload area. Below it, you'll see a **file path** input — enter the path to the directory inside the container:
-   - **File path** — `/var/datanika/inbox-json` (or a glob like `/var/datanika/inbox-json/*.jsonl`).
+3. In Datanika, open **`/connections`**, pick `json` from the type dropdown.
+4. Skip the file upload area. Below it, you'll see the **Or enter file path** input — enter the path to the directory inside the container:
+   - **Or enter file path** — `/var/datanika/inbox-json` (or a glob like `/var/datanika/inbox-json/*.jsonl`).
 5. Click **Test Connection**. Datanika checks the path is readable and previews the first matching file.
 6. Click **Create Connection**.
 
@@ -88,8 +87,6 @@ JSON connections are almost always one file (or one directory) → one table. Ne
 3. When the run finishes, open **Catalog → `<your warehouse>` → `raw_<source>`** and you'll see the root table plus any child tables created from nested arrays.
 4. Spot-check: open the source file in a text editor, copy one record, and verify its flattened columns landed correctly in the warehouse.
 
-![First run landing the JSON](/docs/connectors/json/03-first-run.png)
-
 ## Step 4 — Schedule it (directory watchers only)
 
 UI-uploaded files are one-shot. Scheduling is only meaningful for the directory-watcher flow from Step 1b.
@@ -106,7 +103,7 @@ UI-uploaded files are one-shot. Scheduling is only meaningful for the directory-
 
 ### `Invalid JSON: Expecting value: line 1 column 1 (char 0)`
 **Cause.** The file isn't valid JSON at all — often it's a JSON Lines file saved with a `.json` extension, so Datanika tried to parse it as a single document and choked on the second object.
-**Fix.** Rename the file to `.jsonl` (or set the **Format hint** field to `jsonlines` in Step 1b). The two formats are distinct — `.json` must have an outer `[...]`, `.jsonl` must not.
+**Fix.** Rename the file to `.jsonl`. The two formats are distinct — `.json` must have an outer `[...]`, `.jsonl` must not.
 
 ### Root table has a column named `null` or one record is missing a field
 **Cause.** Missing keys and explicit `null` values are distinct in JSON but land identically in most warehouses (as SQL `NULL`). Datanika preserves the distinction in the raw column by using `null` the value for explicit nulls, and omitting the key entirely for missing ones — but you lose that distinction once it's in a typed column.
@@ -114,7 +111,7 @@ UI-uploaded files are one-shot. Scheduling is only meaningful for the directory-
 
 ### `UnicodeDecodeError` on a JSON file
 **Cause.** The file is valid JSON but in an encoding other than UTF-8. Most common on JSON exported from Windows apps that default to Windows-1252.
-**Fix.** Re-export the file as UTF-8 (the JSON spec technically requires it). If you can't, override the encoding in the connection form, same as the CSV workflow.
+**Fix.** Re-export the file as UTF-8 (the JSON spec technically requires it). If you can't, convert it locally before uploading: `iconv -f WINDOWS-1252 -t UTF-8 input.json > output.json`.
 
 ### Child tables aren't being created for nested arrays
 **Cause.** The arrays are arrays of **scalars** (strings, numbers, booleans), not arrays of objects. Datanika only creates child tables for object arrays — scalar arrays stay inline as typed array columns.

@@ -4,8 +4,8 @@ description: "Step-by-step guide to set up Databricks as a destination in Datani
 source: "databricks"
 source_name: "Databricks"
 category: "database"
-verified_by: "draft-pending-verification"
-verified_date: null
+verified_by: "product-ui"
+verified_date: "2026-07-19"
 related_use_cases:
   - "postgresql-to-databricks"
   - "salesforce-to-databricks"
@@ -49,21 +49,19 @@ Databricks is the enterprise lakehouse platform — teams choose it when they ne
 
 > **Least privilege.** Datanika needs `CREATE TABLE`, `MODIFY` (insert/update/delete), and `USE SCHEMA` on the target schema. It does not need workspace admin, cluster management, or access to other catalogs. Use Unity Catalog grants to scope permissions tightly.
 
-![Creating credentials in Databricks](/docs/connectors/databricks/01-credentials.png)
-
 ## Step 2 — Add the connection in Datanika
 
 1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page — there's no separate "New Connection" button to click.
-2. From the **type dropdown** at the top of the form, pick **Databricks**.
+2. From the **type dropdown** at the top of the form, pick `databricks`.
 3. Fill in the form:
-   - **Name** — e.g. `databricks-prod` or `databricks-lakehouse`.
-   - **Server hostname** — the workspace URL hostname, e.g. `adb-1234567890.12.azuredatabricks.net`.
-   - **HTTP path** — the SQL Warehouse or cluster HTTP path, e.g. `/sql/1.0/warehouses/abc123`. Find this in the warehouse's **Connection details** tab.
-   - **Access token** — the personal access token or service principal secret from Step 1. Stored encrypted at rest with Fernet.
+   - **Connection Name** — e.g. `databricks-prod` or `databricks-lakehouse`.
+   - **Host** — the workspace URL hostname, e.g. `adb-1234567890.12.azuredatabricks.net`.
+   - **HTTP Path** — the SQL Warehouse or cluster HTTP path, e.g. `/sql/1.0/warehouses/abc123`. Find this in the warehouse's **Connection details** tab.
+   - **Access Token** — the personal access token or service principal secret from Step 1. Stored encrypted at rest with Fernet.
    - **Catalog** — the Unity Catalog catalog name, e.g. `main`. Leave blank for legacy hive_metastore.
    - **Schema** — the default landing schema, e.g. `raw_data`.
-4. Click **Test connection**. Datanika verifies it can connect to the SQL endpoint and access the catalog. You should see a green checkmark.
-5. Click **Save**.
+4. Click **Test Connection**. Datanika verifies it can connect to the SQL endpoint and access the catalog. You should see a green checkmark.
+5. Click **Create Connection**.
 
 ![Adding Databricks as a destination in Datanika](/docs/connectors/databricks/02-add-connection.png)
 
@@ -90,8 +88,6 @@ Databricks is the enterprise lakehouse platform — teams choose it when they ne
 4. Spot-check in the Databricks SQL editor: `SELECT count(*) FROM main.raw_postgres.orders;` should match the row count Datanika reports.
 5. Verify in Databricks: **Data Explorer → catalog → schema → table → History** to see the Delta transaction log entries from the load.
 
-![First run landing data in Databricks](/docs/connectors/databricks/04-first-run.png)
-
 ## Step 5 — Schedule it
 
 1. On the pipeline page, click **Schedule**.
@@ -103,8 +99,6 @@ Databricks is the enterprise lakehouse platform — teams choose it when they ne
 4. Wire up failure alerts in **Settings → Notifications** so broken runs surface before dashboards go stale.
 
 > **Cost tip.** Databricks charges by DBU (Databricks Unit) per second of compute. SQL Warehouses are the cheapest option for load-only workloads. Auto-suspend after 10 minutes is the default — your warehouse won't run between scheduled loads. For very frequent schedules (every 15 min), consider increasing the auto-suspend timeout to avoid repeated cold starts.
-
-![Configuring the schedule](/docs/connectors/databricks/05-schedule.png)
 
 ## Troubleshooting
 

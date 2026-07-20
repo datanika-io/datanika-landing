@@ -5,7 +5,7 @@ source: "oracle"
 source_name: "Oracle"
 category: "database"
 verified_by: "product-ui"
-verified_date: "2026-07-17"
+verified_date: "2026-07-19"
 related_use_cases: []
 related_comparisons:
   - "airbyte"

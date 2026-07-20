@@ -1,20 +1,17 @@
 # Snowflake setup-guide screenshots
 
-This directory is referenced from `src/content/connectors/snowflake.md`.
+Referenced from `src/content/connectors/snowflake.md` (destination-only connector).
 
-## Required screenshots
+## Captured
 
-| Filename | Step | What to capture |
+| Filename | Step | Notes |
 |---|---|---|
-| `01-credentials.png` | Step 1 | Snowsight SQL worksheet showing the `CREATE ROLE DATANIKA_LOADER`, `CREATE WAREHOUSE`, `CREATE USER` sequence running successfully. |
-| `02-add-connection.png` | Step 2 | The **Connections → New connection** form in Datanika with Snowflake selected: account, user, password, database, warehouse, role, schema fields visible. **Blur the password.** |
-| `03-configure-pipeline.png` | Step 3 | The **Configure pipeline** screen showing a source targeting Snowflake, with schema name and table selection visible. |
-| `04-first-run.png` | Step 4 | The **Runs** tab after a successful first run, showing per-table row counts. |
-| `05-schedule.png` | Step 5 | The **Schedule** modal with a cadence selected. |
+| `02-add-connection.png` | Step 2 | The **New Connection** form with `snowflake` selected (all 7 fields). Captured 2026-07-19 from a real `app.datanika.io` session in light theme (the app default for a new account). Demo values only; the password field renders masked. |
 
-## Capture guidelines
+## Verification
 
-- Use a **trial or dev Snowflake account** — no production data.
-- **Redact** passwords and any real account identifiers if connected to production.
-- Dark theme, 1600 px width, `pngquant --quality 80-95`.
-- Crop tightly.
+`verified_by: product-ui` / `verified_date: 2026-07-19` — Step-2 field labels verified against the live shipped UI (`snowflake_fields()` in `connection_config_fields.py` + `en.json` on `origin/master`). Shipped form: **Connection Name**, **Account**, **User**, **Password**, **Database**, **Warehouse**, **Role**, **Schema**. The type dropdown shows the lowercase key **`snowflake`**. Both **Test Connection** and **Create Connection** buttons render. Guide drift fixed: dropdown key, added the missing **Connection Name** field, "Save" → "Create Connection".
+
+## Not yet captured (deferred, not embedded in the guide)
+
+- `01-credentials.png` (Snowsight user/role setup) and `03/04/05` — need a source→Snowflake pipeline run.

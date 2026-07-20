@@ -4,8 +4,8 @@ description: "Step-by-step guide to sync MySQL with Datanika — create a read-o
 source: "mysql"
 source_name: "MySQL"
 category: "database"
-verified_by: "draft-pending-verification"
-verified_date: null
+verified_by: "product-ui"
+verified_date: "2026-07-18"
 related_use_cases:
   - "mysql-to-bigquery"
 related_comparisons:
@@ -39,18 +39,19 @@ MySQL is one of the most common operational databases our users sync into their 
 
 > **Least privilege.** Only grant `SELECT`. Datanika never needs write access to the source.
 
-![Creating the MySQL user](/docs/connectors/mysql/01-credentials.png)
-
 ## Step 2 — Add the connection in Datanika
 
-1. In Datanika, open **`/connections`** and pick **MySQL** from the type dropdown at the top of the inline New Connection form.
-2. Fill in:
-   - **Name** — e.g. `mysql-prod-readonly`
-   - **Host / Port** — your MySQL server, default port `3306`
-   - **Database** — the database to sync
-   - **User / Password** — the `datanika_readonly` user from Step 1
-3. Click **Test connection** — you should see green ✅.
-4. Click **Save**.
+1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page — there's no separate "New Connection" button to click.
+2. From the **type dropdown** at the top of the form, pick `mysql`.
+3. Fill in the form:
+   - **Connection Name** — a label you'll recognize later, e.g. `mysql-prod-readonly`.
+   - **Host** — the hostname or IP of your MySQL server.
+   - **Port** — usually `3306`.
+   - **Database** — the database you granted access to in Step 1.
+   - **User** — `datanika_readonly`.
+   - **Password** — the password from Step 1. Stored encrypted at rest with Fernet.
+4. Click **Test Connection**. You should see a green ✅ within a few seconds.
+5. Click **Create Connection**.
 
 ![Adding MySQL in Datanika](/docs/connectors/mysql/02-add-connection.png)
 
@@ -66,8 +67,6 @@ MySQL is one of the most common operational databases our users sync into their 
 
 1. Click **Run now** and watch the **Runs** tab.
 2. When done, browse **Catalog → `raw_mysql`** and spot-check row counts.
-
-![First run](/docs/connectors/mysql/04-first-run.png)
 
 ## Step 5 — Schedule it
 

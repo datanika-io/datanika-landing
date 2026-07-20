@@ -4,8 +4,8 @@ description: "Step-by-step guide to pipe Stripe into your warehouse with Datanik
 source: "stripe"
 source_name: "Stripe"
 category: "saas"
-verified_by: "draft-pending-verification"
-verified_date: null
+verified_by: "product-ui"
+verified_date: "2026-07-19"
 related_use_cases:
   - "stripe-to-bigquery"
 related_comparisons:
@@ -39,19 +39,16 @@ Create a **dedicated restricted key** instead of reusing your secret key. Restri
 6. Click **Create key** and copy the value. It starts with `rk_live_…` (live mode) or `rk_test_…` (test mode). **This is your only chance to copy the key** — Stripe shows it exactly once.
 
 > **Least privilege.** If you're ever prompted to paste a standard secret key (`sk_live_…`), stop. Datanika only needs a restricted key with `Read` permissions. A standard secret key grants write access to your entire Stripe account and is never required.
-
-![Creating a restricted key in the Stripe dashboard](/docs/connectors/stripe/01-credentials.png)
-
 ## Step 2 — Add the connection in Datanika
 
 1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page — there's no separate "New Connection" button to click.
-2. From the **type dropdown** at the top of the form, pick **Stripe**.
+2. From the **type dropdown** at the top of the form, pick `stripe`.
 3. Fill in the form:
-   - **Name** — a label you'll recognize later, e.g. `stripe-prod` or `stripe-test`.
-   - **API key** — paste the restricted key from Step 1 (`rk_live_…` or `rk_test_…`). Stored encrypted at rest with Fernet.
-4. Click **Save**.
+   - **Connection Name** — a label you'll recognize later, e.g. `stripe-prod` or `stripe-test`.
+   - **API Key (optional)** — paste the restricted key from Step 1 (`rk_live_…` or `rk_test_…`). Stored encrypted at rest with Fernet.
+4. Click **Create Connection**.
 
-> **Stripe connections don't expose a "Test connection" button.** Stripe is an HTTP-API source, so there's no `SELECT 1` equivalent to validate the credential offline. The credential is validated for real on the first pipeline run — see Step 4. If the key is bad, the run fails immediately with a clear Stripe API error.
+> **Test Connection for Stripe.** The **Test Connection** button is present, but because Stripe is an HTTP-API source it returns *"Test not applicable for this type"* rather than validating the key offline. The credential is validated for real on the first pipeline run — see Step 4. If the key is bad, the run fails immediately with a clear Stripe API error.
 
 ![Adding the Stripe connection in Datanika](/docs/connectors/stripe/02-add-connection.png)
 
@@ -81,9 +78,6 @@ Create a **dedicated restricted key** instead of reusing your secret key. Restri
 3. If the restricted key is missing a required `Read` permission, the run fails with a Stripe API error naming the resource and permission. Fix it in the Stripe dashboard (Step 1), re-save the key in Datanika (Step 2), and re-run.
 4. When the run finishes, open **Catalog → `<your warehouse>` → `raw_stripe`** and browse the landed tables. You should see one table per resource you enabled — `customers`, `charges`, `invoices`, and so on.
 5. Spot-check: `SELECT count(*) FROM raw_stripe.customers;` should roughly match the customer count shown in the Stripe dashboard for the same time window.
-
-![First run in the Runs tab](/docs/connectors/stripe/04-first-run.png)
-
 ## Step 5 — Schedule it
 
 1. On the pipeline page, click **Schedule**.
@@ -94,9 +88,6 @@ Create a **dedicated restricted key** instead of reusing your secret key. Restri
 3. Choose a **timezone** — matters when your cadence is daily or weekly.
 4. Save. The next scheduled run appears in the **Runs** tab.
 5. Wire up failure alerts in **Settings → Notifications** so broken runs page your finance/data team before stakeholders notice the dashboards are stale.
-
-![Configuring the schedule](/docs/connectors/stripe/05-schedule.png)
-
 ## Troubleshooting
 
 ### `Stripe source requires 'api_key'`

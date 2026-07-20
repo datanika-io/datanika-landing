@@ -4,8 +4,8 @@ description: "Step-by-step guide to sync Airtable bases into your warehouse with
 source: "airtable"
 source_name: "Airtable"
 category: "saas"
-verified_by: "draft-pending-verification"
-verified_date: null
+verified_by: "product-ui"
+verified_date: "2026-07-19"
 related_use_cases: []
 related_comparisons:
   - "airbyte"
@@ -38,20 +38,17 @@ Personal access tokens (PATs) replaced the legacy API key in 2024. They're scope
 6. Click **Create token** and copy the value. It starts with `pat…`. **This is your only chance to copy it** — Airtable shows it exactly once.
 
 > **Least privilege.** Only grant `read` scopes. Datanika never writes to Airtable. If you're syncing multiple bases, you can either create one token with access to all of them or one token per base — one-per-base is easier to revoke without disrupting other pipelines.
-
-![Creating a personal access token in Airtable](/docs/connectors/airtable/01-credentials.png)
-
 ## Step 2 — Add the connection in Datanika
 
 1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page — there's no separate "New Connection" button to click.
-2. From the **type dropdown** at the top of the form, pick **Airtable**.
+2. From the **type dropdown** at the top of the form, pick `airtable`.
 3. Fill in:
    - **Connection Name** — a label you'll recognize, e.g. `airtable-crm` or `airtable-content-calendar`.
-   - **Airtable personal access token** — paste the PAT from Step 1 (`pat…`). Stored encrypted at rest with Fernet.
+   - **API Key (optional)** — paste the Airtable personal access token from Step 1 (`pat…`). Stored encrypted at rest with Fernet.
    - **Base ID** — the `app…` string from the Airtable URL of the base you want to sync.
-4. Click **Create Connection**.
+4. Click **Test Connection** (an HTTP-API source returns *"Test not applicable for this type"*), then **Create Connection**.
 
-> **No "Test connection" button.** Airtable is an HTTP-API source — the credential is validated on the first pipeline run, not at save time.
+> **Credentials are validated on the first run.** Airtable is an HTTP-API source, so the **Test Connection** button reports *"Test not applicable for this type"* — the PAT is validated for real when the first pipeline runs.
 
 ![Adding the Airtable connection in Datanika](/docs/connectors/airtable/02-add-connection.png)
 
@@ -74,9 +71,6 @@ Personal access tokens (PATs) replaced the legacy API key in 2024. They're scope
 3. If the PAT is missing a required scope or doesn't have access to the base, the run fails immediately with an Airtable API error naming the missing permission. Fix it at [airtable.com/create/tokens](https://airtable.com/create/tokens) — you can edit an existing token's scopes without regenerating it.
 4. When the run finishes, open **Catalog → `<your warehouse>` → `raw_airtable`** and browse the landed tables. You should see one table per Airtable table you enabled.
 5. Spot-check: compare row counts in Datanika against the record count shown at the bottom of the Airtable table view.
-
-![First Airtable run](/docs/connectors/airtable/04-first-run.png)
-
 ## Step 5 — Schedule it
 
 1. On the pipeline page, click **Schedule**.

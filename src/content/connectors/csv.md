@@ -4,8 +4,8 @@ description: "Load a CSV file into your warehouse with Datanika — drag it into
 source: "csv"
 source_name: "CSV"
 category: "file"
-verified_by: "draft-pending-verification"
-verified_date: null
+verified_by: "product-ui"
+verified_date: "2026-07-19"
 related_use_cases: []
 related_comparisons:
   - "airbyte"
@@ -26,18 +26,20 @@ CSV is the universal escape hatch. Every SaaS tool exports it, every analyst has
 ## Step 1 — Create the CSV Connection
 
 1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page — there's no separate "New Connection" button to click.
-2. From the **type dropdown** at the top of the form, pick **CSV**. The form reshapes itself to show the CSV-specific fields.
+2. From the **type dropdown** at the top of the form, pick `csv`. The form reshapes itself to show the CSV-specific fields.
 3. Fill in:
    - **Connection Name** — a label you'll recognize, e.g. `q3-signups-export` or `customers-2026-04`. This is what shows up in pipeline pickers.
    - **File source** — choose one of the two inputs on the form:
      - **Upload File** — drag a `.csv` file into the dashed drop zone, or click the **Upload File** button and pick it from the OS file picker. Datanika uploads the file to your org's storage and uses it as the connection source.
      - **Or enter file path** — fill this text input with a path the `datanika-app` container can reach (e.g., `/var/datanika/inbox/customers.csv`), or an object-store URI (e.g., `s3://my-bucket/exports/customers.csv`). Use this when the file isn't on your laptop — it's on a host-mounted volume, an NFS share, or object storage that the container has credentials for.
-4. Click **Test Connection**. Datanika resolves the file (reading from the uploaded blob or opening the path) and reports success or an error.
+4. Click **Test Connection**. For a **file path** input, Datanika checks it can reach the file; for an **uploaded file** the test may report *"Test not applicable for this type"* — that's expected, the file is validated when the pipeline runs.
 5. Click **Create Connection**.
 
 > **Name + file is all you get on the form.** The CSV Connection form has exactly three inputs: Name, Upload File, and Or enter file path (plus a **Use raw JSON config** escape hatch for advanced cases). There's no delimiter picker, no encoding picker, no header-row override, and no column-type editor on the form itself — the loader handles all of that at pipeline runtime with best-effort detection. If you need per-column control over types, do it downstream in a dbt model.
 
 > **Read-only bind mounts.** If you're pointing the path input at a directory on the host, mount it into the container read-only (`:ro` in `docker-compose.yml`). Datanika never writes back to a CSV source, and read-only makes that guarantee explicit.
+
+![Adding the CSV connection in Datanika](/docs/connectors/csv/02-add-connection.png)
 
 ## Step 2 — Configure the pipeline
 
@@ -59,8 +61,6 @@ CSV connections are usually one file → one table, so configuration is lighter 
 2. Watch the **Runs** tab. CSV loads are usually **fast**: Datanika streams rows directly into the destination, so a 100k-row file typically lands in seconds and a 10M-row file in a few minutes.
 3. When the run finishes, open **Catalog → `<your warehouse>` → `raw_uploads`** and browse the new table.
 4. Spot-check by opening the CSV in a spreadsheet and comparing row counts and a handful of values — type inference failures usually show up as null or truncated cells and are easy to catch visually.
-
-![First run landing the CSV](/docs/connectors/csv/03-first-run.png)
 
 ## Step 4 — Schedule it
 

@@ -4,8 +4,8 @@ description: "Step-by-step guide to use Azure Synapse as a destination in Datani
 source: "synapse"
 source_name: "Azure Synapse"
 category: "database"
-verified_by: "draft-pending-verification"
-verified_date: null
+verified_by: "product-ui"
+verified_date: "2026-07-18"
 related_use_cases: []
 related_comparisons:
   - "airbyte"
@@ -54,13 +54,13 @@ Create a dedicated user for Datanika with only the permissions it needs.
 ## Step 2 — Add the connection in Datanika
 
 1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page — there's no separate "New Connection" button to click.
-2. From the **type dropdown** at the top of the form, pick **Azure Synapse**.
+2. From the **type dropdown** at the top of the form, pick `synapse`.
 3. Fill in:
    - **Connection Name** — e.g. `synapse-analytics` or `synapse-prod`.
-   - **Synapse SQL endpoint** — the dedicated SQL pool endpoint, e.g. `<workspace>.sql.azuresynapse.net`. Find it in the Azure portal under **Synapse workspace → Overview → Dedicated SQL endpoint**.
-   - **Port number** — default `1433`. Rarely needs changing.
-   - **Database/pool name** — the name of the dedicated SQL pool, e.g. `analytics_pool` or `dwh`.
-   - **Username** — `datanika_writer`.
+   - **Host** — the dedicated SQL pool endpoint, e.g. `<workspace>.sql.azuresynapse.net`. Find it in the Azure portal under **Synapse workspace → Overview → Dedicated SQL endpoint**.
+   - **Port** — default `1433`. Rarely needs changing.
+   - **Database** — the name of the dedicated SQL pool, e.g. `analytics_pool` or `dwh`.
+   - **User** — `datanika_writer`.
    - **Password** — stored encrypted at rest with Fernet.
 4. Click **Test Connection**.
 5. Click **Create Connection**.
@@ -88,8 +88,6 @@ Synapse is a **destination** — you select it when configuring a pipeline's tar
    - `Cannot open database` — wrong pool name, or the pool is paused.
    - `Network-related error` — firewall blocking. Add the client IP in the Synapse workspace firewall settings.
 4. When finished, query the tables in Synapse Studio, Azure Data Studio, or Datanika's SQL Editor.
-
-![First run to Synapse](/docs/connectors/synapse/04-first-run.png)
 
 ## Step 5 — Schedule it
 

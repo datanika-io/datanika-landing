@@ -1,8 +1,17 @@
-# Amazon Redshift — Screenshot Placeholders
+# Amazon Redshift setup-guide screenshots
 
-Replace these with real screenshots after human verification:
+Referenced from `src/content/connectors/redshift.md` (destination-only connector).
 
-- `01-credentials.png` — Creating the loader user in Redshift query editor
-- `02-add-connection.png` — Filling in the Redshift connection form in Datanika
-- `04-first-run.png` — First run completing in the Runs tab
-- `05-schedule.png` — Schedule configuration dialog
+## Captured
+
+| Filename | Step | Notes |
+|---|---|---|
+| `02-add-connection.png` | Step 2 | The **New Connection** form with `redshift` selected (Port 5439). Captured 2026-07-18 from a real `app.datanika.io` session in light theme (the app default for a new account). Demo values only; the password field renders masked. |
+
+## Verification
+
+`verified_by: product-ui` / `verified_date: 2026-07-18` — Step-2 field labels verified against the live shipped UI (`db_fields()` in `connection_config_fields.py` + `en.json` on `origin/master`). Shipped form: **Connection Name**, **Host**, **Port**, **User**, **Password**, **Database**. **Major drift fixed:** the draft's **Schema** field is fictional — `db_fields()` has none, and the screenshot confirms it's absent. The landing schema is chosen per pipeline (Step 3). The type dropdown shows the lowercase key **`redshift`** (name ≠ key). Both **Test Connection** and **Create Connection** buttons render. Also fixed: dropdown key, "Name" → "Connection Name", "Save" → "Create Connection".
+
+## Not yet captured (deferred, not embedded in the guide)
+
+- `01-credentials.png` (loader-user creation) and `04/05` — need a source→Redshift pipeline run.

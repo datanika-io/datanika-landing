@@ -4,8 +4,8 @@ description: "Step-by-step guide to set up ClickHouse as a destination in Datani
 source: "clickhouse"
 source_name: "ClickHouse"
 category: "database"
-verified_by: "draft-pending-verification"
-verified_date: null
+verified_by: "product-ui"
+verified_date: "2026-07-19"
 related_use_cases:
   - "postgresql-to-clickhouse"
   - "stripe-to-clickhouse"
@@ -53,23 +53,23 @@ Create a **dedicated loader user** rather than reusing the `default` admin accou
 
 > **ClickHouse Cloud.** If you're using ClickHouse Cloud, the default user already has full permissions. You can skip user creation and use the credentials from your ClickHouse Cloud service page directly — but we still recommend creating a dedicated user for audit purposes.
 
-![Creating the loader user in ClickHouse](/docs/connectors/clickhouse/01-credentials.png)
-
 ## Step 2 — Add the connection in Datanika
 
 1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page — there's no separate "New Connection" button to click.
-2. From the **type dropdown** at the top of the form, pick **ClickHouse**.
+2. From the **type dropdown** at the top of the form, pick `clickhouse`.
 3. Fill in the form:
-   - **Name** — e.g. `clickhouse-prod` or `clickhouse-analytics`.
+   - **Connection Name** — e.g. `clickhouse-prod` or `clickhouse-analytics`.
    - **Host** — the hostname, e.g. `abc123.clickhouse.cloud` or `clickhouse.internal`.
    - **Port** — `8443` (ClickHouse Cloud / TLS) or `8123` (self-hosted plain HTTP).
-   - **Database** — the target database, e.g. `raw_data`.
    - **User** — `datanika_loader` (or `default` for ClickHouse Cloud).
    - **Password** — the password from Step 1. Stored encrypted at rest with Fernet.
-4. Click **Test connection**. Datanika runs a `SELECT 1` to verify connectivity. You should see a green checkmark.
-5. Click **Save**.
+   - **Database** — the target database, e.g. `raw_data`.
+   - **Use HTTPS (TLS)** — tick this for TLS/HTTPS endpoints (ClickHouse Cloud, or any instance on the secure `8443` port). Leave unchecked for plain HTTP on `8123`.
+   - **Enable cluster replication** — tick this only if you're loading into a replicated ClickHouse cluster (`ON CLUSTER` DDL). Leave unchecked for single-node instances.
+4. Click **Test Connection**. Datanika runs a `SELECT 1` to verify connectivity. You should see a green checkmark.
+5. Click **Create Connection**.
 
-> **ClickHouse Cloud (TLS) users.** TLS-only instances on port `8443` are not yet supported end-to-end via the structured connection form — the Test Connection button may fail even with correct credentials. Track [datanika-core#157 CORE-7](https://github.com/datanika-io/datanika-core/issues/157). Self-hosted ClickHouse on the plain HTTP port `8123` works without qualification.
+> **ClickHouse Cloud / TLS.** For TLS endpoints (ClickHouse Cloud, or the secure `8443` port), tick **Use HTTPS (TLS)** in the form above. Self-hosted ClickHouse on the plain HTTP port `8123` works with the checkbox left unchecked.
 
 ![Adding ClickHouse as a destination in Datanika](/docs/connectors/clickhouse/02-add-connection.png)
 
@@ -96,8 +96,6 @@ Create a **dedicated loader user** rather than reusing the `default` admin accou
 4. Spot-check in the ClickHouse console: `SELECT count() FROM raw_postgres.orders;` should match the row count Datanika reports.
 5. Verify the table engine: `SHOW CREATE TABLE raw_postgres.orders;` — you should see `ReplacingMergeTree` for tables using `merge` mode.
 
-![First run landing data in ClickHouse](/docs/connectors/clickhouse/04-first-run.png)
-
 ## Step 5 — Schedule it
 
 1. On the pipeline page, click **Schedule**.
@@ -109,8 +107,6 @@ Create a **dedicated loader user** rather than reusing the `default` admin accou
 4. Wire up failure alerts in **Settings → Notifications** so broken runs surface before dashboards go stale.
 
 > **Cost tip.** ClickHouse Cloud charges per compute-second. Batch your loads into fewer, larger runs rather than many small ones. A single hourly run loading 100K rows is cheaper than 60 runs loading 1.7K rows each — the per-query overhead adds up.
-
-![Configuring the schedule](/docs/connectors/clickhouse/05-schedule.png)
 
 ## Troubleshooting
 
