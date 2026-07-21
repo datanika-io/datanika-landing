@@ -8,13 +8,19 @@ category: "product"
 tags: ["mcp", "ai-agents", "claude", "dbt", "product"]
 ---
 
-`datanika-mcp` is live on [PyPI](https://pypi.org/project/datanika-mcp/) and listed on the [official MCP registry](https://registry.modelcontextprotocol.io) as `io.datanika/datanika-mcp`. One line in your client config and Claude, Claude Code, or Cursor can work with your actual data pipelines.
+Datanika now speaks MCP two ways. Paste our hosted endpoint into a client that supports remote MCP servers and approve it in the browser:
+
+```
+https://app.datanika.io/mcp
+```
+
+Or run it locally — `datanika-mcp` is on [PyPI](https://pypi.org/project/datanika-mcp/) and listed on the [official MCP registry](https://registry.modelcontextprotocol.io) as `io.datanika/datanika-mcp`:
 
 ```bash
 uvx datanika-mcp
 ```
 
-Read-only by default. Full setup for each client is in the [MCP server guide](/docs/mcp-server/).
+Read-only by default on both. Full setup is in the [MCP server guide](/docs/mcp-server/).
 
 ## What your agent can actually do
 
@@ -30,15 +36,21 @@ That last one changes the texture of debugging. "Why did last night's sync fail?
 
 ## Read-only by default, and why that matters
 
-Start the server and the 8 write tools — create a connection, create a model, trigger a run — refuse to execute. They return an error telling the agent write access is disabled. You turn them on explicitly:
+The 8 write tools — create a connection, create a model, trigger a run — refuse to execute unless you have deliberately enabled them. How deliberate depends on which path you took:
+
+**Over the hosted endpoint, writes are simply not available.** There is no flag, no setting, and no scope on an API key that turns them on. An agent connected through the browser flow can read your pipelines and nothing more.
+
+**Locally, writes are an explicit opt-in:**
 
 ```bash
 uvx datanika-mcp --allow-write
 ```
 
-This is not security theatre, but it is also not the whole story, so here is the honest version. The API key you hand the server is the real ceiling: the MCP server can't reach another organization or escalate its own scope, `query_connection` is `SELECT`-only enforced server-side, and everything an agent does with that key lands in your [audit log](/docs/audit-log). The read-only default just means the *common* case — "help me understand why this pipeline is broken" — needs no write access at all, so you shouldn't grant it.
+That asymmetry is deliberate. The one-click path is the one people will hand to an agent casually, so it is the one that cannot break anything.
 
-Use a dedicated API key for agent access rather than reusing one from CI. If an agent does something surprising, you revoke one key instead of untangling which automation broke.
+This is not security theatre, but it is also not the whole story, so here is the honest version. Authentication is the real ceiling: the server can't reach another organization or escalate its own scope, `query_connection` is `SELECT`-only enforced server-side, and everything an agent does lands in your [audit log](/docs/audit-log). The read-only default just means the *common* case — "help me understand why this pipeline is broken" — needs no write access at all, so you shouldn't grant it.
+
+If you use the local path, use a dedicated API key for agent access rather than reusing one from CI. If an agent does something surprising, you revoke one key instead of untangling which automation broke. Over the hosted path there's no key to manage: consent mints one for you and revoking the grant is the off switch.
 
 ## What the agent leaves behind
 
@@ -49,6 +61,8 @@ An agent with write access can produce a great deal of work very quickly. If tha
 We wrote about that trade-off in more detail on the [AI agents page](/ai-agents#portability). It's the reason the MCP server is deliberately thin: it forwards to the REST API, which orchestrates dlt and dbt-core. There is no clever middle layer accumulating state you can't take with you.
 
 ## Setting it up
+
+If your client supports remote MCP servers, there is nothing to set up beyond pasting `https://app.datanika.io/mcp` and approving the consent screen. Everything below is the local path.
 
 Claude Desktop, in `claude_desktop_config.json`:
 

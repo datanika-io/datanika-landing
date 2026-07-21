@@ -138,12 +138,14 @@ const competitors = [
           <span class="text-cyan-500">|</span>
           <span>25 tools</span>
         </div>
-        <h2 class="text-3xl font-bold mb-4">Connect Claude in One Command</h2>
-        <p class="text-slate-400 max-w-2xl mx-auto mb-12">
-          <code class="text-violet-300 bg-slate-800 px-1.5 py-0.5 rounded text-sm">datanika-mcp</code> is a
-          Model Context Protocol server that exposes the API below as 25 typed tools. Your agent browses
-          connections, previews tables, compiles dbt models, and reads run logs without writing a single
-          HTTP call. Read-only by default.
+        <h2 class="text-3xl font-bold mb-4">Connect Claude in One Click</h2>
+        <p class="text-slate-400 max-w-3xl mx-auto mb-12">
+          Datanika speaks Model Context Protocol, exposing the API below as 25 typed tools. Your agent
+          browses connections, previews tables, compiles dbt models, and reads run logs without writing a
+          single HTTP call. Two ways in: paste our
+          <strong class="text-slate-200">hosted endpoint</strong> and approve in the browser, or run
+          <code class="text-violet-300 bg-slate-800 px-1.5 py-0.5 rounded text-sm">uvx datanika-mcp</code>
+          locally. Read-only by default either way.
         </p>
       </div>
 
@@ -153,33 +155,44 @@ const competitors = [
             <span class="h-3 w-3 rounded-full bg-red-500/60"></span>
             <span class="h-3 w-3 rounded-full bg-yellow-500/60"></span>
             <span class="h-3 w-3 rounded-full bg-green-500/60"></span>
-            <span class="ml-2">claude_desktop_config.json</span>
+            <span class="ml-2">the local path &mdash; claude_desktop_config.json</span>
           </div>
           <pre class="p-6 text-sm leading-relaxed overflow-x-auto"><code class="text-slate-300">{mcpConfig}</code></pre>
+          <div class="px-6 pb-6 -mt-2">
+            <p class="text-xs text-slate-500">
+              Prefer no install? Paste
+              <code class="text-violet-300 bg-slate-800 px-1.5 py-0.5 rounded text-xs">https://app.datanika.io/mcp</code>
+              wherever your client accepts a remote MCP server and authorize in the browser.
+            </p>
+          </div>
         </div>
 
         <div class="space-y-4">
           <div class="rounded-xl border border-slate-800 bg-slate-900/50 backdrop-blur p-5">
             <h3 class="font-semibold text-white mb-1">Read-only by default</h3>
             <p class="text-sm text-slate-400">
-              17 read tools are always available. The 8 write tools — create resources, trigger runs —
-              refuse to execute until you start the server with
+              17 read tools are always available. Over the
+              <a href="/docs/mcp-server#one-click" class="text-violet-400 hover:underline">hosted endpoint</a>
+              the 8 write tools are refused outright — there is no opt-in. Running
+              <a href="/docs/mcp-server#local" class="text-violet-400 hover:underline">locally</a>, they stay
+              off until you pass
               <code class="text-violet-300 bg-slate-800 px-1.5 py-0.5 rounded text-xs">--allow-write</code>.
             </p>
           </div>
           <div class="rounded-xl border border-slate-800 bg-slate-900/50 backdrop-blur p-5">
-            <h3 class="font-semibold text-white mb-1">Runs on your machine</h3>
+            <h3 class="font-semibold text-white mb-1">Your choice where it runs</h3>
             <p class="text-sm text-slate-400">
-              stdio transport, installed with
-              <code class="text-violet-300 bg-slate-800 px-1.5 py-0.5 rounded text-xs">uvx datanika-mcp</code>.
-              Your API key stays local and talks straight to your instance — self-hosted included.
+              Hosted: OAuth in the browser, nothing to install, no key to store. Local:
+              <code class="text-violet-300 bg-slate-800 px-1.5 py-0.5 rounded text-xs">uvx datanika-mcp</code>
+              over stdio, with an API key that never leaves your machine — the path to use against a
+              self-hosted instance.
             </p>
           </div>
           <div class="rounded-xl border border-slate-800 bg-slate-900/50 backdrop-blur p-5">
             <h3 class="font-semibold text-white mb-1">Works with any MCP client</h3>
             <p class="text-sm text-slate-400">
-              Claude Desktop, Claude Code, and Cursor have copy-paste configs in the docs. Anything that
-              speaks MCP over stdio works the same way.
+              Clients that support remote MCP servers can use the hosted URL directly. Everything else —
+              Claude Desktop, Claude Code, Cursor — connects over stdio with a copy-paste config from the docs.
             </p>
           </div>
           <div class="flex flex-col sm:flex-row gap-4 pt-2">
