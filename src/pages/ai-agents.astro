@@ -171,12 +171,13 @@ const competitors = [
           <div class="rounded-xl border border-slate-800 bg-slate-900/50 backdrop-blur p-5">
             <h3 class="font-semibold text-white mb-1">Read-only by default</h3>
             <p class="text-sm text-slate-400">
-              17 read tools are always available. Over the
-              <a href="/docs/mcp-server#one-click" class="text-violet-400 hover:underline">hosted endpoint</a>
-              the 8 write tools are refused outright — there is no opt-in. Running
-              <a href="/docs/mcp-server#local" class="text-violet-400 hover:underline">locally</a>, they stay
-              off until you pass
-              <code class="text-violet-300 bg-slate-800 px-1.5 py-0.5 rounded text-xs">--allow-write</code>.
+              17 read tools are always available. The 8 write tools stay off until you say otherwise —
+              approved once in the browser at
+              <a href="/docs/mcp-server#hosted-writes" class="text-violet-400 hover:underline">authorization time</a>
+              on the hosted endpoint, or with
+              <code class="text-violet-300 bg-slate-800 px-1.5 py-0.5 rounded text-xs">--allow-write</code>
+              <a href="/docs/mcp-server#local" class="text-violet-400 hover:underline">locally</a>. A client
+              that asks for nothing gets read-only.
             </p>
           </div>
           <div class="rounded-xl border border-slate-800 bg-slate-900/50 backdrop-blur p-5">

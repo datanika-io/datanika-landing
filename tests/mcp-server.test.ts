@@ -144,14 +144,33 @@ describe("/docs/mcp-server", () => {
       expect(html).toContain('id="local"');
     });
 
-    it("states that the hosted path never allows writes", () => {
-      // The load-bearing claim. services/mcp_routes.py builds every hosted
-      // session with allow_write=False, so --allow-write is local-only and a
-      // write-scoped key changes nothing over /mcp. Documenting this wrong
-      // sends people down a path that cannot do what they came for.
-      // Whitespace-tolerant: the source wraps these phrases across lines.
-      expect(html).toMatch(/hosted endpoint there is no opt-in/i);
-      expect(html).toMatch(/local-only\s+capability/i);
+    it("describes hosted writes as consent-time scope, not impossible", () => {
+      // Was: "the hosted path never allows writes" — true until core#445, which
+      // made write grantable at OAuth consent. That guard outlived the behaviour
+      // it guarded and briefly enforced a false claim. Guarding another team's
+      // *behaviour* is worth doing, but it must be updated with the behaviour;
+      // only the durable facts below (tool names, install string) are safe to
+      // pin indefinitely.
+      expect(html).toMatch(/granted\s+at\s+<strong>authorization time<\/strong>|at\s+authorization\s+time/i);
+      expect(html).not.toMatch(/hosted endpoint there is no opt-in/i);
+    });
+
+    it("keeps the two properties that make the grant safe", () => {
+      // Both are load-bearing and easy to lose in an edit: a client that omits
+      // `scope` must not be read as consenting to write, and a pasted bearer key
+      // must not silently inherit write from its own scopes.
+      expect(html).toMatch(/[Ss]ilence is (never read as|not) consent/i);
+      expect(html).toMatch(/pasted API key/i);
+    });
+
+    it("discloses the consent-screen gap while it exists", () => {
+      // core#450: the approval screen still renders a fixed "Read-only" block
+      // regardless of the scopes requested. Documenting write access without
+      // saying so would tell readers to trust a screen that is currently wrong.
+      // DELETE THIS TEST when core#450 lands — it pins a temporary caveat, and a
+      // guard on a caveat must not outlive the caveat.
+      expect(html).toMatch(/consent screen still says read-only/i);
+      expect(html).toContain("datanika-io/datanika-core/issues/450");
     });
 
     it("tells the reader how to revoke a one-click grant", () => {
@@ -216,12 +235,14 @@ describe("/ai-agents MCP section", () => {
       expect(html).not.toMatch(/Anything that\s+speaks MCP over stdio works the same way/i);
     });
 
-    it("scopes the write opt-in to the local path", () => {
-      // Over /mcp there is no --allow-write and no scope that enables writes.
-      // Implying otherwise sends people down a path that cannot do what they
-      // came for. Mirrors the same guard on /docs/mcp-server.
-      expect(html).toMatch(/there is no opt-in/i);
+    it("names both ways writes get enabled, without implying either is the only one", () => {
+      // Was: "over /mcp there is no --allow-write and no scope that enables
+      // writes" — invalidated by core#445. The page must now name the hosted
+      // route (authorization time) as well as the local flag, or it understates
+      // the product in the other direction.
+      expect(html).toMatch(/authorization time/i);
       expect(html).toContain("--allow-write");
+      expect(html).not.toMatch(/there is no opt-in/i);
     });
   });
 });
