@@ -36,6 +36,10 @@ const scheduledPosts = [
   // a content dump, and the second one buries the first in the index and RSS.
   { file: "sso-saml-oidc-enterprise.md", date: "2026-07-25", publishedAt: "2026-07-25", category: "product", titleContains: "SSO for Enterprise" },
   { file: "why-we-built-datanika.md", date: "2026-07-30", publishedAt: "2026-07-30", category: "company", titleContains: "One Tool Instead of Five" },
+  // Issue #261 — third in the queue, same 5-day spacing. Held until 2026-08-04
+  // deliberately: the post points at the official MCP registry listing, which
+  // only went live 2026-07-21.
+  { file: "datanika-mcp-server-launch.md", date: "2026-08-04", publishedAt: "2026-08-04", category: "product", titleContains: "Now an MCP Server" },
 ];
 
 const publishedScheduledPosts = [

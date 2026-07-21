@@ -21,7 +21,22 @@
 import fallback from "./agent-tiers.fallback.json";
 
 const ENDPOINT = "https://app.datanika.io/api/v1/meta/agent-tiers";
-const USER_AGENT = "Mozilla/5.0 (compatible; DatanikaAstroBuild/1.0; +https://datanika.io)";
+/**
+ * Plain product token — deliberately NOT the `Mozilla/5.0 (compatible; ...)`
+ * crawler shape.
+ *
+ * The previous value, `Mozilla/5.0 (compatible; DatanikaAstroBuild/1.0; ...)`,
+ * was hard-403'd at the Cloudflare edge in front of app.datanika.io, so every
+ * build silently fell back to the checked-in snapshot. Isolated 2026-07-21:
+ * the rule matches the literal token `DatanikaAstroBuild` — `AstroBuild/1.0`,
+ * `curl/8.0`, an empty UA, and this value all return 200, while both
+ * `DatanikaAstroBuild/1.0` and the full Mozilla-prefixed string return 403.
+ *
+ * If this starts 403ing again, check the WAF/bot rules on the `datanika.io`
+ * zone before assuming the endpoint is down — the 403 comes from Cloudflare,
+ * not the origin (an origin failure surfaces as 502 instead).
+ */
+const USER_AGENT = "Datanika-Landing-Build/1.0 (+https://datanika.io)";
 const FETCH_TIMEOUT_MS = 5000;
 
 export interface AgentCapability {
