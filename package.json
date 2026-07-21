@@ -8,7 +8,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "test": "vitest run"
+    "test": "vitest run",
+    "sync:agent-tiers": "node scripts/sync-agent-tiers.mjs"
   },
   "dependencies": {
     "@astrojs/rss": "^4.0.18",
