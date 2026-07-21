@@ -5,6 +5,20 @@ import Footer from "../components/Footer.astro";
 import ConversionCTA from "../components/ConversionCTA.astro";
 import { tiers, tierCount } from "../data/agent-tiers";
 
+// Kept in the frontmatter so the JSON braces render as text without escaping.
+// Mirrors /docs/mcp-server — if you change one, change both.
+const mcpConfig = `{
+  "mcpServers": {
+    "datanika": {
+      "command": "uvx",
+      "args": [
+        "datanika-mcp",
+        "--api-key", "etf_your_key_here"
+      ]
+    }
+  }
+}`;
+
 const competitors = [
   { feature: "/llms.txt discovery", datanika: true, fivetran: false, airbyte: false, stitch: false, hevo: false },
   { feature: "Agent strategy guide", datanika: true, fivetran: false, airbyte: false, stitch: false, hevo: false },
@@ -53,6 +67,74 @@ const competitors = [
         <a href="https://app.datanika.io/llms.txt" class="btn-secondary" target="_blank" rel="noopener">
           View /llms.txt
         </a>
+      </div>
+      <p class="mt-6 text-sm text-slate-500">
+        Using Claude or Cursor?
+        <a href="#mcp" class="text-violet-400 hover:underline">Install the MCP server &darr;</a>
+      </p>
+    </div>
+  </section>
+
+  <!-- MCP server — the no-code path onto the same API the tiers below describe. -->
+  <section id="mcp" class="py-20 scroll-mt-24">
+    <div class="max-w-5xl mx-auto px-6">
+      <div class="text-center">
+        <div class="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-4 py-1.5 text-sm text-cyan-300 mb-6">
+          <span>MCP</span>
+          <span class="text-cyan-500">|</span>
+          <span>25 tools</span>
+        </div>
+        <h2 class="text-3xl font-bold mb-4">Connect Claude in One Command</h2>
+        <p class="text-slate-400 max-w-2xl mx-auto mb-12">
+          <code class="text-violet-300 bg-slate-800 px-1.5 py-0.5 rounded text-sm">datanika-mcp</code> is a
+          Model Context Protocol server that exposes the API below as 25 typed tools. Your agent browses
+          connections, previews tables, compiles dbt models, and reads run logs without writing a single
+          HTTP call. Read-only by default.
+        </p>
+      </div>
+
+      <div class="grid lg:grid-cols-2 gap-8 items-start">
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/80 backdrop-blur overflow-hidden">
+          <div class="flex items-center gap-2 px-4 py-3 border-b border-slate-800 text-sm text-slate-500">
+            <span class="h-3 w-3 rounded-full bg-red-500/60"></span>
+            <span class="h-3 w-3 rounded-full bg-yellow-500/60"></span>
+            <span class="h-3 w-3 rounded-full bg-green-500/60"></span>
+            <span class="ml-2">claude_desktop_config.json</span>
+          </div>
+          <pre class="p-6 text-sm leading-relaxed overflow-x-auto"><code class="text-slate-300">{mcpConfig}</code></pre>
+        </div>
+
+        <div class="space-y-4">
+          <div class="rounded-xl border border-slate-800 bg-slate-900/50 backdrop-blur p-5">
+            <h3 class="font-semibold text-white mb-1">Read-only by default</h3>
+            <p class="text-sm text-slate-400">
+              17 read tools are always available. The 8 write tools — create resources, trigger runs —
+              refuse to execute until you start the server with
+              <code class="text-violet-300 bg-slate-800 px-1.5 py-0.5 rounded text-xs">--allow-write</code>.
+            </p>
+          </div>
+          <div class="rounded-xl border border-slate-800 bg-slate-900/50 backdrop-blur p-5">
+            <h3 class="font-semibold text-white mb-1">Runs on your machine</h3>
+            <p class="text-sm text-slate-400">
+              stdio transport, installed with
+              <code class="text-violet-300 bg-slate-800 px-1.5 py-0.5 rounded text-xs">uvx datanika-mcp</code>.
+              Your API key stays local and talks straight to your instance — self-hosted included.
+            </p>
+          </div>
+          <div class="rounded-xl border border-slate-800 bg-slate-900/50 backdrop-blur p-5">
+            <h3 class="font-semibold text-white mb-1">Works with any MCP client</h3>
+            <p class="text-sm text-slate-400">
+              Claude Desktop, Claude Code, and Cursor have copy-paste configs in the docs. Anything that
+              speaks MCP over stdio works the same way.
+            </p>
+          </div>
+          <div class="flex flex-col sm:flex-row gap-4 pt-2">
+            <a href="/docs/mcp-server" class="btn-primary">MCP Setup Guide</a>
+            <a href="https://pypi.org/project/datanika-mcp/" class="btn-secondary" target="_blank" rel="noopener">
+              View on PyPI
+            </a>
+          </div>
+        </div>
       </div>
     </div>
   </section>

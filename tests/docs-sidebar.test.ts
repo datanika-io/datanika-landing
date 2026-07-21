@@ -36,6 +36,7 @@ const EXPECTED_GROUPS = [
       { label: "Transformation Guide", href: "/docs/transformations-guide" },
       { label: "Data Catalog", href: "/docs/catalog" },
       { label: "AI Agents", href: "/docs/ai-agents" },
+      { label: "MCP Server", href: "/docs/mcp-server" },
     ],
   },
   {
@@ -123,10 +124,11 @@ describe("docs sidebar consistency", () => {
   });
 
   it("has all expected sidebar entries in DocsLayout source", () => {
-    // 19 = 20 original entries minus API Reference and API Keys (moved to
+    // 20 = 20 original entries minus API Reference and API Keys (moved to
     // /api/* in issue #105) plus AI Agents (added in issue #96, lives under
-    // Build because it's a how-to for building agent-driven automations).
-    expect(EXPECTED_SIDEBAR.length).toBe(19);
+    // Build because it's a how-to for building agent-driven automations)
+    // plus MCP Server (issue #254, same group and audience).
+    expect(EXPECTED_SIDEBAR.length).toBe(20);
   });
 
   it("groups sidebar entries into 5 named groups", () => {
