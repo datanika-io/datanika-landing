@@ -30,6 +30,15 @@ import {
     it stays in sync with the live API. See <a href="https://github.com/datanika-io/datanika-landing/issues/108" target="_blank" rel="noopener">issue #108</a> for background.
   </p>
 
+  <h2>Prefer tools over HTTP?</h2>
+  <p>
+    Everything on this page describes the REST surface an agent drives directly. If your agent runs in
+    Claude Desktop, Claude Code, or Cursor, the <a href="/docs/mcp-server">Datanika MCP server</a> wraps
+    that same surface as 25 typed tools — one <code>uvx datanika-mcp</code> line in your client config,
+    read-only by default. The rest of this page is still worth reading: the golden-path loop and error
+    codes apply either way.
+  </p>
+
   <h2>Discovery Documents</h2>
   <p>These require no authentication. Point your agent here first.</p>
 
@@ -173,6 +182,10 @@ Content-Type: application/json
     <a href="/docs/api-keys" class="block rounded-xl border border-slate-800 p-5 transition-colors hover:border-violet-500/50">
       <h3 class="!mt-0 text-white">API Keys</h3>
       <p class="text-sm text-slate-400 !mb-0">Create and manage API keys for agent access.</p>
+    </a>
+    <a href="/docs/mcp-server" class="block rounded-xl border border-slate-800 p-5 transition-colors hover:border-violet-500/50">
+      <h3 class="!mt-0 text-white">MCP Server</h3>
+      <p class="text-sm text-slate-400 !mb-0">Connect Claude Desktop, Claude Code, or Cursor — 25 tools, read-only by default.</p>
     </a>
     <a href="/ai-agents" class="block rounded-xl border border-slate-800 p-5 transition-colors hover:border-violet-500/50">
       <h3 class="!mt-0 text-white">AI Agents Landing Page</h3>

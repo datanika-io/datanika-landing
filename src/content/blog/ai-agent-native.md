@@ -136,7 +136,9 @@ For a head start, point the agent at our public [pipeline templates](/templates)
 
 ## What's Next
 
-We're working on agent-specific observability (tracking which pipelines were built by agents vs. humans) and a Claude Code MCP integration for building pipelines directly from your terminal.
+**Update:** the MCP server shipped. `uvx datanika-mcp` hands Claude Desktop, Claude Code, or Cursor 25 typed tools over the same API described above — read-only until you pass `--allow-write`. Setup is in the [MCP server guide](/docs/mcp-server/).
+
+Still on the list: agent-specific observability — tracking which pipelines were built by agents versus humans.
 
 ## Get Started
 
