@@ -193,6 +193,37 @@ describe("/ai-agents MCP section", () => {
   it("links to the setup guide", () => {
     expect(html).toContain('href="/docs/mcp-server"');
   });
+
+  describe("stdio-only claims stay scoped to the local path", () => {
+    // Product flagged (2026-07-21) that this section described stdio behaviour
+    // as if it were the whole product: "Runs on your machine", "your API key
+    // stays local", "anything that speaks MCP over stdio". All true of the
+    // local path, none true of the hosted endpoint, which was documented in
+    // #265. A positioning page asserting the wrong security model is worse
+    // than one that says nothing.
+
+    it("surfaces the hosted endpoint alongside the local one", () => {
+      expect(html).toContain("https://app.datanika.io/mcp");
+      expect(html).toMatch(/hosted/i);
+    });
+
+    it("does not claim the server runs on your machine unconditionally", () => {
+      expect(html).not.toContain("Runs on your machine");
+      expect(html).not.toMatch(/API key stays local and talks straight/i);
+    });
+
+    it("does not present stdio as the only transport", () => {
+      expect(html).not.toMatch(/Anything that\s+speaks MCP over stdio works the same way/i);
+    });
+
+    it("scopes the write opt-in to the local path", () => {
+      // Over /mcp there is no --allow-write and no scope that enables writes.
+      // Implying otherwise sends people down a path that cannot do what they
+      // came for. Mirrors the same guard on /docs/mcp-server.
+      expect(html).toMatch(/there is no opt-in/i);
+      expect(html).toContain("--allow-write");
+    });
+  });
 });
 
 describe("MCP discoverability across the site", () => {
