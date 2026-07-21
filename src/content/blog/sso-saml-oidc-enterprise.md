@@ -81,7 +81,7 @@ Two things are worth calling out about *how* this is done, not just what is chec
 Being direct about the boundaries:
 
 - **It is not SCIM.** We provision users on first login, but we do not yet sync deprovisioning from your IdP. When someone leaves, revoke them in your IdP — that stops new logins immediately — and remove their membership in Datanika to end existing sessions.
-- **It does not replace API keys.** Programmatic access — the [REST API](/api/reference), the [agent interfaces](/docs/ai-agents), CI jobs — authenticates with API keys, not SSO. Those are issued and revoked separately.
+- **It does not replace API keys.** Programmatic access — the [REST API](/api/reference), the [MCP server](/docs/mcp-server), CI jobs — authenticates with API keys, not SSO. Those are issued and revoked separately.
 - **One configuration per organization.** If you need multiple IdPs against a single org, that's not supported today.
 - **We do not sign our own authentication requests.** Some IdPs can be configured to require this. If yours does, it will need that requirement relaxed.
 
