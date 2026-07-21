@@ -31,6 +31,11 @@ function readFrontmatter(filename: string): Record<string, string> {
 const scheduledPosts = [
   { file: "billing-provider-migration.md", date: "2026-04-18", publishedAt: "2026-04-18", category: "engineering", titleContains: "Payment Provider" },
   { file: "temp-file-cleanup.md", date: "2026-04-21", publishedAt: "2026-04-21", category: "engineering", titleContains: "Filled My Disk" },
+  // Issue #257 / #258 — queued as a staggered pair so they don't land on the
+  // same day. The 5-day gap is the point: two posts published together read as
+  // a content dump, and the second one buries the first in the index and RSS.
+  { file: "sso-saml-oidc-enterprise.md", date: "2026-07-25", publishedAt: "2026-07-25", category: "product", titleContains: "SSO for Enterprise" },
+  { file: "why-we-built-datanika.md", date: "2026-07-30", publishedAt: "2026-07-30", category: "company", titleContains: "One Tool Instead of Five" },
 ];
 
 const publishedScheduledPosts = [
