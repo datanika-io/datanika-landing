@@ -62,11 +62,18 @@ describe("/docs/mcp-server", () => {
   });
 
   it("documents the PyPI install command", () => {
-    // The whole point of the page: `uvx datanika-mcp` works today (verified
-    // against PyPI 0.1.0). A git-subdirectory install string here would mean
-    // we regressed to the pre-PyPI instructions.
+    // The whole point of the local path: `uvx datanika-mcp` works today.
+    // A git-subdirectory install string here would mean we regressed to the
+    // pre-PyPI instructions.
     expect(html).toContain("uvx datanika-mcp");
     expect(html).not.toContain("#subdirectory=datanika-mcp");
+  });
+
+  it("shows the published package version, not a stale one", () => {
+    // The page prints the expected `--version` output. Printing a version
+    // nobody can reproduce is a small lie that erodes trust in the rest.
+    expect(html).toContain("datanika-mcp 0.2.0");
+    expect(html).not.toContain("datanika-mcp 0.1.0");
   });
 
   it("links to the PyPI project and the source", () => {
@@ -121,6 +128,44 @@ describe("/docs/mcp-server", () => {
   it("cross-links the agent docs and API key docs", () => {
     expect(html).toContain('href="/docs/ai-agents"');
     expect(html).toContain('href="/api/keys"');
+  });
+
+  describe("the hosted one-click path (core#394)", () => {
+    it("gives the hosted endpoint URL", () => {
+      // Verified end-to-end against production 2026-07-21. This URL is the
+      // entire setup step for the hosted path — if it drifts, the docs are a
+      // dead end rather than a guide.
+      expect(html).toContain("https://app.datanika.io/mcp");
+    });
+
+    it("frames both paths so neither reads as the only option", () => {
+      expect(html).toContain("Two ways to connect");
+      expect(html).toContain('id="one-click"');
+      expect(html).toContain('id="local"');
+    });
+
+    it("states that the hosted path never allows writes", () => {
+      // The load-bearing claim. services/mcp_routes.py builds every hosted
+      // session with allow_write=False, so --allow-write is local-only and a
+      // write-scoped key changes nothing over /mcp. Documenting this wrong
+      // sends people down a path that cannot do what they came for.
+      // Whitespace-tolerant: the source wraps these phrases across lines.
+      expect(html).toMatch(/hosted endpoint there is no opt-in/i);
+      expect(html).toMatch(/local-only\s+capability/i);
+    });
+
+    it("tells the reader how to revoke a one-click grant", () => {
+      // Consent mints an API key named "MCP: <app>"; that key is the off
+      // switch. A consent flow documented without its undo is half a flow.
+      expect(html).toContain("MCP: &lt;app name&gt;");
+      expect(html).toMatch(/Settings → API Keys/);
+    });
+
+    it("does not promise a browser UI path we cannot verify", () => {
+      // Client-side menu paths change without notice and we do not control
+      // them. Naming the clients is fine; scripting their UI is not.
+      expect(html).not.toMatch(/click\s+(Settings|Connectors)\s*(→|>)\s*Add/i);
+    });
   });
 });
 

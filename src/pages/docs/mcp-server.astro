@@ -106,11 +106,15 @@ const cursorConfig = `{
     }
   }
 }`;
+
+// The hosted endpoint. Verified end-to-end against production 2026-07-21:
+// discovery -> dynamic registration -> consent -> token -> tools/call.
+const HOSTED_URL = "https://app.datanika.io/mcp";
 ---
 
 <DocsLayout
   title="MCP Server"
-  description="Connect Datanika to Claude Desktop, Claude Code, or Cursor with the datanika-mcp server. 25 tools, read-only by default, installed with uvx datanika-mcp."
+  description="Connect Datanika to Claude, ChatGPT, or Cursor over MCP — one click with the hosted endpoint, or locally with uvx datanika-mcp. 25 tools, read-only by default."
 >
   <h1 class="gradient-text">MCP Server</h1>
   <p class="text-lg text-slate-400 mb-8">
@@ -120,15 +124,10 @@ const cursorConfig = `{
 
   <h2>What it is</h2>
   <p>
-    <code>datanika-mcp</code> is a <a href="https://modelcontextprotocol.io" target="_blank" rel="noopener">Model Context Protocol</a>
-    server that wraps the <a href="/api/reference">Datanika REST API</a> as {toolCount} typed tools.
+    Datanika speaks <a href="https://modelcontextprotocol.io" target="_blank" rel="noopener">Model Context Protocol</a>,
+    which exposes the <a href="/api/reference">Datanika REST API</a> as {toolCount} typed tools.
     Instead of teaching your agent to read an OpenAPI spec and hand-roll HTTP calls, you point an
-    MCP client at it once and the agent gets first-class tools it can call directly.
-  </p>
-  <p>
-    It runs locally over stdio: your MCP client starts the process, the process talks to your
-    Datanika instance over HTTPS with your API key. Nothing about your pipelines passes through us
-    beyond the instance you already use.
+    MCP client at Datanika once and the agent gets first-class tools it can call directly.
   </p>
   <p>
     The server is open source (AGPL-3.0) and lives in the
@@ -137,7 +136,131 @@ const cursorConfig = `{
     <a href="https://pypi.org/project/datanika-mcp/" target="_blank" rel="noopener">datanika-mcp</a>.
   </p>
 
-  <h2 id="requirements">Requirements</h2>
+  <h2 id="two-ways">Two ways to connect</h2>
+  <p>
+    Both expose the same tools against the same API. The difference is where the server runs and
+    how you authenticate.
+  </p>
+  <table>
+    <thead>
+      <tr><th></th><th>Hosted — one click</th><th>Local — stdio</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Setup</strong></td>
+        <td>Paste a URL, approve in your browser</td>
+        <td>Edit a config file, paste an API key</td>
+      </tr>
+      <tr>
+        <td><strong>Install</strong></td>
+        <td>Nothing</td>
+        <td><code>uv</code> / <code>uvx</code></td>
+      </tr>
+      <tr>
+        <td><strong>Auth</strong></td>
+        <td>OAuth 2.1 — no key handling</td>
+        <td>An API key you create and paste</td>
+      </tr>
+      <tr>
+        <td><strong>Writes</strong></td>
+        <td>Never — read-only, no opt-in</td>
+        <td>Opt in with <code>--allow-write</code></td>
+      </tr>
+      <tr>
+        <td><strong>Works with</strong></td>
+        <td>Clients that support remote MCP servers</td>
+        <td>Any MCP client, including self-hosted Datanika</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>
+    Use the hosted endpoint unless you need write access or you self-host. If you need an agent to
+    <em>create</em> things, that is the local path today — see
+    <a href="#read-only">read-only by default</a>.
+  </p>
+
+  <h2 id="one-click">Connect in one click (hosted)</h2>
+  <p>
+    Datanika hosts an MCP endpoint at <code>{HOSTED_URL}</code>. Add that URL wherever your client
+    accepts a remote MCP server or custom connector, and it will walk you through authorizing in the
+    browser. There is nothing to install and no API key to create, copy, or store in a config file.
+  </p>
+  <p>
+    Which clients offer this, and where the setting lives, changes quickly enough that we will not
+    try to describe their menus here. If yours has no remote-server option yet, use
+    <a href="#local">the local path</a> — same tools, same API.
+  </p>
+  <p>What happens after you paste the URL:</p>
+  <ol>
+    <li>
+      Your client discovers how to authenticate and <strong>registers itself</strong> automatically
+      (<a href="https://datatracker.ietf.org/doc/html/rfc7591" target="_blank" rel="noopener">RFC 7591</a>).
+      Nothing to pre-register on our side.
+    </li>
+    <li>
+      A browser tab opens on Datanika. <strong>If you are not signed in, you sign in first</strong> and
+      come straight back to the authorization request — you will not lose your place.
+    </li>
+    <li>
+      You get a consent screen naming <strong>the app that asked</strong>, <strong>which organization</strong>
+      it will read (switchable there if you belong to more than one), and exactly what it may do.
+      Approve or deny.
+    </li>
+    <li>
+      On approve, the browser hands a short-lived code back to your client, which exchanges it for an
+      access token. Tokens last an hour and refresh silently. You are done.
+    </li>
+  </ol>
+  <p>
+    The grant is bound to the organization that was active when you approved. To connect a different
+    organization, switch it on the consent screen before approving — or authorize again from the
+    other organization.
+  </p>
+
+  <h3 id="revoking">Revoking access</h3>
+  <p>
+    Approving mints an API key in your organization named <code>MCP: &lt;app name&gt;</code> — the
+    token your client holds maps to that key, so revoking the key ends the access immediately.
+    Find it under <em>Settings → API Keys</em>, next to any key you made by hand, showing the same
+    scope list and last-used time. See <a href="/api/keys">API Keys</a>.
+  </p>
+  <p>
+    Each authorization creates its own key, so re-connecting an app adds a second one rather than
+    replacing the first. If you have connected the same app a few times, revoke the older entries —
+    last-used tells you which one is live.
+  </p>
+
+  <h3 id="hosted-security">What the grant can and cannot do</h3>
+  <ul>
+    <li>
+      <strong>Read-only, with no opt-in.</strong> The grant carries the eight <code>*:read</code>
+      scopes and nothing else. The hosted endpoint refuses every write tool regardless of the key's
+      scopes, so an agent connected this way cannot create, change, delete, or trigger anything.
+    </li>
+    <li>
+      <strong>One organization.</strong> The organization comes from your signed-in session, not from
+      the link you clicked, so a crafted authorization URL cannot aim the grant somewhere else.
+    </li>
+    <li>
+      <strong>The app name is resolved by us</strong>, from what the client registered — not from the
+      URL. What you read on the consent screen is what you are approving.
+    </li>
+    <li>
+      <strong>PKCE is required</strong> (<code>S256</code>; <code>plain</code> is refused and not
+      advertised), authorization codes are single-use and expire in five minutes, and refresh tokens
+      rotate on every use.
+    </li>
+  </ul>
+
+  <h2 id="local">Run it locally (stdio)</h2>
+  <p>
+    The local path runs the server on your machine over stdio: your MCP client starts the process,
+    and the process talks to your Datanika instance over HTTPS with an API key you provide. Use it
+    when you need write access, when you self-host, or when your client does not support remote MCP
+    servers.
+  </p>
+
+  <h3 id="requirements">Requirements</h3>
   <ul>
     <li>
       <strong>A Datanika API key.</strong> Create one under <em>Settings → API Keys</em> in the app.
@@ -150,17 +273,17 @@ const cursorConfig = `{
     </li>
   </ul>
 
-  <h2 id="install">Install</h2>
+  <h3 id="install">Install</h3>
   <p>Check that it resolves and runs:</p>
   <pre><code>uvx datanika-mcp --version
-# datanika-mcp 0.1.0</code></pre>
+# datanika-mcp 0.2.0</code></pre>
   <p>
     That is the whole install. You will not normally run the command by hand — an MCP server
     speaks stdio, so your client launches it and owns the process. Running it in a terminal just
     prints a startup line and then waits for a client that will never speak.
   </p>
 
-  <h2 id="claude-desktop">Claude Desktop</h2>
+  <h3 id="claude-desktop">Claude Desktop</h3>
   <p>Edit your Claude Desktop config file:</p>
   <table>
     <thead>
@@ -187,7 +310,7 @@ const cursorConfig = `{
     <em>"preview the orders table on my production Postgres connection"</em>.
   </p>
 
-  <h2 id="claude-code">Claude Code</h2>
+  <h3 id="claude-code">Claude Code</h3>
   <p>One command, from the project you want the server available in:</p>
   <pre><code>claude mcp add datanika -- uvx datanika-mcp --api-key etf_your_key_here</code></pre>
   <p>
@@ -195,7 +318,7 @@ const cursorConfig = `{
     <code>--url https://your-instance.example.com</code> if you self-host.
   </p>
 
-  <h2 id="cursor">Cursor</h2>
+  <h3 id="cursor">Cursor</h3>
   <p>
     Add the server to <code>~/.cursor/mcp.json</code> for every project, or
     <code>.cursor/mcp.json</code> inside a single repository. This example configures it through
@@ -203,9 +326,9 @@ const cursorConfig = `{
   </p>
   <pre><code>{cursorConfig}</code></pre>
 
-  <h2 id="other-clients">Any other MCP client</h2>
+  <h3 id="other-clients">Any other MCP client</h3>
   <p>
-    The server is a plain stdio MCP server, so any compliant client works. Configure it to run
+    Locally it is a plain stdio MCP server, so any compliant client works. Configure it to run
     <code>uvx datanika-mcp</code> and pass configuration as flags or environment variables:
   </p>
   <table>
@@ -236,13 +359,20 @@ const cursorConfig = `{
 
   <h2 id="read-only">Read-only by default</h2>
   <p>
-    The server starts in read-only mode. All {readCount} read tools are available; the {writeCount} write
-    tools are registered but refuse to execute, returning an error that tells the agent write access is
-    disabled. An agent cannot create a connection, change a model, or trigger a run unless you opted in.
+    All {readCount} read tools are always available. The {writeCount} write tools are registered but
+    refuse to execute unless write access is enabled, returning an error rather than acting. An agent
+    cannot create a connection, change a model, or trigger a run by accident.
   </p>
   <p>This is deliberate. The common case — "help me understand and debug my pipelines" — needs no write access at all.</p>
+  <p>
+    <strong>Over the hosted endpoint there is no opt-in.</strong> Write tools always refuse there,
+    whatever scopes the underlying key has, so <code>--allow-write</code> below is a local-only
+    capability. If an agent connected through <a href="#one-click">one-click</a> tells you to
+    "restart the server with <code>--allow-write</code>", that advice is written for the local path
+    and there is no server for you to restart — connect locally instead.
+  </p>
 
-  <h3>Enabling writes</h3>
+  <h3>Enabling writes (local only)</h3>
   <p>Add <code>--allow-write</code> (or set <code>DATANIKA_ALLOW_WRITE=true</code>):</p>
   <pre><code>{claudeDesktopWriteConfig}</code></pre>
 
@@ -322,6 +452,15 @@ const cursorConfig = `{
     If you run Datanika behind a reverse proxy, use the public origin instead — the same one you
     open in a browser.
   </p>
+  <p>
+    Your instance also serves its own <code>/mcp</code> endpoint and authorization server, so the
+    <a href="#one-click">one-click flow</a> works against your own origin. It depends on your
+    deployment knowing its public URLs: set <code>OAUTH_REDIRECT_BASE_URL</code> and
+    <code>FRONTEND_URL</code> to the origins users actually reach, or the browser will be sent to
+    <code>localhost</code> partway through authorizing. Your proxy must also pass
+    <code>/mcp</code> to the backend and leave the response unbuffered — the transport holds a
+    long-lived stream.
+  </p>
 
   <h2 id="troubleshooting">Troubleshooting</h2>
   <table>
@@ -348,6 +487,22 @@ const cursorConfig = `{
       <tr>
         <td>Connection errors against a self-hosted instance</td>
         <td><code>--url</code> is pointing at the frontend rather than the API. Use the origin that serves <code>/api/v1</code>.</td>
+      </tr>
+      <tr>
+        <td>The one-click flow drops you on the dashboard instead of the consent screen</td>
+        <td>You signed in with Google or GitHub, which does not yet carry you back to the pending request. Ask your client to connect again — you are signed in now, so the second attempt goes straight to consent.</td>
+      </tr>
+      <tr>
+        <td>The consent screen says the request is incomplete or the app is not registered</td>
+        <td>The authorization link was truncated or hand-edited. Start the connection from the client again rather than reusing the URL — nothing was shared.</td>
+      </tr>
+      <tr>
+        <td>A hosted connection worked and then stopped</td>
+        <td>Its API key was revoked, which is the intended off switch. Check <em>Settings → API Keys</em> for the <code>MCP:</code> entry, then reconnect from the client to mint a new grant.</td>
+      </tr>
+      <tr>
+        <td>Write tools refuse over the hosted endpoint</td>
+        <td>Working as designed and not configurable — the hosted path is read-only. Use the <a href="#local">local server</a> with <code>--allow-write</code>.</td>
       </tr>
     </tbody>
   </table>

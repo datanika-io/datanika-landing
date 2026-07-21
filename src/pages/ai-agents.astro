@@ -33,7 +33,7 @@ const competitors = [
 
 <Layout
   title="AI Data Pipeline — Agent-Native ETL Tool | Datanika"
-  description="Build data pipelines with AI agents. Agent API with /llms.txt discovery, typed config schemas, compile-before-run validation, and idempotent retries. Works with Claude, GPT, or any LLM. Start free."
+  description="Build data pipelines with AI agents that write portable dbt-core, not vendor lock-in. Agent API with /llms.txt discovery, typed config schemas, compile-before-run validation, and a 25-tool MCP server. Start free."
   breadcrumbs={[
     { name: "Home", url: "/" },
     { name: "AI Agents", url: "/ai-agents" },
@@ -49,17 +49,18 @@ const competitors = [
     <div class="glow bg-cyan-600 -bottom-40 -right-40"></div>
     <div class="relative max-w-5xl mx-auto px-6 text-center">
       <div class="inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-4 py-1.5 text-sm text-violet-300 mb-6">
-        <span>New</span>
-        <span class="text-violet-500">|</span>
         <span>{tierCount}-Tier Agent API</span>
+        <span class="text-violet-500">|</span>
+        <span>Portable by default</span>
       </div>
       <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-6">
         <span class="gradient-text">AI Data Pipeline</span><br />
-        Built for Autonomous Agents
+        Your Agent Writes dbt, Not Lock-In
       </h1>
       <p class="text-lg sm:text-xl text-slate-400 max-w-3xl mx-auto leading-relaxed mb-8">
-        The first data pipeline platform designed for autonomous agents. Full OpenAPI spec, typed config schemas,
-        compile-before-run validation, and machine-readable discovery. Point your agent at
+        Datanika gives agents a full API to build pipelines — and runs
+        <strong class="text-slate-200">real dbt-core and dlt</strong> underneath. Everything your agent builds
+        here is a standard dbt project, so it runs anywhere dbt runs. Point your agent at
         <code class="text-violet-300 bg-slate-800 px-1.5 py-0.5 rounded text-base">/llms.txt</code> and go.
       </p>
       <div class="flex flex-col sm:flex-row gap-4 justify-center">
@@ -71,6 +72,59 @@ const competitors = [
       <p class="mt-6 text-sm text-slate-500">
         Using Claude or Cursor?
         <a href="#mcp" class="text-violet-400 hover:underline">Install the MCP server &darr;</a>
+      </p>
+    </div>
+  </section>
+
+  <!-- Portability — the lead argument. An agent generates lock-in faster than a human can. -->
+  <section id="portability" class="py-20 scroll-mt-24">
+    <div class="max-w-5xl mx-auto px-6">
+      <div class="text-center mb-14">
+        <h2 class="text-3xl font-bold mb-4">Lock-In Compounds at Machine Speed</h2>
+        <p class="text-slate-400 max-w-3xl mx-auto leading-relaxed">
+          A human analyst might write twenty models a quarter. An agent can write two hundred in an afternoon.
+          If those land in a proprietary transformation format, you didn't automate your data stack — you
+          automated your migration cost. The question to ask any agent-native platform is not how many tools
+          its API exposes. It's <em>what your agent leaves behind</em>.
+        </p>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-6 items-stretch">
+        <div class="rounded-2xl border border-emerald-500/25 bg-emerald-500/[0.04] backdrop-blur p-7">
+          <div class="text-xs font-semibold uppercase tracking-widest text-emerald-400 mb-3">What Datanika writes</div>
+          <h3 class="text-xl font-semibold text-white mb-3">A standard dbt project</h3>
+          <ul class="space-y-2.5 text-sm text-slate-300">
+            <li><span class="text-emerald-400 mr-2">&#10003;</span>SQL models with <code class="text-violet-300 bg-slate-800 px-1.5 py-0.5 rounded text-xs">ref()</code> and <code class="text-violet-300 bg-slate-800 px-1.5 py-0.5 rounded text-xs">source()</code></li>
+            <li><span class="text-emerald-400 mr-2">&#10003;</span>dbt tests, snapshots, seeds and packages</li>
+            <li><span class="text-emerald-400 mr-2">&#10003;</span>Extraction via <a href="https://dlthub.com" target="_blank" rel="noopener">dlt</a>, an open-source library</li>
+            <li><span class="text-emerald-400 mr-2">&#10003;</span>Runs under plain <code class="text-violet-300 bg-slate-800 px-1.5 py-0.5 rounded text-xs">dbt run</code> with no Datanika present</li>
+          </ul>
+          <p class="text-sm text-slate-400 mt-5 pt-5 border-t border-slate-800">
+            Your team already knows this tooling, and so does every model trained on public dbt code — which
+            is a large part of why agents are good at writing it.
+          </p>
+        </div>
+
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur p-7">
+          <div class="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-3">What a bespoke engine writes</div>
+          <h3 class="text-xl font-semibold text-white mb-3">Something only it can run</h3>
+          <ul class="space-y-2.5 text-sm text-slate-300">
+            <li><span class="text-slate-600 mr-2">&#10007;</span>Transformations in a vendor-specific DSL or JSON config</li>
+            <li><span class="text-slate-600 mr-2">&#10007;</span>Tests and lineage expressed in a private format</li>
+            <li><span class="text-slate-600 mr-2">&#10007;</span>Leaving means rewriting, not exporting</li>
+            <li><span class="text-slate-600 mr-2">&#10007;</span>Your agent has to learn the format before it's useful</li>
+          </ul>
+          <p class="text-sm text-slate-400 mt-5 pt-5 border-t border-slate-800">
+            "Open source" and "portable" are different claims. A platform can be fully open source and still
+            leave you with logic that runs nowhere else.
+          </p>
+        </div>
+      </div>
+
+      <p class="text-center text-slate-400 text-sm mt-10 max-w-3xl mx-auto">
+        This is also why we don't gate connectors by plan: all 36 are on every tier, including free.
+        We charge for volume, not for capability — see <a href="/pricing" class="text-violet-400 hover:underline">pricing</a>
+        and <a href="/docs/self-hosting" class="text-violet-400 hover:underline">self-hosting</a>, where the whole thing runs on your own infrastructure under AGPL.
       </p>
     </div>
   </section>
