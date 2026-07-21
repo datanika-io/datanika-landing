@@ -155,6 +155,6 @@ We also [compare to Fivetran](/compare/fivetran) and [Airbyte](/compare/airbyte)
 
 ## What's Next
 
-We're working on a Claude Code MCP server that wraps the whole 5-tier API so you can build pipelines directly from your terminal without any HTTP ceremony. If you'd like early access, [create a free account](https://app.datanika.io) and drop us a note — no credit card, 500 model runs/month, 10 GB/month of data.
+**Update:** the MCP server shipped. `uvx datanika-mcp` wraps the whole 5-tier API as 25 typed tools, so Claude Code, Claude Desktop, and Cursor can build pipelines without any HTTP ceremony — read-only until you pass `--allow-write`. Setup is in the [MCP server guide](/docs/mcp-server/). [Create a free account](https://app.datanika.io) for an API key — no credit card, 10 GB/month of data.
 
 The point isn't that an AI built a pipeline. The point is that the pipeline platform was built so an AI *could*.

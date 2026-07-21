@@ -1,0 +1,374 @@
+---
+import DocsLayout from "../../layouts/DocsLayout.astro";
+
+// Tool inventory mirrors datanika-core/datanika-mcp/src/datanika_mcp/server.py.
+// 17 read-only tools are always registered; the 8 write tools refuse to run
+// unless the server was started with --allow-write. If you add a tool in core,
+// add it here and bump the counts in tests/mcp-server.test.ts.
+const readTools = [
+  {
+    group: "Discover & introspect",
+    tools: [
+      { name: "get_agent_tiers", desc: "Fetch the 5-tier agent capability stack — what the API can do." },
+      { name: "get_connection_types", desc: "List every supported connector with its typed config schema." },
+      { name: "list_connections", desc: "List the connections in your organization." },
+      { name: "get_connection", desc: "Get one connection by ID." },
+      { name: "introspect_connection", desc: "List the schemas and tables inside a source connection." },
+      { name: "preview_connection", desc: "Read the first N rows of a source table (default 100)." },
+      { name: "query_connection", desc: "Run a single read-only SELECT against a source connection." },
+    ],
+  },
+  {
+    group: "Validate",
+    tools: [
+      { name: "compile_transformation", desc: "Compile a dbt model — resolves Jinja, ref(), source(). Nothing executes." },
+      { name: "preview_transformation", desc: "Compile and execute a model, returning preview rows." },
+    ],
+  },
+  {
+    group: "Observe",
+    tools: [
+      { name: "list_uploads", desc: "List uploads (extract + load jobs)." },
+      { name: "list_pipelines", desc: "List pipelines (dbt orchestration)." },
+      { name: "list_transformations", desc: "List dbt transformations." },
+      { name: "list_runs", desc: "List runs, filterable by target type and status." },
+      { name: "get_run", desc: "Get one run by ID." },
+      { name: "get_run_logs", desc: "Fetch the logs for a run — how the agent debugs a failure." },
+      { name: "list_catalog", desc: "List catalog entries (source tables and dbt models)." },
+      { name: "get_catalog_entry", desc: "Get one catalog entry by ID." },
+    ],
+  },
+];
+
+const writeTools = [
+  {
+    group: "Build",
+    tools: [
+      { name: "create_connection", desc: "Create a data connection from a type plus its config." },
+      { name: "create_upload", desc: "Create an upload (extract + load) between two connections." },
+      { name: "create_pipeline", desc: "Create a pipeline that runs a dbt command." },
+      { name: "create_transformation", desc: "Create a dbt SQL model with a materialization and target schema." },
+      { name: "bulk_import", desc: "Create connections, uploads, pipelines and models in one validated call." },
+    ],
+  },
+  {
+    group: "Execute",
+    tools: [
+      { name: "trigger_upload", desc: "Run an upload. Pass wait to block until it finishes." },
+      { name: "trigger_pipeline", desc: "Run a pipeline (dbt build/run/test)." },
+      { name: "trigger_transformation", desc: "Run a single transformation." },
+    ],
+  },
+];
+
+const readCount = readTools.reduce((n, g) => n + g.tools.length, 0);
+const writeCount = writeTools.reduce((n, g) => n + g.tools.length, 0);
+const toolCount = readCount + writeCount;
+
+// Config snippets live in the frontmatter so the braces don't need escaping
+// in the template. Astro renders `{snippet}` as escaped text.
+const claudeDesktopConfig = `{
+  "mcpServers": {
+    "datanika": {
+      "command": "uvx",
+      "args": [
+        "datanika-mcp",
+        "--url", "https://app.datanika.io",
+        "--api-key", "etf_your_key_here"
+      ]
+    }
+  }
+}`;
+
+const claudeDesktopWriteConfig = `{
+  "mcpServers": {
+    "datanika": {
+      "command": "uvx",
+      "args": [
+        "datanika-mcp",
+        "--url", "https://app.datanika.io",
+        "--api-key", "etf_your_key_here",
+        "--allow-write"
+      ]
+    }
+  }
+}`;
+
+const cursorConfig = `{
+  "mcpServers": {
+    "datanika": {
+      "command": "uvx",
+      "args": ["datanika-mcp"],
+      "env": {
+        "DATANIKA_URL": "https://app.datanika.io",
+        "DATANIKA_API_KEY": "etf_your_key_here"
+      }
+    }
+  }
+}`;
+---
+
+<DocsLayout
+  title="MCP Server"
+  description="Connect Datanika to Claude Desktop, Claude Code, or Cursor with the datanika-mcp server. 25 tools, read-only by default, installed with uvx datanika-mcp."
+>
+  <h1 class="gradient-text">MCP Server</h1>
+  <p class="text-lg text-slate-400 mb-8">
+    Give Claude, Cursor, or any MCP client direct access to your data pipelines —
+    {toolCount} tools over the Datanika API, read-only by default.
+  </p>
+
+  <h2>What it is</h2>
+  <p>
+    <code>datanika-mcp</code> is a <a href="https://modelcontextprotocol.io" target="_blank" rel="noopener">Model Context Protocol</a>
+    server that wraps the <a href="/api/reference">Datanika REST API</a> as {toolCount} typed tools.
+    Instead of teaching your agent to read an OpenAPI spec and hand-roll HTTP calls, you point an
+    MCP client at it once and the agent gets first-class tools it can call directly.
+  </p>
+  <p>
+    It runs locally over stdio: your MCP client starts the process, the process talks to your
+    Datanika instance over HTTPS with your API key. Nothing about your pipelines passes through us
+    beyond the instance you already use.
+  </p>
+  <p>
+    The server is open source (AGPL-3.0) and lives in the
+    <a href="https://github.com/datanika-io/datanika-core/tree/master/datanika-mcp" target="_blank" rel="noopener">datanika-core</a>
+    repository. It is published on PyPI as
+    <a href="https://pypi.org/project/datanika-mcp/" target="_blank" rel="noopener">datanika-mcp</a>.
+  </p>
+
+  <h2 id="requirements">Requirements</h2>
+  <ul>
+    <li>
+      <strong>A Datanika API key.</strong> Create one under <em>Settings → API Keys</em> in the app.
+      See <a href="/api/keys">API Keys</a> for scopes and rotation. Keys are prefixed <code>etf_</code>.
+    </li>
+    <li>
+      <strong><a href="https://docs.astral.sh/uv/" target="_blank" rel="noopener">uv</a></strong>, which ships
+      the <code>uvx</code> runner. It downloads and caches the server on first use — you do not need to
+      manage a Python environment yourself.
+    </li>
+  </ul>
+
+  <h2 id="install">Install</h2>
+  <p>Check that it resolves and runs:</p>
+  <pre><code>uvx datanika-mcp --version
+# datanika-mcp 0.1.0</code></pre>
+  <p>
+    That is the whole install. You will not normally run the command by hand — an MCP server
+    speaks stdio, so your client launches it and owns the process. Running it in a terminal just
+    prints a startup line and then waits for a client that will never speak.
+  </p>
+
+  <h2 id="claude-desktop">Claude Desktop</h2>
+  <p>Edit your Claude Desktop config file:</p>
+  <table>
+    <thead>
+      <tr><th>OS</th><th>Path</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>macOS</td>
+        <td><code>~/Library/Application Support/Claude/claude_desktop_config.json</code></td>
+      </tr>
+      <tr>
+        <td>Windows</td>
+        <td><code>%APPDATA%\Claude\claude_desktop_config.json</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>Add a <code>datanika</code> entry:</p>
+  <pre><code>{claudeDesktopConfig}</code></pre>
+
+  <p>
+    Restart Claude Desktop. The Datanika tools appear in the tools menu, and you can ask things like
+    <em>"list my connections and show me the last five failed runs"</em> or
+    <em>"preview the orders table on my production Postgres connection"</em>.
+  </p>
+
+  <h2 id="claude-code">Claude Code</h2>
+  <p>One command, from the project you want the server available in:</p>
+  <pre><code>claude mcp add datanika -- uvx datanika-mcp --api-key etf_your_key_here</code></pre>
+  <p>
+    Everything after <code>--</code> is the command Claude Code will launch. Add
+    <code>--url https://your-instance.example.com</code> if you self-host.
+  </p>
+
+  <h2 id="cursor">Cursor</h2>
+  <p>
+    Add the server to <code>~/.cursor/mcp.json</code> for every project, or
+    <code>.cursor/mcp.json</code> inside a single repository. This example configures it through
+    environment variables instead of flags — both work everywhere:
+  </p>
+  <pre><code>{cursorConfig}</code></pre>
+
+  <h2 id="other-clients">Any other MCP client</h2>
+  <p>
+    The server is a plain stdio MCP server, so any compliant client works. Configure it to run
+    <code>uvx datanika-mcp</code> and pass configuration as flags or environment variables:
+  </p>
+  <table>
+    <thead>
+      <tr><th>Flag</th><th>Environment variable</th><th>Default</th><th>Purpose</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>--url</code></td>
+        <td><code>DATANIKA_URL</code></td>
+        <td><code>https://app.datanika.io</code></td>
+        <td>Which Datanika instance to talk to</td>
+      </tr>
+      <tr>
+        <td><code>--api-key</code></td>
+        <td><code>DATANIKA_API_KEY</code></td>
+        <td>—  <em>(required)</em></td>
+        <td>Your API key. The server exits immediately without one</td>
+      </tr>
+      <tr>
+        <td><code>--allow-write</code></td>
+        <td><code>DATANIKA_ALLOW_WRITE</code></td>
+        <td><code>false</code></td>
+        <td>Enable the {writeCount} write tools. Set the variable to <code>true</code> or <code>1</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2 id="read-only">Read-only by default</h2>
+  <p>
+    The server starts in read-only mode. All {readCount} read tools are available; the {writeCount} write
+    tools are registered but refuse to execute, returning an error that tells the agent write access is
+    disabled. An agent cannot create a connection, change a model, or trigger a run unless you opted in.
+  </p>
+  <p>This is deliberate. The common case — "help me understand and debug my pipelines" — needs no write access at all.</p>
+
+  <h3>Enabling writes</h3>
+  <p>Add <code>--allow-write</code> (or set <code>DATANIKA_ALLOW_WRITE=true</code>):</p>
+  <pre><code>{claudeDesktopWriteConfig}</code></pre>
+
+  <h3>What still protects you</h3>
+  <ul>
+    <li>
+      <strong>The API key is the ceiling.</strong> The server has exactly the permissions of the key you
+      give it — it cannot reach another organization or escalate its own scope.
+    </li>
+    <li>
+      <strong><code>query_connection</code> is SELECT-only.</strong> Read-query enforcement happens
+      server-side in Datanika, not in the agent's prompt.
+    </li>
+    <li>
+      <strong>Compile before run.</strong> <code>compile_transformation</code> validates dbt SQL without
+      touching your warehouse, so an agent can check its own work cheaply before executing anything.
+    </li>
+    <li>
+      <strong>Everything is audited.</strong> Actions taken with an API key land in the
+      <a href="/docs/audit-log">audit log</a> like any other action.
+    </li>
+  </ul>
+  <p>
+    Use a dedicated key for agent access rather than reusing one from CI. If an agent does something
+    surprising, you can revoke that one key without breaking your other automations.
+  </p>
+
+  <h2 id="tools">The {toolCount} tools</h2>
+
+  <h3>Read-only — always available ({readCount})</h3>
+  {readTools.map((group) => (
+    <>
+      <h4>{group.group}</h4>
+      <table>
+        <thead>
+          <tr><th>Tool</th><th>What it does</th></tr>
+        </thead>
+        <tbody>
+          {group.tools.map((tool) => (
+            <tr>
+              <td><code>{tool.name}</code></td>
+              <td>{tool.desc}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </>
+  ))}
+
+  <h3>Requires <code>--allow-write</code> ({writeCount})</h3>
+  {writeTools.map((group) => (
+    <>
+      <h4>{group.group}</h4>
+      <table>
+        <thead>
+          <tr><th>Tool</th><th>What it does</th></tr>
+        </thead>
+        <tbody>
+          {group.tools.map((tool) => (
+            <tr>
+              <td><code>{tool.name}</code></td>
+              <td>{tool.desc}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </>
+  ))}
+
+  <h2 id="self-hosted">Self-hosted instances</h2>
+  <p>
+    Point <code>--url</code> at whatever origin serves <code>/api/v1</code>. With the default
+    <a href="/docs/self-hosting">Docker Compose setup</a> the API listens on port 8000:
+  </p>
+  <pre><code>uvx datanika-mcp --url http://localhost:8000 --api-key etf_your_key_here</code></pre>
+  <p>
+    If you run Datanika behind a reverse proxy, use the public origin instead — the same one you
+    open in a browser.
+  </p>
+
+  <h2 id="troubleshooting">Troubleshooting</h2>
+  <table>
+    <thead>
+      <tr><th>Symptom</th><th>Cause and fix</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>Error: --api-key or $DATANIKA_API_KEY is required</code></td>
+        <td>No key reached the process. Client config files do not inherit your shell environment — put the key in the config itself, as <code>args</code> or <code>env</code>.</td>
+      </tr>
+      <tr>
+        <td>The server does not appear in the client</td>
+        <td>Restart the client fully after editing its config, and confirm <code>uvx</code> is on the PATH the client sees. On macOS, apps launched from the Dock do not read your shell profile — an absolute path to <code>uvx</code> is the reliable fix.</td>
+      </tr>
+      <tr>
+        <td>Every tool returns 401</td>
+        <td>The key is wrong, revoked, or belongs to a different instance than <code>--url</code>.</td>
+      </tr>
+      <tr>
+        <td>Write tools say write access is required</td>
+        <td>Working as designed — the server is read-only. Add <code>--allow-write</code> and restart the client.</td>
+      </tr>
+      <tr>
+        <td>Connection errors against a self-hosted instance</td>
+        <td><code>--url</code> is pointing at the frontend rather than the API. Use the origin that serves <code>/api/v1</code>.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Next Steps</h2>
+  <div class="mt-4 grid gap-4 sm:grid-cols-2">
+    <a href="/docs/ai-agents" class="block rounded-xl border border-slate-800 p-5 transition-colors hover:border-violet-500/50">
+      <h3 class="!mt-0 text-white">AI Agents</h3>
+      <p class="text-sm text-slate-400 !mb-0">The REST path: discovery documents, the golden-path loop, and error handling.</p>
+    </a>
+    <a href="/api/keys" class="block rounded-xl border border-slate-800 p-5 transition-colors hover:border-violet-500/50">
+      <h3 class="!mt-0 text-white">API Keys</h3>
+      <p class="text-sm text-slate-400 !mb-0">Create, scope, and rotate the key the MCP server authenticates with.</p>
+    </a>
+    <a href="/api/reference" class="block rounded-xl border border-slate-800 p-5 transition-colors hover:border-violet-500/50">
+      <h3 class="!mt-0 text-white">API Reference</h3>
+      <p class="text-sm text-slate-400 !mb-0">Every endpoint each MCP tool calls underneath.</p>
+    </a>
+    <a href="/ai-agents" class="block rounded-xl border border-slate-800 p-5 transition-colors hover:border-violet-500/50">
+      <h3 class="!mt-0 text-white">AI-Agent Platform</h3>
+      <p class="text-sm text-slate-400 !mb-0">Why Datanika is built for autonomous agents, with a competitor comparison.</p>
+    </a>
+  </div>
+</DocsLayout>
