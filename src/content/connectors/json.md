@@ -5,7 +5,7 @@ source: "json"
 source_name: "JSON"
 category: "file"
 verified_by: "product-ui"
-verified_date: "2026-07-19"
+verified_date: "2026-07-22"
 related_use_cases: []
 related_comparisons:
   - "airbyte"
@@ -30,7 +30,7 @@ JSON is the format your APIs already speak, your logs already emit, and your Saa
 
 1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page.
 2. From the **type dropdown**, pick `json` (under the **File** category).
-3. **Connection Name** — give it a label, e.g. `api-logs-2026-04` or `segment-export-q1`.
+3. **Connection Name** — give it a label, e.g. `apilogs202604` or `segmentexportq1`. **The field strips anything that isn't a letter or a digit as you type**, so `api-logs-2026-04` becomes `apilogs202604`. Type the name you want to end up with.
 4. In the **Upload File** section, drag your `.json` / `.jsonl` / `.ndjson` file into the upload area, or click the **Upload File** button to browse. (There's no in-form preview — the file is parsed when the pipeline runs.)
 5. Click **Test Connection**, then **Create Connection**.
 
@@ -58,7 +58,7 @@ The classic use case: an upstream job writes one `.jsonl` file per hour or per d
 3. In Datanika, open **`/connections`**, pick `json` from the type dropdown.
 4. Skip the file upload area. Below it, you'll see the **Or enter file path** input — enter the path to the directory inside the container:
    - **Or enter file path** — `/var/datanika/inbox-json` (or a glob like `/var/datanika/inbox-json/*.jsonl`).
-5. Click **Test Connection**. Datanika checks the path is readable and previews the first matching file.
+5. Click **Test Connection** if you like, but it tells you nothing here: JSON connections always return *"Test not applicable for this type"*. It does not open the path, does not check it is readable, and does not preview the file — that only happens when the load runs. A wrong path looks exactly like a right one.
 6. Click **Create Connection**.
 
 > **Read-only mount.** Always mount source directories with `:ro`. Datanika never writes to a JSON source, and the read-only flag is an explicit guarantee for the upstream producer.
@@ -67,36 +67,34 @@ The classic use case: an upstream job writes one `.jsonl` file per hour or per d
 
 JSON connections are almost always one file (or one directory) → one table. Nested child tables (arrays of objects) land alongside the root table with a foreign key.
 
-1. Open the connection and click **Configure pipeline**.
-2. Pick the **destination warehouse** and a **target schema** — we recommend `raw_<source>` (e.g., `raw_segment`, `raw_mixpanel`, `raw_api_logs`).
-3. For the root table:
-   - **Write disposition**
-     - `replace` — drop and reload on every run. Use for full exports where each file is the new source of truth.
-     - `append` — add new rows. Use for log drops where each file is strictly new events.
-     - `merge` — upsert on primary key. Use when the same `id` can appear in multiple files with updated values.
-   - **Primary key** — pick a field that uniquely identifies a record (usually `id`, `uuid`, or `event_id`).
-4. For any **arrays of objects** Datanika discovered, a child table is configured automatically. You can disable it if you don't care about that branch of the tree.
-5. Save the pipeline configuration.
+The connection alone moves nothing — the thing that reads the JSON and writes it to your warehouse is an **upload**, and it lives on its own page rather than on the connection.
+
+1. Open **`/uploads`**. The **New Upload** form is rendered inline on the page.
+2. Fill in **Upload name** (letters and digits only — other characters are stripped as you type), an optional **Description**, the **Source connection** from Step 1, and the **Destination connection** to land in. **Batch size** defaults to 10,000 rows.
+3. Optionally set the **Schema Contract** — the **Tables** / **Columns** / **Data Type** dropdowns that decide whether a changed incoming shape evolves the destination or fails the run. This is the control that matters most for JSON, where upstream producers add fields without warning.
+4. Click **Create Upload**. It appears below with status `draft`.
+
+> **There is no write disposition, primary key, or target schema for a JSON source.** Datanika hides the **Load Mode** and **Write Disposition** selectors for every non-SQL source — files (`csv`, `json`, `parquet`, `s3`), SaaS APIs, MongoDB, Google Sheets, REST and Kafka. They appear only when the source is a SQL database. Nested arrays still land as child tables (see below), but you don't get per-table configuration on the way in; shape the result in a dbt model downstream.
 
 > **Flattening is opinionated.** Nested objects become `parent__child` columns. Arrays of scalars become typed array columns (`ARRAY<STRING>`, etc.) where the destination supports them, or comma-joined strings where it doesn't. Arrays of objects always become child tables — Datanika never embeds an object array in a single cell, because that's impossible to query efficiently in most warehouses.
 
 ## Step 3 — First run
 
-1. From the pipeline page, click **Run now**.
-2. Watch the **Runs** tab. JSON Lines streams incrementally, so even a 5 GB log file won't blow up memory — Datanika processes it in constant memory and emits rows as they're parsed.
-3. When the run finishes, open **Catalog → `<your warehouse>` → `raw_<source>`** and you'll see the root table plus any child tables created from nested arrays.
+1. On the **`/uploads`** row for your upload, click **Run**.
+2. Watch **`/runs`**. JSON Lines streams incrementally, so even a 5 GB log file won't blow up memory — Datanika processes it in constant memory and emits rows as they're parsed.
+3. When the run finishes, open **Catalog → `<your warehouse>`** and you'll see the root table plus any child tables created from nested arrays.
 4. Spot-check: open the source file in a text editor, copy one record, and verify its flattened columns landed correctly in the warehouse.
 
 ## Step 4 — Schedule it (directory watchers only)
 
 UI-uploaded files are one-shot. Scheduling is only meaningful for the directory-watcher flow from Step 1b.
 
-1. On the pipeline page, click **Schedule**.
-2. Match the cadence to the upstream producer:
-   - **Every 15 minutes** — for hot log directories where freshness matters.
-   - **Hourly** — the sweet spot for API export drops.
-   - **Daily at 03:00** — for end-of-day batch dumps from legacy systems.
-3. Choose a timezone and save.
+1. Open **`/schedules`** and use the inline **New Schedule** form. Set **Target type** to `upload` and **Target name** to the upload's saved name.
+2. Enter a five-field **Cron expression** matching the upstream producer — there is no cadence picker, and leaving the upload unscheduled is what "manual only" means here:
+   - `*/15 * * * *` — for hot log directories where freshness matters.
+   - `0 * * * *` — hourly, the sweet spot for API export drops.
+   - `0 3 * * *` — end-of-day batch dumps from legacy systems.
+3. Set the **Timezone** (defaults to `UTC`; the cron is evaluated in it) and click **Create Schedule**. The row lands as **Active** and can be paused per row.
 4. Wire up failure alerts in **Settings → Notifications** so malformed files or missing drops surface immediately.
 
 ## Troubleshooting

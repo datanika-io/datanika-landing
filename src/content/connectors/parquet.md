@@ -5,7 +5,7 @@ source: "parquet"
 source_name: "Parquet"
 category: "file"
 verified_by: "product-ui"
-verified_date: "2026-07-19"
+verified_date: "2026-07-22"
 related_use_cases: []
 related_comparisons:
   - "airbyte"
@@ -30,7 +30,7 @@ Apache Parquet is the "production-grade CSV" — a columnar file format with str
 
 1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page.
 2. From the **type dropdown**, pick `parquet` (under the **File** category).
-3. **Connection Name** — give it a label, e.g. `spark-exports-2026-04` or `dbt-snapshot-customers`.
+3. **Connection Name** — give it a label, e.g. `sparkexports202604` or `dbtsnapshotcustomers`. **The field strips anything that isn't a letter or a digit as you type**, so `spark-exports-2026-04` becomes `sparkexports202604`. Type the name you want to end up with.
 4. In the **Upload File** section, drag your `.parquet` file into the upload area, or click the **Upload File** button to browse. (There's no in-form preview — the file is read when the pipeline runs.)
 5. Click **Test Connection**, then **Create Connection**.
 
@@ -58,7 +58,7 @@ Use this for landing-zone patterns: a data lake, an hourly Spark export, a night
 3. In Datanika, open **`/connections`**, pick `parquet` from the type dropdown.
 4. Skip the file upload area. Below it, you'll see the **Or enter file path** input — enter the path to the directory inside the container:
    - **Or enter file path** — `/var/datanika/parquet-lake` (or a glob like `/var/datanika/parquet-lake/*.parquet`).
-5. Click **Test Connection**. Datanika opens the first matching file, reads the footer, and shows you the schema.
+5. Click **Test Connection** if you like, but it tells you nothing here: Parquet connections always return *"Test not applicable for this type"*. It does not open the file, read the footer, or show you the schema — that only happens when the load runs. A wrong path looks exactly like a right one.
 6. Click **Create Connection**.
 
 > **Partition columns are preserved.** If your glob uses Hive-style partitioning (`year=2026/month=04/...`), Datanika extracts the partition values from the file path and lands them as extra columns in the destination table. You don't lose your partition keys by loading into a flat warehouse table.
@@ -67,34 +67,34 @@ Use this for landing-zone patterns: a data lake, an hourly Spark export, a night
 
 Parquet config is the simplest of the three file formats because type inference is a non-problem and the schema is stable.
 
-1. Open the connection and click **Configure pipeline**.
-2. Pick the **destination warehouse** and a **target schema** — we recommend `raw_parquet` for ad-hoc files and `raw_<pipeline-name>` for recurring lake drops.
-3. For the load:
-   - **Write disposition**
-     - `replace` — drop and reload every run. Use for a single file that gets fully rewritten upstream.
-     - `append` — add new rows. Use for partitioned drops where each file is a new partition, strictly disjoint from the previous.
-     - `merge` — upsert on primary key. Use when the same record ID can appear in multiple files with updated values (e.g., CDC Parquet drops).
-4. Save the pipeline configuration.
+The connection alone moves nothing — the thing that reads the Parquet and writes it to your warehouse is an **upload**, and it lives on its own page rather than on the connection.
+
+1. Open **`/uploads`**. The **New Upload** form is rendered inline on the page.
+2. Fill in **Upload name** (letters and digits only — other characters are stripped as you type), an optional **Description**, the **Source connection** from Step 1, and the **Destination connection** to land in. **Batch size** defaults to 10,000 rows.
+3. Optionally set the **Schema Contract** — the **Tables** / **Columns** / **Data Type** dropdowns that decide whether a changed incoming shape evolves the destination or fails the run.
+4. Click **Create Upload**. It appears below with status `draft`.
+
+> **There is no write disposition or target schema for a Parquet source.** Datanika hides the **Load Mode** and **Write Disposition** selectors for every non-SQL source — files (`csv`, `json`, `parquet`, `s3`), SaaS APIs, MongoDB, Google Sheets, REST and Kafka. They appear only when the source is a SQL database. If you need `replace` vs `merge` semantics for a Parquet drop, express it in a dbt model downstream.
 
 > **Type mapping tip.** Parquet has types that don't exist in every warehouse — `INT96` timestamps, `FIXED_LEN_BYTE_ARRAY` with arbitrary lengths, decimal logical types with large precision. Datanika picks the closest destination type (e.g., `INT96` → `TIMESTAMP`); if you need a different mapping, cast the column downstream in a dbt model. Warehouses with weak type systems (SQLite, older MySQL) will lose some fidelity. Warehouses with strong type systems (BigQuery, Snowflake, DuckDB) preserve everything.
 
 ## Step 3 — First run
 
-1. From the pipeline page, click **Run now**.
+1. On the **`/uploads`** row for your upload, click **Run**.
 2. Parquet loads are **fast and memory-efficient** because Datanika streams row groups sequentially — a 2 GB compressed Parquet file (~8 GB raw) typically lands in under a minute, in under 500 MB of RAM.
-3. Check the **Runs** tab for per-row-group progress. You'll see row counts stream in as each group is decoded and written to the destination.
-4. When the run finishes, open **Catalog → `<your warehouse>` → `raw_parquet`** and browse the landed table. Spot-check by comparing `count(*)` against the Parquet footer's `num_rows` — they should match exactly, with no coercion losses.
+3. Watch **`/runs`** for progress. You'll see row counts stream in as each group is decoded and written to the destination.
+4. When the run finishes, open **Catalog → `<your warehouse>`** and browse the landed table. Spot-check by comparing `count(*)` against the Parquet footer's `num_rows` — they should match exactly, with no coercion losses.
 
 ## Step 4 — Schedule it (directory watchers only)
 
 Same logic as CSV and JSON — one-shot uploads don't need a schedule, directory watchers do.
 
-1. On the pipeline page, click **Schedule**.
-2. Cadence choices:
-   - **Every 15 minutes** — for a hot lake partition that's being appended to in real time.
-   - **Hourly** — typical Spark/dbt export cadence.
-   - **Daily at 03:00** — for nightly snapshot drops.
-3. Choose a timezone and save.
+1. Open **`/schedules`** and use the inline **New Schedule** form. Set **Target type** to `upload` and **Target name** to the upload's saved name.
+2. Enter a five-field **Cron expression** — there is no cadence picker, and leaving the upload unscheduled is what "manual only" means here:
+   - `*/15 * * * *` — for a hot lake partition that's being appended to in real time.
+   - `0 * * * *` — hourly, the typical Spark/dbt export cadence.
+   - `0 3 * * *` — nightly snapshot drops at 03:00.
+3. Set the **Timezone** (defaults to `UTC`; the cron is evaluated in it) and click **Create Schedule**. The row lands as **Active** and can be paused per row.
 4. Wire up failure alerts in **Settings → Notifications**. Schema drift in Parquet is rare (strict types prevent most of the CSV/JSON failure modes) but file corruption and missing partitions happen.
 
 ## Troubleshooting
