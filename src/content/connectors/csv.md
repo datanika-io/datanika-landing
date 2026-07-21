@@ -5,7 +5,7 @@ source: "csv"
 source_name: "CSV"
 category: "file"
 verified_by: "product-ui"
-verified_date: "2026-07-19"
+verified_date: "2026-07-22"
 related_use_cases: []
 related_comparisons:
   - "airbyte"
@@ -28,11 +28,11 @@ CSV is the universal escape hatch. Every SaaS tool exports it, every analyst has
 1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page — there's no separate "New Connection" button to click.
 2. From the **type dropdown** at the top of the form, pick `csv`. The form reshapes itself to show the CSV-specific fields.
 3. Fill in:
-   - **Connection Name** — a label you'll recognize, e.g. `q3-signups-export` or `customers-2026-04`. This is what shows up in pipeline pickers.
+   - **Connection Name** — a label you'll recognize, e.g. `q3signupsexport` or `customers202604`. This is what shows up in the source and destination pickers. **The field strips anything that isn't a letter or a digit as you type** — hyphens, underscores and spaces silently disappear, so `q3-signups-export` becomes `q3signupsexport`. Type the name you want to end up with.
    - **File source** — choose one of the two inputs on the form:
      - **Upload File** — drag a `.csv` file into the dashed drop zone, or click the **Upload File** button and pick it from the OS file picker. Datanika uploads the file to your org's storage and uses it as the connection source.
      - **Or enter file path** — fill this text input with a path the `datanika-app` container can reach (e.g., `/var/datanika/inbox/customers.csv`), or an object-store URI (e.g., `s3://my-bucket/exports/customers.csv`). Use this when the file isn't on your laptop — it's on a host-mounted volume, an NFS share, or object storage that the container has credentials for.
-4. Click **Test Connection**. For a **file path** input, Datanika checks it can reach the file; for an **uploaded file** the test may report *"Test not applicable for this type"* — that's expected, the file is validated when the pipeline runs.
+4. Click **Test Connection** if you like, but don't read anything into it: CSV connections always return *"Test not applicable for this type"*, **including when you gave it a file path**. The button does not check that the path exists or that the file is readable — the file is only validated when the load runs. A wrong path looks exactly like a right one here.
 5. Click **Create Connection**.
 
 > **Name + file is all you get on the form.** The CSV Connection form has exactly three inputs: Name, Upload File, and Or enter file path (plus a **Use raw JSON config** escape hatch for advanced cases). There's no delimiter picker, no encoding picker, no header-row override, and no column-type editor on the form itself — the loader handles all of that at pipeline runtime with best-effort detection. If you need per-column control over types, do it downstream in a dbt model.
@@ -41,36 +41,45 @@ CSV is the universal escape hatch. Every SaaS tool exports it, every analyst has
 
 ![Adding the CSV connection in Datanika](/docs/connectors/csv/02-add-connection.png)
 
-## Step 2 — Configure the pipeline
+## Step 2 — Create the upload
 
-CSV connections are usually one file → one table, so configuration is lighter than for databases. You still get to pick how loads behave.
+A connection on its own moves nothing. The thing that actually reads the CSV and writes it to your warehouse is an **upload**, and it lives on its own page — not on the connection.
 
-1. Open the connection you just created and click **Configure pipeline**.
-2. Pick the **destination warehouse** and a **target schema** — we recommend `raw_uploads` for ad-hoc files and `raw_<vendor>` for recurring drops from a specific source.
-3. For each file/table, pick a **Write disposition**:
-   - `replace` — drops and reloads the target table on every run. The right choice for "here's the latest export" files where the file is the source of truth.
-   - `append` — adds new rows to the existing table. Use when files are **disjoint** (e.g., one file per day, never overlapping).
-   - `merge` — upserts changed rows. Use when files overlap and you need dedup; requires a primary key.
-4. Save the pipeline configuration.
+1. Open **`/uploads`**. As with connections, the **New Upload** form is already rendered on the page.
+2. Fill in:
+   - **Upload name** — same normalization as connection names: letters and digits only.
+   - **Description** *(optional)* — worth writing, it's the only free text you get.
+   - **Source connection** — pick the CSV connection from Step 1. Entries read `15 — customerscsv (csv)`, i.e. id, name, type.
+   - **Destination connection** — the warehouse to land in. [DuckDB](/docs/connectors/duckdb) if you're following the zero-credentials path.
+   - **Batch size** *(optional)* — defaults to 10,000 rows.
+   - **Schema Contract** *(optional)* — three dropdowns, **Tables** / **Columns** / **Data Type**, that decide what happens when the incoming shape stops matching the destination. This is where you handle a CSV whose columns change upstream: leave it alone to let the schema evolve, or tighten it to make the run fail loudly instead of silently widening your table.
+3. Click **Create Upload**. It appears in the table below with status `draft`.
 
-> **Schema drift.** If the CSV's columns change between loads (a column added, removed, or renamed upstream), Datanika flags the drift on the next run rather than silently breaking. You can opt in to automatic schema evolution per pipeline if you trust the source — it's off by default.
+![Configuring the CSV upload in Datanika](/docs/connectors/csv/03-configure-upload.png)
+
+> **There is no write disposition, target schema, or table picker for a CSV source, and that is deliberate.** Datanika hides the **Load Mode** and **Write Disposition** selectors for every non-SQL source — files (`csv`, `json`, `parquet`, `s3`), SaaS APIs, MongoDB, Google Sheets, REST and Kafka. Those controls only appear when the source is a SQL database. A CSV lands as one table named after the upload; if you need `replace` vs `merge` semantics, do it in a dbt model downstream.
 
 ## Step 3 — First run
 
-1. From the pipeline page, click **Run now**.
-2. Watch the **Runs** tab. CSV loads are usually **fast**: Datanika streams rows directly into the destination, so a 100k-row file typically lands in seconds and a 10M-row file in a few minutes.
-3. When the run finishes, open **Catalog → `<your warehouse>` → `raw_uploads`** and browse the new table.
+1. On the **`/uploads`** row for your upload, click **Run**.
+2. Watch **`/runs`**. CSV loads are usually **fast**: Datanika streams rows directly into the destination, so a 100k-row file typically lands in seconds and a 10M-row file in a few minutes.
+3. When the run finishes, open **Catalog → `<your warehouse>`** and browse the new table.
 4. Spot-check by opening the CSV in a spreadsheet and comparing row counts and a handful of values — type inference failures usually show up as null or truncated cells and are easy to catch visually.
 
 ## Step 4 — Schedule it
 
-1. On the pipeline page, click **Schedule**.
-2. Pick a cadence that matches how the source file gets refreshed:
-   - **Hourly** — near-real-time for frequently refreshed files.
-   - **Every 6 hours** — typical vendor export cadence.
-   - **Daily at 03:00** — for nightly exports or end-of-day drops.
-   - **Manual only** — for one-shot ad-hoc loads. Perfectly reasonable for a file you uploaded once and only need to reload on demand.
-3. Choose a timezone and save.
+Schedules are their own page too, and they reference the upload **by name**.
+
+1. Open **`/schedules`**. The **New Schedule** form is rendered inline.
+2. Fill in:
+   - **Target type** — `upload` (the dropdown also offers pipelines and transformations).
+   - **Target name** — the upload's name exactly as it was saved, e.g. `customersdailyload`.
+   - **Cron expression** — a real five-field cron string. There is no cadence picker and no "manual only" option; leaving the upload unscheduled *is* manual-only. `0 3 * * *` is nightly at 03:00, `0 * * * *` hourly, `0 */6 * * *` every six hours.
+   - **Timezone** — defaults to `UTC`. The cron is evaluated in this zone.
+3. Click **Create Schedule**. It lands in the table as **Active**, with **Pause** available per row.
+
+![Scheduling the CSV upload in Datanika](/docs/connectors/csv/05-schedule.png)
+
 4. Wire up failure alerts in **Settings → Notifications** so schema drift or missing files surface immediately.
 
 ## Troubleshooting
@@ -91,9 +100,9 @@ CSV connections are usually one file → one table, so configuration is lighter 
 **Cause.** The date format in the CSV doesn't match the loader's recognized patterns (`YYYY-MM-DD`, ISO-8601, `MM/DD/YYYY`, `DD/MM/YYYY` disambiguated by sample, Unix epoch). Ambiguous formats (is `03/04/2026` March or April?) are parsed as string to avoid silent data corruption.
 **Fix.** Cast in a dbt model downstream — `to_date(<col>, 'DD/MM/YYYY')` or the equivalent for your warehouse. Don't try to force it at load time; dbt gives you full visibility into the parse rule.
 
-### Test Connection fails with "File not found" for a path input
-**Cause.** The `datanika-app` container can't see the path — usually because the file is on the host but not bind-mounted, or the mount point is wrong, or permissions block the read.
-**Fix.** Verify the path is visible from inside the container: `docker exec -it datanika-app ls -l /var/datanika/inbox/customers.csv`. If the file isn't there, fix the bind mount (`docker-compose.yml` → `volumes:`) and restart. If it IS there but Datanika still can't open it, check file permissions (`chmod 644 <file>`).
+### The run fails with "File not found", even though Test Connection was happy
+**Cause.** Test Connection never looked. It returns *"Test not applicable for this type"* for every file connector without touching the path, so a bad path is only discovered when the load runs. The usual reason the container can't see it: the file is on the host but not bind-mounted, the mount point is wrong, or permissions block the read.
+**Fix.** Verify the path from inside the container *before* running: `docker exec -it datanika-app ls -l /var/datanika/inbox/customers.csv`. If the file isn't there, fix the bind mount (`docker-compose.yml` → `volumes:`) and restart. If it IS there but Datanika still can't open it, check file permissions (`chmod 644 <file>`). Note the path must be reachable from the **worker** too, not just the web container — they are separate containers, and the load runs in the worker.
 
 ## Related
 

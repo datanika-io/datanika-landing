@@ -5,7 +5,7 @@ source: "duckdb"
 source_name: "DuckDB"
 category: "database"
 verified_by: "product-ui"
-verified_date: "2026-07-18"
+verified_date: "2026-07-22"
 related_use_cases: []
 related_comparisons:
   - "airbyte"
@@ -42,7 +42,7 @@ DuckDB stores its entire database in a single file. You just need to decide wher
 1. In Datanika, open `/connections`. The New Connection form is rendered inline on the page.
 2. From the type dropdown, pick `duckdb`.
 3. Fill in the form:
-   - **Connection Name** — a label you'll recognize, e.g. `duckdb-analytics`. This is what shows up in pipeline pickers.
+   - **Connection Name** — a label you'll recognize, e.g. `duckdbanalytics`. This is what shows up in the source and destination pickers. **The field strips anything that isn't a letter or a digit as you type**, so `duckdb-analytics` becomes `duckdbanalytics`. Type the name you want to end up with.
    - **Database Path** — the full path from Step 1, e.g. `/var/datanika/duckdb/analytics.duckdb`. You can also use `:memory:` for an ephemeral in-process database (data is lost when the worker exits — only useful for smoke tests).
 4. Click **Create Connection**. DuckDB will open (or create) the file on the first pipeline run.
 
@@ -50,26 +50,27 @@ DuckDB stores its entire database in a single file. You just need to decide wher
 
 > **"File not found"?** On self-hosted, the parent directory must exist *before* you hit Test connection. DuckDB creates the `.duckdb` file, but it does not create parent directories. Run the `mkdir -p` from Step 1 first, then retry.
 
-## Step 3 — Configure tables and schemas
+## Step 3 — Point a load at it
 
-DuckDB supports schemas just like a full warehouse — they're namespaces inside the file. Use them the same way you would in Postgres or Snowflake.
+DuckDB supports schemas just like a full warehouse — they're namespaces inside the file. What lands in them is an **upload**, configured on its own page rather than on the connection.
 
-1. Open the pipeline you want to land into DuckDB (or create a new one).
-2. Set the **destination** to the DuckDB connection you just made.
-3. Pick a **target schema**. We recommend one schema per source system so raw landings don't collide:
-   - `raw_postgres` for a Postgres source
-   - `raw_stripe` for a Stripe source
-   - `raw_csv` for CSV uploads
-4. For each table being loaded, the source connector's existing settings still apply — **write disposition** (`replace` or `merge`), **primary key**, **incremental cursor**. DuckDB honors all of them.
-5. Save the pipeline configuration.
+1. Open **`/uploads`**. The **New Upload** form is rendered inline on the page.
+2. Fill in **Upload name** (letters and digits only — other characters are stripped as you type) and an optional **Description**.
+3. Pick the **Source connection** you want to read from, and set the **Destination connection** to the DuckDB connection from Step 2. Entries read `14 — analyticswarehouse (duckdb)`, i.e. id, name, type.
+4. **Batch size** defaults to 10,000 rows. The **Schema Contract** dropdowns (**Tables** / **Columns** / **Data Type**) decide whether a changed incoming shape evolves the destination or fails the run.
+5. Click **Create Upload**. It appears below with status `draft`.
+
+![Configuring an upload that lands in DuckDB](/docs/connectors/duckdb/03-configure-upload.png)
+
+> **What you can configure depends on the *source*, not on DuckDB.** **Load Mode** and **Write Disposition** (`append` / `replace` / `merge`) appear only when the source is a SQL database. For a file, SaaS, MongoDB, Google Sheets, REST or Kafka source they are hidden, and the load's shape is whatever the source produces. DuckDB honours whatever it is handed either way.
 
 > **Tip.** DuckDB is single-writer by design. If you point five pipelines at the same `.duckdb` file and run them concurrently, four of them will queue waiting for the file lock. For parallel workloads, use one file per source or switch to PostgreSQL as the destination.
 
 ## Step 4 — First run
 
-1. From the pipeline page, click **Run now**.
-2. Watch the **Runs** tab. DuckDB loads are typically **fast** — seconds to minutes for anything under a few GB, because there's no network round-trip, no query planner warmup, and no cloud API rate limit.
-3. When the run finishes, open **Catalog → DuckDB → `raw_<source>`** and browse the landed tables. You can preview rows and see column types directly in Datanika's Data Catalog, no SQL required.
+1. On the **`/uploads`** row for your upload, click **Run**.
+2. Watch **`/runs`**. DuckDB loads are typically **fast** — seconds to minutes for anything under a few GB, because there's no network round-trip, no query planner warmup, and no cloud API rate limit.
+3. When the run finishes, open **Catalog → DuckDB** and browse the landed tables. You can preview rows and see column types directly in Datanika's Data Catalog, no SQL required.
 4. For a deeper inspection without leaving Datanika, open **SQL Editor**, point it at the DuckDB connection, and run `SHOW TABLES;` or `SELECT count(*) FROM raw_postgres.users;`. If you'd rather drive DuckDB from outside Datanika, run the Python engine that's already in the container:
    ```bash
    docker exec -it datanika-app python -c \
@@ -78,15 +79,14 @@ DuckDB supports schemas just like a full warehouse — they're namespaces inside
 
 ## Step 5 — Schedule it
 
-1. On the pipeline page, click **Schedule**.
-2. Pick a cadence. For DuckDB, common choices:
-   - **Hourly** — local analytics, internal dashboards pointed at the `.duckdb` file.
-   - **Daily** — end-of-day snapshots for a laptop analyst workflow.
-   - **Manual only** — ad-hoc loads during exploration or migration work. DuckDB's speed makes manual runs cheap.
-3. Choose a timezone and save.
+1. Open **`/schedules`** and use the inline **New Schedule** form. Set **Target type** to `upload` and **Target name** to the upload's saved name.
+2. Enter a five-field **Cron expression**. There is no cadence picker and no "manual only" option — an upload with no schedule *is* manual-only, which is the right choice for ad-hoc exploration or migration work, where DuckDB's speed makes manual runs cheap.
+   - `0 * * * *` — hourly, for local analytics and internal dashboards pointed at the `.duckdb` file.
+   - `0 3 * * *` — nightly at 03:00, for end-of-day snapshots in a laptop analyst workflow.
+3. Set the **Timezone** (defaults to `UTC`; the cron is evaluated in it) and click **Create Schedule**. The row lands as **Active**, with **Pause** available per row.
 4. Wire up failure alerts in **Settings → Notifications** so you hear about broken runs immediately.
 
-> **Concurrency warning.** If you schedule two pipelines pointing at the same `.duckdb` file on overlapping cadences, they will contend for the single-writer lock. Stagger their start times or split into multiple files.
+> **Concurrency warning.** If you schedule two loads pointing at the same `.duckdb` file on overlapping cadences, they will contend for the single-writer lock. Stagger their cron expressions or split into multiple files.
 
 ## Troubleshooting
 
