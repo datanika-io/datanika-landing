@@ -163,7 +163,7 @@ const HOSTED_URL = "https://app.datanika.io/mcp";
       </tr>
       <tr>
         <td><strong>Writes</strong></td>
-        <td>Never — read-only, no opt-in</td>
+        <td>Off unless you grant them at consent</td>
         <td>Opt in with <code>--allow-write</code></td>
       </tr>
       <tr>
@@ -174,9 +174,9 @@ const HOSTED_URL = "https://app.datanika.io/mcp";
     </tbody>
   </table>
   <p>
-    Use the hosted endpoint unless you need write access or you self-host. If you need an agent to
-    <em>create</em> things, that is the local path today — see
-    <a href="#read-only">read-only by default</a>.
+    Use the hosted endpoint unless you self-host. Both paths can create and trigger things; they
+    differ in how you say so — a browser approval on the hosted path, a command-line flag locally.
+    See <a href="#read-only">read-only by default</a>.
   </p>
 
   <h2 id="one-click">Connect in one click (hosted)</h2>
@@ -233,13 +233,26 @@ const HOSTED_URL = "https://app.datanika.io/mcp";
   <h3 id="hosted-security">What the grant can and cannot do</h3>
   <ul>
     <li>
-      <strong>Read-only, with no opt-in.</strong> The grant carries the eight <code>*:read</code>
-      scopes and nothing else. The hosted endpoint refuses every write tool regardless of the key's
-      scopes, so an agent connected this way cannot create, change, delete, or trigger anything.
+      <strong>Read-only unless you granted write.</strong> The grant carries exactly the scopes you
+      approved. A client that asks for nothing, or asks for something we don't recognise, gets the
+      eight <code>*:read</code> scopes — <em>silence is never read as consent to write</em>. Write
+      tools work only when the grant carries write scopes, and the refusal is enforced by the grant
+      itself rather than by the transport.
+    </li>
+    <li>
+      <strong>A pasted API key is always read-only here.</strong> If you authenticate to the hosted
+      endpoint with a bearer key instead of the browser flow, write tools stay off even when that
+      key's own scopes would permit writes. Nothing recorded a human decision, so this layer won't
+      infer one. (Your key's scopes still bound what the REST API will do with it.)
     </li>
     <li>
       <strong>One organization.</strong> The organization comes from your signed-in session, not from
       the link you clicked, so a crafted authorization URL cannot aim the grant somewhere else.
+    </li>
+    <li>
+      <strong>Revoking the key revokes the write access.</strong> The grant's authority travels with
+      the credential, so removing the key in <strong>Settings → API Keys</strong> ends it — there is
+      no second place to check.
     </li>
     <li>
       <strong>The app name is resolved by us</strong>, from what the client registered — not from the
@@ -365,14 +378,51 @@ const HOSTED_URL = "https://app.datanika.io/mcp";
   </p>
   <p>This is deliberate. The common case — "help me understand and debug my pipelines" — needs no write access at all.</p>
   <p>
-    <strong>Over the hosted endpoint there is no opt-in.</strong> Write tools always refuse there,
-    whatever scopes the underlying key has, so <code>--allow-write</code> below is a local-only
-    capability. If an agent connected through <a href="#one-click">one-click</a> tells you to
-    "restart the server with <code>--allow-write</code>", that advice is written for the local path
-    and there is no server for you to restart — connect locally instead.
+    How you enable them depends on which path you took, because the two record the decision
+    differently — <code>--allow-write</code> is a local-only flag, and the hosted endpoint has no
+    flag at all.
   </p>
 
-  <h3>Enabling writes (local only)</h3>
+  <h3 id="hosted-writes">Enabling writes on the hosted endpoint</h3>
+  <p>
+    Write access is granted <strong>at authorization time</strong>. When a client requests write
+    scopes, you approve them in the browser once, and the API key that approval mints carries exactly
+    those scopes. There is no runtime toggle and nothing to restart.
+  </p>
+  <p>Three properties are worth knowing before you approve one:</p>
+  <ul>
+    <li>
+      <strong>Silence is not consent.</strong> A client that omits <code>scope</code>, or asks for
+      something unrecognised, gets read-only. Clients omit it routinely, so this had to be the
+      default rather than an error.
+    </li>
+    <li>
+      <strong>A pasted API key stays read-only</strong> on this endpoint even if its scopes allow
+      writes — see <a href="#hosted-security">what the grant can and cannot do</a>.
+    </li>
+    <li>
+      <strong>There is no "may build but may not trigger" tier.</strong> The REST API gives
+      <code>create_upload</code> and <code>trigger_upload</code> the same <code>uploads:write</code>
+      scope, so a checkbox splitting them could only be enforced in the MCP layer while the
+      credential still permitted both. That is a control the token doesn't back, so we didn't ship
+      it. Spend is bounded by your key's rate limit and byte quota instead.
+    </li>
+  </ul>
+
+  <div class="not-prose my-6 rounded-xl border border-amber-500/30 bg-amber-500/5 p-5">
+    <p class="text-sm font-semibold text-amber-300 mb-1">Known gap: the consent screen still says read-only</p>
+    <p class="text-sm text-slate-300">
+      The approval screen currently renders a fixed <em>"Read-only — it cannot create, modify, delete
+      or trigger anything"</em> block regardless of the scopes actually being requested. The grant
+      itself is correct; the description of it is not. Until
+      <a href="https://github.com/datanika-io/datanika-core/issues/450" target="_blank" rel="noopener">core#450</a>
+      lands, <strong>check the scopes your client is requesting</strong> rather than relying on that
+      screen, and revoke the key in <strong>Settings → API Keys</strong> if a grant carries more than
+      you intended.
+    </p>
+  </div>
+
+  <h3>Enabling writes locally</h3>
   <p>Add <code>--allow-write</code> (or set <code>DATANIKA_ALLOW_WRITE=true</code>):</p>
   <pre><code>{claudeDesktopWriteConfig}</code></pre>
 

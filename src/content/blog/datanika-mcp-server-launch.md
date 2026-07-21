@@ -38,7 +38,7 @@ That last one changes the texture of debugging. "Why did last night's sync fail?
 
 The 8 write tools — create a connection, create a model, trigger a run — refuse to execute unless you have deliberately enabled them. How deliberate depends on which path you took:
 
-**Over the hosted endpoint, writes are simply not available.** There is no flag, no setting, and no scope on an API key that turns them on. An agent connected through the browser flow can read your pipelines and nothing more.
+**Over the hosted endpoint, write access is granted at authorization time.** When a client asks for write scopes, you approve them in the browser once, and the key that approval mints carries exactly those scopes. A client that asks for nothing gets read-only — silence is never read as consent to write — and a pasted API key stays read-only on that endpoint even if its own scopes would allow writes.
 
 **Locally, writes are an explicit opt-in:**
 
@@ -46,7 +46,7 @@ The 8 write tools — create a connection, create a model, trigger a run — ref
 uvx datanika-mcp --allow-write
 ```
 
-That asymmetry is deliberate. The one-click path is the one people will hand to an agent casually, so it is the one that cannot break anything.
+Either way the default is read-only, and enabling writes is a decision someone has to make on purpose rather than a setting that drifts on.
 
 This is not security theatre, but it is also not the whole story, so here is the honest version. Authentication is the real ceiling: the server can't reach another organization or escalate its own scope, `query_connection` is `SELECT`-only enforced server-side, and everything an agent does lands in your [audit log](/docs/audit-log). The read-only default just means the *common* case — "help me understand why this pipeline is broken" — needs no write access at all, so you shouldn't grant it.
 
