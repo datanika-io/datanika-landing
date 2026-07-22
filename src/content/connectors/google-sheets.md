@@ -64,34 +64,39 @@ Repeat for every spreadsheet you want to sync with this connection.
 
 ![Adding Google Sheets in Datanika](/docs/connectors/google-sheets/02-add-connection.png)
 
-## Step 3 — Configure sheets and schemas
+## Step 3 — Configure the upload
 
-1. Open the connection and click **Configure pipeline**.
-2. Pick the **destination warehouse** and a **target schema** — we recommend `raw_gsheets`.
-3. Datanika reads each worksheet tab as a separate table. Select which tabs to sync.
-4. For each tab, pick a **Write disposition**:
-   - `replace` — full refresh. The right default for most sheets, which are small enough to reload in seconds.
-   - `append` — adds new rows. Only use if the sheet is append-only and rows are never edited or deleted.
-   - `merge` — upserts. Requires a column that serves as a unique key. Sheets rarely have one naturally, so `replace` is usually simpler.
-5. Save the pipeline configuration.
+Extract-load is configured at **`/uploads`**, not on the connection. There is no "Configure pipeline" button — connection rows offer only Test / Edit / Copy / Delete, and `/pipelines` is the **dbt** builder, which is a different thing.
 
-> **Tip.** Datanika uses the first row of each tab as column headers. If your sheet doesn't have headers in row 1, add them — otherwise column names will be auto-generated (`column_0`, `column_1`, …).
+1. Open **`/uploads`**. The **New Upload** form is rendered inline on the page.
+2. Fill in **Upload name** (letters and digits only — anything else is stripped as you type, so `sheets-daily-sync` becomes `sheetsdailysync`) and an optional **Description**.
+3. Pick the **Source connection** and the **Destination connection** — the Google Sheets connection from Step 2 is the source. Each picker opens a dialog listing entries as `16 — myconnection (postgres)`, i.e. id, name, type.
+4. **Sheet Names (optional, comma-separated)** — an input placeholdered `Sheet1, Sheet2 (leave empty for all sheets)`. Name the tabs you want, comma-separated. Leave it empty to load **every** tab in the spreadsheet.
+5. Click **Create Upload**. It appears in the table below with status `draft`.
+
+> **There is no write disposition, load mode, source schema or table-name field for a Google Sheets source, and that is deliberate.** Those controls are rendered only when the source is a SQL database.
+
+> **Batch size** (default 10000) and the optional **Schema Contract** dropdowns — **Tables** / **Columns** / **Data Type** — are on every upload regardless of source. The contract decides whether a changed incoming shape evolves the destination or fails the run.
 
 ## Step 4 — First run
 
-1. Click **Run now**.
-2. Watch the **Runs** tab. Google Sheets syncs are fast — the API returns all rows in one batch for sheets under 10M cells, so most runs finish in seconds.
-3. If the service account doesn't have Viewer access to the spreadsheet, the run fails with a `403 Forbidden` or `The caller does not have permission` error. Go back to Step 1.5 and share the sheet.
-4. When the run finishes, open **Catalog → `<your warehouse>` → `raw_gsheets`** and browse. One table per worksheet tab.
-5. Spot-check: row counts should match the sheet minus the header row.
+1. On the **`/uploads`** row for your upload, click **Run**. There is no "Run now" on a pipeline page — the trigger lives on the upload's own row.
+2. Watch **`/runs`**. The run shows a status badge, start and finish timestamps and a **Rows** count; the **Logs** icon on the row opens the detail.
+3. When it finishes, open **Catalog** and browse the landed tables. The upload lands them in a schema **named after the upload** — `sheetsdailysync` creates schema `sheetsdailysync` in the destination, next to dlt's `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables. There is no target-schema field to choose.
+4. Spot-check the row count against the source. **Verify in the destination rather than trusting the status badge** — a green run means the load finished, not that it moved what you expected.
+
 ## Step 5 — Schedule it
 
-1. On the pipeline page, click **Schedule**.
-2. Pick a cadence. Sheets change at human speed:
-   - **Daily at 03:00** — standard for reporting dashboards.
-   - **Every 6 hours** — if the sheet is actively edited throughout the day.
-   - **Hourly** — rarely needed unless the sheet is updated programmatically (Apps Script, Zapier).
-3. Choose a **timezone** and save.
+Schedules live on their own page and reference the upload **by name**.
+
+1. Open **`/schedules`**. The **New Schedule** form is rendered inline.
+2. Fill in:
+   - **Target type** — `upload` (the dropdown also offers pipelines and transformations).
+   - **Target name** — the upload's name exactly as it was saved, e.g. `sheetsdailysync`.
+   - **Cron expression** — a real five-field cron string. There is no cadence picker and no "manual only" option: leaving the upload unscheduled *is* manual-only. `0 * * * *` hourly, `0 */6 * * *` every six hours, `0 3 * * *` nightly at 03:00.
+   - **Timezone** — defaults to `UTC`. The cron is evaluated in this zone, which matters for daily and weekly cadences.
+3. Click **Create Schedule**. The row lands as **Active**, with **Pause** available per row.
+4. Wire up failure alerts in **Settings → Notifications** so you hear about broken runs before your stakeholders do.
 
 ## Troubleshooting
 

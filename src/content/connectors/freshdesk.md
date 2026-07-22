@@ -48,41 +48,38 @@ Every Freshdesk agent has a personal API key. Authentication is HTTP Basic: the 
 
 ![Adding Freshdesk in Datanika](/docs/connectors/freshdesk/02-add-connection.png)
 
-## Step 3 — Configure resources and schemas
+## Step 3 — Configure the upload
 
-1. Open the connection and click **Configure pipeline**.
-2. Pick the **destination warehouse** and a **target schema** — we recommend `raw_freshdesk`.
-3. Resources typically include:
-   - `tickets` — the main table: status, priority, source, group, agent, requester, tags, custom fields
-   - `contacts` — requesters / end-users
-   - `companies` — customer org records
-   - `agents` — support staff
-   - `groups` — agent groups / queues
-   - `conversations` — replies and private notes per ticket
-   - `satisfaction_ratings` — CSAT responses
-4. For each resource, pick a **Write disposition**:
-   - `merge` — recommended for `tickets` and `conversations` (they change as tickets progress). Uses the ticket/record `id` as the primary key.
-   - `replace` — fine for reference tables like `agents`, `groups`, `companies`.
-5. Save.
+Extract-load is configured at **`/uploads`**, not on the connection. There is no "Configure pipeline" button — connection rows offer only Test / Edit / Copy / Delete, and `/pipelines` is the **dbt** builder, which is a different thing.
 
-> **Tip.** Freshdesk's ticket-list API only returns tickets **updated in the last 30 days** unless you page through history, and it caps at 300 pages. `merge` with an `updated_since` incremental cursor is the reliable way to keep a full ticket table fresh — start there rather than a wide `replace`.
+1. Open **`/uploads`**. The **New Upload** form is rendered inline on the page.
+2. Fill in **Upload name** (letters and digits only — anything else is stripped as you type, so `freshdesk-daily-sync` becomes `freshdeskdailysync`) and an optional **Description**.
+3. Pick the **Source connection** and the **Destination connection** — the Freshdesk connection from Step 2 is the source. Each picker opens a dialog listing entries as `16 — myconnection (postgres)`, i.e. id, name, type.
+4. Click **Create Upload**. It appears in the table below with status `draft`.
+
+> **⚠️ The form currently shows SQL fields that do nothing for Freshdesk.** You will see **Load Mode**, **Write Disposition**, **Source schema** and **Table names**, and you will *not* see the endpoint checkboxes that the other SaaS connectors get. That is a known UI bug ([core#503](https://github.com/datanika-io/datanika-core/issues/503)): Freshdesk is treated as a SaaS source at run time but was never added to the UI's SaaS list, so the form falls through to the SQL branch. **Leave those four fields alone** — the loader ignores them and pulls the connector's standard resources. The load itself is unaffected.
+
+> **Batch size** (default 10000) and the optional **Schema Contract** dropdowns — **Tables** / **Columns** / **Data Type** — are on every upload regardless of source. The contract decides whether a changed incoming shape evolves the destination or fails the run.
 
 ## Step 4 — First run
 
-1. Click **Run now**.
-2. Watch the **Runs** tab. Freshdesk returns up to 100 records per page. A few thousand tickets sync in a couple of minutes; large instances take longer on the first backfill.
-3. If the subdomain or key is wrong, the run fails with `401 Unauthorized`.
-4. When finished, open **Catalog → `raw_freshdesk`** and browse the tables.
+1. On the **`/uploads`** row for your upload, click **Run**. There is no "Run now" on a pipeline page — the trigger lives on the upload's own row.
+2. Watch **`/runs`**. The run shows a status badge, start and finish timestamps and a **Rows** count; the **Logs** icon on the row opens the detail.
+3. When it finishes, open **Catalog** and browse the landed tables. The upload lands them in a schema **named after the upload** — `freshdeskdailysync` creates schema `freshdeskdailysync` in the destination, next to dlt's `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables. There is no target-schema field to choose.
+4. Spot-check the row count against the source. **Verify in the destination rather than trusting the status badge** — a green run means the load finished, not that it moved what you expected.
 
 ## Step 5 — Schedule it
 
-1. On the pipeline page, click **Schedule**.
-2. Common cadences:
-   - **Hourly** — live support dashboards, SLA monitoring.
-   - **Every 6 hours** — daily support reports, manager dashboards.
-   - **Daily at 03:00** — weekly/monthly trend and CSAT analysis.
-3. Choose a **timezone** and save.
-4. Wire up failure alerts in **Settings → Notifications**.
+Schedules live on their own page and reference the upload **by name**.
+
+1. Open **`/schedules`**. The **New Schedule** form is rendered inline.
+2. Fill in:
+   - **Target type** — `upload` (the dropdown also offers pipelines and transformations).
+   - **Target name** — the upload's name exactly as it was saved, e.g. `freshdeskdailysync`.
+   - **Cron expression** — a real five-field cron string. There is no cadence picker and no "manual only" option: leaving the upload unscheduled *is* manual-only. `0 * * * *` hourly, `0 */6 * * *` every six hours, `0 3 * * *` nightly at 03:00.
+   - **Timezone** — defaults to `UTC`. The cron is evaluated in this zone, which matters for daily and weekly cadences.
+3. Click **Create Schedule**. The row lands as **Active**, with **Pause** available per row.
+4. Wire up failure alerts in **Settings → Notifications** so you hear about broken runs before your stakeholders do.
 
 ## Troubleshooting
 

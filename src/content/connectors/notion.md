@@ -51,34 +51,43 @@ Notion uses "internal integrations" for programmatic access. Each integration ge
 
 ![Adding the Notion connection in Datanika](/docs/connectors/notion/02-add-connection.png)
 
-## Step 3 — Configure databases and schemas
+## Step 3 — Configure the upload
 
-1. Open the connection you just created and click **Configure pipeline**.
-2. Pick the **destination warehouse** and a **target schema** — we recommend `raw_notion`.
-3. Datanika discovers all databases shared with the integration. Select which ones to sync.
-4. For each database, choose a **Write disposition**:
-   - `replace` — full refresh. Simple and correct for most Notion databases, which are typically under 100k rows.
-   - `merge` — upserts using Notion's page ID as the primary key. Use for large databases where full reloads are slow.
-5. Save the pipeline configuration.
+Extract-load is configured at **`/uploads`**, not on the connection. There is no "Configure pipeline" button — connection rows offer only Test / Edit / Copy / Delete, and `/pipelines` is the **dbt** builder, which is a different thing.
 
-> **Tip.** Notion property types (select, multi-select, relation, rollup, formula) are flattened into warehouse-compatible columns. Relation properties land as arrays of page IDs — join them with the related database's table in a dbt model.
+1. Open **`/uploads`**. The **New Upload** form is rendered inline on the page.
+2. Fill in **Upload name** (letters and digits only — anything else is stripped as you type, so `notion-daily-sync` becomes `notiondailysync`) and an optional **Description**.
+3. Pick the **Source connection** and the **Destination connection** — the Notion connection from Step 2 is the source. Each picker opens a dialog listing entries as `16 — myconnection (postgres)`, i.e. id, name, type.
+4. Because Notion is a SaaS source, the form shows **Select endpoints to load** — a checkbox per resource, **all ticked by default**. For Notion the list is `databases`, `pages`. Each endpoint becomes its own table in the destination.
+5. Click **Create Upload**. It appears in the table below with status `draft`.
+
+> **There is no write disposition, load mode, source schema or table-name field for a SaaS source, and that is deliberate.** Those controls are rendered only when the source is a SQL database. The endpoint checkboxes are the equivalent control here.
+
+> **⚠️ Unticking does not currently narrow the load.** The selection is stored as `endpoints` in the upload config, and the Notion loader does not read it — it pulls its full default resource set regardless ([core#532](https://github.com/datanika-io/datanika-core/issues/532)). Nothing fails; you simply get every table rather than the subset you picked. Drop what you do not need in a dbt model downstream until this is wired up.
+
+> **The endpoint list is a fixed default, not a live fetch.** It comes from Datanika's built-in map for Notion rather than from your account, so it does not reflect custom objects. Anything outside the list needs the [REST API connector](/docs/connectors/rest-api).
+
+> **Batch size** (default 10000) and the optional **Schema Contract** dropdowns — **Tables** / **Columns** / **Data Type** — are on every upload regardless of source. The contract decides whether a changed incoming shape evolves the destination or fails the run.
 
 ## Step 4 — First run
 
-1. From the pipeline page, click **Run now**.
-2. Watch the **Runs** tab. Notion's API returns 100 pages per request, so a 5k-row database typically finishes in under a minute.
-3. If a database wasn't shared with the integration (Step 1.5), it won't appear in the results — no error, just missing data. Go back to Notion and share it.
-4. When the run finishes, open **Catalog → `<your warehouse>` → `raw_notion`** and browse the tables. One table per database.
-5. Spot-check: compare row counts against the record count in Notion's database view.
+1. On the **`/uploads`** row for your upload, click **Run**. There is no "Run now" on a pipeline page — the trigger lives on the upload's own row.
+2. Watch **`/runs`**. The run shows a status badge, start and finish timestamps and a **Rows** count; the **Logs** icon on the row opens the detail.
+3. When it finishes, open **Catalog** and browse the landed tables. The upload lands them in a schema **named after the upload** — `notiondailysync` creates schema `notiondailysync` in the destination, next to dlt's `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables. There is no target-schema field to choose.
+4. Spot-check the row count against the source. **Verify in the destination rather than trusting the status badge** — a green run means the load finished, not that it moved what you expected.
+
 ## Step 5 — Schedule it
 
-1. On the pipeline page, click **Schedule**.
-2. Pick a cadence. Notion data changes at human speed:
-   - **Daily at 03:00** — standard for reporting dashboards.
-   - **Every 6 hours** — if your team updates Notion throughout the day and you need fresher data in the warehouse.
-   - **Hourly** — rarely needed unless Notion is updated programmatically (e.g., via Zapier or the Notion API).
-3. Choose a **timezone** and save.
-4. Wire up failure alerts in **Settings → Notifications**.
+Schedules live on their own page and reference the upload **by name**.
+
+1. Open **`/schedules`**. The **New Schedule** form is rendered inline.
+2. Fill in:
+   - **Target type** — `upload` (the dropdown also offers pipelines and transformations).
+   - **Target name** — the upload's name exactly as it was saved, e.g. `notiondailysync`.
+   - **Cron expression** — a real five-field cron string. There is no cadence picker and no "manual only" option: leaving the upload unscheduled *is* manual-only. `0 * * * *` hourly, `0 */6 * * *` every six hours, `0 3 * * *` nightly at 03:00.
+   - **Timezone** — defaults to `UTC`. The cron is evaluated in this zone, which matters for daily and weekly cadences.
+3. Click **Create Schedule**. The row lands as **Active**, with **Pause** available per row.
+4. Wire up failure alerts in **Settings → Notifications** so you hear about broken runs before your stakeholders do.
 
 ## Troubleshooting
 

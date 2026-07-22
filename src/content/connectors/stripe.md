@@ -52,42 +52,44 @@ Create a **dedicated restricted key** instead of reusing your secret key. Restri
 
 ![Adding the Stripe connection in Datanika](/docs/connectors/stripe/02-add-connection.png)
 
-## Step 3 — Configure resources and schemas
+## Step 3 — Configure the upload
 
-1. Open the connection you just created and click **Configure pipeline**.
-2. Pick the **destination warehouse** and a **target schema** — we recommend `raw_stripe` so it's obvious where the data came from. Keep raw landing data separated from modeled data.
-3. **Resources** — Datanika's Stripe source ships with the canonical set of endpoints:
-   - `customers` — one row per Customer object
-   - `charges` — every Charge, one row per event
-   - `invoices` — Invoices, usually the table your finance team cares most about
-   - `subscriptions` — current + historical Subscriptions
-   - `products` — your Product catalog
-   - `prices` — Prices attached to Products
+Extract-load is configured at **`/uploads`**, not on the connection. There is no "Configure pipeline" button — connection rows offer only Test / Edit / Copy / Delete, and `/pipelines` is the **dbt** builder, which is a different thing.
 
-   Pick the subset you need. Narrowing to 2–3 resources is the right move for the first run so you can validate the flow before pulling the full history.
-4. **Start date** (optional) — Stripe backfills can be large. If you only care about the last 12 months of data, set a `start_date` to cut down initial-run time and API quota usage. Leave it empty to backfill all history.
-5. **Write disposition** — `merge` is the right choice for every Stripe resource. Stripe records are identified by their `id` field, and `merge` upserts changed rows on each run (e.g. when an Invoice transitions from `open` to `paid`).
-6. Save the pipeline configuration.
+1. Open **`/uploads`**. The **New Upload** form is rendered inline on the page.
+2. Fill in **Upload name** (letters and digits only — anything else is stripped as you type, so `stripe-daily-sync` becomes `stripedailysync`) and an optional **Description**.
+3. Pick the **Source connection** and the **Destination connection** — the Stripe connection from Step 2 is the source. Each picker opens a dialog listing entries as `16 — myconnection (postgres)`, i.e. id, name, type.
+4. Because Stripe is a SaaS source, the form shows **Select endpoints to load** — a checkbox per resource, **all ticked by default**. For Stripe the list is `Subscription`, `Account`, `Coupon`, `Customer`, `Invoice`, `Product`, `Price`. Each endpoint becomes its own table in the destination. Stripe is currently the **only** connector where unticking actually narrows the load — see the note below.
+5. Click **Create Upload**. It appears in the table below with status `draft`.
 
-> **Tip.** Start with `customers` + `charges` on a test-mode account for the first run. Once you see the schemas land correctly in your warehouse, enable the full resource list against live data.
+> **There is no write disposition, load mode, source schema or table-name field for a SaaS source, and that is deliberate.** Those controls are rendered only when the source is a SQL database. The endpoint checkboxes are the equivalent control here.
+
+> **The selection is honoured here, but not everywhere.** Datanika stores it as `endpoints` in the upload config, and the Stripe loader is the one that reads it. For the other SaaS connectors the same checkboxes are currently inert ([core#532](https://github.com/datanika-io/datanika-core/issues/532)) — worth knowing if you switch connectors and expect the same behaviour.
+
+> **The endpoint list is a fixed default, not a live fetch.** It comes from Datanika's built-in map for Stripe rather than from your account, so it does not reflect custom objects. Anything outside the list needs the [REST API connector](/docs/connectors/rest-api).
+
+> **Batch size** (default 10000) and the optional **Schema Contract** dropdowns — **Tables** / **Columns** / **Data Type** — are on every upload regardless of source. The contract decides whether a changed incoming shape evolves the destination or fails the run.
 
 ## Step 4 — First run
 
-1. From the pipeline page, click **Run now**.
-2. Open the **Runs** tab to watch progress. You'll see per-resource row counts stream in as dlt extracts and loads each one. A typical first run against a small Stripe account is under 60 seconds; accounts with hundreds of thousands of charges can take several minutes.
-3. If the restricted key is missing a required `Read` permission, the run fails with a Stripe API error naming the resource and permission. Fix it in the Stripe dashboard (Step 1), re-save the key in Datanika (Step 2), and re-run.
-4. When the run finishes, open **Catalog → `<your warehouse>` → `raw_stripe`** and browse the landed tables. You should see one table per resource you enabled — `customers`, `charges`, `invoices`, and so on.
-5. Spot-check: `SELECT count(*) FROM raw_stripe.customers;` should roughly match the customer count shown in the Stripe dashboard for the same time window.
+1. On the **`/uploads`** row for your upload, click **Run**. There is no "Run now" on a pipeline page — the trigger lives on the upload's own row.
+2. Watch **`/runs`**. The run shows a status badge, start and finish timestamps and a **Rows** count; the **Logs** icon on the row opens the detail.
+3. When it finishes, open **Catalog** and browse the landed tables. The upload lands them in a schema **named after the upload** — `stripedailysync` creates schema `stripedailysync` in the destination, next to dlt's `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables. There is no target-schema field to choose.
+4. Spot-check the row count against the source. **Verify in the destination rather than trusting the status badge** — a green run means the load finished, not that it moved what you expected.
+
 ## Step 5 — Schedule it
 
-1. On the pipeline page, click **Schedule**.
-2. Pick a cadence. Stripe data changes continuously, so freshness usually matters:
-   - **Hourly** — revenue dashboards, finance-ops Slack alerts, near-real-time subscription metrics.
-   - **Every 6 hours** — weekly/monthly finance reporting, cohort analysis.
-   - **Daily at 03:00** — long-running warehouse batch jobs where Stripe is one of many sources.
-3. Choose a **timezone** — matters when your cadence is daily or weekly.
-4. Save. The next scheduled run appears in the **Runs** tab.
-5. Wire up failure alerts in **Settings → Notifications** so broken runs page your finance/data team before stakeholders notice the dashboards are stale.
+Schedules live on their own page and reference the upload **by name**.
+
+1. Open **`/schedules`**. The **New Schedule** form is rendered inline.
+2. Fill in:
+   - **Target type** — `upload` (the dropdown also offers pipelines and transformations).
+   - **Target name** — the upload's name exactly as it was saved, e.g. `stripedailysync`.
+   - **Cron expression** — a real five-field cron string. There is no cadence picker and no "manual only" option: leaving the upload unscheduled *is* manual-only. `0 * * * *` hourly, `0 */6 * * *` every six hours, `0 3 * * *` nightly at 03:00.
+   - **Timezone** — defaults to `UTC`. The cron is evaluated in this zone, which matters for daily and weekly cadences.
+3. Click **Create Schedule**. The row lands as **Active**, with **Pause** available per row.
+4. Wire up failure alerts in **Settings → Notifications** so you hear about broken runs before your stakeholders do.
+
 ## Troubleshooting
 
 ### `Stripe source requires 'api_key'`

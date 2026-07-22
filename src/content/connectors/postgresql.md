@@ -5,7 +5,7 @@ source: "postgresql"
 source_name: "PostgreSQL"
 category: "database"
 verified_by: "product-ui"
-verified_date: "2026-07-18"
+verified_date: "2026-07-22"
 related_use_cases:
   - "postgresql-to-bigquery"
   - "postgresql-to-snowflake"
@@ -70,38 +70,52 @@ Create a **dedicated read-only role** rather than reusing an existing login. Thi
 
 > **Test connection fails?** Jump to [Troubleshooting](#troubleshooting) — 90% of first-run failures are a missing `pg_hba.conf` rule, a firewall, or a TLS/SSL handshake issue on the Postgres side.
 
-## Step 3 — Configure tables and schemas
+## Step 3 — Configure the upload
 
-1. Open the connection you just created and click **Configure pipeline**.
-2. Pick the **destination warehouse** and a **target schema** — we recommend `raw_postgres` so it's obvious where the data came from. Don't reuse an analyst-facing schema; keep raw landing data separated from modeled data.
-3. Datanika introspects the source and shows every table you have `SELECT` on. For each table you want to sync:
-   - **Write disposition**
-     - `replace` — drops and reloads the target table on every run. Safe and simple; fine for small lookup tables.
-     - `merge` — upserts changed rows into the target. The right choice for anything that grows over time.
-   - **Primary key** — required for `merge`. Datanika will auto-detect it from Postgres metadata; override if you need to.
-   - **Incremental cursor** — a column that only ever increases. `updated_at` is the canonical choice; `id` works for append-only tables. Without a cursor, `merge` still works but every run is a full scan.
-4. Save the pipeline configuration.
+Extract-load is configured at **`/uploads`**, not on the connection. There is no "Configure pipeline" button — connection rows offer only Test / Edit / Copy / Delete, and `/pipelines` is the **dbt** builder, which is a different thing.
 
-> **Tip.** Start with 1–2 small tables to validate the flow end-to-end before enabling the full sync. A failed 8-hour run is much more expensive to debug than a failed 30-second one.
+1. Open **`/uploads`**. The **New Upload** form is rendered inline on the page.
+2. Fill in **Upload name** (letters and digits only — anything else is stripped as you type, so `customer-orders-sync` becomes `customerorderssync`) and an optional **Description**.
+3. Pick the **Source connection** — the Postgres connection from Step 2 — and the **Destination connection**. Each picker opens a dialog listing entries as `16 — docssamplesdb (postgres)`, i.e. id, name, type.
+4. Because the source is a SQL database, you also get:
+   - **Load Mode** — `full_database` (the default) or `single_table`.
+   - **Write Disposition** — `append` (the default), `replace`, or `merge`.
+   - **Source schema** *(optional)* — e.g. `public`. Leave blank to use the connection's default.
+   - **Table names** *(optional, comma-separated)* — restrict the sync to specific tables. Blank means every table the role can `SELECT`.
+   - **Batch size** *(optional, default 10000)*.
+   - **Schema Contract** *(optional)* — **Tables** / **Columns** / **Data Type** dropdowns controlling whether a changed incoming shape evolves the destination or fails the run.
+5. Click **Create Upload**. It appears in the table below with status `draft`.
+
+> **These controls exist only because the source is a SQL database.** Load Mode, Write Disposition, Source schema and Table names are hidden for every non-SQL source — files, SaaS APIs, MongoDB, Google Sheets, REST and Kafka. If you're following this guide with a file source, that section of the form will not be there.
+
+> **Tip.** Start with 1–2 small tables via **Table names** to validate the flow end-to-end before syncing everything. A failed 8-hour run is much more expensive to debug than a failed 30-second one.
 
 ## Step 4 — First run
 
-1. From the pipeline page, click **Run now**.
-2. Open the **Runs** tab to watch progress. You'll see per-table row counts stream in as dlt extracts and loads each one.
-3. A typical first run takes minutes for small OLTP databases and hours for databases in the hundreds of GB. Subsequent incremental runs are much faster because only new/changed rows move.
-4. When the run finishes, open **Catalog → `<your warehouse>` → `raw_postgres`** and browse the landed tables.
-5. Spot-check row counts against the source: `SELECT count(*) FROM <schema>.<table>;` on both sides should match (or differ by exactly the rows written during the sync window for incremental loads).
+1. On the **`/uploads`** row for your upload, click **Run**. (There is no "Run now" on a pipeline page — the button lives on the upload's own row.)
+2. Watch **`/runs`**. The run appears with a status badge, start and finish timestamps, and a **Rows** count; the **Logs** icon on the row opens the detail.
+
+![A completed first run in Datanika's run history](/docs/connectors/postgresql/04-first-run.png)
+
+3. A typical first run takes seconds for a small database and hours for one in the hundreds of GB. Subsequent incremental runs are much faster because only new/changed rows move.
+4. When the run finishes, open **Catalog** and browse the landed tables. The upload lands them in a schema named after the upload — an upload called `customerorderssync` creates schema `customerorderssync` in the destination, alongside dlt's own `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables.
+5. Spot-check row counts against the source: `SELECT count(*) FROM <schema>.<table>;` on both sides should match (or differ by exactly the rows written during the sync window for incremental loads). **Check this rather than trusting the status badge** — the Rows figure counts everything the run moved across all tables, so one number covers the whole sync.
 
 ## Step 5 — Schedule it
 
-1. On the pipeline page, click **Schedule**.
-2. Pick a cadence. Common choices:
-   - **Hourly** — operational dashboards, Slack alerts, reverse-ETL downstream.
-   - **Every 6 hours** — marketing, finance, product analytics where freshness beyond ~1 hour is fine.
-   - **Daily at 03:00** — warehouse-wide batch jobs that feed overnight reports.
-3. Choose a **timezone** — this matters when your cadence is daily or weekly. Datanika stores the schedule in the selected timezone, including DST rules.
-4. Save. The next scheduled run shows up immediately in the **Runs** tab.
-5. Wire up failure alerts in **Settings → Notifications** so you hear about broken runs before your stakeholders do. Slack, email, and webhooks are supported.
+Schedules live on their own page and reference the upload **by name**.
+
+1. Open **`/schedules`**. The **New Schedule** form is rendered inline.
+2. Fill in:
+   - **Target type** — `upload` (the dropdown also offers pipelines and transformations).
+   - **Target name** — the upload's name exactly as it was saved, e.g. `customerorderssync`.
+   - **Cron expression** — a real five-field cron string. There is no cadence picker, and no "manual only" option: leaving the upload unscheduled *is* manual-only. Common choices:
+     - `0 * * * *` — hourly, for operational dashboards, Slack alerts, reverse-ETL downstream.
+     - `0 */6 * * *` — every six hours, for marketing, finance and product analytics where freshness beyond ~1 hour is fine.
+     - `0 3 * * *` — nightly at 03:00, for warehouse-wide batch jobs feeding overnight reports.
+   - **Timezone** — defaults to `UTC`. The cron is evaluated in this zone, which matters for daily and weekly cadences.
+3. Click **Create Schedule**. The row lands as **Active**, with **Pause** available per row.
+4. Wire up failure alerts in **Settings → Notifications** so you hear about broken runs before your stakeholders do. Slack, email, and webhooks are supported.
 
 ## Troubleshooting
 

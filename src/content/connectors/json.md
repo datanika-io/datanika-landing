@@ -56,9 +56,10 @@ The classic use case: an upstream job writes one `.jsonl` file per hour or per d
    ```
 2. Restart the container to pick up the mount.
 3. In Datanika, open **`/connections`**, pick `json` from the type dropdown.
-4. Skip the file upload area. Below it, you'll see the **Or enter file path** input — enter the path to the directory inside the container:
-   - **Or enter file path** — `/var/datanika/inbox-json` (or a glob like `/var/datanika/inbox-json/*.jsonl`).
-5. Click **Test Connection** if you like, but it tells you nothing here: JSON connections always return *"Test not applicable for this type"*. It does not open the path, does not check it is readable, and does not preview the file — that only happens when the load runs. A wrong path looks exactly like a right one.
+4. Skip the file upload area. Below it, you'll see the **Or enter file path** input — enter the path to the **directory** inside the container:
+   - **Or enter file path** — `/var/datanika/inbox-json`. **A directory, not a file and not a glob.** Datanika matches `*.json` *inside* whatever you type, so a path ending in a filename or a pattern matches nothing.
+   - ⚠️ **`.jsonl` files do not match the default pattern.** The default is `*.json`. If your drops are `.jsonl` or `.ndjson`, set **File Pattern** on the upload (S3) or `file_glob` in the upload's **Use raw JSON config** — otherwise the run fails with "no files matched". The *reader* handles JSON Lines fine; it's the file pattern that has to agree.
+5. Click **Test Connection** if you like, but it tells you nothing here: JSON connections always return *"Test not applicable for this type"*. It does not open the path, check readability, or preview the file — that only happens when the load runs. The run itself now fails loudly if nothing matches, so a wrong path surfaces there rather than as a silent empty load.
 6. Click **Create Connection**.
 
 > **Read-only mount.** Always mount source directories with `:ro`. Datanika never writes to a JSON source, and the read-only flag is an explicit guarantee for the upstream producer.

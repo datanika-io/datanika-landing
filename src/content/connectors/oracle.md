@@ -63,30 +63,45 @@ Copy the host, port, service name, username, and password.
 
 ![Adding Oracle in Datanika](/docs/connectors/oracle/02-add-connection.png)
 
-## Step 3 — Configure tables and schemas
+## Step 3 — Configure the upload
 
-1. Open the connection and click **Configure pipeline**.
-2. Pick the **destination warehouse** and a **target schema** — we recommend `raw_oracle`.
-3. Select the tables to sync. Oracle stores schema (owner) and table names in **UPPERCASE** by default — pick them from the discovered list rather than typing them.
-4. For each table, choose a **Write disposition**:
-   - `merge` — recommended for tables that change, using the primary key plus an **incremental cursor** (a monotonic `NUMBER` id or a `DATE`/`TIMESTAMP` like `LAST_UPDATED`).
-   - `replace` — fine for small reference/lookup tables.
-5. Save.
+Extract-load is configured at **`/uploads`**, not on the connection. There is no "Configure pipeline" button — connection rows offer only Test / Edit / Copy / Delete, and `/pipelines` is the **dbt** builder, which is a different thing.
 
-> **Tip.** Start with one or two tables to validate the flow end-to-end before enabling a wide sync. Very wide `NUMBER` columns without precision/scale land as high-precision decimals — cast them in a dbt staging model if your warehouse is strict.
+1. Open **`/uploads`**. The **New Upload** form is rendered inline on the page.
+2. Fill in **Upload name** (letters and digits only — anything else is stripped as you type, so `finance-daily-sync` becomes `financedailysync`) and an optional **Description**.
+3. Pick the **Source connection** and the **Destination connection** — the Oracle connection from Step 2 is the source. Each picker opens a dialog listing entries as `16 — myconnection (postgres)`, i.e. id, name, type.
+4. Because the source is a SQL database, you also get:
+   - **Load Mode** — `full_database` (the default) or `single_table`.
+   - **Write Disposition** — `append` (the default), `replace`, or `merge`.
+   - **Source schema** *(optional)* — Set **Source schema** to the schema owner, which Oracle stores **upper-case** (e.g. `HR`). Table names are upper-cased for you.
+   - **Table names** *(optional, comma-separated)* — restrict the sync to specific tables. Blank means every table the role can read.
+5. Click **Create Upload**. It appears in the table below with status `draft`.
+
+> **These four controls exist only because the source is a SQL database.** They are hidden for every non-SQL source — files, SaaS APIs, MongoDB, Google Sheets, REST and Kafka.
+
+> **Tip.** Start with one or two small tables via **Table names** to validate the flow end-to-end before syncing everything. A failed 8-hour run is much more expensive to debug than a failed 30-second one.
+
+> **Batch size** (default 10000) and the optional **Schema Contract** dropdowns — **Tables** / **Columns** / **Data Type** — are on every upload regardless of source. The contract decides whether a changed incoming shape evolves the destination or fails the run.
 
 ## Step 4 — First run
 
-1. Click **Run now** and watch the **Runs** tab.
-2. When the run finishes, open **Catalog → `raw_oracle`** and browse the landed tables.
-3. Spot-check: `SELECT count(*) FROM raw_oracle.orders` should match `SELECT count(*) FROM sales.orders` in Oracle.
+1. On the **`/uploads`** row for your upload, click **Run**. There is no "Run now" on a pipeline page — the trigger lives on the upload's own row.
+2. Watch **`/runs`**. The run shows a status badge, start and finish timestamps and a **Rows** count; the **Logs** icon on the row opens the detail.
+3. When it finishes, open **Catalog** and browse the landed tables. The upload lands them in a schema **named after the upload** — `financedailysync` creates schema `financedailysync` in the destination, next to dlt's `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables. There is no target-schema field to choose.
+4. Spot-check the row count against the source. **Verify in the destination rather than trusting the status badge** — a green run means the load finished, not that it moved what you expected.
 
 ## Step 5 — Schedule it
 
-1. On the pipeline page, click **Schedule**.
-2. Pick a cadence — **hourly** for operational reporting, **every 6 hours** for finance dashboards, **daily at 03:00** for warehouse-wide batch loads.
-3. Choose a **timezone** and save.
-4. Wire up failure alerts in **Settings → Notifications**.
+Schedules live on their own page and reference the upload **by name**.
+
+1. Open **`/schedules`**. The **New Schedule** form is rendered inline.
+2. Fill in:
+   - **Target type** — `upload` (the dropdown also offers pipelines and transformations).
+   - **Target name** — the upload's name exactly as it was saved, e.g. `financedailysync`.
+   - **Cron expression** — a real five-field cron string. There is no cadence picker and no "manual only" option: leaving the upload unscheduled *is* manual-only. `0 * * * *` hourly, `0 */6 * * *` every six hours, `0 3 * * *` nightly at 03:00.
+   - **Timezone** — defaults to `UTC`. The cron is evaluated in this zone, which matters for daily and weekly cadences.
+3. Click **Create Schedule**. The row lands as **Active**, with **Pause** available per row.
+4. Wire up failure alerts in **Settings → Notifications** so you hear about broken runs before your stakeholders do.
 
 ## Troubleshooting
 

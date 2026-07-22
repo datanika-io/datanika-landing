@@ -67,38 +67,37 @@ Create a dedicated user for Datanika with only the permissions it needs.
 
 ![Adding Synapse in Datanika](/docs/connectors/synapse/02-add-connection.png)
 
-## Step 3 — Use Synapse as a pipeline destination
+## Step 3 — Use Synapse as a destination
 
-Synapse is a **destination** — you select it when configuring a pipeline's target.
+A destination is chosen per **upload**, at **`/uploads`** — not on the connection, and not on a pipeline page. There is no "Configure pipeline" button; `/pipelines` is the **dbt** builder, which is a different thing.
 
-1. Open or create a pipeline from any source (e.g., Salesforce, PostgreSQL, S3).
-2. In **Configure pipeline**, pick the Synapse connection as the **destination**.
-3. Choose a **target schema** — e.g., `raw_salesforce`. Datanika creates it if it doesn't exist.
-4. Configure write dispositions per table (`replace`, `append`, or `merge`).
-5. Save.
+1. Open **`/uploads`**. The **New Upload** form is rendered inline on the page.
+2. Fill in **Upload name** (letters and digits only — anything else is stripped as you type) and an optional **Description**.
+3. Pick the **Source connection** you want to read from, and set the **Destination connection** to the Synapse connection from Step 2. Each picker opens a dialog listing entries as `17 — mywarehouse (synapse)`, i.e. id, name, type.
+4. **What else the form shows depends on the *source*, not on Synapse.** **Load Mode**, **Write Disposition**, **Source schema** and **Table names** appear only when the source is a SQL database; for a file, SaaS, MongoDB, Google Sheets, REST or Kafka source they are hidden and the load takes whatever shape the source produces. Synapse honours what it is handed either way.
+5. Click **Create Upload**. It appears in the table below with status `draft`.
 
-> **Tip.** For large initial loads, use `replace` with heap tables (Synapse default). Add distribution keys and clustered columnstore indexes in a dbt model after the raw data lands — optimizing the raw layer prematurely slows down loads.
+> **Batch size** (default 10000) and the optional **Schema Contract** dropdowns — **Tables** / **Columns** / **Data Type** — are on every upload regardless of source. The contract decides whether a changed incoming shape evolves the destination or fails the run.
 
 ## Step 4 — First run
 
-1. Click **Run now**.
-2. Watch the **Runs** tab. Synapse load speed depends on the SQL pool's DWU (Data Warehouse Unit) scale — a DW100c handles modest loads; DW1000c+ handles large-scale ingestion.
-3. Common first-run failures:
-   - `Login failed` — wrong credentials or the login doesn't exist in the master database.
-   - `Cannot open database` — wrong pool name, or the pool is paused.
-   - `Network-related error` — firewall blocking. Add the client IP in the Synapse workspace firewall settings.
-4. When finished, query the tables in Synapse Studio, Azure Data Studio, or Datanika's SQL Editor.
+1. On the **`/uploads`** row for your upload, click **Run**. There is no "Run now" on a pipeline page — the trigger lives on the upload's own row.
+2. Watch **`/runs`**. The run shows a status badge, start and finish timestamps and a **Rows** count; the **Logs** icon on the row opens the detail.
+3. When it finishes, open **Catalog** and browse the landed tables. The upload lands them in a schema **named after the upload** — `warehousedailyload` creates schema `warehousedailyload` in the destination, next to dlt's `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables. There is no target-schema field to choose.
+4. Spot-check the row count against the source. **Verify in the destination rather than trusting the status badge** — a green run means the load finished, not that it moved what you expected.
 
 ## Step 5 — Schedule it
 
-1. On the pipeline page, click **Schedule**.
-2. Consider the SQL pool's auto-pause behavior:
-   - **Daily at 03:00** — standard for batch loads. Ensure the pool is active at run time (set an auto-resume schedule in Azure, or disable auto-pause).
-   - **Every 6 hours** — mid-frequency reporting. Auto-pause must be disabled or set to > 6 hours.
-   - **Hourly** — near-real-time. Only practical with auto-pause disabled and a DWU scale that handles continuous writes.
-3. Choose a **timezone** and save.
+Schedules live on their own page and reference the upload **by name**.
 
-> **Cost tip.** If you schedule daily loads, configure the SQL pool to auto-pause after 60 minutes of inactivity. The pool resumes automatically when Datanika connects, runs the load, then pauses again — you only pay for the active minutes.
+1. Open **`/schedules`**. The **New Schedule** form is rendered inline.
+2. Fill in:
+   - **Target type** — `upload` (the dropdown also offers pipelines and transformations).
+   - **Target name** — the upload's name exactly as it was saved, e.g. `warehousedailyload`.
+   - **Cron expression** — a real five-field cron string. There is no cadence picker and no "manual only" option: leaving the upload unscheduled *is* manual-only. `0 * * * *` hourly, `0 */6 * * *` every six hours, `0 3 * * *` nightly at 03:00.
+   - **Timezone** — defaults to `UTC`. The cron is evaluated in this zone, which matters for daily and weekly cadences.
+3. Click **Create Schedule**. The row lands as **Active**, with **Pause** available per row.
+4. Wire up failure alerts in **Settings → Notifications** so you hear about broken runs before your stakeholders do.
 
 ## Troubleshooting
 

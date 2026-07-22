@@ -70,12 +70,16 @@ DuckDB supports schemas just like a full warehouse — they're namespaces inside
 
 1. On the **`/uploads`** row for your upload, click **Run**.
 2. Watch **`/runs`**. DuckDB loads are typically **fast** — seconds to minutes for anything under a few GB, because there's no network round-trip, no query planner warmup, and no cloud API rate limit.
-3. When the run finishes, open **Catalog → DuckDB** and browse the landed tables. You can preview rows and see column types directly in Datanika's Data Catalog, no SQL required.
-4. For a deeper inspection without leaving Datanika, open **SQL Editor**, point it at the DuckDB connection, and run `SHOW TABLES;` or `SELECT count(*) FROM raw_postgres.users;`. If you'd rather drive DuckDB from outside Datanika, run the Python engine that's already in the container:
+
+![A completed load into DuckDB in Datanika's run history](/docs/connectors/duckdb/04-first-run.png)
+
+3. When the run finishes, open **Catalog** and browse the landed tables. Each lands in a schema **named after the upload**, and you can see column counts and last-run status directly in the Data Catalog, no SQL required.
+4. For a deeper inspection without leaving Datanika, open **SQL Editor**, point it at the DuckDB connection, and run `SHOW ALL TABLES;` or `SELECT count(*) FROM <upload_name>.<table>;`. If you'd rather drive DuckDB from outside Datanika, run the Python engine that's already in the container:
    ```bash
-   docker exec -it datanika-app python -c \
-     "import duckdb; con = duckdb.connect('/var/datanika/duckdb/analytics.duckdb'); print(con.execute('SHOW TABLES').fetchall())"
+   docker exec -it datanika-celery /app/.venv/bin/python -c \
+     "import duckdb; con = duckdb.connect('/var/datanika/duckdb/analytics.duckdb', read_only=True); print(con.execute('SHOW ALL TABLES').fetchall())"
    ```
+   > **Use `/app/.venv/bin/python`, not `python`.** The image's system interpreter has none of the app's packages and answers `ModuleNotFoundError: No module named 'duckdb'`, which looks like a far bigger problem than it is. Run it in the **worker** (`datanika-celery`): the load happens there, so that container is the one guaranteed to see the file. Open it `read_only=True` unless you mean to write — DuckDB is single-writer, and an open handle will block the next scheduled run.
 
 ## Step 5 — Schedule it
 

@@ -49,40 +49,43 @@ Atlassian API tokens authenticate as your user account with the same permissions
 
 ![Adding the Jira connection in Datanika](/docs/connectors/jira/02-add-connection.png)
 
-## Step 3 — Configure projects and schemas
+## Step 3 — Configure the upload
 
-1. Open the connection and click **Configure pipeline**.
-2. Pick the **destination warehouse** and a **target schema** — we recommend `raw_jira`.
-3. Datanika discovers all projects your account can access. Select which ones to sync.
-4. Resources typically include:
-   - `issues` — all issues across selected projects (the main table)
-   - `projects` — project metadata
-   - `users` — team members
-   - `sprints` — sprint definitions and dates
-   - `boards` — Scrum/Kanban board configuration
-5. For each resource, pick a **Write disposition**:
-   - `merge` — recommended for issues (they update frequently). Uses the issue key as the primary key.
-   - `replace` — fine for small reference tables like `projects` and `users`.
-6. Save.
+Extract-load is configured at **`/uploads`**, not on the connection. There is no "Configure pipeline" button — connection rows offer only Test / Edit / Copy / Delete, and `/pipelines` is the **dbt** builder, which is a different thing.
 
-> **Tip.** Start with one project to validate the schema, then expand. Large Jira instances with 100k+ issues can take several minutes on the first backfill.
+1. Open **`/uploads`**. The **New Upload** form is rendered inline on the page.
+2. Fill in **Upload name** (letters and digits only — anything else is stripped as you type, so `jira-daily-sync` becomes `jiradailysync`) and an optional **Description**.
+3. Pick the **Source connection** and the **Destination connection** — the Jira connection from Step 2 is the source. Each picker opens a dialog listing entries as `16 — myconnection (postgres)`, i.e. id, name, type.
+4. Because Jira is a SaaS source, the form shows **Select endpoints to load** — a checkbox per resource, **all ticked by default**. For Jira the list is `issues`, `users`, `workflows`, `projects`. Each endpoint becomes its own table in the destination.
+5. Click **Create Upload**. It appears in the table below with status `draft`.
+
+> **There is no write disposition, load mode, source schema or table-name field for a SaaS source, and that is deliberate.** Those controls are rendered only when the source is a SQL database. The endpoint checkboxes are the equivalent control here.
+
+> **⚠️ Unticking does not currently narrow the load.** The selection is stored as `endpoints` in the upload config, and the Jira loader does not read it — it pulls its full default resource set regardless ([core#532](https://github.com/datanika-io/datanika-core/issues/532)). Nothing fails; you simply get every table rather than the subset you picked. Drop what you do not need in a dbt model downstream until this is wired up.
+
+> **The endpoint list is a fixed default, not a live fetch.** It comes from Datanika's built-in map for Jira rather than from your account, so it does not reflect custom objects. Anything outside the list needs the [REST API connector](/docs/connectors/rest-api).
+
+> **Batch size** (default 10000) and the optional **Schema Contract** dropdowns — **Tables** / **Columns** / **Data Type** — are on every upload regardless of source. The contract decides whether a changed incoming shape evolves the destination or fails the run.
 
 ## Step 4 — First run
 
-1. Click **Run now**.
-2. Watch the **Runs** tab. Jira's API paginates at 100 issues per request. A 10k-issue project takes 1–2 minutes; 100k+ issues can take 10+ minutes.
-3. If the API token or email is wrong, the run fails with `401 Unauthorized`. Double-check both in the connection settings.
-4. When finished, open **Catalog → `raw_jira`** and browse. The `issues` table contains one row per issue with columns for summary, status, assignee, reporter, priority, created, updated, story points, sprint, epic, labels, and custom fields.
-5. Spot-check: `SELECT count(*) FROM raw_jira.issues WHERE project_key = 'ENG'` should roughly match the issue count in Jira's project sidebar.
+1. On the **`/uploads`** row for your upload, click **Run**. There is no "Run now" on a pipeline page — the trigger lives on the upload's own row.
+2. Watch **`/runs`**. The run shows a status badge, start and finish timestamps and a **Rows** count; the **Logs** icon on the row opens the detail.
+3. When it finishes, open **Catalog** and browse the landed tables. The upload lands them in a schema **named after the upload** — `jiradailysync` creates schema `jiradailysync` in the destination, next to dlt's `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables. There is no target-schema field to choose.
+4. Spot-check the row count against the source. **Verify in the destination rather than trusting the status badge** — a green run means the load finished, not that it moved what you expected.
+
 ## Step 5 — Schedule it
 
-1. On the pipeline page, click **Schedule**.
-2. Jira data changes throughout the workday:
-   - **Hourly** — sprint dashboards, standup metrics, real-time velocity tracking.
-   - **Every 6 hours** — weekly reporting, manager dashboards.
-   - **Daily at 03:00** — batch analytics, historical trend analysis.
-3. Choose a **timezone** and save.
-4. Wire up failure alerts in **Settings → Notifications**.
+Schedules live on their own page and reference the upload **by name**.
+
+1. Open **`/schedules`**. The **New Schedule** form is rendered inline.
+2. Fill in:
+   - **Target type** — `upload` (the dropdown also offers pipelines and transformations).
+   - **Target name** — the upload's name exactly as it was saved, e.g. `jiradailysync`.
+   - **Cron expression** — a real five-field cron string. There is no cadence picker and no "manual only" option: leaving the upload unscheduled *is* manual-only. `0 * * * *` hourly, `0 */6 * * *` every six hours, `0 3 * * *` nightly at 03:00.
+   - **Timezone** — defaults to `UTC`. The cron is evaluated in this zone, which matters for daily and weekly cadences.
+3. Click **Create Schedule**. The row lands as **Active**, with **Pause** available per row.
+4. Wire up failure alerts in **Settings → Notifications** so you hear about broken runs before your stakeholders do.
 
 ## Troubleshooting
 

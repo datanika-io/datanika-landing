@@ -65,45 +65,43 @@ GitHub has two kinds of tokens: **classic** PATs (broad, all-or-nothing scopes) 
 
 > **All three fields are required.** The shipped form requires **Access Token**, **Owner / Organization**, and **Repository** — there's no anonymous/public-repo mode in the structured form. Always use a PAT.
 
-## Step 3 — Configure resources and schemas
+## Step 3 — Configure the upload
 
-GitHub exposes many resource types. For each repo you connect, you can pick which ones to sync.
+Extract-load is configured at **`/uploads`**, not on the connection. There is no "Configure pipeline" button — connection rows offer only Test / Edit / Copy / Delete, and `/pipelines` is the **dbt** builder, which is a different thing.
 
-1. Open the connection and click **Configure pipeline**.
-2. Pick the **destination warehouse** and a **target schema**. Recommended: `raw_github`.
-3. Select the resources to sync:
-   - **`repositories`** — basic repo metadata (stars, forks, topics, default branch). Small, always sync. Incremental via `updated_at`.
-   - **`issues`** — all issues including pull requests (GitHub internally models PRs as a kind of issue). Incremental via `updated_at`.
-   - **`pull_requests`** — full PR details beyond the issue-level summary (commits, reviews, mergeable state). Heavier than `issues`; incremental via `updated_at`.
-   - **`commits`** — commits on the default branch. Full fetch on first run; incremental by `sha` thereafter. Can be large on active repos.
-   - **`releases`** — tagged releases with assets.
-   - **`stargazers`** — users who starred the repo, with star timestamp. Useful for growth charting. Append-only.
-   - **`workflow_runs`** — GitHub Actions runs. Incremental via `updated_at`. Grows fast — sync only if you care about CI analytics.
-4. For each resource, pick **write disposition**:
-   - `merge` — recommended for everything with `updated_at`. Upserts on the GitHub ID.
-   - `replace` — safe for small resources like `repositories`.
-   - `append` — use for immutable streams like `stargazers`.
-5. Save the pipeline configuration.
+1. Open **`/uploads`**. The **New Upload** form is rendered inline on the page.
+2. Fill in **Upload name** (letters and digits only — anything else is stripped as you type, so `github-daily-sync` becomes `githubdailysync`) and an optional **Description**.
+3. Pick the **Source connection** and the **Destination connection** — the GitHub connection from Step 2 is the source. Each picker opens a dialog listing entries as `16 — myconnection (postgres)`, i.e. id, name, type.
+4. Because GitHub is a SaaS source, the form shows **Select endpoints to load** — a checkbox per resource, **all ticked by default**. For GitHub the list is `issues`, `pulls`, `commits`, `stargazers`. Each endpoint becomes its own table in the destination.
+5. Click **Create Upload**. It appears in the table below with status `draft`.
 
-> **Rate limit math.** The authenticated REST limit is 5,000 requests per hour. Syncing all issues + PRs + commits on a moderately active repo typically uses a few hundred requests on a first run and a handful on each incremental run. You're very unlikely to hit the limit unless you're syncing hundreds of large repos.
+> **There is no write disposition, load mode, source schema or table-name field for a SaaS source, and that is deliberate.** Those controls are rendered only when the source is a SQL database. The endpoint checkboxes are the equivalent control here.
+
+> **⚠️ Unticking does not currently narrow the load.** The selection is stored as `endpoints` in the upload config, and the GitHub loader does not read it — it pulls its full default resource set regardless ([core#532](https://github.com/datanika-io/datanika-core/issues/532)). Nothing fails; you simply get every table rather than the subset you picked. Drop what you do not need in a dbt model downstream until this is wired up.
+
+> **The endpoint list is a fixed default, not a live fetch.** It comes from Datanika's built-in map for GitHub rather than from your account, so it does not reflect custom objects. Anything outside the list needs the [REST API connector](/docs/connectors/rest-api).
+
+> **Batch size** (default 10000) and the optional **Schema Contract** dropdowns — **Tables** / **Columns** / **Data Type** — are on every upload regardless of source. The contract decides whether a changed incoming shape evolves the destination or fails the run.
 
 ## Step 4 — First run
 
-1. From the pipeline page, click **Run now**.
-2. Watch the **Runs** tab. First runs on a medium-activity repo (say, 1k issues, 500 PRs, 10k commits) typically take 5–15 minutes, dominated by commit fetching. Subsequent incremental runs take seconds.
-3. When the run finishes, open **Catalog → `<your warehouse>` → `raw_github`** and browse the landed tables. There's one table per resource plus child tables for nested structures like PR reviews and issue comments.
-4. Spot-check: `SELECT count(*) FROM raw_github.issues WHERE repository = 'owner/repo'` should match the issue count shown in the GitHub UI (minus any issues deleted since the last sync, which GitHub does not surface via the API).
+1. On the **`/uploads`** row for your upload, click **Run**. There is no "Run now" on a pipeline page — the trigger lives on the upload's own row.
+2. Watch **`/runs`**. The run shows a status badge, start and finish timestamps and a **Rows** count; the **Logs** icon on the row opens the detail.
+3. When it finishes, open **Catalog** and browse the landed tables. The upload lands them in a schema **named after the upload** — `githubdailysync` creates schema `githubdailysync` in the destination, next to dlt's `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables. There is no target-schema field to choose.
+4. Spot-check the row count against the source. **Verify in the destination rather than trusting the status badge** — a green run means the load finished, not that it moved what you expected.
+
 ## Step 5 — Schedule it
 
-1. On the pipeline page, click **Schedule**.
-2. Pick a cadence based on how fresh the data needs to be:
-   - **Every 15 minutes** — live dashboards for triage queues, PR SLAs, or incident response.
-   - **Hourly** — the default for DevRel and open-source health dashboards.
-   - **Daily at 03:00** — for weekly or monthly reports where hourly freshness isn't needed.
-3. Choose a timezone and save.
-4. Wire up failure alerts in **Settings → Notifications**. GitHub rarely fails, but expired PATs do — you want the first bounced run to surface immediately, not three days later when your dashboard has gone stale.
+Schedules live on their own page and reference the upload **by name**.
 
-> **PAT expiration is the #1 production failure.** GitHub emails you before a fine-grained PAT expires, but the email is easy to miss. Set an alert on failed syncs and you'll catch it on the first missed run.
+1. Open **`/schedules`**. The **New Schedule** form is rendered inline.
+2. Fill in:
+   - **Target type** — `upload` (the dropdown also offers pipelines and transformations).
+   - **Target name** — the upload's name exactly as it was saved, e.g. `githubdailysync`.
+   - **Cron expression** — a real five-field cron string. There is no cadence picker and no "manual only" option: leaving the upload unscheduled *is* manual-only. `0 * * * *` hourly, `0 */6 * * *` every six hours, `0 3 * * *` nightly at 03:00.
+   - **Timezone** — defaults to `UTC`. The cron is evaluated in this zone, which matters for daily and weekly cadences.
+3. Click **Create Schedule**. The row lands as **Active**, with **Pause** available per row.
+4. Wire up failure alerts in **Settings → Notifications** so you hear about broken runs before your stakeholders do.
 
 ## Troubleshooting
 

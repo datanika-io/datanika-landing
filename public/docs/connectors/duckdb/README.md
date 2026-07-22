@@ -8,6 +8,7 @@ Referenced from `src/content/connectors/duckdb.md`.
 |---|---|---|
 | `02-add-connection.png` | Step 2 | The **New Connection** form with `duckdb` selected. Captured 2026-07-18 from a real `app.datanika.io` session in light theme (the app default for a new account). Path only — no secrets in this form. |
 | `03-configure-upload.png` | Step 3 | The **New Upload** form at `/uploads` with a real DuckDB destination selected (`14 — analyticswarehouse (duckdb)`). Captured 2026-07-22. Shared with the CSV guide — it is the same screen and the same real upload, shown here for the destination side. |
+| `04-first-run.png` | Step 4 | The `/runs` table after a **real** CSV → DuckDB load on production: run 6, `success`, **12 rows**, with the Logs icon. Captured 2026-07-22, cropped to the header + the single run row. Shared with the CSV guide — same screen, same real run, shown here for the destination side. No credentials on screen. |
 
 ## Verification
 
@@ -25,4 +26,21 @@ Referenced from `src/content/connectors/duckdb.md`.
 ## Not captured
 
 - `01-credentials.png` — not applicable; DuckDB is a local file path with no credential step.
-- `04-first-run.png` — **blocked on [core#456](https://github.com/datanika-io/datanika-core/issues/456)**: every successful run is currently flipped to FAILED by a `TypeError` in the run-completion hook, so there is no green run to photograph. Capture once #456 is fixed and promoted.
+
+## ✅ 2026-07-22 (later) — `04-first-run` captured, and Step 4's verification works for the first time
+
+Both blockers are closed and **verified running in prod**:
+
+- **[core#492](https://github.com/datanika-io/datanika-core/issues/492) (P0)** — the CSV source now loads file **contents**. Run 6 landed **12 real customer rows** in `warehouse.duckdb`, read back directly with `duckdb.connect(...)` in the worker:
+  ```
+  customersdailyload.csv: 12 rows
+  columns: customer_id, full_name, email, country, signup_date, plan, lifetime_value_usd, …
+  (1001, 'Ada Lovelace', 'ada@example.com', 'GB', '2026-01-14', 'pro', 1840.0, …)
+  ```
+- **[core#494](https://github.com/datanika-io/datanika-core/issues/494)** — `duckdb_engine 0.17.0` is now in the image, so the catalog sync no longer dies on `NoSuchModuleError`. **Step 4's "browse the landed tables in Catalog" instruction has never once worked before today**; it does now — `/models` lists `customersdailyload` / table `csv` / schema `customersdailyload` / `success` / 9 columns. Data Preview ([core#260](https://github.com/datanika-io/datanika-core/issues/260)) should be reachable for DuckDB again too, though that wasn't re-tested.
+
+**The acceptance criterion was rows of real data in the destination, not a green run row** — met, and checked in the destination rather than from the run counter.
+
+The stale `warehouse.duckdb` was deleted before the run: it still held the #492 wreckage (a table called `filesystem`), which would otherwise have shown up in the Catalog.
+
+> **Probing DuckDB on the box:** use **`/app/.venv/bin/python`**, not `python` — the system interpreter has none of the app's packages and reports `ModuleNotFoundError: No module named 'duckdb'`, which reads like a far bigger outage than it is. Run it in **`datanika-celery`**: the load happens in the worker, so that container is guaranteed to see the file. Step 4 of the guide now says both. ⚠️ **The prod app container name alternates** (`datanika-app` / `datanika-app-b`) because of blue/green, so never hard-code it; the stock compose name is right for a self-hoster.

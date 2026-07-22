@@ -68,40 +68,45 @@ Then use `/mnt/myapp/app.sqlite` as the path in Step 2. Read-only is enough — 
 
 ![Adding the SQLite connection in Datanika](/docs/connectors/sqlite/02-add-connection.png)
 
-## Step 3 — Configure tables and schemas
+## Step 3 — Configure the upload
 
-1. Open the connection you just created and click **Configure pipeline**.
-2. Pick the **destination warehouse** and a **target schema** — we recommend `raw_sqlite` (or `raw_<app-name>` if you know what the SQLite file is from) so raw landings are clearly namespaced.
-3. Datanika introspects the file and lists every user table. SQLite's internal tables (`sqlite_sequence`, `sqlite_stat1`, etc.) are filtered out automatically. For each table you want to sync:
-   - **Write disposition**
-     - `replace` — drops and reloads the target table on every run. Safe and simple; fine for small lookup tables or SQLite files that get fully rewritten.
-     - `merge` — upserts changed rows. Use this when the SQLite file grows monotonically (e.g., an event log, an audit trail).
-   - **Primary key** — required for `merge`. Datanika auto-detects it from the SQLite `PRIMARY KEY` constraint; override if needed.
-   - **Incremental cursor** — a column that only ever increases. `rowid`, `created_at`, or an `INTEGER PRIMARY KEY AUTOINCREMENT` column all work.
-4. Save the pipeline configuration.
+Extract-load is configured at **`/uploads`**, not on the connection. There is no "Configure pipeline" button — connection rows offer only Test / Edit / Copy / Delete, and `/pipelines` is the **dbt** builder, which is a different thing.
 
-> **Type affinity gotcha.** SQLite uses type *affinity*, not strict types — a column declared `INTEGER` can hold text. Datanika coerces to the declared type on load, which means a text-in-integer-column row will either be coerced or rejected depending on the destination warehouse. If you see mystery load failures, check the source data with `SELECT typeof(col) FROM <table> GROUP BY typeof(col);` in the `sqlite3` CLI to find the stragglers.
+1. Open **`/uploads`**. The **New Upload** form is rendered inline on the page.
+2. Fill in **Upload name** (letters and digits only — anything else is stripped as you type, so `appdatasync` becomes `appdatasync`) and an optional **Description**.
+3. Pick the **Source connection** and the **Destination connection** — the SQLite connection from Step 2 is the source. Each picker opens a dialog listing entries as `16 — myconnection (postgres)`, i.e. id, name, type.
+4. Because the source is a SQL database, you also get:
+   - **Load Mode** — `full_database` (the default) or `single_table`.
+   - **Write Disposition** — `append` (the default), `replace`, or `merge`.
+   - **Source schema** *(optional)* — SQLite has no schemas — leave **Source schema** blank.
+   - **Table names** *(optional, comma-separated)* — restrict the sync to specific tables. Blank means every table the role can read.
+5. Click **Create Upload**. It appears in the table below with status `draft`.
+
+> **These four controls exist only because the source is a SQL database.** They are hidden for every non-SQL source — files, SaaS APIs, MongoDB, Google Sheets, REST and Kafka.
+
+> **Tip.** Start with one or two small tables via **Table names** to validate the flow end-to-end before syncing everything. A failed 8-hour run is much more expensive to debug than a failed 30-second one.
+
+> **Batch size** (default 10000) and the optional **Schema Contract** dropdowns — **Tables** / **Columns** / **Data Type** — are on every upload regardless of source. The contract decides whether a changed incoming shape evolves the destination or fails the run.
 
 ## Step 4 — First run
 
-1. From the pipeline page, click **Run now**.
-2. Watch the **Runs** tab. SQLite reads are **very fast** because everything is local: tens of thousands of rows per second even on modest hardware.
-3. When the run finishes, open **Catalog → `<your warehouse>` → `raw_sqlite`** and browse the landed tables.
-4. Spot-check row counts: `SELECT count(*) FROM <table>;` in both the `sqlite3` CLI (against the source file) and the warehouse should match.
+1. On the **`/uploads`** row for your upload, click **Run**. There is no "Run now" on a pipeline page — the trigger lives on the upload's own row.
+2. Watch **`/runs`**. The run shows a status badge, start and finish timestamps and a **Rows** count; the **Logs** icon on the row opens the detail.
+3. When it finishes, open **Catalog** and browse the landed tables. The upload lands them in a schema **named after the upload** — `appdatasync` creates schema `appdatasync` in the destination, next to dlt's `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables. There is no target-schema field to choose.
+4. Spot-check the row count against the source. **Verify in the destination rather than trusting the status badge** — a green run means the load finished, not that it moved what you expected.
 
 ## Step 5 — Schedule it
 
-SQLite is unusual among sources because **the file doesn't change unless something external rewrites it**. Pick a schedule based on how the upstream SQLite file gets updated:
+Schedules live on their own page and reference the upload **by name**.
 
-1. On the pipeline page, click **Schedule**.
-2. Common choices:
-   - **Hourly / every 15 minutes** — for a SQLite file written by a live app on the same host (mounted read-only from Step 1).
-   - **Daily** — for a SQLite file pulled or exported once a day from a mobile/desktop app.
-   - **Manual only** — for one-off migrations or ad-hoc exports.
-3. Choose a timezone and save.
-4. Wire up failure alerts in **Settings → Notifications**. If the upstream file disappears or gets locked, you want to know about it on the first failed run.
-
-> **WAL mode writer contention.** If another process is actively writing to the SQLite file during Datanika's read (common with `journal_mode=WAL`), reads still work — SQLite WAL lets one writer and many readers coexist. If you see `database is locked` errors, the upstream writer is probably using the older rollback journal mode. Have it switch to WAL: `PRAGMA journal_mode=WAL;`.
+1. Open **`/schedules`**. The **New Schedule** form is rendered inline.
+2. Fill in:
+   - **Target type** — `upload` (the dropdown also offers pipelines and transformations).
+   - **Target name** — the upload's name exactly as it was saved, e.g. `appdatasync`.
+   - **Cron expression** — a real five-field cron string. There is no cadence picker and no "manual only" option: leaving the upload unscheduled *is* manual-only. `0 * * * *` hourly, `0 */6 * * *` every six hours, `0 3 * * *` nightly at 03:00.
+   - **Timezone** — defaults to `UTC`. The cron is evaluated in this zone, which matters for daily and weekly cadences.
+3. Click **Create Schedule**. The row lands as **Active**, with **Pause** available per row.
+4. Wire up failure alerts in **Settings → Notifications** so you hear about broken runs before your stakeholders do.
 
 ## Troubleshooting
 

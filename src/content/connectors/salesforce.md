@@ -65,39 +65,44 @@ Salesforce uses OAuth 2.0 for API access. The simplest path for server-to-server
 
 ![Adding the Salesforce connection in Datanika](/docs/connectors/salesforce/02-add-connection.png)
 
-## Step 3 — Configure objects and schemas
+## Step 3 — Configure the upload
 
-1. Open the connection you just created and click **Configure pipeline**.
-2. Pick the **destination warehouse** and a **target schema** — e.g. `raw_salesforce`.
-3. **Objects** — Datanika's Salesforce source ships with the canonical CRM objects:
-   - `accounts` — one row per Account (companies, organizations)
-   - `contacts` — one row per Contact (people associated with Accounts)
-   - `opportunities` — one row per Opportunity (deals in your pipeline)
+Extract-load is configured at **`/uploads`**, not on the connection. There is no "Configure pipeline" button — connection rows offer only Test / Edit / Copy / Delete, and `/pipelines` is the **dbt** builder, which is a different thing.
 
-   Select the subset you need. For a first run, `accounts` + `opportunities` gives you the core revenue pipeline data.
-4. **Write disposition** — `merge` is the right choice for all Salesforce objects. Records are identified by their Salesforce `Id` field, and Salesforce objects are updated in place (e.g., an Opportunity moves from `Prospecting` to `Closed Won`).
-5. Save the pipeline configuration.
+1. Open **`/uploads`**. The **New Upload** form is rendered inline on the page.
+2. Fill in **Upload name** (letters and digits only — anything else is stripped as you type, so `salesforce-daily-sync` becomes `salesforcedailysync`) and an optional **Description**.
+3. Pick the **Source connection** and the **Destination connection** — the Salesforce connection from Step 2 is the source. Each picker opens a dialog listing entries as `16 — myconnection (postgres)`, i.e. id, name, type.
+4. Because Salesforce is a SaaS source, the form shows **Select endpoints to load** — a checkbox per resource, **all ticked by default**. For Salesforce the list is `Account`, `Contact`, `Opportunity`, `Lead`, `Campaign`, `Case`. Each endpoint becomes its own table in the destination.
+5. Click **Create Upload**. It appears in the table below with status `draft`.
 
-> **Tip.** Start with 1–2 objects on a Salesforce sandbox or developer edition. Once you validate the schema lands correctly, enable the full set against production.
+> **There is no write disposition, load mode, source schema or table-name field for a SaaS source, and that is deliberate.** Those controls are rendered only when the source is a SQL database. The endpoint checkboxes are the equivalent control here.
+
+> **⚠️ Unticking does not currently narrow the load.** The selection is stored as `endpoints` in the upload config, and the Salesforce loader does not read it — it pulls its full default resource set regardless ([core#532](https://github.com/datanika-io/datanika-core/issues/532)). Nothing fails; you simply get every table rather than the subset you picked. Drop what you do not need in a dbt model downstream until this is wired up.
+
+> **The endpoint list is a fixed default, not a live fetch.** It comes from Datanika's built-in map for Salesforce rather than from your account, so it does not reflect custom objects. Anything outside the list needs the [REST API connector](/docs/connectors/rest-api).
+
+> **Batch size** (default 10000) and the optional **Schema Contract** dropdowns — **Tables** / **Columns** / **Data Type** — are on every upload regardless of source. The contract decides whether a changed incoming shape evolves the destination or fails the run.
 
 ## Step 4 — First run
 
-1. Click **Run now** on the pipeline page.
-2. Open the **Runs** tab. Datanika uses the Salesforce REST API (v59.0) to pull objects. A typical first run against a mid-size Salesforce org (tens of thousands of records) takes 1–5 minutes.
-3. If the access token is expired or missing permissions, the run fails immediately — jump to [Troubleshooting](#troubleshooting).
-4. When done, open **Catalog → `<warehouse>` → `raw_salesforce`** and browse.
-5. Spot-check: `SELECT count(*) FROM raw_salesforce.accounts;` should roughly match the Account count in Salesforce (Reports → Accounts).
+1. On the **`/uploads`** row for your upload, click **Run**. There is no "Run now" on a pipeline page — the trigger lives on the upload's own row.
+2. Watch **`/runs`**. The run shows a status badge, start and finish timestamps and a **Rows** count; the **Logs** icon on the row opens the detail.
+3. When it finishes, open **Catalog** and browse the landed tables. The upload lands them in a schema **named after the upload** — `salesforcedailysync` creates schema `salesforcedailysync` in the destination, next to dlt's `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables. There is no target-schema field to choose.
+4. Spot-check the row count against the source. **Verify in the destination rather than trusting the status badge** — a green run means the load finished, not that it moved what you expected.
+
 ## Step 5 — Schedule it
 
-1. On the pipeline page, click **Schedule**.
-2. Pick a cadence:
-   - **Hourly** — revenue dashboards, live pipeline forecasting.
-   - **Every 6 hours** — sales ops reporting, weekly reviews.
-   - **Daily at 06:00** — morning-ready dashboards for the sales team.
-3. Choose a **timezone** — align with your sales team's working hours so dashboards are fresh when they check.
-4. Save and wire up failure alerts in **Settings → Notifications**.
+Schedules live on their own page and reference the upload **by name**.
 
-> **Token expiration.** Salesforce access tokens expire (typically after 2 hours for session tokens). For scheduled pipelines, use a refresh token flow or a Connected App with the Client Credentials grant — these auto-renew without manual intervention. If your token expires between runs, the run will fail and you'll need to regenerate it.
+1. Open **`/schedules`**. The **New Schedule** form is rendered inline.
+2. Fill in:
+   - **Target type** — `upload` (the dropdown also offers pipelines and transformations).
+   - **Target name** — the upload's name exactly as it was saved, e.g. `salesforcedailysync`.
+   - **Cron expression** — a real five-field cron string. There is no cadence picker and no "manual only" option: leaving the upload unscheduled *is* manual-only. `0 * * * *` hourly, `0 */6 * * *` every six hours, `0 3 * * *` nightly at 03:00.
+   - **Timezone** — defaults to `UTC`. The cron is evaluated in this zone, which matters for daily and weekly cadences.
+3. Click **Create Schedule**. The row lands as **Active**, with **Pause** available per row.
+4. Wire up failure alerts in **Settings → Notifications** so you hear about broken runs before your stakeholders do.
+
 ## Troubleshooting
 
 ### `Salesforce source requires 'access_token' and 'instance_url'`
