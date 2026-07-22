@@ -7,7 +7,9 @@ Referenced from `src/content/connectors/postgresql.md`.
 | Filename | Step | Notes |
 |---|---|---|
 | `02-add-connection.png` | Step 2 | The **New Connection** form with `postgres` selected. Captured 2026-07-18 from a real `app.datanika.io` session in light theme (the app default for a new account). Demo values only; the password field renders masked. |
+| `03-configure-upload.png` | Step 3 | The **New Upload** form with a real SQL source selected (`16 — docssamplesdb (postgres)` → `17 — docswarehouse (postgres)`), showing the **SQL-source shape**: Load Mode, Write Disposition, Source schema (`public`), Table names (`customers, orders`), Batch size, Schema Contract. Captured 2026-07-22 by filling the live form on prod — **nothing was submitted**, so no stray upload was created. |
 | `04-first-run.png` | Step 4 | The `/runs` table after a **real** Postgres → Postgres load on production: run 5, `success`, **19 rows**, with the Logs icon. Captured 2026-07-22, cropped to the header + the single run row to match the cropped style of the other guides' shots. No credentials on screen. |
+| `05-schedule.png` | Step 5 | The **New Schedule** form filled for the same upload: target type `upload`, target name `customerorderssync`, cron `0 3 * * *`, timezone `UTC`. Captured 2026-07-22. **Deliberately not submitted** — an Active nightly schedule firing runs into live alerting is not something to leave behind (the same reason schedule 7 was deleted in the csv session). |
 
 ## Verification
 
@@ -36,6 +38,13 @@ Corrections, all verified live — this guide carried the same wrong walkthrough
 ## Not yet captured
 
 - `01-credentials.png` — psql role creation happens in a terminal, not in Datanika's UI.
-- `03-configure-upload.png` / `05-schedule.png` — the SQL-source variant of these forms differs from the file-source shots already captured for csv/duckdb (it has the Load Mode / Write Disposition / Source schema / Table names block). Worth capturing on the next pass; the prose is already correct.
+
+## Capture notes (2026-07-22) — three things that produced wrong shots first
+
+1. **The connection picker's options and the uploads table below share the same text.** `getByText(/docssamplesdb/).first()` matched a **table row**, not the dialog option — the dialog closed with nothing selected, and the only tell was the label coming back as `docssamplesdb (postgres)` instead of `16 — docssamplesdb (postgres)`. Scope option lookups to `getByRole('dialog')`.
+2. **`body.innerText` is not a check that the *form* shows something.** The uploads table lists the same connection names, so a body-wide assertion passed while both pickers rendered their placeholder — and that shot was nearly shipped. Assert against the form card only.
+3. **Target name has an in-app autocomplete that covers the cron field.** It is a Reflex-rendered list, not a browser popup, so it *does* appear in screenshots (browser autofill does not). Dismiss it by clicking the suggestion, the way a user would.
+
+> **Reusable for the other SQL guides — but only deliberately.** Both shots show `(postgres)` in the pickers, so they are visibly Postgres and are **not** copied into mysql/mssql/oracle/sqlite. The *shape* is identical for those; capture your own or note the reuse in that guide's README.
 
 > **Reusable for the other SQL guides — but only deliberately.** `/runs` shows nothing Postgres-specific, so `04-first-run.png` is visually valid for any SQL-database source. It is deliberately **not** copied into the other guides here: the run it shows is a Postgres run, and fanning one capture across connectors nobody exercised is how the guides drifted in the first place. Reuse it with a note in that guide's README, or capture your own.
