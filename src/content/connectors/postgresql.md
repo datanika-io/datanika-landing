@@ -86,6 +86,8 @@ Extract-load is configured at **`/uploads`**, not on the connection. There is no
    - **Schema Contract** *(optional)* — **Tables** / **Columns** / **Data Type** dropdowns controlling whether a changed incoming shape evolves the destination or fails the run.
 5. Click **Create Upload**. It appears in the table below with status `draft`.
 
+![The New Upload form with a PostgreSQL source selected](/docs/connectors/postgresql/03-configure-upload.png)
+
 > **These controls exist only because the source is a SQL database.** Load Mode, Write Disposition, Source schema and Table names are hidden for every non-SQL source — files, SaaS APIs, MongoDB, Google Sheets, REST and Kafka. If you're following this guide with a file source, that section of the form will not be there.
 
 > **Tip.** Start with 1–2 small tables via **Table names** to validate the flow end-to-end before syncing everything. A failed 8-hour run is much more expensive to debug than a failed 30-second one.
@@ -115,7 +117,12 @@ Schedules live on their own page and reference the upload **by name**.
      - `0 3 * * *` — nightly at 03:00, for warehouse-wide batch jobs feeding overnight reports.
    - **Timezone** — defaults to `UTC`. The cron is evaluated in this zone, which matters for daily and weekly cadences.
 3. Click **Create Schedule**. The row lands as **Active**, with **Pause** available per row.
+
+![The New Schedule form set to run the upload nightly at 03:00 UTC](/docs/connectors/postgresql/05-schedule.png)
+
 4. Wire up failure alerts in **Settings → Notifications** so you hear about broken runs before your stakeholders do. Slack, email, and webhooks are supported.
+
+> **Target name is matched against your existing uploads as you type**, and the suggestion list appears directly over the cron field — pick from it rather than typing past it.
 
 ## Troubleshooting
 
