@@ -85,6 +85,8 @@ A destination is chosen per **upload**, at **`/uploads`** — not on the connect
 4. **What else the form shows depends on the *source*, not on ClickHouse.** **Load Mode**, **Write Disposition**, **Source schema** and **Table names** appear only when the source is a SQL database; for a file, SaaS, MongoDB, Google Sheets, REST or Kafka source they are hidden and the load takes whatever shape the source produces. ClickHouse honours what it is handed either way.
 5. Click **Create Upload**. It appears in the table below with status `draft`.
 
+![The New Upload form with ClickHouse as the destination](/docs/connectors/clickhouse/03-configure-upload.png)
+
 > **ClickHouse can also be a *source*.** Pick it as the **Source connection** instead and the SQL controls above apply to it — Load Mode, Write Disposition, Source schema and Table names all appear.
 
 > **Batch size** (default 10000) and the optional **Schema Contract** dropdowns — **Tables** / **Columns** / **Data Type** — are on every upload regardless of source. The contract decides whether a changed incoming shape evolves the destination or fails the run.
