@@ -28,6 +28,35 @@ Also corrected: **Test Connection never checks a file path.** The guide claimed 
 ## Not captured
 
 - `01-credentials.png` — not applicable; a CSV has no credential step.
-- `04-first-run.png` — **blocked on [core#456](https://github.com/datanika-io/datanika-core/issues/456)**. The load was created and executed on prod, but every successful run is currently flipped to FAILED by a `TypeError` in the `run.upload_completed` hook, so there is no green run to photograph. Capture this once #456 is fixed and promoted — do not screenshot the failed state.
+- `04-first-run.png` — **still blocked. [core#456](https://github.com/datanika-io/datanika-core/issues/456) is fixed and promoted; the blocker is now [core#492](https://github.com/datanika-io/datanika-core/issues/492), one layer deeper.** Read the next section before attempting this again.
+
+## ⚠️ 2026-07-22 — why `04-first-run` is *still* not capturable
+
+#456 (every successful run marked FAILED) was fixed in core#464 and reached `master` in #481, so the original block genuinely lifted. A fresh run was triggered on prod (Docs-QA org, upload 7). It came back **`success`** — the first green run in the production database, which does confirm #464 works.
+
+**It still cannot be photographed, because the run moves no data.** Three separate defects, all found in that one run:
+
+| | Issue | What it does |
+|---|---|---|
+| 1 | [core#492](https://github.com/datanika-io/datanika-core/issues/492) (**P0**) | `csv`/`json`/`parquet`/`s3` sources load a **file listing**, not file contents. dlt's `filesystem()` is a lister; `_build_file_source` returns it with no `read_csv()` transformer. The landed table is called `filesystem` and holds one row of `file_name` / `mime_type` / `size_in_bytes` per file. Our 12-row `customers.csv` produced **zero** customer columns. |
+| 2 | [core#493](https://github.com/datanika-io/datanika-core/issues/493) | A glob matching **zero** files completes as `success` with 0 rows. Connection 15 had `bucket_url` set to a full *file* path; `*.csv` is globbed *under* that value, so it matched nothing — silently. |
+| 3 | [core#494](https://github.com/datanika-io/datanika-core/issues/494) | DuckDB loads never reach the **Catalog** (`duckdb_engine` missing from the image), so Step 3's "browse the new table" verification has never worked. |
+
+A green run whose payload is a directory listing would document a broken flow as working — the same reason the previous session refused to screenshot the red run, one layer down.
+
+**Do not capture this until #492 is fixed and promoted.** Green status is not the acceptance criterion; **rows of real data in the destination** is.
+
+## ⚠️ The guide's file-path instruction is wrong, and the fix is deliberately deferred
+
+Step 1 tells the user to enter `/var/datanika/inbox/customers.csv` in **Or enter file path**. That field is `bucket_url`, and the connector globs `*.csv` *underneath* it — so a path ending in a filename matches nothing. Measured in the prod worker against the real `filesystem()` source:
+
+```
+DIRECTORY  /app/dbt_projects/_docs_samples          -> 1 file(s) matched: ['customers.csv']
+FILE       /app/dbt_projects/_docs_samples/customers.csv  -> 0 file(s) matched: []
+```
+
+The placeholder already says `/data/files or s3://...` (a directory), so the guide contradicts the form.
+
+**Not corrected yet, on purpose.** The most natural fix for #493 is to *accept* a file path, which would make a docs correction wrong a second time. The prose changes once #492/#493 settle the field's semantics — same PR as the screenshot. `json.md`, `parquet.md` and `s3.md` carry the same error.
 
 > **Provenance note.** The upload for these shots was created through the **Or enter file path** input rather than the browser upload widget, because `POST /_upload` returns HTTP 500 in production ([core#452](https://github.com/datanika-io/datanika-core/issues/452), fix in [core#455](https://github.com/datanika-io/datanika-core/pull/455)). That affects only how the file got attached; Steps 2–4 are identical either way, and neither screenshot shows the connection form.
