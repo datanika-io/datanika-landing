@@ -56,9 +56,9 @@ Use this for landing-zone patterns: a data lake, an hourly Spark export, a night
    ```
 2. Restart the container.
 3. In Datanika, open **`/connections`**, pick `parquet` from the type dropdown.
-4. Skip the file upload area. Below it, you'll see the **Or enter file path** input — enter the path to the directory inside the container:
-   - **Or enter file path** — `/var/datanika/parquet-lake` (or a glob like `/var/datanika/parquet-lake/*.parquet`).
-5. Click **Test Connection** if you like, but it tells you nothing here: Parquet connections always return *"Test not applicable for this type"*. It does not open the file, read the footer, or show you the schema — that only happens when the load runs. A wrong path looks exactly like a right one.
+4. Skip the file upload area. Below it, you'll see the **Or enter file path** input — enter the path to the **directory** inside the container:
+   - **Or enter file path** — `/var/datanika/parquet-lake`. **A directory, not a file and not a glob.** Datanika matches `*.parquet` *inside* whatever you type, so a path ending in a filename or a pattern matches nothing.
+5. Click **Test Connection** if you like, but it tells you nothing here: Parquet connections always return *"Test not applicable for this type"*. It does not open the file, read the footer, or show you the schema — that only happens when the load runs. The run itself now fails loudly if nothing matches, so a wrong path surfaces there rather than as a silent empty load.
 6. Click **Create Connection**.
 
 > **Partition columns are preserved.** If your glob uses Hive-style partitioning (`year=2026/month=04/...`), Datanika extracts the partition values from the file path and lands them as extra columns in the destination table. You don't lose your partition keys by loading into a flat warehouse table.
