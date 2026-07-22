@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { readFileSync, existsSync } from "fs";
 import { resolve } from "path";
+import { connectors } from "../src/data/connectors";
 
 const DIST = resolve(__dirname, "../dist");
 
@@ -10,22 +11,29 @@ function readHtml(path: string): string {
   return readFileSync(file, "utf-8");
 }
 
-// All 36 connector slugs
-const connectorSlugs = [
-  "postgresql", "mysql", "mssql", "sqlite", "clickhouse", "duckdb", "oracle",
-  "bigquery", "snowflake", "redshift", "databricks", "synapse",
-  "mongodb",
-  "stripe", "github", "hubspot", "salesforce", "shopify", "jira", "slack",
-  "google-analytics", "google-ads", "facebook-ads", "zendesk", "airtable", "notion", "pipedrive", "freshdesk", "asana", "rest-api",
-  "csv", "json", "parquet", "s3", "google-sheets", "kafka",
-];
+// Derived from the data file rather than duplicated here.
+//
+// This list was hardcoded in three separate test files, so withdrawing one
+// connector (google-ads, core#567) meant editing the same list four times —
+// counting the copy in connectors.ts itself — and any one of them could be
+// missed. Deriving it means the data file is the single place a connector is
+// added or removed, and these tests follow automatically.
+const connectorSlugs = connectors.map((c) => c.slug);
 
 describe("connector landing pages", () => {
-  it("generates all 36 connector pages", () => {
+  it("generates a page for every connector in the data file", () => {
+    expect(connectorSlugs.length).toBeGreaterThan(30);
     for (const slug of connectorSlugs) {
       const file = resolve(DIST, `connectors/${slug}/index.html`);
       expect(existsSync(file), `Missing: /connectors/${slug}`).toBe(true);
     }
+  });
+
+  it("does not ship a page for a withdrawn connector", () => {
+    // google-ads is withdrawn in the app (core#567) and 301s to /connectors.
+    // Astro emits a redirect stub at this path, so assert on the data file —
+    // the question is whether we still *market* it, not whether a file exists.
+    expect(connectorSlugs).not.toContain("google-ads");
   });
 });
 

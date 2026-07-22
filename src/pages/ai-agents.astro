@@ -4,6 +4,7 @@ import Navbar from "../components/Navbar.astro";
 import Footer from "../components/Footer.astro";
 import ConversionCTA from "../components/ConversionCTA.astro";
 import { tiers, tierCount } from "../data/agent-tiers";
+import { connectors } from "../data/connectors";
 
 // Kept in the frontmatter so the JSON braces render as text without escaping.
 // Mirrors /docs/mcp-server — if you change one, change both.
@@ -122,7 +123,7 @@ const competitors = [
       </div>
 
       <p class="text-center text-slate-400 text-sm mt-10 max-w-3xl mx-auto">
-        This is also why we don't gate connectors by plan: all 36 are on every tier, including free.
+        This is also why we don't gate connectors by plan: all {connectors.length} are on every tier, including free.
         We charge for volume, not for capability — see <a href="/pricing" class="text-violet-400 hover:underline">pricing</a>
         and <a href="/docs/self-hosting" class="text-violet-400 hover:underline">self-hosting</a>, where the whole thing runs on your own infrastructure under AGPL.
       </p>

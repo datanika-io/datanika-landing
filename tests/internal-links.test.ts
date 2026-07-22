@@ -6,6 +6,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync, existsSync, readdirSync } from "fs";
 import { resolve } from "path";
+import { connectors } from "../src/data/connectors";
 
 const DIST = resolve(__dirname, "../dist");
 const BLOG_SRC = resolve(__dirname, "../src/content/blog");
@@ -23,14 +24,10 @@ function countLinks(html: string, pattern: string): number {
 
 // --- Connector pages must link to use-cases ---
 
-const connectorSlugs = [
-  "postgresql", "mysql", "mssql", "sqlite", "clickhouse", "duckdb", "oracle",
-  "bigquery", "snowflake", "redshift", "databricks", "synapse",
-  "mongodb",
-  "stripe", "github", "hubspot", "salesforce", "shopify", "jira", "slack",
-  "google-analytics", "google-ads", "facebook-ads", "zendesk", "airtable", "notion", "pipedrive", "freshdesk", "asana", "rest-api",
-  "csv", "json", "parquet", "s3", "google-sheets", "kafka",
-];
+// Derived from the data file — see the note in connectors.test.ts. This list
+// was one of three hardcoded copies that all had to be edited by hand whenever
+// a connector was added or withdrawn.
+const connectorSlugs = connectors.map((c) => c.slug);
 
 const connectorsThatHaveUseCases = [
   "postgresql", "mysql", "mongodb", "stripe", "hubspot", "salesforce",
@@ -120,13 +117,18 @@ function uniqueConnectorLinks(html: string): Set<string> {
 }
 
 describe("docs pages cross-link service connectors (#117)", () => {
-  it("/docs/connections links to all 36 connectors", () => {
-    // The page groups connectors by category and renders every one. If a
-    // new connector is added to src/data/connectors.ts, this count changes
-    // and the test flags that the expected count needs updating.
+  it("/docs/connections links to every connector", () => {
+    // The page groups connectors by category and renders every one. Asserting
+    // against connectors.length rather than a literal means adding *or
+    // withdrawing* a connector keeps this honest without a hand edit — the
+    // literal 36 here was one of the copies that had to be chased when Google
+    // Ads was withdrawn (core#567).
     const html = readHtml("docs/connections/index.html");
     const links = uniqueConnectorLinks(html);
-    expect(links.size, `/docs/connections should link all 36 connectors`).toBe(36);
+    expect(
+      links.size,
+      `/docs/connections should link all ${connectorSlugs.length} connectors`,
+    ).toBe(connectorSlugs.length);
   });
 
   it("/docs/pipelines links to the 5 Pipeline Templates connectors", () => {

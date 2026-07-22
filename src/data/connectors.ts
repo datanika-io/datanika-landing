@@ -487,33 +487,22 @@ export const connectors: Connector[] = [
       { name: "credentials", description: "Google service account JSON key" },
       { name: "property_id", description: "GA4 property ID" },
     ],
-    related: ["google-ads", "facebook-ads", "bigquery", "snowflake"],
+    related: ["facebook-ads", "bigquery", "snowflake", "stripe"],
     seoTitle: "GA4 to BigQuery Pipeline | Datanika",
     seoDescription: "Load GA4 report data into BigQuery or Snowflake via service account. Build custom attribution models with dbt transforms. Open source. Start free on Datanika.",
     seoH1: "GA4 to BigQuery",
   },
-  {
-    slug: "google-ads",
-    name: "Google Ads",
-    category: "SaaS & API",
-    direction: "source",
-    description: "Extract advertising data from Google Ads — campaigns, ad groups, ads, keywords, and performance metrics.",
-    useCases: [
-      "Build paid search analytics dashboards",
-      "Track ROAS and conversion metrics",
-      "Combine Google Ads with GA4 for full funnel view",
-      "Automate ad performance reporting",
-    ],
-    configFields: [
-      { name: "credentials", description: "Google OAuth credentials JSON" },
-      { name: "customer_id", description: "Google Ads customer ID" },
-      { name: "developer_token", description: "Google Ads developer token (encrypted at rest)" },
-    ],
-    related: ["google-analytics", "facebook-ads", "bigquery", "snowflake"],
-    seoTitle: "Google Ads Data Pipeline | Datanika",
-    seoDescription: "Google Ads data pipeline to load campaigns, ad groups, and performance metrics into BigQuery or Snowflake. dbt transforms built in. Start free on Datanika.",
-    seoH1: "Google Ads Data Pipeline",
-  },
+  // Google Ads was withdrawn in core#567 (closing core#555) and is now in
+  // `WITHDRAWN_SOURCE_TYPES` — it cannot be created in the app at all.
+  //
+  // The reason is not the one on core#555 ("we collect no developer token"),
+  // which reads like a form we could extend. Every Google Ads API request needs
+  // a `developer-token` issued **per manager account, on application, after
+  // Google's review** — so each user would face a multi-day approval loop before
+  // their first row moved. That is incompatible with self-serve onboarding and
+  // is not something we can fix, which is why this is a removal and not a
+  // "coming soon". `/connectors/google-ads` 301s to `/connectors` in
+  // astro.config.mjs; do not re-add an entry here without the app supporting it.
   {
     slug: "facebook-ads",
     name: "Facebook Ads",
@@ -530,7 +519,7 @@ export const connectors: Connector[] = [
       { name: "access_token", description: "Facebook Marketing API access token (encrypted at rest)" },
       { name: "account_id", description: "Ad account ID" },
     ],
-    related: ["google-ads", "google-analytics", "bigquery", "shopify"],
+    related: ["google-analytics", "bigquery", "shopify", "hubspot"],
     seoTitle: "Facebook Ads ETL — Meta Ads Pipeline | Datanika",
     seoDescription: "Load Facebook and Meta ad campaigns, leads, and creatives into your data warehouse. Build cross-channel marketing analytics with dbt. Start free on Datanika.",
     seoH1: "Facebook Ads ETL",
