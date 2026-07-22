@@ -25,4 +25,16 @@ Referenced from `src/content/connectors/duckdb.md`.
 ## Not captured
 
 - `01-credentials.png` — not applicable; DuckDB is a local file path with no credential step.
-- `04-first-run.png` — **blocked on [core#456](https://github.com/datanika-io/datanika-core/issues/456)**: every successful run is currently flipped to FAILED by a `TypeError` in the run-completion hook, so there is no green run to photograph. Capture once #456 is fixed and promoted.
+- `04-first-run.png` — **still blocked. [core#456](https://github.com/datanika-io/datanika-core/issues/456) is fixed and promoted; the blockers are now [core#492](https://github.com/datanika-io/datanika-core/issues/492) and [core#494](https://github.com/datanika-io/datanika-core/issues/494).** See below.
+
+## ⚠️ 2026-07-22 — why `04-first-run` is *still* not capturable
+
+A fresh run on prod (Docs-QA org, upload 7 → connection 14) returned **`success`** — the first green run in the production database, confirming core#464 fixed #456. It still cannot be photographed:
+
+- **[core#492](https://github.com/datanika-io/datanika-core/issues/492) (P0)** — the CSV *source* loads a file **listing**, not contents, so what lands in `warehouse.duckdb` is one row of `file_name` / `mime_type` / `size_in_bytes`, not the 12 customers. Verified by reading the file directly with `duckdb.connect(...)` in the worker.
+- **[core#494](https://github.com/datanika-io/datanika-core/issues/494)** — **Step 4's verification instruction has never worked for DuckDB.** The guide says "open **Catalog → DuckDB** and browse the landed tables"; the catalog sync dies on `NoSuchModuleError: Can't load plugin: sqlalchemy.dialects:duckdb` (the `duckdb_engine` dialect is not in the image) and is swallowed as *"Catalog sync failed (non-fatal)"*. Models stays empty. Data Preview (core#260) is unreachable for DuckDB for the same reason.
+- **[core#493](https://github.com/datanika-io/datanika-core/issues/493)** — a zero-match glob completes as `success`, which is how #492 stayed invisible.
+
+**Do not capture until #492 + #494 are fixed and promoted.** The acceptance criterion is rows of real data visible in the Catalog, not a green run row.
+
+> **Probing DuckDB on the box:** use `/app/.venv/bin/python`, not `python` — the system interpreter has none of the app's packages and reports `ModuleNotFoundError: No module named 'duckdb'`, which reads like a far bigger outage than it is. Also note the live prod app container is currently **`datanika-app-b`** (blue/green), so `docker exec datanika-app …` — the command printed in Step 4 of the guide — fails on prod. It remains correct for a self-hoster running the stock compose file.
