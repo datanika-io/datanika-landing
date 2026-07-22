@@ -409,18 +409,13 @@ const HOSTED_URL = "https://app.datanika.io/mcp";
     </li>
   </ul>
 
-  <div class="not-prose my-6 rounded-xl border border-amber-500/30 bg-amber-500/5 p-5">
-    <p class="text-sm font-semibold text-amber-300 mb-1">Known gap: the consent screen still says read-only</p>
-    <p class="text-sm text-slate-300">
-      The approval screen currently renders a fixed <em>"Read-only — it cannot create, modify, delete
-      or trigger anything"</em> block regardless of the scopes actually being requested. The grant
-      itself is correct; the description of it is not. Until
-      <a href="https://github.com/datanika-io/datanika-core/issues/450" target="_blank" rel="noopener">core#450</a>
-      lands, <strong>check the scopes your client is requesting</strong> rather than relying on that
-      screen, and revoke the key in <strong>Settings → API Keys</strong> if a grant carries more than
-      you intended.
-    </p>
-  </div>
+  <p>
+    The approval screen states which of these you are granting: a read-only grant shows a
+    <em>Read-only</em> badge, and a write grant shows <em>Read and write</em> with the specific
+    capabilities spelled out — <em>"Create, modify and delete connections, uploads, pipelines,
+    transformations, schedules and notifications — and trigger runs"</em> — plus a caution that the
+    app can spend your quota. Read it before approving; it is the only place the decision is recorded.
+  </p>
 
   <h3>Enabling writes locally</h3>
   <p>Add <code>--allow-write</code> (or set <code>DATANIKA_ALLOW_WRITE=true</code>):</p>
