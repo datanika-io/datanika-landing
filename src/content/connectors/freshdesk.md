@@ -58,6 +58,8 @@ Extract-load is configured at **`/uploads`**, not on the connection. There is no
 4. Because Freshdesk is a SaaS source, the form shows **Select endpoints to load** — a checkbox per resource, **all ticked by default**. For Freshdesk the list is `agents`, `companies`, `contacts`, `groups`, `tickets`. Untick anything you do not want: each ticked endpoint becomes its own table in the destination, and unticked ones are not fetched at all.
 5. Click **Create Upload**. It appears in the table below with status `draft`.
 
+![The New Upload form with a Freshdesk source and its endpoint checkboxes](/docs/connectors/freshdesk/03-configure-upload.png)
+
 > **There is no write disposition, load mode, source schema or table-name field for a SaaS source, and that is deliberate.** Those controls are rendered only when the source is a SQL database. The endpoint checkboxes are the equivalent control here.
 
 > **Batch size** (default 10000) and the optional **Schema Contract** dropdowns — **Tables** / **Columns** / **Data Type** — are on every upload regardless of source. The contract decides whether a changed incoming shape evolves the destination or fails the run.
