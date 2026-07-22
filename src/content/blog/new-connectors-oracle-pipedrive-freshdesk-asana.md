@@ -43,7 +43,7 @@ And because Datanika [bills per GB processed](/why-cheaper) — not per connecto
 
 ## Try it
 
-- [Browse all 36 connectors](/connectors)
+- [Browse all connectors](/connectors)
 - [Oracle](/connectors/oracle) · [Pipedrive](/connectors/pipedrive) · [Freshdesk](/connectors/freshdesk) · [Asana](/connectors/asana)
 - [Why per-GB pricing beats Fivetran's MAR](/why-cheaper)
 - [Star on GitHub](https://github.com/datanika-io/datanika-core)

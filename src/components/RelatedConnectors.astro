@@ -9,7 +9,7 @@
 // page can tune the context without coupling to this component — see issue #117
 // and PR #87's auto-detection pattern.
 
-import type { Connector } from "../data/connectors";
+import { connectors as allConnectors, type Connector } from "../data/connectors";
 
 interface Props {
   heading: string;
@@ -17,7 +17,8 @@ interface Props {
   connectors: Connector[];
   // Optional anchor id for deep-linking from other docs pages.
   id?: string;
-  // When true, append a "Browse all 36 connectors →" footer link.
+  // When true, append a "Browse all N connectors →" footer link, where N is
+  // derived from the data file rather than written into the copy.
   showAllLink?: boolean;
 }
 
@@ -48,6 +49,6 @@ function shortDescription(full: string): string {
 </ul>
 {showAllLink && (
   <p>
-    <a href="/connectors">Browse all 36 connectors →</a>
+    <a href="/connectors">Browse all {allConnectors.length} connectors →</a>
   </p>
 )}

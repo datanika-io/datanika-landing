@@ -304,7 +304,7 @@ Compare that to [Fivetran](/compare/fivetran/), which counts each Stripe object 
 - **[Connect Stripe →](/docs/connectors/stripe/)** the full setup guide (restricted key, resources, first run).
 - **[Stripe → BigQuery use case](/use-cases/stripe-to-bigquery/)** — the reference architecture for this pipeline.
 - **[Transformations guide](/docs/transformations/)** — models, tests, snapshots, and materializations in Datanika.
-- **[Browse all 36 connectors](/connectors/)** — join Stripe against HubSpot, your product Postgres, Google Ads, and more.
+- **[Browse all connectors](/connectors/)** — join Stripe against HubSpot, your product Postgres, Facebook Ads, and more.
 
 Stripe gives you the payments. dbt gives you the metrics. Datanika is the ten-minute bridge between them.
 

@@ -1,4 +1,11 @@
 ---
+import { connectors } from "../data/connectors";
+
+// Derived, never typed. This number was hardcoded here and in six other places;
+// withdrawing Google Ads (core#567) meant hunting all of them, and a missed one
+// is a public claim that contradicts the connector index one click away.
+const connectorCount = connectors.length;
+
 const categories = [
   {
     title: "OLTP Databases",
@@ -55,7 +62,7 @@ const colorMap: Record<string, { border: string; bg: string; text: string; dot: 
         Connect to <span class="gradient-text">anything</span>
       </h2>
       <p class="mx-auto mt-4 max-w-2xl text-lg text-slate-400">
-        36 connectors across databases, warehouses, SaaS APIs, files, and streams.
+        {connectorCount} connectors across databases, warehouses, SaaS APIs, files, and streams.
       </p>
     </div>
 

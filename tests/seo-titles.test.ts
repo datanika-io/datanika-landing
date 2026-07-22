@@ -13,6 +13,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync, existsSync } from "fs";
 import { resolve } from "path";
+import { connectors } from "../src/data/connectors";
 
 const DIST = resolve(__dirname, "../dist");
 const LAYOUT_DEFAULT_TITLE = "Datanika — Your Data Pipeline Platform";
@@ -84,7 +85,6 @@ const tier3: TierSpec[] = [
   { path: "connectors/jira/index.html", primaryKeyword: "jira data export", titleMustContain: "Jira" },
   { path: "connectors/slack/index.html", primaryKeyword: "slack data export", titleMustContain: "Slack" },
   { path: "connectors/google-analytics/index.html", primaryKeyword: "ga4 to bigquery", titleMustContain: "GA4" },
-  { path: "connectors/google-ads/index.html", primaryKeyword: "google ads data pipeline", titleMustContain: "Google Ads" },
   { path: "connectors/facebook-ads/index.html", primaryKeyword: "facebook ads etl", titleMustContain: "Facebook Ads" },
   { path: "connectors/zendesk/index.html", primaryKeyword: "zendesk data export", titleMustContain: "Zendesk" },
   { path: "connectors/airtable/index.html", primaryKeyword: "airtable to warehouse", titleMustContain: "Airtable" },
@@ -260,14 +260,8 @@ describe("Wave-1 connector SEO title/meta compliance", () => {
 // --- Regression guard: every connector/use-case/comparison page has a custom title ---
 // This prevents future pages from shipping with the Layout default title.
 
-const allConnectorSlugs = [
-  "postgresql", "mysql", "mssql", "sqlite", "clickhouse", "duckdb", "oracle",
-  "bigquery", "snowflake", "redshift", "databricks", "synapse",
-  "mongodb",
-  "stripe", "github", "hubspot", "salesforce", "shopify", "jira", "slack",
-  "google-analytics", "google-ads", "facebook-ads", "zendesk", "airtable", "notion", "pipedrive", "freshdesk", "asana", "rest-api",
-  "csv", "json", "parquet", "s3", "google-sheets", "kafka",
-];
+// Derived from the data file — see the note in connectors.test.ts.
+const allConnectorSlugs = connectors.map((c) => c.slug);
 
 const allUseCaseSlugs = [
   "postgresql-to-bigquery", "postgresql-to-snowflake", "mysql-to-bigquery",
