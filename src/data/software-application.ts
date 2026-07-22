@@ -19,6 +19,8 @@
  * the first 5 real reviews land (tracked in PLAN_HUMAN_LOCKERS.md).
  */
 
+import { connectors } from "./connectors";
+
 export interface OfferData {
   /** Plan name shown in the SERP card. */
   name: string;
@@ -42,7 +44,7 @@ export const PLAN_OFFERS: OfferData[] = [
     priceCurrency: "USD",
     billingDuration: "P1M",
     description:
-      "1 seat, 5 connections, 2 schedules, 500 model runs per month. All 36 connectors included.",
+      `1 seat, 5 connections, 2 schedules, 500 model runs per month. All ${connectors.length} connectors included.`,
   },
   {
     name: "Pro (monthly)",

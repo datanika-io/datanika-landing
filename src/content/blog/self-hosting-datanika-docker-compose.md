@@ -8,7 +8,7 @@ tags: ["tutorial", "self-hosting", "docker", "open-source", "elt", "devops"]
 heroImage: "/logo.png"
 ---
 
-Most data platforms make self-hosting a footnote — a "contact sales for the on-prem option" link that goes nowhere, or an open-source core so stripped-down it's really just a demo for the paid cloud. Datanika's open-source core is the actual product: extract (`dlt`), transform (`dbt-core`), scheduling, a visual pipeline builder, all 36 connectors, multi-org RBAC, nine languages. It runs from one Docker Compose file, and self-hosting it costs **$0 forever** — the AGPL-3.0 core has no license key, no seat count, and no GB meter.
+Most data platforms make self-hosting a footnote — a "contact sales for the on-prem option" link that goes nowhere, or an open-source core so stripped-down it's really just a demo for the paid cloud. Datanika's open-source core is the actual product: extract (`dlt`), transform (`dbt-core`), scheduling, a visual pipeline builder, every connector, multi-org RBAC, nine languages. It runs from one Docker Compose file, and self-hosting it costs **$0 forever** — the AGPL-3.0 core has no license key, no seat count, and no GB meter.
 
 This is the walkthrough: what you get, the five-minute quick start, the configuration that actually matters, and — because this is the part most tutorials skip — an honest checklist for running it in production, where *you* own the pager.
 
@@ -142,7 +142,7 @@ If none of those matter to you, self-hosting isn't a downgrade — it's the same
 - **[Self-hosting docs](/docs/self-hosting/)** — the canonical reference: full env-var table, Helm `values.yaml`, production notes.
 - **[Getting Started](/docs/getting-started/)** — your first source → destination → run.
 - **[Architecture](/docs/architecture/)** — how `dlt`, `dbt-core`, Celery, and Reflex fit together.
-- **[Browse all 36 connectors](/connectors/)** — 31 sources, 11 destinations, all included, no plan gating.
+- **[Browse all connectors](/connectors/)** — 30 sources, 11 destinations, all included, no plan gating.
 - **[The $12/mo stack](/blog/saas-12-euros/)** — the bill for running real software on one small VPS.
 
 Clone it, run `docker compose up -d`, and you own your data pipeline stack end to end. Or if you'd rather we run it — [the managed free tier](https://app.datanika.io/) is one click and includes 10 GB/month.

@@ -33,11 +33,25 @@ function extractOgImage(html: string): string | null {
   return match ? match[1] : null;
 }
 
+/**
+ * Astro emits a tiny `<meta http-equiv="refresh">` stub for every entry in the
+ * `redirects` config. Those land inside these families on disk — e.g.
+ * `/connectors/google-ads` after that connector was withdrawn (core#567) — but
+ * they are not content pages: they have no OG tags by design, and giving them
+ * any would be worse, since the whole point is that nobody should land there.
+ *
+ * Excluded by shape rather than by slug so the next redirect needs no edit here.
+ */
+function isRedirectStub(html: string): boolean {
+  return /http-equiv="refresh"/i.test(html);
+}
+
 describe("og:image fallback guardrail", () => {
   const pages: { family: string; slug: string; file: string }[] = [];
 
   for (const family of SEO_FAMILIES) {
     for (const file of leafPages(family)) {
+      if (isRedirectStub(readFileSync(file, "utf-8"))) continue;
       const slug = relative(resolve(DIST, family), file).split(/[\\/]/)[0];
       pages.push({ family, slug, file });
     }
