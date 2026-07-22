@@ -55,9 +55,10 @@ Extract-load is configured at **`/uploads`**, not on the connection. There is no
 1. Open **`/uploads`**. The **New Upload** form is rendered inline on the page.
 2. Fill in **Upload name** (letters and digits only — anything else is stripped as you type, so `freshdesk-daily-sync` becomes `freshdeskdailysync`) and an optional **Description**.
 3. Pick the **Source connection** and the **Destination connection** — the Freshdesk connection from Step 2 is the source. Each picker opens a dialog listing entries as `16 — myconnection (postgres)`, i.e. id, name, type.
-4. Click **Create Upload**. It appears in the table below with status `draft`.
+4. Because Freshdesk is a SaaS source, the form shows **Select endpoints to load** — a checkbox per resource, **all ticked by default**. For Freshdesk the list is `agents`, `companies`, `contacts`, `groups`, `tickets`. Untick anything you do not want: each ticked endpoint becomes its own table in the destination, and unticked ones are not fetched at all.
+5. Click **Create Upload**. It appears in the table below with status `draft`.
 
-> **⚠️ The form currently shows SQL fields that do nothing for Freshdesk.** You will see **Load Mode**, **Write Disposition**, **Source schema** and **Table names**, and you will *not* see the endpoint checkboxes that the other SaaS connectors get. That is a known UI bug ([core#503](https://github.com/datanika-io/datanika-core/issues/503)): Freshdesk is treated as a SaaS source at run time but was never added to the UI's SaaS list, so the form falls through to the SQL branch. **Leave those four fields alone** — the loader ignores them and pulls the connector's standard resources. The load itself is unaffected.
+> **There is no write disposition, load mode, source schema or table-name field for a SaaS source, and that is deliberate.** Those controls are rendered only when the source is a SQL database. The endpoint checkboxes are the equivalent control here.
 
 > **Batch size** (default 10000) and the optional **Schema Contract** dropdowns — **Tables** / **Columns** / **Data Type** — are on every upload regardless of source. The contract decides whether a changed incoming shape evolves the destination or fails the run.
 
