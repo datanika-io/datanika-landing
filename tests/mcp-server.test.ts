@@ -163,14 +163,16 @@ describe("/docs/mcp-server", () => {
       expect(html).toMatch(/pasted API key/i);
     });
 
-    it("discloses the consent-screen gap while it exists", () => {
-      // core#450: the approval screen still renders a fixed "Read-only" block
-      // regardless of the scopes requested. Documenting write access without
-      // saying so would tell readers to trust a screen that is currently wrong.
-      // DELETE THIS TEST when core#450 lands — it pins a temporary caveat, and a
-      // guard on a caveat must not outlive the caveat.
-      expect(html).toMatch(/consent screen still says read-only/i);
-      expect(html).toContain("datanika-io/datanika-core/issues/450");
+    it("describes what the approval screen actually shows", () => {
+      // Replaced the core#450 gap-disclosure guard, which was marked DELETE WHEN
+      // core#450 LANDS. It landed (core#463) and the screen now branches on the
+      // granted scope, verified end-to-end against prod 2026-07-22. The caveat
+      // and its guard both go; what stays is the durable claim that the docs
+      // describe the screen the reader will actually see.
+      expect(html).not.toMatch(/consent screen still says read-only/i);
+      expect(html).not.toContain("datanika-io/datanika-core/issues/450");
+      expect(html).toMatch(/Read and write/);
+      expect(html).toMatch(/trigger runs/i);
     });
 
     it("tells the reader how to revoke a one-click grant", () => {

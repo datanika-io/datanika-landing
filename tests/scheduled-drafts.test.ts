@@ -40,6 +40,12 @@ const scheduledPosts = [
   // deliberately: the post points at the official MCP registry listing, which
   // only went live 2026-07-21.
   { file: "datanika-mcp-server-launch.md", date: "2026-08-04", publishedAt: "2026-08-04", category: "product", titleContains: "Now an MCP Server" },
+  // core#445 write tools. Held while the consent screen still described every
+  // grant as read-only (core#450) — announcing "you decide knowingly" would have
+  // marketed a property we didn't yet deliver. core#463 fixed the screen and it
+  // was verified end-to-end against prod, so this ships 5 days after the MCP
+  // launch post rather than colliding with it.
+  { file: "mcp-write-tools-consent-scope.md", date: "2026-08-09", publishedAt: "2026-08-09", category: "product", titleContains: "If You Say So Once" },
 ];
 
 const publishedScheduledPosts = [
