@@ -59,12 +59,10 @@ Extract-load is configured at **`/uploads`**, not on the connection. There is no
 1. Open **`/uploads`**. The **New Upload** form is rendered inline on the page.
 2. Fill in **Upload name** (letters and digits only — anything else is stripped as you type, so `stripe-daily-sync` becomes `stripedailysync`) and an optional **Description**.
 3. Pick the **Source connection** and the **Destination connection** — the Stripe connection from Step 2 is the source. Each picker opens a dialog listing entries as `16 — myconnection (postgres)`, i.e. id, name, type.
-4. Because Stripe is a SaaS source, the form shows **Select endpoints to load** — a checkbox per resource, **all ticked by default**. For Stripe the list is `Subscription`, `Account`, `Coupon`, `Customer`, `Invoice`, `Product`, `Price`. Each endpoint becomes its own table in the destination. Stripe is currently the **only** connector where unticking actually narrows the load — see the note below.
+4. Because Stripe is a SaaS source, the form shows **Select endpoints to load** — a checkbox per resource, **all ticked by default**. For Stripe the list is `charges`, `customers`, `invoices`, `prices`, `products`, `subscriptions`. Untick anything you do not want: each ticked endpoint becomes its own table in the destination, and unticked ones are not fetched at all.
 5. Click **Create Upload**. It appears in the table below with status `draft`.
 
 > **There is no write disposition, load mode, source schema or table-name field for a SaaS source, and that is deliberate.** Those controls are rendered only when the source is a SQL database. The endpoint checkboxes are the equivalent control here.
-
-> **The selection is honoured here, but not everywhere.** Datanika stores it as `endpoints` in the upload config, and the Stripe loader is the one that reads it. For the other SaaS connectors the same checkboxes are currently inert ([core#532](https://github.com/datanika-io/datanika-core/issues/532)) — worth knowing if you switch connectors and expect the same behaviour.
 
 > **The endpoint list is a fixed default, not a live fetch.** It comes from Datanika's built-in map for Stripe rather than from your account, so it does not reflect custom objects. Anything outside the list needs the [REST API connector](/docs/connectors/rest-api).
 
