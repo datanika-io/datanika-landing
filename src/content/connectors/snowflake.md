@@ -85,38 +85,37 @@ Create a **dedicated user and role** rather than reusing a personal login. This 
 
 ![Adding Snowflake as a destination in Datanika](/docs/connectors/snowflake/02-add-connection.png)
 
-## Step 3 — Configure a pipeline to Snowflake
+## Step 3 — Use Snowflake as a destination
 
-1. Open the **source connection** (e.g., PostgreSQL, Stripe, CSV) and click **Configure pipeline**.
-2. Pick **Snowflake** as the destination warehouse.
-3. Choose a **target schema** — e.g. `RAW_POSTGRES`, `RAW_STRIPE`. Snowflake schemas are created automatically if the role has `CREATE SCHEMA`.
-4. Select the tables/endpoints to sync. For each:
-   - **Write disposition** — `replace` (full refresh) or `merge` (incremental upsert).
-   - **Primary key** — required for `merge`.
-   - **Incremental cursor** — e.g. `updated_at`.
-5. Save.
+A destination is chosen per **upload**, at **`/uploads`** — not on the connection, and not on a pipeline page. There is no "Configure pipeline" button; `/pipelines` is the **dbt** builder, which is a different thing.
 
-> **Cost tip.** Snowflake charges by compute-seconds when the warehouse is active. Use `AUTO_SUSPEND = 60` (set in Step 1) so the warehouse hibernates between pipeline runs. For large incremental loads, consider an `X-SMALL` warehouse — dlt streams data efficiently and doesn't need large warehouses for most ELT workloads.
+1. Open **`/uploads`**. The **New Upload** form is rendered inline on the page.
+2. Fill in **Upload name** (letters and digits only — anything else is stripped as you type) and an optional **Description**.
+3. Pick the **Source connection** you want to read from, and set the **Destination connection** to the Snowflake connection from Step 2. Each picker opens a dialog listing entries as `17 — mywarehouse (snowflake)`, i.e. id, name, type.
+4. **What else the form shows depends on the *source*, not on Snowflake.** **Load Mode**, **Write Disposition**, **Source schema** and **Table names** appear only when the source is a SQL database; for a file, SaaS, MongoDB, Google Sheets, REST or Kafka source they are hidden and the load takes whatever shape the source produces. Snowflake honours what it is handed either way.
+5. Click **Create Upload**. It appears in the table below with status `draft`.
+
+> **Batch size** (default 10000) and the optional **Schema Contract** dropdowns — **Tables** / **Columns** / **Data Type** — are on every upload regardless of source. The contract decides whether a changed incoming shape evolves the destination or fails the run.
 
 ## Step 4 — First run
 
-1. Click **Run now** on the pipeline page.
-2. Watch the **Runs** tab. dlt uses Snowflake's `COPY INTO` or `PUT`/`COPY` for bulk loading — expect fast ingestion even for large tables.
-3. When done, open **Catalog → Snowflake → `RAW_POSTGRES`** (or your schema) and browse.
-4. Spot-check: in Snowsight, run `SELECT count(*) FROM RAW.RAW_POSTGRES.<table>;` and compare to the source row count.
-5. Check **Query History** in Snowsight to confirm queries ran under the `DATANIKA_LOADER` role and `DATANIKA_WH` warehouse.
+1. On the **`/uploads`** row for your upload, click **Run**. There is no "Run now" on a pipeline page — the trigger lives on the upload's own row.
+2. Watch **`/runs`**. The run shows a status badge, start and finish timestamps and a **Rows** count; the **Logs** icon on the row opens the detail.
+3. When it finishes, open **Catalog** and browse the landed tables. The upload lands them in a schema **named after the upload** — `warehousedailyload` creates schema `warehousedailyload` in the destination, next to dlt's `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables. There is no target-schema field to choose.
+4. Spot-check the row count against the source. **Verify in the destination rather than trusting the status badge** — a green run means the load finished, not that it moved what you expected.
 
 ## Step 5 — Schedule it
 
-1. On the pipeline page, click **Schedule**.
-2. Pick a cadence:
-   - **Hourly** — operational dashboards, near-real-time analytics.
-   - **Every 6 hours** — standard reporting.
-   - **Daily at 03:00** — full warehouse refresh, lowest compute cost window.
-3. Choose a **timezone** and save.
-4. Wire up failure alerts in **Settings → Notifications**.
+Schedules live on their own page and reference the upload **by name**.
 
-> **Warehouse auto-suspend matters.** If your schedule runs every 6 hours and your warehouse auto-suspends after 60 seconds, you'll pay for ~2 minutes of compute per run (spin-up + load + suspend). This is significantly cheaper than leaving a warehouse running 24/7.
+1. Open **`/schedules`**. The **New Schedule** form is rendered inline.
+2. Fill in:
+   - **Target type** — `upload` (the dropdown also offers pipelines and transformations).
+   - **Target name** — the upload's name exactly as it was saved, e.g. `warehousedailyload`.
+   - **Cron expression** — a real five-field cron string. There is no cadence picker and no "manual only" option: leaving the upload unscheduled *is* manual-only. `0 * * * *` hourly, `0 */6 * * *` every six hours, `0 3 * * *` nightly at 03:00.
+   - **Timezone** — defaults to `UTC`. The cron is evaluated in this zone, which matters for daily and weekly cadences.
+3. Click **Create Schedule**. The row lands as **Active**, with **Pause** available per row.
+4. Wire up failure alerts in **Settings → Notifications** so you hear about broken runs before your stakeholders do.
 
 ## Troubleshooting
 

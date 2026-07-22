@@ -67,44 +67,43 @@ Create a **dedicated loader user** rather than reusing an admin account. This ke
 4. Click **Test Connection**. Datanika verifies it can connect and run a query against the cluster. You should see a green checkmark.
 5. Click **Create Connection**.
 
-> **No schema field on the connection.** You pick a **target schema** per pipeline in [Step 3](#step-3--configure-a-pipeline-to-redshift), so one Redshift connection can feed multiple landing schemas (`raw_postgres`, `raw_stripe`, …).
+> **No schema field on the connection — and none on the upload either.** There is no target-schema control anywhere: each upload lands in a schema **named after the upload**. That still lets one Redshift connection feed multiple landing schemas — name the uploads `rawpostgres`, `rawstripe`, and so on, and you get a schema per upload.
 
 ![Adding Redshift as a destination in Datanika](/docs/connectors/redshift/02-add-connection.png)
 
 > **Test connection fails?** Jump to [Troubleshooting](#troubleshooting) — most first-time failures are security group rules or the cluster not being publicly accessible.
 
-## Step 3 — Configure a pipeline to Redshift
+## Step 3 — Use Redshift as a destination
 
-1. Open the **source connection** you want to pipe data from (e.g., your Postgres or Stripe source) and click **Configure pipeline**.
-2. Pick **Amazon Redshift** as the destination warehouse.
-3. Choose a **target schema**. We recommend a schema name that reflects the source — e.g. `raw_postgres`, `raw_stripe` — so it's obvious where the data came from. Keep raw landing data separated from modeled data.
-4. Select the tables/endpoints to sync from the source. For each:
-   - **Write disposition** — `replace` (full refresh) or `merge` (incremental upsert).
-   - **Primary key** — required for `merge`.
-   - **Incremental cursor** — a monotonically increasing column (e.g. `updated_at`).
-5. Save the pipeline configuration.
+A destination is chosen per **upload**, at **`/uploads`** — not on the connection, and not on a pipeline page. There is no "Configure pipeline" button; `/pipelines` is the **dbt** builder, which is a different thing.
 
-> **Tip.** Redshift performs best with bulk loads. Use `merge` with an incremental cursor for large tables to avoid rewriting the full table on every run. dlt uses Redshift's `COPY` command under the hood for fast parallel loads.
+1. Open **`/uploads`**. The **New Upload** form is rendered inline on the page.
+2. Fill in **Upload name** (letters and digits only — anything else is stripped as you type) and an optional **Description**.
+3. Pick the **Source connection** you want to read from, and set the **Destination connection** to the Redshift connection from Step 2. Each picker opens a dialog listing entries as `17 — mywarehouse (redshift)`, i.e. id, name, type.
+4. **What else the form shows depends on the *source*, not on Redshift.** **Load Mode**, **Write Disposition**, **Source schema** and **Table names** appear only when the source is a SQL database; for a file, SaaS, MongoDB, Google Sheets, REST or Kafka source they are hidden and the load takes whatever shape the source produces. Redshift honours what it is handed either way.
+5. Click **Create Upload**. It appears in the table below with status `draft`.
+
+> **Batch size** (default 10000) and the optional **Schema Contract** dropdowns — **Tables** / **Columns** / **Data Type** — are on every upload regardless of source. The contract decides whether a changed incoming shape evolves the destination or fails the run.
 
 ## Step 4 — First run
 
-1. From the pipeline page, click **Run now**.
-2. Open the **Runs** tab to watch progress. dlt stages data in S3 (or local temp files for self-hosted) and uses Redshift `COPY` for fast bulk loading.
-3. When the run finishes, open **Catalog → Redshift → `raw_<source>`** to browse the landed tables.
-4. Spot-check in the Redshift query editor: `SELECT count(*) FROM raw_postgres.orders;` should match the row count Datanika reports.
-5. Check **SVL_QUERY_SUMMARY** or the Redshift Console → Query monitoring to confirm the load queries ran under the `datanika_loader` user.
+1. On the **`/uploads`** row for your upload, click **Run**. There is no "Run now" on a pipeline page — the trigger lives on the upload's own row.
+2. Watch **`/runs`**. The run shows a status badge, start and finish timestamps and a **Rows** count; the **Logs** icon on the row opens the detail.
+3. When it finishes, open **Catalog** and browse the landed tables. The upload lands them in a schema **named after the upload** — `warehousedailyload` creates schema `warehousedailyload` in the destination, next to dlt's `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables. There is no target-schema field to choose.
+4. Spot-check the row count against the source. **Verify in the destination rather than trusting the status badge** — a green run means the load finished, not that it moved what you expected.
 
 ## Step 5 — Schedule it
 
-1. On the pipeline page, click **Schedule**.
-2. Pick a cadence:
-   - **Hourly** — operational dashboards, reverse-ETL downstream.
-   - **Every 6 hours** — standard analytics reporting.
-   - **Daily at 03:00** — full warehouse refresh, cost-optimized (Redshift Serverless auto-scales down during idle).
-3. Choose a **timezone** and save.
-4. Wire up failure alerts in **Settings → Notifications** so broken runs surface before dashboards go stale.
+Schedules live on their own page and reference the upload **by name**.
 
-> **Cost tip.** Redshift Serverless charges per RPU-second of compute. Schedule bulk loads during predictable windows so the cluster can scale down between runs. For provisioned clusters, align schedules with your WLM queue configuration to avoid contention with analyst queries.
+1. Open **`/schedules`**. The **New Schedule** form is rendered inline.
+2. Fill in:
+   - **Target type** — `upload` (the dropdown also offers pipelines and transformations).
+   - **Target name** — the upload's name exactly as it was saved, e.g. `warehousedailyload`.
+   - **Cron expression** — a real five-field cron string. There is no cadence picker and no "manual only" option: leaving the upload unscheduled *is* manual-only. `0 * * * *` hourly, `0 */6 * * *` every six hours, `0 3 * * *` nightly at 03:00.
+   - **Timezone** — defaults to `UTC`. The cron is evaluated in this zone, which matters for daily and weekly cadences.
+3. Click **Create Schedule**. The row lands as **Active**, with **Pause** available per row.
+4. Wire up failure alerts in **Settings → Notifications** so you hear about broken runs before your stakeholders do.
 
 ## Troubleshooting
 

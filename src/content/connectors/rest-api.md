@@ -62,38 +62,38 @@ Some public APIs (government data, open datasets) require no authentication at a
 
 ![Adding a REST API connection in Datanika](/docs/connectors/rest-api/02-add-connection.png)
 
-## Step 3 — Configure endpoints and schemas
+## Step 3 — Configure the upload
 
-1. Open the connection and click **Configure pipeline**.
-2. Pick the **destination warehouse** and a **target schema** — e.g., `raw_api` or `raw_<service_name>`.
-3. Configure the endpoints to sync. Each endpoint maps to one table:
-   - **Path** — the relative path from the base URL, e.g. `/users`, `/orders`, `/products`.
-   - **Response path** — if the API wraps results in a nested key (e.g., `{"data": {"items": [...]}}`), specify the JSON path to the array.
-4. For each endpoint, pick a **Write disposition**:
-   - `replace` — full refresh every run. The simplest option, works for any API.
-   - `append` — adds new records. Use for event/log-style endpoints.
-   - `merge` — upserts by a primary key. Use for entity endpoints (users, orders) if the API supports filtering by `updated_since`.
-5. Save.
+Extract-load is configured at **`/uploads`**, not on the connection. There is no "Configure pipeline" button — connection rows offer only Test / Edit / Copy / Delete, and `/pipelines` is the **dbt** builder, which is a different thing.
 
-> **Tip.** Start with one small endpoint (`/users` or `/health`) to validate the connection and response parsing before configuring the full set.
+1. Open **`/uploads`**. The **New Upload** form is rendered inline on the page.
+2. Fill in **Upload name** (letters and digits only — anything else is stripped as you type, so `restapi-daily-sync` becomes `restapidailysync`) and an optional **Description**.
+3. Pick the **Source connection** and the **Destination connection** — the REST API connection from Step 2 is the source. Each picker opens a dialog listing entries as `16 — myconnection (postgres)`, i.e. id, name, type.
+4. Click **Create Upload**. It appears in the table below with status `draft`.
+
+> **There is no write disposition, load mode, source schema or table-name field for a REST API source, and that is deliberate.** Those controls are rendered only when the source is a SQL database. Endpoints and pagination are set on the **connection** (Base URL, API Key, Extra Headers) — there is no endpoint selector on the upload form.
+
+> **Batch size** (default 10000) and the optional **Schema Contract** dropdowns — **Tables** / **Columns** / **Data Type** — are on every upload regardless of source. The contract decides whether a changed incoming shape evolves the destination or fails the run.
 
 ## Step 4 — First run
 
-1. Click **Run now**.
-2. Watch the **Runs** tab. Performance depends entirely on the target API — fast APIs with few records finish in seconds; slow paginated APIs with millions of records can take minutes to hours.
-3. Common first-run failures:
-   - `401 Unauthorized` — bad token or wrong auth type.
-   - `404 Not Found` — wrong base URL or endpoint path.
-   - `JSONDecodeError` — the API returned HTML or XML instead of JSON (wrong URL, auth redirect, or the API isn't JSON-based).
-4. When finished, open **Catalog → `raw_api`** and browse. One table per endpoint.
+1. On the **`/uploads`** row for your upload, click **Run**. There is no "Run now" on a pipeline page — the trigger lives on the upload's own row.
+2. Watch **`/runs`**. The run shows a status badge, start and finish timestamps and a **Rows** count; the **Logs** icon on the row opens the detail.
+3. When it finishes, open **Catalog** and browse the landed tables. The upload lands them in a schema **named after the upload** — `restapidailysync` creates schema `restapidailysync` in the destination, next to dlt's `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables. There is no target-schema field to choose.
+4. Spot-check the row count against the source. **Verify in the destination rather than trusting the status badge** — a green run means the load finished, not that it moved what you expected.
+
 ## Step 5 — Schedule it
 
-1. On the pipeline page, click **Schedule**.
-2. The right cadence depends on how often the source data changes:
-   - **Hourly** — event streams, rapidly changing data.
-   - **Every 6 hours** — entity data that changes throughout the day.
-   - **Daily at 03:00** — reference data, slow-moving catalogs.
-3. Choose a **timezone** and save.
+Schedules live on their own page and reference the upload **by name**.
+
+1. Open **`/schedules`**. The **New Schedule** form is rendered inline.
+2. Fill in:
+   - **Target type** — `upload` (the dropdown also offers pipelines and transformations).
+   - **Target name** — the upload's name exactly as it was saved, e.g. `restapidailysync`.
+   - **Cron expression** — a real five-field cron string. There is no cadence picker and no "manual only" option: leaving the upload unscheduled *is* manual-only. `0 * * * *` hourly, `0 */6 * * *` every six hours, `0 3 * * *` nightly at 03:00.
+   - **Timezone** — defaults to `UTC`. The cron is evaluated in this zone, which matters for daily and weekly cadences.
+3. Click **Create Schedule**. The row lands as **Active**, with **Pause** available per row.
+4. Wire up failure alerts in **Settings → Notifications** so you hear about broken runs before your stakeholders do.
 
 ## Troubleshooting
 

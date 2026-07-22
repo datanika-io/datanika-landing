@@ -49,41 +49,38 @@ A personal access token (PAT) authenticates as you and can read everything your 
 
 ![Adding Asana in Datanika](/docs/connectors/asana/02-add-connection.png)
 
-## Step 3 — Configure resources and schemas
+## Step 3 — Configure the upload
 
-1. Open the connection and click **Configure pipeline**.
-2. Pick the **destination warehouse** and a **target schema** — we recommend `raw_asana`.
-3. Resources typically include:
-   - `tasks` — the main table: name, assignee, completed status, due date, project, section, timestamps, custom fields
-   - `projects` — project metadata and status
-   - `sections` — columns/phases within a project
-   - `users` — workspace members
-   - `teams` — team structure
-   - `tags` — labels applied to tasks
-   - `stories` — the activity log / comments on tasks
-4. Every Asana object is keyed by a **`gid`** (a stable string ID). For each resource pick a **Write disposition**:
-   - `merge` — recommended for `tasks` and `stories` (they change constantly). Uses `gid` as the primary key with a `modified_at` cursor.
-   - `replace` — fine for small reference tables like `users`, `teams`, `tags`.
-5. Save.
+Extract-load is configured at **`/uploads`**, not on the connection. There is no "Configure pipeline" button — connection rows offer only Test / Edit / Copy / Delete, and `/pipelines` is the **dbt** builder, which is a different thing.
 
-> **Tip.** Asana's API won't return every task in a workspace from a single unscoped call — tasks are fetched per project (or per assignee). Sync `projects` first, then `tasks`; Datanika iterates projects to assemble the full task table.
+1. Open **`/uploads`**. The **New Upload** form is rendered inline on the page.
+2. Fill in **Upload name** (letters and digits only — anything else is stripped as you type, so `asana-daily-sync` becomes `asanadailysync`) and an optional **Description**.
+3. Pick the **Source connection** and the **Destination connection** — the Asana connection from Step 2 is the source. Each picker opens a dialog listing entries as `16 — myconnection (postgres)`, i.e. id, name, type.
+4. Click **Create Upload**. It appears in the table below with status `draft`.
+
+> **⚠️ The form currently shows SQL fields that do nothing for Asana.** You will see **Load Mode**, **Write Disposition**, **Source schema** and **Table names**, and you will *not* see the endpoint checkboxes that the other SaaS connectors get. That is a known UI bug ([core#503](https://github.com/datanika-io/datanika-core/issues/503)): Asana is treated as a SaaS source at run time but was never added to the UI's SaaS list, so the form falls through to the SQL branch. **Leave those four fields alone** — the loader ignores them and pulls the connector's standard resources. The load itself is unaffected.
+
+> **Batch size** (default 10000) and the optional **Schema Contract** dropdowns — **Tables** / **Columns** / **Data Type** — are on every upload regardless of source. The contract decides whether a changed incoming shape evolves the destination or fails the run.
 
 ## Step 4 — First run
 
-1. Click **Run now**.
-2. Watch the **Runs** tab. Asana paginates results and enforces a per-minute rate limit, so large workspaces with thousands of tasks take a few minutes on the first backfill.
-3. If the token is wrong, the run fails with `401 Unauthorized`.
-4. When finished, open **Catalog → `raw_asana`** and browse the tables.
+1. On the **`/uploads`** row for your upload, click **Run**. There is no "Run now" on a pipeline page — the trigger lives on the upload's own row.
+2. Watch **`/runs`**. The run shows a status badge, start and finish timestamps and a **Rows** count; the **Logs** icon on the row opens the detail.
+3. When it finishes, open **Catalog** and browse the landed tables. The upload lands them in a schema **named after the upload** — `asanadailysync` creates schema `asanadailysync` in the destination, next to dlt's `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables. There is no target-schema field to choose.
+4. Spot-check the row count against the source. **Verify in the destination rather than trusting the status badge** — a green run means the load finished, not that it moved what you expected.
 
 ## Step 5 — Schedule it
 
-1. On the pipeline page, click **Schedule**.
-2. Common cadences:
-   - **Hourly** — live delivery dashboards, stand-up prep.
-   - **Every 6 hours** — daily throughput and load reports.
-   - **Daily at 03:00** — weekly/monthly cycle-time and completion analysis.
-3. Choose a **timezone** and save.
-4. Wire up failure alerts in **Settings → Notifications**.
+Schedules live on their own page and reference the upload **by name**.
+
+1. Open **`/schedules`**. The **New Schedule** form is rendered inline.
+2. Fill in:
+   - **Target type** — `upload` (the dropdown also offers pipelines and transformations).
+   - **Target name** — the upload's name exactly as it was saved, e.g. `asanadailysync`.
+   - **Cron expression** — a real five-field cron string. There is no cadence picker and no "manual only" option: leaving the upload unscheduled *is* manual-only. `0 * * * *` hourly, `0 */6 * * *` every six hours, `0 3 * * *` nightly at 03:00.
+   - **Timezone** — defaults to `UTC`. The cron is evaluated in this zone, which matters for daily and weekly cadences.
+3. Click **Create Schedule**. The row lands as **Active**, with **Pause** available per row.
+4. Wire up failure alerts in **Settings → Notifications** so you hear about broken runs before your stakeholders do.
 
 ## Troubleshooting
 

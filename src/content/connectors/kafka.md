@@ -58,32 +58,39 @@ You don't need to generate API keys or certificates for the structured flow — 
 
 > **Need SASL/SSL/mTLS?** Toggle **Use raw JSON config** at the top of the form and provide a JSON payload with the dlt kafka options you need (e.g. `{"bootstrap_servers": "...", "topics": [...], "group_id": "...", "security_protocol": "SASL_SSL", "sasl_mechanism": "PLAIN", "sasl_username": "...", "sasl_password": "..."}`). These extra keys pass through to the dlt `kafka_consumer` resource. The Test Connection button may fail on the raw-JSON path — the first pipeline run will attempt the real connection.
 
-## Step 3 — Configure the pipeline
+## Step 3 — Configure the upload
 
-1. Open the connection you just created and click **Configure pipeline**.
-2. Pick the **destination warehouse** and a **target schema** — we recommend `raw_kafka` or a schema per domain (e.g., `raw_events`, `raw_clickstream`). Datanika syncs the topics you listed on the connection into one landing table per topic.
-3. Save the pipeline configuration.
+Extract-load is configured at **`/uploads`**, not on the connection. There is no "Configure pipeline" button — connection rows offer only Test / Edit / Copy / Delete, and `/pipelines` is the **dbt** builder, which is a different thing.
 
-> **Tip.** Start with one low-volume topic (a few thousand messages/hour) on the connection — edit the Topics field to point at just that one topic — so the first run validates the full flow (auth, deserialization, warehouse load) before you widen the scope. Once the pipeline is green, edit the connection and add the rest of the topics.
+1. Open **`/uploads`**. The **New Upload** form is rendered inline on the page.
+2. Fill in **Upload name** (letters and digits only — anything else is stripped as you type, so `events-stream-load` becomes `eventsstreamload`) and an optional **Description**.
+3. Pick the **Source connection** and the **Destination connection** — the Kafka connection from Step 2 is the source. Each picker opens a dialog listing entries as `16 — myconnection (postgres)`, i.e. id, name, type.
+4. Click **Create Upload**. It appears in the table below with status `draft`.
+
+> **There is no write disposition, load mode, source schema or table-name field for a Kafka source, and that is deliberate.** Those controls are rendered only when the source is a SQL database. Topics are set on the **connection**, not here — there is no topic selector on the upload form.
+
+> **Batch size** (default 10000) and the optional **Schema Contract** dropdowns — **Tables** / **Columns** / **Data Type** — are on every upload regardless of source. The contract decides whether a changed incoming shape evolves the destination or fails the run.
 
 ## Step 4 — First run
 
-1. From the pipeline page, click **Run now**.
-2. Open the **Runs** tab to watch progress. dlt creates a Kafka consumer in your configured consumer group and reads messages in batches.
-3. A first run against a topic with millions of messages can take 10–60 minutes depending on message size and network throughput. Subsequent runs only read new messages from the last committed offset.
-4. When the run finishes, open **Catalog → `<your warehouse>` → `raw_kafka`** to browse the landed tables. You should see one table per topic.
-5. Spot-check: compare the table's row count against the topic's message count in your Kafka admin tool or Confluent Cloud metrics.
+1. On the **`/uploads`** row for your upload, click **Run**. There is no "Run now" on a pipeline page — the trigger lives on the upload's own row.
+2. Watch **`/runs`**. The run shows a status badge, start and finish timestamps and a **Rows** count; the **Logs** icon on the row opens the detail.
+3. When it finishes, open **Catalog** and browse the landed tables. The upload lands them in a schema **named after the upload** — `eventsstreamload` creates schema `eventsstreamload` in the destination, next to dlt's `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables. There is no target-schema field to choose.
+4. Spot-check the row count against the source. **Verify in the destination rather than trusting the status badge** — a green run means the load finished, not that it moved what you expected.
+
 ## Step 5 — Schedule it
 
-1. On the pipeline page, click **Schedule**.
-2. Pick a cadence. Kafka topics accumulate messages continuously, so the cadence controls how fresh your warehouse data is:
-   - **Every 15 minutes** — near-real-time analytics, event-driven dashboards.
-   - **Hourly** — standard event analytics, session aggregation.
-   - **Every 6 hours** — batch reporting where sub-hour freshness isn't critical.
-3. Choose a **timezone** and save.
-4. Wire up failure alerts in **Settings → Notifications** so broken runs surface before downstream consumers notice stale data.
+Schedules live on their own page and reference the upload **by name**.
 
-> **Note on latency vs. cost.** Datanika reads Kafka in batch, not as a continuous consumer. Each scheduled run consumes from the last committed offset, loads into the warehouse, and stops. This is by design — it's cost-efficient and warehouse-friendly. For true sub-second streaming, use Kafka Streams or Flink and point Datanika at the resulting tables.
+1. Open **`/schedules`**. The **New Schedule** form is rendered inline.
+2. Fill in:
+   - **Target type** — `upload` (the dropdown also offers pipelines and transformations).
+   - **Target name** — the upload's name exactly as it was saved, e.g. `eventsstreamload`.
+   - **Cron expression** — a real five-field cron string. There is no cadence picker and no "manual only" option: leaving the upload unscheduled *is* manual-only. `0 * * * *` hourly, `0 */6 * * *` every six hours, `0 3 * * *` nightly at 03:00.
+   - **Timezone** — defaults to `UTC`. The cron is evaluated in this zone, which matters for daily and weekly cadences.
+3. Click **Create Schedule**. The row lands as **Active**, with **Pause** available per row.
+4. Wire up failure alerts in **Settings → Notifications** so you hear about broken runs before your stakeholders do.
+
 ## Troubleshooting
 
 ### `Test connection failed: DNS resolution failed for broker`
