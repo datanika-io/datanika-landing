@@ -31,11 +31,13 @@ CSV is the universal escape hatch. Every SaaS tool exports it, every analyst has
    - **Connection Name** — a label you'll recognize, e.g. `q3signupsexport` or `customers202604`. This is what shows up in the source and destination pickers. **The field strips anything that isn't a letter or a digit as you type** — hyphens, underscores and spaces silently disappear, so `q3-signups-export` becomes `q3signupsexport`. Type the name you want to end up with.
    - **File source** — choose one of the two inputs on the form:
      - **Upload File** — drag a `.csv` file into the dashed drop zone, or click the **Upload File** button and pick it from the OS file picker. Datanika uploads the file to your org's storage and uses it as the connection source.
-     - **Or enter file path** — fill this text input with a path the `datanika-app` container can reach (e.g., `/var/datanika/inbox/customers.csv`), or an object-store URI (e.g., `s3://my-bucket/exports/customers.csv`). Use this when the file isn't on your laptop — it's on a host-mounted volume, an NFS share, or object storage that the container has credentials for.
-4. Click **Test Connection** if you like, but don't read anything into it: CSV connections always return *"Test not applicable for this type"*, **including when you gave it a file path**. The button does not check that the path exists or that the file is readable — the file is only validated when the load runs. A wrong path looks exactly like a right one here.
+     - **Or enter file path** — **this is a directory, not a file.** Give it a path the worker can reach (e.g. `/var/datanika/inbox`) or an object-store prefix (e.g. `s3://my-bucket/exports/`); Datanika then matches `*.csv` *inside* it. Pointing this at `/var/datanika/inbox/customers.csv` matches nothing, because the pattern is applied underneath whatever you type. Use this when the file isn't on your laptop — a host-mounted volume, an NFS share, or object storage the container has credentials for.
+4. Click **Test Connection** if you like, but don't read anything into it: CSV connections always return *"Test not applicable for this type"*, **including when you gave it a path**. The button does not check that the directory exists or that anything in it is readable — that happens when the load runs.
 5. Click **Create Connection**.
 
-> **Name + file is all you get on the form.** The CSV Connection form has exactly three inputs: Name, Upload File, and Or enter file path (plus a **Use raw JSON config** escape hatch for advanced cases). There's no delimiter picker, no encoding picker, no header-row override, and no column-type editor on the form itself — the loader handles all of that at pipeline runtime with best-effort detection. If you need per-column control over types, do it downstream in a dbt model.
+> **Name + file is all you get on the form.** The CSV Connection form has exactly three inputs: Name, Upload File, and Or enter file path (plus a **Use raw JSON config** escape hatch). There is no delimiter picker, no encoding picker, no header-row override and no column-type editor.
+>
+> **What actually happens at load time:** the header row and column types are inferred for you (the reader is pandas-backed, and it is good at this). **Delimiter and encoding are *not* auto-detected** — they use pandas' defaults, comma and UTF-8. If your file is semicolon-delimited or Windows-1252, you must say so explicitly via `delimiter` / `encoding` in the upload's **Use raw JSON config**; there is no form field for them yet ([core#499](https://github.com/datanika-io/datanika-core/issues/499)). Either convert the file first (see Troubleshooting) or use the raw-config escape hatch. For per-column type control, do it downstream in a dbt model.
 
 > **Read-only bind mounts.** If you're pointing the path input at a directory on the host, mount it into the container read-only (`:ro` in `docker-compose.yml`). Datanika never writes back to a CSV source, and read-only makes that guarantee explicit.
 
@@ -63,8 +65,13 @@ A connection on its own moves nothing. The thing that actually reads the CSV and
 
 1. On the **`/uploads`** row for your upload, click **Run**.
 2. Watch **`/runs`**. CSV loads are usually **fast**: Datanika streams rows directly into the destination, so a 100k-row file typically lands in seconds and a 10M-row file in a few minutes.
-3. When the run finishes, open **Catalog → `<your warehouse>`** and browse the new table.
-4. Spot-check by opening the CSV in a spreadsheet and comparing row counts and a handful of values — type inference failures usually show up as null or truncated cells and are easy to catch visually.
+
+![A completed CSV load in Datanika's run history](/docs/connectors/csv/04-first-run.png)
+
+3. When the run finishes, open **Catalog** and browse the new table. It lands in a schema **named after the upload**, and the table itself is named **`csv`** — the default file pattern is `*.csv`, which matches many files rather than one, so the table takes the connector's name instead of a filename. To choose the name yourself, set `table_name` in the upload's **Use raw JSON config**.
+4. Spot-check by opening the CSV in a spreadsheet and comparing row counts and a handful of values against the destination. Type-inference failures usually show up as null or truncated cells and are easy to catch visually.
+
+> **A run that matches no files now fails, loudly.** If the path is wrong, the export never ran, or the pattern matches nothing, the run ends `failed` with a message naming the cause — including the specific case where the path points at a *file* rather than the directory containing it, which tells you the parent directory to use instead. It used to complete as `success` with zero rows ([core#493](https://github.com/datanika-io/datanika-core/issues/493)), which was indistinguishable from a healthy load.
 
 ## Step 4 — Schedule it
 
