@@ -4,7 +4,7 @@ description: "Step-by-step guide to sync Google Ads reporting into your warehous
 source: "google_ads"
 source_name: "Google Ads"
 category: "saas"
-verified_by: "source-code"
+verified_by: "product-ui"
 verified_date: "2026-08-29"
 related_use_cases: []
 related_comparisons:
@@ -70,6 +70,8 @@ Datanika authenticates as **you**, using a standard OAuth user credential — no
 4. Click **Create Connection**. The three secret fields are stored encrypted at rest with Fernet.
 
 > **Credentials are validated on the first run.** Google Ads is an HTTP-API source, so **Test Connection** reports *"Test not applicable for this type"*. Access, token level and OAuth scope are all checked when the first pipeline runs — that run is the real test.
+
+![Adding Google Ads in Datanika](/docs/connectors/google-ads/02-add-connection.png)
 
 ## Step 4 — Configure the upload
 
