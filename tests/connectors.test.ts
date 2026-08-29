@@ -29,11 +29,32 @@ describe("connector landing pages", () => {
     }
   });
 
-  it("does not ship a page for a withdrawn connector", () => {
-    // google-ads is withdrawn in the app (core#567) and 301s to /connectors.
-    // Astro emits a redirect stub at this path, so assert on the data file —
-    // the question is whether we still *market* it, not whether a file exists.
-    expect(connectorSlugs).not.toContain("google-ads");
+  it("never both markets and redirects the same connector", () => {
+    // This replaces a guard that named `google-ads` as withdrawn (core#567).
+    // Naming the connector was the bug: the withdrawal was reversed in
+    // core#592 and a literal cannot notice that.
+    //
+    // The durable invariant is the one that has teeth in both directions — a
+    // slug must not appear in `connectors.ts` *and* in the redirect map at the
+    // same time. Astro resolves the redirect first, so leaving a stale 301
+    // behind silently shadows the page it points away from: the build passes,
+    // the page exists in `dist/`, and every visitor still bounces to the
+    // index. That is exactly the half-finished restore this test now catches.
+    const config = readFileSync(resolve(__dirname, "../astro.config.mjs"), "utf-8");
+    const redirectBlock = config.slice(
+      config.indexOf("redirects: {"),
+      config.indexOf("integrations:"),
+    );
+    const redirected = [...redirectBlock.matchAll(/^\s*"(\/connectors\/[^"]+)":/gm)].map(
+      (m) => m[1],
+    );
+    const shadowed = connectorSlugs.filter((slug) =>
+      redirected.includes(`/connectors/${slug}`),
+    );
+    expect(
+      shadowed,
+      `These connectors are in connectors.ts but still redirect away: ${shadowed.join(", ")}`,
+    ).toEqual([]);
   });
 });
 

@@ -1,0 +1,100 @@
+name: Connector count parity
+
+# Landing and core each count connectors, and until 2026-08-29 nothing compared
+# the two.
+#
+# Core's number is guarded: `tests/test_docs/test_readme_claims.py` derives it
+# from the `ConnectionType` enum minus `WITHDRAWN_SOURCE_TYPES`, so when
+# Engineering withdrew Google Ads (core#567) and then restored it (core#592) the
+# README moved 36 -> 35 -> 36 on its own. Landing's number is derived too, but
+# only from `src/data/connectors.ts` — which is edited by hand. So the two
+# guards were each internally consistent and mutually blind: core self-corrected
+# on 2026-07-23 and landing sat at 35 for five weeks, publicly understating the
+# product and 301ing away a page that ranked for "google ads data pipeline".
+#
+# Nothing was watching, and that is the actual defect. A PR-time check watches
+# our PRs; the change that broke us landed in someone else's repo. Hence a cron
+# that files an issue: the drift shows up on the board the next morning instead
+# of waiting for a human to read both numbers.
+#
+# Deliberately NOT a required check on `dev`: this depends on a network call to
+# another repo, and a required check that can fail for reasons unrelated to the
+# PR is how merges get blocked on nothing. It runs daily, and on demand.
+
+on:
+  schedule:
+    - cron: "30 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  parity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Read landing's connector count
+        id: landing
+        run: |
+          # Count top-level `slug:` keys in the connectors array. Comment lines
+          # are skipped by the leading-whitespace + quote shape.
+          count=$(grep -cE '^\s{4}slug: "' src/data/connectors.ts)
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+          echo "landing: $count"
+
+      - name: Read core's connector count
+        id: core
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # datanika-core is public, so the default token can read it. Line 19
+          # of the README is the headline claim; the other two must agree with
+          # it or core's own guard would already be red.
+          readme=$(gh api repos/datanika-io/datanika-core/contents/README.md \
+            --jq '.content' | base64 -d)
+          count=$(printf '%s' "$readme" | grep -oiE '\*\*([0-9]+) Connectors\*\*' \
+            | head -1 | grep -oE '[0-9]+')
+          if [ -z "$count" ]; then
+            echo "::error::Could not parse a connector count out of core's README."
+            echo "The headline format changed — fix this workflow's regex."
+            exit 1
+          fi
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+          echo "core: $count"
+
+      - name: Compare, and file an issue on drift
+        if: steps.landing.outputs.count != steps.core.outputs.count
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LANDING: ${{ steps.landing.outputs.count }}
+          CORE: ${{ steps.core.outputs.count }}
+        run: |
+          # Don't stack duplicates — one open issue per drift is enough.
+          existing=$(gh issue list --state open --search "in:title Connector count drift" \
+            --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            echo "Already tracked in #$existing; not filing again."
+            exit 1
+          fi
+
+          # Heredoc, not an inline string: continuation lines in a quoted shell
+          # argument keep their indentation, and GitHub renders four leading
+          # spaces as a code block.
+          cat > /tmp/drift.md <<EOF
+          \`src/data/connectors.ts\` has **$LANDING** entries. \`datanika-core\`'s README claims **$CORE** connectors.
+
+          Core's count is derived from \`ConnectionType\` minus \`WITHDRAWN_SOURCE_TYPES\` and guarded by \`tests/test_docs/test_readme_claims.py\`, so it moves on its own when a connector is added, withdrawn or restored. Landing's does not — it follows \`connectors.ts\`, which is edited by hand.
+
+          **Core is almost always the side that moved.** Check what changed there first, then reconcile landing: add or remove the \`connectors.ts\` entry, write or retire the connector page and setup guide, and add or remove the \`/connectors/<slug>\` redirect in \`astro.config.mjs\` to match. \`tests/connectors.test.ts\` fails if an entry and a redirect ever coexist.
+
+          Filed automatically by \`.github/workflows/connector-count-parity.yml\`.
+          EOF
+          sed -i 's/^          //' /tmp/drift.md
+
+          gh issue create \
+            --title "Connector count drift: landing says $LANDING, core says $CORE" \
+            --body-file /tmp/drift.md
+          exit 1
