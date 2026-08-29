@@ -85,6 +85,7 @@ const tier3: TierSpec[] = [
   { path: "connectors/jira/index.html", primaryKeyword: "jira data export", titleMustContain: "Jira" },
   { path: "connectors/slack/index.html", primaryKeyword: "slack data export", titleMustContain: "Slack" },
   { path: "connectors/google-analytics/index.html", primaryKeyword: "ga4 to bigquery", titleMustContain: "GA4" },
+  { path: "connectors/google-ads/index.html", primaryKeyword: "google ads data pipeline", titleMustContain: "Google Ads" },
   { path: "connectors/facebook-ads/index.html", primaryKeyword: "facebook ads etl", titleMustContain: "Facebook Ads" },
   { path: "connectors/zendesk/index.html", primaryKeyword: "zendesk data export", titleMustContain: "Zendesk" },
   { path: "connectors/airtable/index.html", primaryKeyword: "airtable to warehouse", titleMustContain: "Airtable" },

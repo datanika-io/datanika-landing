@@ -487,22 +487,52 @@ export const connectors: Connector[] = [
       { name: "credentials", description: "Google service account JSON key" },
       { name: "property_id", description: "GA4 property ID" },
     ],
-    related: ["facebook-ads", "bigquery", "snowflake", "stripe"],
+    related: ["google-ads", "facebook-ads", "bigquery", "snowflake"],
     seoTitle: "GA4 to BigQuery Pipeline | Datanika",
     seoDescription: "Load GA4 report data into BigQuery or Snowflake via service account. Build custom attribution models with dbt transforms. Open source. Start free on Datanika.",
     seoH1: "GA4 to BigQuery",
   },
-  // Google Ads was withdrawn in core#567 (closing core#555) and is now in
-  // `WITHDRAWN_SOURCE_TYPES` — it cannot be created in the app at all.
+  // Restored in core#592 (reopening and closing core#555) after being withdrawn
+  // in core#567. `WITHDRAWN_SOURCE_TYPES` is empty again.
   //
-  // The reason is not the one on core#555 ("we collect no developer token"),
-  // which reads like a form we could extend. Every Google Ads API request needs
-  // a `developer-token` issued **per manager account, on application, after
-  // Google's review** — so each user would face a multi-day approval loop before
-  // their first row moved. That is incompatible with self-serve onboarding and
-  // is not something we can fix, which is why this is a removal and not a
-  // "coming soon". `/connectors/google-ads` 301s to `/connectors` in
-  // astro.config.mjs; do not re-add an entry here without the app supporting it.
+  // What changed is *who holds the developer token*, not the Google process.
+  // The token is still issued per manager account after Google's review — but
+  // the user brings their own, exactly as they bring a service-account JSON, so
+  // it is a form field rather than something we would have to hold on their
+  // behalf. The friction is real and belongs in the copy, not hidden: a new
+  // token starts at Test Account access and reaches production accounts only
+  // after Basic access is granted. `/connectors/google-ads` no longer redirects.
+  //
+  // `configFields` mirrors CONFIG_SCHEMAS["google_ads"] in core's
+  // connection_schemas.py. It is a *user* OAuth credential, not a service
+  // account: service-account access to the Ads API needs Workspace
+  // domain-wide delegation a self-serve user cannot arrange, which is why the
+  // pre-withdrawal `service_account_json` field could never have worked.
+  {
+    slug: "google-ads",
+    name: "Google Ads",
+    category: "SaaS & API",
+    direction: "source",
+    description: "Extract Google Ads reporting data with your own developer token and OAuth credentials. Runs any GAQL query — campaign performance by day out of the box.",
+    useCases: [
+      "Build paid search analytics dashboards",
+      "Track ROAS and conversion metrics",
+      "Combine Google Ads with GA4 for a full-funnel view",
+      "Automate ad performance reporting",
+    ],
+    configFields: [
+      { name: "customer_id", description: "Google Ads customer ID — paste it with or without hyphens" },
+      { name: "developer_token", description: "Developer token from your manager account's API Center (encrypted at rest)" },
+      { name: "client_id", description: "OAuth client ID for an installed/desktop app" },
+      { name: "client_secret", description: "OAuth client secret (encrypted at rest)" },
+      { name: "refresh_token", description: "OAuth refresh token for the user authorizing access (encrypted at rest)" },
+      { name: "login_customer_id", description: "Manager (MCC) customer ID — only when the OAuth user is a manager" },
+    ],
+    related: ["google-analytics", "facebook-ads", "bigquery", "snowflake"],
+    seoTitle: "Google Ads Data Pipeline | Datanika",
+    seoDescription: "Google Ads data pipeline to load campaign and performance metrics into BigQuery or Snowflake. Bring your own developer token, run any GAQL query. Start free.",
+    seoH1: "Google Ads Data Pipeline",
+  },
   {
     slug: "facebook-ads",
     name: "Facebook Ads",
@@ -519,7 +549,7 @@ export const connectors: Connector[] = [
       { name: "access_token", description: "Facebook Marketing API access token (encrypted at rest)" },
       { name: "account_id", description: "Ad account ID" },
     ],
-    related: ["google-analytics", "bigquery", "shopify", "hubspot"],
+    related: ["google-ads", "google-analytics", "bigquery", "shopify"],
     seoTitle: "Facebook Ads ETL — Meta Ads Pipeline | Datanika",
     seoDescription: "Load Facebook and Meta ad campaigns, leads, and creatives into your data warehouse. Build cross-channel marketing analytics with dbt. Start free on Datanika.",
     seoH1: "Facebook Ads ETL",

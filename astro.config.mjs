@@ -15,16 +15,12 @@ export default defineConfig({
     "/docs/api": "/api/reference",
     "/docs/api-keys": "/api/keys",
     "/docs/api-versioning": "/api/versioning",
-    // Google Ads was withdrawn from the product (core#567, closing core#555):
-    // its API needs a developer token issued per manager account after Google's
-    // review, so no self-serve user could complete a first run. The page ranked
-    // for "google ads data pipeline", so it redirects rather than 404s — landing
-    // an indexed URL on an error page wastes the equity and the visit.
-    //
-    // Target is the connector index, deliberately, not a sibling: we have no
-    // substitute to offer, and pointing paid-search intent at Facebook Ads or
-    // GA4 would be a bait-and-switch. The index lets the visitor self-select.
-    "/connectors/google-ads": "/connectors",
+    // NOTE: `/connectors/google-ads` was redirected here from 2026-07-22 to
+    // 2026-08-29 while the connector was withdrawn (core#567). core#592
+    // restored it, so the redirect is removed rather than re-pointed — a
+    // redirect left in place would outrank the page it shadows. Removing it is
+    // the whole reason the 301 was chosen over a 404: the URL kept its equity
+    // and now resolves to a real page again.
   },
   integrations: [
     sitemap({
