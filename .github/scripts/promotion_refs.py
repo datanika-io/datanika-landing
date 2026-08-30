@@ -83,6 +83,42 @@ def run(*args: str) -> str:
     return result.stdout
 
 
+def introduced_the_commit(pull: dict) -> bool:
+    """Did this PR actually bring the commit in, or does its branch merely contain it?
+
+    `GET /repos/{repo}/commits/{sha}/pulls` returns **every** pull whose branch contains
+    the commit -- not just the one that introduced it. Any open feature branch cut from
+    `dev` therefore comes back for every commit already on `dev`, and without this filter
+    it donates its closing keywords to the promotion.
+
+    That is datanika-core#635, caught on core's promotion PR #634 before merge: the block
+    claimed `Closes #608 ... via #633` while #633 was still open and one commit ahead of
+    `dev`. It was fixed in core#636 and **this repo was never patched** (landing#315), so
+    the buggy version ran on all 7 of landing's generated blocks. Audited 2026-08-30
+    across both repos -- 29 promotions, 83 issue references, one real false closure
+    (core#425, closed by core's promotion #469 crediting #467, which merged 12 minutes
+    later). Landing's own 7 were clean, but by luck: the bug only fires when an open
+    branch carries a closing keyword at promotion time, and landing's usual pattern is
+    Growth-merges-then-Infra-promotes with zero open PRs.
+
+    Direction is why this is worth fixing on a clean record. The automation replaced
+    hand-enumeration, which failed **open**; this bug makes it fail **closed**, which is
+    worse -- an open issue gets re-triaged by whoever reads the board next, a wrongly
+    closed one does not.
+
+    Two independent reasons to skip, and neither subsumes the other:
+      * not merged -> the branch merely contains the commit
+      * base main  -> a previous promotion PR, which IS merged
+
+    ⚠️ `"main"`, not `"master"`. Core's copy of this function filters on `master` because
+    that is core's default branch. Porting it verbatim would make this repo skip nothing
+    and re-list every earlier promotion PR's references.
+    """
+    if pull.get("merged_at") is None:
+        return False
+    return pull.get("base", {}).get("ref") != "main"
+
+
 def gh_api(path: str) -> object:
     out = run("gh", "api", path)
     if not out.strip():
@@ -119,8 +155,8 @@ def main() -> int:
         if not isinstance(pulls, list):
             continue
         for pull in pulls:
-            if pull.get("base", {}).get("ref") == "main":
-                continue  # a previous promotion PR, not a feature PR
+            if not introduced_the_commit(pull):
+                continue
             for num in find_refs(pull.get("title", ""), pull.get("body") or ""):
                 refs.setdefault(num, set()).add(f"#{pull['number']}")
 
