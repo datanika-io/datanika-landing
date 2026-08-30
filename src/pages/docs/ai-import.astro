@@ -21,7 +21,8 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
     <li>In the <strong>Backup & Import</strong> section, click <strong>Export Backup</strong></li>
     <li>A <code>backup.json</code> file is downloaded with all your connections, uploads, pipelines, and transformations</li>
   </ol>
-  <p>Sensitive credentials (passwords, API keys) are automatically replaced with <code>CHANGE_ME</code> in the export. You'll re-enter them after importing.</p>
+  <p>Exporting requires the <strong>admin</strong> role, the same as importing.</p>
+  <p><strong>The export never contains a credential.</strong> Every password, token, key and service-account file is replaced with <code>__REDACTED__</code> before the file is written &mdash; so a backup is safe to commit to git or attach to a support ticket, and it cannot be used to move a credential anywhere.</p>
 
   <h2>Import File</h2>
   <ol>
@@ -34,16 +35,18 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
         <li><strong>Rename</strong> &mdash; import as a copy (appends "Copy" to the name)</li>
       </ul>
     </li>
-    <li>After import, update any <code>CHANGE_ME</code> passwords with real credentials</li>
+    <li>Enter credentials for any newly created connection. The result message names exactly which ones need them</li>
   </ol>
   <p><strong>Import is non-destructive</strong> &mdash; it never deletes existing items. Only items in the JSON file are created or updated.</p>
+  <p>That extends to credentials: choosing <strong>Overwrite</strong> updates the connection's settings and <em>keeps the credential it already has</em>, so re-importing a backup can never break a working connection. A connection the import <em>creates</em> has nothing to keep, so it starts with the credential field empty.</p>
+  <p>If the file was exported from a different workspace, Datanika says so and asks you to confirm before importing. Moving configuration between workspaces is a supported thing to do &mdash; the prompt exists because doing it by accident is not.</p>
 
   <h2>Use Cases</h2>
   <table>
     <thead><tr><th>Scenario</th><th>How</th></tr></thead>
     <tbody>
-      <tr><td>Migrate between environments</td><td>Export from staging, import into production</td></tr>
-      <tr><td>Clone an organization's setup</td><td>Export, create new org, import</td></tr>
+      <tr><td>Migrate between environments</td><td>Export from staging, import into production, then enter production credentials</td></tr>
+      <tr><td>Clone an organization's setup</td><td>Export, create new org, import, then enter that org's credentials</td></tr>
       <tr><td>Version-control your config</td><td>Export periodically, commit the JSON to git</td></tr>
       <tr><td>Generate pipelines with AI</td><td>Give the format spec to an AI assistant, import the result</td></tr>
       <tr><td>Bulk-create resources</td><td>Write the JSON by hand or with a script, import all at once</td></tr>
@@ -59,18 +62,19 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
     <li>Import the JSON via <strong>Settings &rarr; Import File</strong></li>
     <li>Enter your real passwords and run</li>
   </ol>
-  <p>The AI never sees your real credentials &mdash; all sensitive fields are set to <code>CHANGE_ME</code>.</p>
+  <p>The AI never sees your real credentials. Tell it to write <code>"CHANGE_ME"</code> for every sensitive field; Datanika recognises that placeholder and does not store it, so the connection arrives with the credential field empty rather than holding a fake value that fails at connection time. (A file Datanika <em>exports</em> writes <code>__REDACTED__</code> instead &mdash; both are recognised, and the two spellings exist so you can tell an export from a file somebody wrote.)</p>
 
   <h2>JSON Format</h2>
   <p>The import file is a JSON object with these top-level fields:</p>
   <pre><code set:html={`{
-  "version": 2,
+  "version": 3,
   "connections": [...],
   "uploads": [...],
   "pipelines": [...],
   "transformations": [...]
 }`} /></pre>
   <p>All sections are optional. Include only what you need.</p>
+  <p>Versions 1 and 2 still import, so older backup files keep working. A file Datanika exports is version 3, which also carries an <code>org</code> object naming the workspace it came from &mdash; you don't need to write one in a file you author.</p>
   <p>Full field reference: <a href="https://github.com/datanika-io/datanika-core/blob/master/AI_IMPORT_GUIDE.md">AI_IMPORT_GUIDE.md on GitHub</a></p>
 
   <h2>Validation & Error Codes</h2>
