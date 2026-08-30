@@ -10,13 +10,41 @@ name: Daily rebuild
 # file stays untouched.
 #
 # GitHub Actions only honors `schedule:` triggers on the default branch
-# (`main`), so this file is inert until it lands on `main`. The 06:00 UTC
-# cron is deliberately after the 06:00 UTC content-schedule boundary that
-# Growth's post-N migration uses — see landing#193 / G6.
+# (`main`), so this file is inert until it lands on `main`. The cron is
+# deliberately after the 06:00 UTC content-schedule boundary that Growth's
+# post-N migration uses — see landing#193 / G6.
+#
+# ⚠️ The cron moved off `0 6` on 2026-08-30. Detected by the scheduled-workflow
+# watchdog (core#628), which filed core#691 naming this exact file.
+# Two reasons, and the second is the load-bearing one:
+#
+# 1. `0 6` is the most contended slot GitHub has. This workflow NEVER fired on
+#    time from it — 14 consecutive `schedule` runs between 2026-06-08 and
+#    2026-06-21 landed between 09:22 and 12:23 UTC, i.e. 3.4-6.4 h late, every
+#    single day. An off-the-hour minute is scheduled against a much shorter
+#    queue.
+#
+# 2. It then stopped firing ENTIRELY. Last `schedule` event: 2026-06-21T09:54Z
+#    — 70 days before this commit, with `state=active` and this file unchanged
+#    since 2026-04-16, so it is NOT the documented 60-day-inactivity disable and
+#    NOT an edit that dropped the trigger. The remedy GitHub documents for a
+#    silently-stopped schedule is a commit on the default branch that CHANGES
+#    THE CRON EXPRESSION, which is what this is.
+#
+# ⚠️ Do not read a green run here as proof that it works. The thing under test
+# is whether an *unattended* `event=schedule` run appears at all; a
+# `workflow_dispatch` proves only that the dispatch step is sound, and one
+# already went green on 2026-08-30 while the schedule was 70 days dead. Check
+# with:
+#   gh api "repos/datanika-io/datanika-landing/actions/workflows/daily-rebuild.yml/runs" #     --jq '.workflow_runs[] | select(.event=="schedule") | .created_at' | head -1
+#
+# The fallback, if this does not revive it: ANY push to `main` runs deploy.yml
+# and rebuilds, so a landing promotion on or after a post's date un-404s it too.
+# That path is not dependent on GitHub's scheduler at all.
 
 on:
   schedule:
-    - cron: "0 6 * * *"
+    - cron: "17 7 * * *"
   workflow_dispatch:
 
 permissions:
