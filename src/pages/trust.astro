@@ -19,6 +19,28 @@
 // │ agree with each other and that retired claims do not come back. It cannot │
 // │ check reality — only consistency. Re-verify against the box when you edit.│
 // └───────────────────────────────────────────────────────────────────────────┘
+//
+// ┌───────────────────────────────────────────────────────────────────────────┐
+// │ ⚠️  DO NOT RESTORE A SOC 2 DATE OR STATUS IN THE COMPLIANCE SECTION.      │
+// │                                                                           │
+// │ The public SOC 2 Type I claim was withdrawn on 2026-08-30 by founder      │
+// │ decision, because no auditor was engaged behind the Q3 2026 target it     │
+// │ stated. A status ("in progress") or a quarter is a commitment nothing     │
+// │ backs, and the section immediately above this one is a list of security   │
+// │ claims we can each point at a test for — this is the one that had none.   │
+// │                                                                           │
+// │ The readiness programme is NOT cancelled. plans/product/SPEC_SOC2_ROADMAP │
+// │ .md is parked on disk, deliberately. Nothing here should be read, or      │
+// │ rewritten, as abandoning it — only as declining to publish a date.        │
+// │                                                                           │
+// │ `tests/compliance-claims.test.ts` sweeps EVERY file under src/, not just  │
+// │ this page: on 2026-08-30 the claim was living in four files across four   │
+// │ pages, including a meta description and a four-month-old blog post.       │
+// │                                                                           │
+// │ ⚠️  Keep notes like this one in the frontmatter. Astro strips these; an   │
+// │ `<!-- … -->` in the template below is SERVED to every visitor. A warning  │
+// │ candid enough to be useful is exactly the kind you do not want shipped.   │
+// └───────────────────────────────────────────────────────────────────────────┘
 import Layout from "../layouts/Layout.astro";
 import Navbar from "../components/Navbar.astro";
 import Footer from "../components/Footer.astro";
@@ -26,7 +48,7 @@ import Footer from "../components/Footer.astro";
 
 <Layout
   title="Trust & Security — Datanika"
-  description="Datanika's security architecture, compliance posture, data protection practices, and infrastructure overview. Hosted in the EU, open-source and auditable, SOC 2 Type I in progress."
+  description="Datanika's security architecture, compliance posture, data protection practices, and infrastructure overview. Hosted in the EU, open-source and auditable, every sub-processor named."
 >
   <Navbar />
   <main class="mx-auto max-w-4xl px-6 py-20">
@@ -121,30 +143,41 @@ import Footer from "../components/Footer.astro";
       <section>
         <h2>Compliance</h2>
 
-        <div class="rounded-lg border border-violet-500/30 bg-violet-500/5 p-6 mb-6">
+        <div class="rounded-lg border border-slate-800 bg-slate-900/50 p-6 mb-6">
           <div class="flex items-start gap-4">
             <div class="flex-shrink-0 mt-1">
-              <svg class="h-6 w-6 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              <svg class="h-6 w-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
             <div>
-              <h3 class="text-lg font-semibold text-white mb-1">SOC 2 Type I — in progress</h3>
+              <h3 class="text-lg font-semibold text-white mb-1">SOC 2 — no attestation, and no date</h3>
               <p class="text-sm text-slate-400">
-                We are actively working toward SOC 2 Type I certification with a target
-                completion in <strong class="text-slate-300">Q3 2026</strong>. Our 90-day
-                readiness roadmap covers the CC1–CC9 Common Criteria control objectives,
-                with approximately <strong class="text-slate-300">65% of controls already
-                implemented in code</strong> — based on a control-by-control mapping of
-                the CC1–CC9 points of focus against our existing security tests, audit
-                logging, and access-control layers. The remainder is policy documentation
-                and operational runbooks, in progress. Our full gap analysis is available
-                under NDA on request. Vendor evaluation (Drata, Vanta, Secureframe) is
-                underway, and an independent auditor will be engaged in the first phase.
+                We hold no SOC 2 attestation, Type I or Type II, and we are not publishing
+                a target date for one. Until 2026-08-30 this page carried a SOC 2 Type I
+                commitment with a stated completion target of
+                <strong class="text-slate-300">Q3 2026</strong>. No auditor had been engaged
+                behind that date. We withdrew it rather than let it stand, and we are
+                recording the withdrawal here rather than quietly deleting the sentence —
+                anyone who read the earlier page should be able to see what changed.
+                If an attestation is a hard requirement for your procurement process today,
+                we are not the right vendor for you yet, and we would rather say so now than
+                at the end of a security review.
               </p>
               <p class="text-sm text-slate-400 mt-2">
-                If you're evaluating Datanika for an enterprise deployment and need details
-                on our compliance timeline, contact
+                What we can point at instead is checkable without taking our word for it.
+                The security test suite described above runs on every push. The core is
+                open source, so every claim on this page can be read in the code that
+                implements it — including the ones that are inconvenient for us. Every
+                sub-processor is named below, with what it receives and where it sits,
+                and the change log records when that list was wrong. And when we fix a
+                security issue we say so in the release notes rather than shipping it
+                quietly; our disclosure policy is in
+                <a href="https://github.com/datanika-io/datanika-core/blob/master/SECURITY.md" class="text-violet-400 hover:underline">SECURITY.md</a>.
+              </p>
+              <p class="text-sm text-slate-400 mt-2">
+                Evaluating Datanika and need to go further than this page — a security
+                questionnaire, a DPA, or a walkthrough of a specific control? Email
                 <a href="mailto:security@datanika.io" class="text-violet-400 hover:underline">security@datanika.io</a>.
               </p>
             </div>

@@ -22,7 +22,7 @@ We don't have ten of those customers yet. We don't have *one* of them yet. Which
 | **Pro** ($79/mo) | 15,000 runs, no volume cap | **100 GB processed/mo**, **$0.50/extra GB**, 15,000 runs |
 | **Enterprise** (from $399/mo) | 50,000 runs, $0.01/run overage, no volume cap | **1 TB processed/mo**, **$0.25/extra GB**, 50,000 runs |
 
-Seats, connections, and schedules stay the same. SSO stays on Enterprise. SOC 2 Type I is still in progress, Type II right behind it. The tiers haven't moved; the meter has.
+Seats, connections, and schedules stay the same. SSO stays on Enterprise. The tiers haven't moved; the meter has.
 
 ## Why "volume" was missing
 

@@ -63,7 +63,11 @@ const tiers = [
       "Unlimited schedules",
       "50,000 model runs / month",
       "SSO (SAML/OIDC)",
-      "SOC 2 Type I in progress",
+      // No compliance bullet here. The SOC 2 Type I claim was withdrawn on
+      // 2026-08-30 (founder decision) and this component renders on BOTH the
+      // homepage and /pricing, so anything added to this list is a claim on two
+      // pages at once. Compliance posture lives on /trust, where it can be
+      // stated with its caveats. See tests/compliance-claims.test.ts.
       "Priority support with SLA",
     ],
     cta: "Contact Us",
