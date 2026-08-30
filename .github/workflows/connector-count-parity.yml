@@ -114,3 +114,77 @@ jobs:
             --title "Connector count drift: landing says $LANDING, core says $CORE" \
             --body-file /tmp/drift.md
           exit 1
+
+  # The count was only half the drift. `connectors.ts` also carries a
+  # `configFields` list per connector — hand-written marketing copy describing a
+  # form it was never checked against. On 2026-08-30, 25 of 36 pages documented
+  # at least one field that does not exist, and in every one of those a REQUIRED
+  # field was misnamed or absent (landing#310). `/connectors/s3/` said
+  # `bucket_name` when the real required field is `bucket_url`, a URL.
+  #
+  # Separate job, not another step: a count drift and a field drift are
+  # different fixes with different owners, and one failing should not hide the
+  # other.
+  config-fields:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Fetch core's shipped connection schema
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # `master`, deliberately — that is the SHA prod runs. A local monorepo
+          # checkout has been observed stale (it still served pre-#550 MongoDB
+          # code during the landing#309 work).
+          gh api "repos/datanika-io/datanika-core/contents/datanika/services/connection_schemas.py?ref=master" \
+            --jq '.content' | base64 -d > /tmp/connection_schemas.py
+          test -s /tmp/connection_schemas.py
+
+      - name: Compare documented fields against the form
+        id: check
+        run: |
+          set +e
+          python scripts/check-config-field-parity.py \
+            --schema /tmp/connection_schemas.py \
+            --connectors src/data/connectors.ts > /tmp/fields.txt 2>&1
+          echo "rc=$?" >> "$GITHUB_OUTPUT"
+          cat /tmp/fields.txt
+
+      - name: File an issue on drift
+        if: steps.check.outputs.rc != '0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          existing=$(gh issue list --state open --search "in:title Connector config field drift" \
+            --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            echo "Already tracked in #$existing; not filing again."
+            exit 1
+          fi
+
+          {
+            echo '`src/data/connectors.ts` documents config fields that do not match the shipped form.'
+            echo
+            echo 'Each `/connectors/<slug>/` page renders its `configFields` as the Configuration table, so a wrong name sends a reader looking for a field that is not in the form.'
+            echo
+            echo '```'
+            cat /tmp/fields.txt
+            echo '```'
+            echo
+            echo 'Fix by reading names off `datanika/services/connection_schemas.py` at core `master`. Reproduce locally:'
+            echo
+            echo '```bash'
+            echo "gh api \"repos/datanika-io/datanika-core/contents/datanika/services/connection_schemas.py?ref=master\" \\"
+            echo "  --jq '.content' | base64 -d > /tmp/connection_schemas.py"
+            echo 'python scripts/check-config-field-parity.py \'
+            echo '  --schema /tmp/connection_schemas.py --connectors src/data/connectors.ts'
+            echo '```'
+            echo
+            echo 'Filed automatically by `.github/workflows/connector-count-parity.yml`.'
+          } > /tmp/fields-issue.md
+
+          gh issue create \
+            --title "Connector config field drift: connectors.ts does not match the shipped form" \
+            --body-file /tmp/fields-issue.md
+          exit 1
