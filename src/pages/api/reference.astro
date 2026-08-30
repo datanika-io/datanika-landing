@@ -339,9 +339,11 @@ POST /api/v1/transformations/{id}/run    # scope: transformations:write
 # Wait for the run to finish
 POST /api/v1/pipelines/1/run?wait=true&timeout=120
 
-# Response: 200 OK once the run reaches a terminal status.
-# NOTE: 200 means the run FINISHED, not that it SUCCEEDED — a failed run
-# also returns 200. Check the "status" field.
+# With ?wait=true the STATUS CODE carries the run's outcome, so
+# \`curl --fail\` and \`raise_for_status()\` are correct idioms for
+# "did my pipeline work?".
+
+# Response: 200 OK — the run SUCCEEDED.
 {
   "id": 43,
   "target_type": "pipeline",
@@ -354,9 +356,19 @@ POST /api/v1/pipelines/1/run?wait=true&timeout=120
   "created_at": "2026-03-25T14:00:00Z"
 }
 
+# Response: 422 Unprocessable Entity — the run reached a terminal status
+# that is NOT success (failed, cancelled). Not a 5xx: the failure is in
+# your pipeline, not in the server. The body is the run, so "status" and
+# "error_message" are still the source of truth.
+{"id": 43, "status": "failed", "error_message": "relation \\"orders\\" does not exist", ...}
+
 # Response: 408 Request Timeout if it is still running when the timeout expires.
 # The run keeps going — poll GET /api/v1/runs/{id} for the outcome.
 {"id": 43, "status": "running", "timed_out": true, ...}`} /></pre>
+  <div role="note" class="not-prose my-6 rounded-lg border border-amber-500/40 bg-amber-500/5 p-4 text-sm text-amber-100">
+    <p class="font-semibold text-amber-300">⚠ Changed behaviour</p>
+    <p class="mt-2 text-amber-100/90">A <code class="bg-amber-500/10 px-1 py-0.5 rounded text-amber-200">?wait=true</code> trigger used to return <strong>200</strong> for a run that failed, so <code class="bg-amber-500/10 px-1 py-0.5 rounded text-amber-200">curl --fail</code> exited 0 on a broken pipeline. It now returns <strong>422</strong>. If you worked around the old behaviour by parsing <code class="bg-amber-500/10 px-1 py-0.5 rounded text-amber-200">status</code> out of the body, that still works — but the exit status is now correct on its own, and a CI step that previously passed on a failed run will start failing. That is the point.</p>
+  </div>
   <p>
     <code>timeout</code> is in seconds, defaults to <strong>120</strong> and is clamped to
     a maximum of <strong>300</strong>. The run status is polled every 2 seconds, and waiting
