@@ -52,7 +52,7 @@ MAR punishes schema choices you didn't make. A table with 10M narrow rows and a 
 
 GB measures the cost driver directly. A wide JSON blob and a narrow normalized row land on the same gram of disk for the same price. Updates don't inflate the count. You can predict your bill by looking at `du -sh` on your source and multiplying by a constant.
 
-At 100 GB on Fivetran Starter, you'd pay approximately **$3,800/mo**. At 1 TB, roughly **$22,000/mo**. On Datanika Pro at 100 GB, you pay $79. On Enterprise at 1 TB, $399 + nothing (it's included). The [calculator on /why-cheaper/](/why-cheaper/) shows this side-by-side with a slider.
+Fivetran publishes no per-MAR rate, so its side of this comparison is an illustrative estimate rather than a quote. Converting at ~200K rows/GB, 100 GB on Starter lands in the region of **$3,800/mo** and 1 TB somewhere around **$22,000/mo**. On Datanika Pro at 100 GB you pay $79, and on Enterprise at 1 TB, $399 + nothing (it's included) — those two are exact. The [calculator on /why-cheaper/](/why-cheaper/) shows the comparison side-by-side with a slider, and [Fivetran's own estimator](https://www.fivetran.com/pricing) is where a binding number comes from.
 
 That's what we mean by "you pay for bytes, not tables."
 
@@ -62,7 +62,7 @@ We count **output bytes after normalization** — the amplified number, not the 
 
 Worked example: you have a 1 GB HubSpot JSON export. Our ingestion flattens nested objects into a wide table — that's ~3 GB of post-normalization data. A dbt model aggregates the 3 GB to a 100 MB summary. Total: **3.1 GB counted against your quota**, not 1 GB.
 
-We tell you this number before the run, not after. Pro and Enterprise pipelines get a pre-run estimate (`predicted_bytes`) based on a moving average of the last 5 runs, or an inspection of source-table size for first runs. If the predicted volume would put you past your included quota, the UI shows the expected overage cost before you click "Run." No MAR-style surprise.
+The reason we publish the amplification rather than hiding it is that it makes the bill something you can work out in advance yourself. A gigabyte is a unit you can count; the rate is on the pricing page; the multiplication is yours. MAR is the opposite kind of unit — it is defined and counted by the vendor, so the invoice is the first place you get to see it.
 
 ## Pick ELT, pay less
 
@@ -108,4 +108,8 @@ The [/why-cheaper/](/why-cheaper/) calculator lets you drag a slider from 1 GB t
 
 ---
 
-**Try it free at [app.datanika.io](https://app.datanika.io)** — 10 GB/mo on Free, no credit card, and you can see your predicted cost before every run.
+**Try it free at [app.datanika.io](https://app.datanika.io)** — 10 GB/mo on Free, no credit card, and one published per-GB rate with no MAR arithmetic to reverse-engineer.
+
+---
+
+*Correction, 2026-08-31.* An earlier version of this post said Pro and Enterprise pipelines show a pre-run `predicted_bytes` estimate, derived from a moving average of the last five runs, before you click "Run." That was written from the pricing spec rather than from the product: the estimate is not computed today, on any plan. The paragraph has been replaced with what the meter actually does. Tracked in [landing#375](https://github.com/datanika-io/datanika-landing/issues/375).
