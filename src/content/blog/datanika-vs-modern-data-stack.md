@@ -86,8 +86,15 @@ Datanika's pricing changed after this post first ran. We now meter **volume**, n
 
 | Quantity | Bytes | GB |
 |---|---:|---:|
-| Source in Postgres (tables + indexes) | 1,025,695,744 | 0.96 |
+| Source in Postgres (tables + indexes) | 1,025,679,360 | 0.96 |
+| Source, table heap only | 637,485,056 | 0.59 |
 | **Post-normalization — what the meter bills** | **245,835,514** | **0.23** |
+| Destination, the DuckDB file | 242,495,488 | 0.23 |
+
+The full log, including the per-table breakdown, is `bytes-2026-08-30.md` in the
+[results directory](https://github.com/datanika-io/datanika-landing/tree/main/scripts/benchmark/results). dlt's own `LoadInfo.file_size` reports 245,828,646 for the same
+load — 6,868 bytes less than the row above, because that figure counts the data files and not the
+schema file written beside them. We quote the larger of the two.
 
 **10.1 million rows is about a quarter of a gigabyte.** The load files dlt writes are
 gzip-compressed JSONL, so for this workload the billable volume comes out *smaller* than the
