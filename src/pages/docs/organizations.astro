@@ -76,15 +76,16 @@ Default dbt schema: analytics`} /></pre>
   <h2>Authentication</h2>
   <p>Users can sign in with:</p>
   <ul>
-    <li><strong>Email & password</strong> — standard registration with email verification</li>
+    <li><strong>Email & password</strong> — standard registration with an email address and a password</li>
     <li><strong>Google OAuth</strong> — sign in with your Google account</li>
     <li><strong>GitHub OAuth</strong> — sign in with your GitHub account</li>
     <li><strong>SSO (SAML / OIDC)</strong> — Enterprise plan only. Configured per organization.</li>
   </ul>
   <p>OAuth and SSO users are automatically created on first sign-in. No separate registration step is needed.</p>
 
-  <h3>Email Verification</h3>
-  <p>On the cloud edition, new accounts registered via email must verify their email address before accessing the platform. A verification link is sent automatically after registration. OAuth and SSO users are auto-verified (the provider already confirmed their email).</p>
+  <h3>Email verification</h3>
+  <p>Datanika does not require email verification. An account registered with an email address and password is usable immediately — no confirmation step gates sign-in, on either the cloud or self-hosted edition. Accounts created through Google, GitHub or SSO carry the address the provider already confirmed.</p>
+  <p>If you want provider-verified identity for everyone in your organization, use SSO (Enterprise) or restrict your team to Google or GitHub sign-in.</p>
 
   <h3>Changing your password</h3>
   <p>Go to <strong>Settings → Your account</strong>. Enter your current password, then the new one twice. Passwords must be at least 8 characters and no more than 72 bytes — accented characters and emoji count as more than one byte each. There are no character-class rules; length is what matters.</p>

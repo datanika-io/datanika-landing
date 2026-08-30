@@ -1,7 +1,8 @@
 ---
 title: "Triggering Data Pipelines from CI/CD via the REST API"
 description: "Run a Datanika pipeline from GitHub Actions with one POST. Covers wait mode, idempotent retries, timeouts — and the 200 response that means finished, not succeeded."
-date: 2026-08-30
+date: 2026-09-05
+publishedAt: 2026-09-05
 author: "Datanika Team"
 category: "tutorial"
 tags: ["rest-api", "ci-cd", "github-actions", "automation", "pipelines", "devops"]
