@@ -21,9 +21,25 @@ name: Connector count parity
 # another repo, and a required check that can fail for reasons unrelated to the
 # PR is how merges get blocked on nothing. It runs daily, and on demand.
 
+# The minute is deliberately arbitrary — do not "tidy" it to :00 or :30.
+#
+# This shipped as `30 6 * * *`, was due 2026-08-30 06:30Z, and produced zero
+# runs. GitHub's docs: "The schedule event can be delayed during periods of high
+# loads... High load times include the start of every hour. To decrease the
+# chance of delay, schedule your workflow to run at a different time of the
+# hour." `:00` and `:30` are the two most contended minutes on the platform.
+#
+# That is a probability improvement, not a diagnosis — one missed slot cannot
+# prove contention. It is the only lever with a documented effect (landing#305).
+#
+# Verifying this fires needs `event == schedule` specifically. A manual dispatch
+# run sits in the same list and looks identical at a glance, which is how a dead
+# cron reads as a healthy one:
+#   gh api "repos/datanika-io/datanika-landing/actions/workflows/345481966/runs" \
+#     --jq '.workflow_runs[] | select(.event=="schedule") | .created_at'
 on:
   schedule:
-    - cron: "30 6 * * *"
+    - cron: "17 6 * * *"
   workflow_dispatch:
 
 permissions:
