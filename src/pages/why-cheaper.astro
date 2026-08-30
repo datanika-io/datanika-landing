@@ -78,7 +78,7 @@ const marPains = [
 
 // datanikaWins rewritten for V2 per SPEC §7.3. Two entries change (flat
 // monthly -> subscription + honest overage; runs-not-rows -> bytes-not-rows)
-// and two stay (self-host, 32 connectors on every tier).
+// and two stay (self-host, 36 connectors on every tier).
 const datanikaWins = [
   {
     title: "Subscription + honest per-GB overage",
@@ -93,7 +93,7 @@ const datanikaWins = [
     body: "The core platform is AGPL-3.0. One docker compose up on your own box and your bill is $0. Every connector and every feature works in self-hosted.",
   },
   {
-    title: "All 32 connectors on every tier",
+    title: "All 36 connectors on every tier",
     body: "No per-connection minimums, no locked-behind-Enterprise destinations. The Free tier gets the same connector catalog as Enterprise.",
   },
 ];
@@ -110,8 +110,8 @@ const notCheaperCases = [
     body: "If you already have a warehouse with raw data in it and you just want a dbt orchestrator, dbt Cloud's free tier or a lightweight scheduler will be cheaper than our full platform. We include dbt, but we're priced for teams that need the extract-and-load side too.",
   },
   {
-    title: "You need 500+ connectors",
-    body: "We have 32 connectors covering the top of the long tail. If your stack depends on a niche SaaS that only Fivetran supports, we're not a drop-in replacement yet — though we ship roughly 2 new connectors per month and take requests seriously.",
+    title: "You need 700+ connectors",
+    body: "We have 36 connectors covering the top of the long tail. If your stack depends on a niche SaaS that only Fivetran supports, we're not a drop-in replacement yet — though we ship roughly 2 new connectors per month and take requests seriously.",
   },
 ];
 

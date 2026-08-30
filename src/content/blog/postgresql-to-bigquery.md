@@ -122,7 +122,7 @@ Compare that to Fivetran ($250+/mo for a few connectors) or Airbyte Cloud ($10/m
 
 ## Next Steps
 
-- [View all 32 connectors](/connectors) — MySQL, MongoDB, Stripe, HubSpot, and more
+- [View all 36 connectors](/connectors) — MySQL, MongoDB, Stripe, HubSpot, and more
 - [Write dbt transformations](/docs/transformations-guide) — models, tests, snapshots
 - [Set up Slack alerts](/blog/slack-alerts-pipeline-failures) — get notified when runs fail
 - [Self-host with Docker](/docs/self-hosting) — run Datanika on your own infrastructure

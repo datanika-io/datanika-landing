@@ -70,7 +70,7 @@ This means the open-source core has zero billing code. It's not crippled — it'
 
 - [Architecture overview](/docs/architecture)
 - [Self-host with Docker](/docs/self-hosting)
-- [32 connectors](/connectors)
+- [36 connectors](/connectors)
 - [Star on GitHub](https://github.com/datanika-io/datanika-core)
 - [Try the cloud version free](https://app.datanika.io)
 

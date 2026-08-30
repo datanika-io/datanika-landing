@@ -7,7 +7,7 @@ import { connectors } from "../../data/connectors";
 
 const features = [
   { name: "Data extraction & loading", datanika: true, fivetran: true },
-  { name: "500+ connectors", datanika: false, fivetran: true },
+  { name: "700+ connectors", datanika: false, fivetran: true },
   { name: "dbt transformations built-in", datanika: true, fivetran: false },
   { name: "Visual pipeline DAG", datanika: true, fivetran: false },
   { name: "SQL Editor", datanika: true, fivetran: false },
@@ -29,7 +29,7 @@ const chooseDatanika = [
 ];
 
 const chooseFivetran = [
-  "You need 500+ managed connectors",
+  "You need 700+ managed connectors",
   "You want zero-maintenance SaaS with enterprise support",
   "You need the most battle-tested reliability at scale",
 ];
@@ -240,10 +240,10 @@ const gbPricingRows = [
           <h3 class="text-xl font-semibold text-slate-400 mb-4">Fivetran</h3>
           <ul class="space-y-2 text-sm text-slate-300">
             <li>EL only (transforms are a separate add-on)</li>
-            <li>500+ managed connectors</li>
+            <li>700+ managed connectors</li>
             <li>SaaS only (no self-host option)</li>
             <li>Closed source, proprietary</li>
-            <li>Pricing starts ~$1/credit (~$250+/mo)</li>
+            <li>Usage-based on MAR (monthly active rows); no per-MAR rate published</li>
           </ul>
         </div>
       </div>

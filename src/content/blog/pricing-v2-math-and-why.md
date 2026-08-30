@@ -82,7 +82,7 @@ The mode selector is on every pipeline. We're not hiding this — it's the first
 
 - **Self-host is still $0 forever.** The AGPL-3.0 open-source core has zero pricing dimensions. Run it on your own hardware, ingest 10 TB/mo, pay us nothing.
 - **10 GB Free is real headroom.** That's enough for a real side project or a 3-source trickle-volume evaluation stack — a genuine test with production-shaped data, not a crippled sandbox. Fivetran Free tops out at 500K MAR (~1–2 GB equivalent); Hevo Free at 1M events. We offer 5–10× more.
-- **All 32 connectors on every tier.** Free users don't get a crippled connector list. Fivetran charges $5/connection on top of MAR; we don't, and we're not going to.
+- **All 36 connectors on every tier.** Free users don't get a crippled connector list. Fivetran charges $5/connection on top of MAR; we don't, and we're not going to.
 - **Pro's 5 seats, Enterprise's 10 seats, schedules unlimited on paid tiers.** Seat economics are unchanged.
 - **Annual discount at 17%** (Pro $79 → $66/mo billed annually; Enterprise from $399 → $333). We'll revisit after 90 days of real signup data — if the math says 20% works, we'll adjust and blog about it.
 
