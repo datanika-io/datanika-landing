@@ -7,7 +7,6 @@ category: "api"
 verified_by: "product-ui"
 verified_date: "2026-07-19"
 related_use_cases:
-  - "kafka-to-bigquery"
   - "kafka-to-clickhouse"
 related_comparisons:
   - "fivetran"
@@ -119,7 +118,7 @@ Schedules live on their own page and reference the upload **by name**.
 
 ## Related
 
-- **Use cases:** [Kafka → BigQuery](/use-cases/kafka-to-bigquery), [Kafka → ClickHouse](/use-cases/kafka-to-clickhouse)
+- **Use cases:** [Kafka → ClickHouse](/use-cases/kafka-to-clickhouse)
 - **Comparisons:** [Datanika vs Fivetran for Kafka](/compare/fivetran), [Datanika vs Airbyte](/compare/airbyte)
 - **dbt tips:** deduplication patterns and event sessionization in the [Transformations guide](/docs/transformations-guide)
 - **Connector reference:** full field-by-field [Kafka connector spec](/connectors/kafka)

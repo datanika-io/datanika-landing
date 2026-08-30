@@ -6,9 +6,7 @@ source_name: "Databricks"
 category: "database"
 verified_by: "product-ui"
 verified_date: "2026-07-19"
-related_use_cases:
-  - "postgresql-to-databricks"
-  - "salesforce-to-databricks"
+related_use_cases: []
 related_comparisons:
   - "fivetran"
   - "airbyte"
@@ -129,7 +127,6 @@ Schedules live on their own page and reference the upload **by name**.
 
 ## Related
 
-- **Use cases:** [PostgreSQL → Databricks](/use-cases/postgresql-to-databricks), [Salesforce → Databricks](/use-cases/salesforce-to-databricks)
 - **Comparisons:** [Datanika vs Fivetran](/compare/fivetran), [Datanika vs Airbyte](/compare/airbyte)
 - **dbt tips:** Databricks-specific materializations (Delta, liquid clustering) in the [Transformations guide](/docs/transformations-guide)
 - **Connector reference:** full field-by-field [Databricks connector spec](/connectors/databricks)

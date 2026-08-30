@@ -7,8 +7,7 @@ category: "database"
 verified_by: "product-ui"
 verified_date: "2026-07-19"
 related_use_cases:
-  - "postgresql-to-clickhouse"
-  - "stripe-to-clickhouse"
+  - "kafka-to-clickhouse"
 related_comparisons:
   - "fivetran"
   - "airbyte"
@@ -139,7 +138,7 @@ Schedules live on their own page and reference the upload **by name**.
 
 ## Related
 
-- **Use cases:** [PostgreSQL → ClickHouse](/use-cases/postgresql-to-clickhouse), [Stripe → ClickHouse](/use-cases/stripe-to-clickhouse)
+- **Use cases:** [Kafka → ClickHouse](/use-cases/kafka-to-clickhouse)
 - **Comparisons:** [Datanika vs Fivetran](/compare/fivetran), [Datanika vs Airbyte](/compare/airbyte)
 - **dbt tips:** ClickHouse-specific materializations (table engines, ORDER BY keys) in the [Transformations guide](/docs/transformations-guide)
 - **Connector reference:** full field-by-field [ClickHouse connector spec](/connectors/clickhouse)
