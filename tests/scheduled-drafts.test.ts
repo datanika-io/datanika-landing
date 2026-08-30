@@ -61,6 +61,11 @@ const scheduledPosts = [
   { file: "password-reset-and-change.md", date: "2026-09-01", publishedAt: "2026-09-01", category: "changelog", titleContains: "password reset and password change are live" },
   { file: "dbt-incremental-duplicates-null-unique-key.md", date: "2026-09-03", publishedAt: "2026-09-03", category: "engineering", titleContains: "Duplicate Rows When" },
   { file: "trigger-pipelines-from-ci-cd.md", date: "2026-09-05", publishedAt: "2026-09-05", category: "tutorial", titleContains: "Triggering Data Pipelines from CI/CD" },
+  // 2026-09-07 is the next free slot under the ≤1-post-per-2-days rule with
+  // 09-01 / 09-03 / 09-05 taken. Verified renderable by temporarily backdating
+  // `publishedAt` and building — a green build proves nothing about a scheduled
+  // post, because a future date is excluded from the output entirely.
+  { file: "customer-360-hubspot-stripe.md", date: "2026-09-07", publishedAt: "2026-09-07", category: "tutorial", titleContains: "Customer 360 from HubSpot and Stripe" },
 ];
 
 const publishedScheduledPosts = [
