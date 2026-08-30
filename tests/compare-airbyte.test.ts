@@ -29,8 +29,11 @@ describe("Datanika vs Airbyte comparison page", () => {
     expect(html.toLowerCase()).toContain("transform");
   });
 
-  it("honestly mentions Airbyte connector advantage", () => {
-    expect(html).toContain("400+");
+  // Airbyte's own pricing page, read 2026-08-30: "600+ connectors".
+  // Same story as the Fivetran assertion -- see the comment there.
+  // RE-VERIFY against https://airbyte.com/pricing before changing this.
+  it("honestly mentions Airbyte connector advantage (600+, verified 2026-08-30)", () => {
+    expect(html).toContain("600+");
   });
 
   it("has CTA to sign up", () => {

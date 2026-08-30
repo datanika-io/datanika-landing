@@ -52,7 +52,7 @@ What connectors would *you* want to see next? Open an [issue on GitHub](https://
 
 ## Try It
 
-- [View all 32 connectors](/connectors)
+- [View all 36 connectors](/connectors)
 - [PostgreSQL → BigQuery in 5 minutes](/blog/postgresql-to-bigquery)
 - [Self-host with Docker](/docs/self-hosting)
 - [Star on GitHub](https://github.com/datanika-io/datanika-core)
