@@ -1,13 +1,14 @@
 ---
 title: "Changelog: password reset and password change are live"
 description: "You can now reset a forgotten password by email and change your password from Settings. Here is exactly what shipped, how the reset token is designed, and what it deliberately does not do."
-date: 2026-08-30
+date: 2026-09-01
+publishedAt: 2026-09-01
 author: "Datanika Team"
 category: "changelog"
 tags: ["changelog", "security", "authentication", "self-hosting"]
 ---
 
-Until today, Datanika had no way to reset a forgotten password and no way to change one. Not a hidden flow, not an admin-only flow — it did not exist. That is now fixed, and this is the changelog entry rather than a launch announcement, because a missing password reset is not a feature you get to celebrate shipping.
+Until this release, Datanika had no way to reset a forgotten password and no way to change one. Not a hidden flow, not an admin-only flow — it did not exist. That is now fixed, and this is the changelog entry rather than a launch announcement, because a missing password reset is not a feature you get to celebrate shipping.
 
 ## What shipped
 
@@ -49,7 +50,7 @@ That notice is deliberately instance-level rather than per-account — it tells 
 
 This is one narrow thing, and it would be easy to read it as more than it is.
 
-**It's password recovery, not account management.** You still cannot change the email address on an account, and there is no self-serve account or organization deletion. Both are real gaps, both are on the list, and neither ships today. If you need either, mail us and a human will do it.
+**It's password recovery, not account management.** You still cannot change the email address on an account, and there is no self-serve account or organization deletion. Both are real gaps, both are on the list, and neither ships in this release. If you need either, mail us and a human will do it.
 
 **This is not a "we're ready" post.** We're pre-launch with no paying customers, and there is a list of things a mature product has that we don't. Password reset was near the top of it. It is now off the list. The list is not empty.
 
