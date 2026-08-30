@@ -57,7 +57,7 @@ Extract-load is configured at **`/uploads`**, not on the connection. There is no
 1. Open **`/uploads`**. The **New Upload** form is rendered inline on the page.
 2. Fill in **Upload name** (letters and digits only — anything else is stripped as you type, so `zendesk-daily-sync` becomes `zendeskdailysync`) and an optional **Description**.
 3. Pick the **Source connection** and the **Destination connection** — the Zendesk connection from Step 2 is the source. Each picker opens a dialog listing entries as `16 — myconnection (postgres)`, i.e. id, name, type.
-4. Because Zendesk is a SaaS source, the form shows **Select endpoints to load** — a checkbox per resource, **all ticked by default**. For Zendesk the list is `organizations`, `tickets`, `users`. Untick anything you do not want: each ticked endpoint becomes its own table in the destination, and unticked ones are not fetched at all.
+4. Because Zendesk is a SaaS source, the form shows **Select endpoints to load** — a checkbox per resource, **all ticked by default**. For Zendesk the list is `organizations`, `tickets`, `users`. Untick anything you do not want: each ticked endpoint becomes its own table in the destination, and unticked ones are not fetched at all — though unticking *every* box loads the full set rather than nothing.
 5. Click **Create Upload**. It appears in the table below with status `draft`.
 
 > **There is no write disposition, load mode, source schema or table-name field for a SaaS source, and that is deliberate.** Those controls are rendered only when the source is a SQL database. The endpoint checkboxes are the equivalent control here.
