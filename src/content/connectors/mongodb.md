@@ -63,10 +63,10 @@ MongoDB is the most common NoSQL source our users sync into a relational warehou
 ## Step 2 — Add the connection in Datanika
 
 1. In Datanika, open **`/connections`** and pick `mongodb` from the type dropdown at the top of the inline New Connection form.
-2. Fill in: **Connection Name**, **Host**, **Port** (default `27017`), **User**, **Password**, **Database**, **Auth Source**.
-3. Leave **Auth Source** at its default of `admin` unless you know otherwise. It is the database your *user* is defined in, which is a different thing from the database you are *reading* — and if you followed Step 1, or used `MONGO_INITDB_ROOT_USERNAME`, your user is in `admin`. Set it to the database name only if the user was created inside the database itself. Background: [MongoDB `Authentication failed`](/blog/mongodb-authentication-failed-authsource/).
-4. Click **Test Connection**.
-   > ⚠️ **Test Connection does not read Auth Source yet** ([core#625](https://github.com/datanika-io/datanika-core/issues/625)). It builds the old-style URI, so on a standard `admin`-user deployment it can report `Connection failed` for a connection whose **runs work fine**. Until that lands, treat a failure here as inconclusive rather than as a verdict on your credentials — Step 4's first run is the real test.
+2. Fill in: **Connection Name**, **Host**, **Port** (default `27017`), **User**, **Password**, **Database**. Those five are the whole form for `mongodb`.
+3. Authentication uses `admin` as the auth database. That is not a field you fill in — it is the built-in default, applied whenever the config does not say otherwise. It is the database your *user* is defined in, which is a different thing from the database you are *reading*, and if you followed Step 1 or used `MONGO_INITDB_ROOT_USERNAME`, your user is in `admin`. Background: [MongoDB `Authentication failed`](/blog/mongodb-authentication-failed-authsource/).
+   > ⚠️ **If your user was created inside the target database rather than in `admin`, the structured form cannot express that** ([core#638](https://github.com/datanika-io/datanika-core/issues/638)). The setting exists — it is `auth_source` — but the `mongodb` form has no input for it, so the only way to set it is the **Use raw JSON** checkbox below the fields, adding `"auth_source": "<your-database>"` to the config by hand. And a connection saved that way loses the key the next time it is saved from the structured form, silently reverting authentication to `admin`. If that is your setup, keep the connection in raw-JSON mode.
+4. Click **Test Connection**. It builds the URI exactly the way a run does, including `auth_source`, so its verdict now matches what a run will do ([core#625](https://github.com/datanika-io/datanika-core/issues/625), fixed).
 5. Click **Create Connection**.
 
 ![Adding MongoDB in Datanika](/docs/connectors/mongodb/02-add-connection.png)
@@ -108,24 +108,32 @@ Schedules live on their own page and reference the upload **by name**.
 ## Troubleshooting
 
 ### `Authentication failed`
-**Almost always `Auth Source`, not the password.** The database in a MongoDB URI doubles as the authentication database, so a connection that names `production` tells the driver to look for your user *inside* `production`. Users are conventionally created in `admin` — that is what Step 1 does, what `MONGO_INITDB_ROOT_USERNAME` does, and what every managed provider does.
+**Almost always the auth database, not the password.** The database in a MongoDB URI doubles as the authentication database, so a URI that names `production` tells the driver to look for your user *inside* `production`. Users are conventionally created in `admin` — that is what Step 1 does, what `MONGO_INITDB_ROOT_USERNAME` does, and what every managed provider does. Datanika sends `authSource=admin` for you, so the common case needs no configuration at all.
 
-**Fix.** Set **Auth Source** to the database the user was created in (`admin` for the setups above — it is the default). Confirm which one that is from `mongosh`:
+**Confirm where your user actually lives**, from `mongosh`:
 
 ```javascript
 use admin
 db.system.users.find({}, { user: 1, db: 1 })
 ```
 
-The `db` field on the record is the value **Auth Source** needs. You can also isolate it outside Datanika entirely — if this connects, `Auth Source` is your answer:
+The `db` field on the record is your auth database. You can also isolate the question outside Datanika entirely — if this connects, the auth database is your answer:
 
 ```bash
 mongosh "mongodb://<user>:<pass>@<host>:27017/<database>?authSource=admin"
 ```
 
-Only after that comes back clean is it worth re-checking the password. Full explanation: [MongoDB `Authentication failed`: You're Authenticating Against the Wrong Database](/blog/mongodb-authentication-failed-authsource/).
+**If that `db` is `admin`**, the default already matches and the fault is elsewhere — re-check the password, then the roles granted on the target database.
 
-> Note the Test Connection caveat in Step 2 above: that button does not read **Auth Source** yet ([core#625](https://github.com/datanika-io/datanika-core/issues/625)), so it can fail on a connection whose runs succeed.
+**If it is anything else**, you have hit [core#000](https://github.com/datanika-io/datanika-core/issues/638): the `mongodb` form has no input for `auth_source`, so tick **Use raw JSON** on the connection form and set the key by hand:
+
+```json
+{"host": "mongo.internal", "port": 27017, "user": "<user>", "password": "<pass>", "database": "<database>", "auth_source": "<your-database>"}
+```
+
+Keep it in raw-JSON mode afterwards. Saving that connection from the structured form drops the key without warning and authentication reverts to `admin`.
+
+Full explanation of the underlying MongoDB behaviour: [MongoDB `Authentication failed`: You're Authenticating Against the Wrong Database](/blog/mongodb-authentication-failed-authsource/).
 
 ### Connection hangs or times out
 **Fix.** Check firewall rules on port `27017` between Datanika and the MongoDB host, and confirm `mongod` is bound to an interface Datanika can reach rather than `127.0.0.1` (`net.bindIp` in `mongod.conf`).
