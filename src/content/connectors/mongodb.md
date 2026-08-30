@@ -125,7 +125,7 @@ mongosh "mongodb://<user>:<pass>@<host>:27017/<database>?authSource=admin"
 
 **If that `db` is `admin`**, the default already matches and the fault is elsewhere — re-check the password, then the roles granted on the target database.
 
-**If it is anything else**, you have hit [core#000](https://github.com/datanika-io/datanika-core/issues/638): the `mongodb` form has no input for `auth_source`, so tick **Use raw JSON** on the connection form and set the key by hand:
+**If it is anything else**, you have hit [core#638](https://github.com/datanika-io/datanika-core/issues/638): the `mongodb` form has no input for `auth_source`, so tick **Use raw JSON** on the connection form and set the key by hand:
 
 ```json
 {"host": "mongo.internal", "port": 27017, "user": "<user>", "password": "<pass>", "database": "<database>", "auth_source": "<your-database>"}
