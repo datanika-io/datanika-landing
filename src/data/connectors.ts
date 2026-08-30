@@ -407,7 +407,7 @@ export const connectors: Connector[] = [
     name: "Salesforce",
     category: "SaaS & API",
     direction: "source",
-    description: "Extract CRM data from Salesforce — accounts, contacts, opportunities, leads, and campaigns. Enterprise-grade CRM analytics pipeline.",
+    description: "Extract CRM data from Salesforce — accounts, contacts and opportunities. Enterprise-grade CRM analytics pipeline.",
     useCases: [
       "Replicate Salesforce objects to your data warehouse",
       "Build pipeline and forecast analytics",
@@ -423,7 +423,7 @@ export const connectors: Connector[] = [
     ],
     related: ["hubspot", "stripe", "bigquery", "snowflake"],
     seoTitle: "Salesforce ETL — CRM to Warehouse | Datanika",
-    seoDescription: "Salesforce ETL to replicate accounts, contacts, opportunities, and leads into BigQuery or Snowflake. Build pipeline velocity and forecast analytics. Start free.",
+    seoDescription: "Salesforce ETL to replicate accounts, contacts and opportunities into BigQuery or Snowflake. Build pipeline velocity and forecast analytics. Start free.",
     seoH1: "Salesforce ETL",
   },
   {
@@ -556,7 +556,7 @@ export const connectors: Connector[] = [
     name: "Facebook Ads",
     category: "SaaS & API",
     direction: "source",
-    description: "Extract advertising data from Meta/Facebook Ads — campaigns, ad sets, ads, leads, and creatives. Build cross-channel marketing analytics.",
+    description: "Extract advertising data from Meta/Facebook Ads — campaigns, ad sets, ads and creatives. Build cross-channel marketing analytics.",
     useCases: [
       "Build cross-channel ad performance dashboards",
       "Track Facebook campaign ROI alongside Google Ads",
@@ -569,7 +569,7 @@ export const connectors: Connector[] = [
     ],
     related: ["google-ads", "google-analytics", "bigquery", "shopify"],
     seoTitle: "Facebook Ads ETL — Meta Ads Pipeline | Datanika",
-    seoDescription: "Load Facebook and Meta ad campaigns, leads, and creatives into your data warehouse. Build cross-channel marketing analytics with dbt. Start free on Datanika.",
+    seoDescription: "Load Facebook and Meta ad campaigns, ad sets and creatives into your data warehouse. Build cross-channel marketing analytics with dbt. Start free on Datanika.",
     seoH1: "Facebook Ads ETL",
   },
   {

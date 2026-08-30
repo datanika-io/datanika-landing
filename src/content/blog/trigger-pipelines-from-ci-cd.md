@@ -1,6 +1,6 @@
 ---
 title: "Triggering Data Pipelines from CI/CD via the REST API"
-description: "Run a Datanika pipeline from GitHub Actions with one POST. Covers wait mode, idempotent retries, timeouts — and the 200 response that means finished, not succeeded."
+description: "Run a Datanika pipeline from GitHub Actions with one POST. Covers wait mode, idempotent retries, timeouts — and why the status code, not a JSON field, tells you whether the pipeline worked."
 date: 2026-09-05
 publishedAt: 2026-09-05
 author: "Datanika Team"
@@ -10,25 +10,31 @@ tags: ["rest-api", "ci-cd", "github-actions", "automation", "pipelines", "devops
 
 The most common thing people want from a data platform's API is boring: **run this pipeline, tell me if it worked.** Usually right after a deploy, a dbt seed change, or a nightly job that has to finish before something else starts.
 
-Here's how to do that with Datanika, and — more usefully — the one place it's easy to get wrong in a way your CI won't notice.
+Here's how to do that with Datanika — and, more usefully, the one place this is easy to get wrong in a way your CI won't notice. We got it wrong ourselves; the fix is at the end of that section.
 
 ## The short version
 
 ```bash
-curl -sS -X POST \
+curl -sS --fail-with-body -X POST \
   "https://app.datanika.io/api/v1/pipelines/1/run?wait=true&timeout=300" \
   -H "Authorization: Bearer $DATANIKA_API_KEY"
 ```
 
-That's it. One call, blocks until the pipeline finishes, returns the run as JSON.
+One call. Blocks until the pipeline finishes, returns the run as JSON, and **exits non-zero if the pipeline failed**. In a `set -e` CI step, that is the whole integration.
 
-Now the part that matters.
+The reason that last clause is worth a sentence is the rest of this section.
 
-## The 200 that isn't success
+## The status code carries the run's outcome
 
-When you pass `?wait=true`, the endpoint polls the run until it reaches a terminal state and then returns it. Terminal means **success, failed, or cancelled** — all three.
+With `?wait=true`, the endpoint polls the run until it reaches a terminal state, then answers with a status code that describes **the run**, not just the request:
 
-All three come back as **HTTP 200.**
+| What happened | Status |
+|---|---|
+| The run finished successfully | **200** |
+| Still pending or running when your timeout expired | **408** |
+| Terminal, but not successful (`failed`, `cancelled`) | **422** |
+
+The body is the serialized run in all three cases, so `status` and `error_message` are still there when you want detail:
 
 ```json
 {
@@ -44,35 +50,40 @@ All three come back as **HTTP 200.**
 }
 ```
 
-That is a **200 OK** describing a pipeline that did not run. This is correct HTTP — your *request* succeeded; it's the run that failed, and the response tells you so. But it means the reflex every CI script has:
+That response is a **422**. `curl --fail` trips on it, `raise_for_status()` raises on it, and your CI job goes red — which is what you wanted when you asked the API to wait.
+
+### The trap this replaced, because you will meet it elsewhere
+
+Until August 2026, that same failed run came back as **HTTP 200**.
+
+The reasoning was defensible and wrong. Your *request* succeeded — the server did its job, found the run, waited, serialized it, and handed it to you. The run is what failed, and the body says so plainly in `status`. Textbook HTTP.
+
+The problem is that nothing in CI reads the body:
 
 ```bash
-# WRONG — goes green on a failed pipeline
+# The reflex every CI script has
 curl --fail -X POST ".../pipelines/1/run?wait=true" -H "Authorization: Bearer $KEY"
 ```
 
-...does nothing useful. `curl --fail` trips on 4xx/5xx. A failed pipeline is a 200. Your job goes green, the dashboard downstream is stale, and nobody finds out until someone notices the numbers are yesterday's.
+`--fail` trips on 4xx and 5xx. A failed pipeline was a 200. **Exit code 0.** The job goes green, the dashboard downstream is stale, and nobody finds out until someone notices the numbers are yesterday's. A step that reports success on a failed load is worse than no step at all, because it converts a loud failure into a silent one.
 
-**Check the field, not the status code:**
+What settled it was noticing the endpoint had **already** decided the question. It returned **408** when the run was still going at the timeout — and that isn't a transport failure either; the request was served perfectly. So `200 == failed` wasn't a competing philosophy, it was an inconsistency with the endpoint's own behaviour. `?wait=true` is the caller explicitly opting into *"block until you know the outcome."* If the outcome doesn't reach the status line, the option is half-built.
 
-```bash
-set -euo pipefail
+So if you are integrating some *other* pipeline API and it offers a "wait" mode: **check what a failed run returns before you trust `--fail`.** Trigger something you know is broken and look at the exit code. It is a two-minute experiment that this post exists because we ran late.
 
-response=$(curl -sS -X POST \
-  "https://app.datanika.io/api/v1/pipelines/1/run?wait=true&timeout=300" \
-  -H "Authorization: Bearer $DATANIKA_API_KEY")
+### Why 422 and not 500
 
-status=$(jq -r '.status' <<<"$response")
-if [ "$status" != "success" ]; then
-  echo "Pipeline run ended as: $status"
-  jq -r '.error_message // "no error message"' <<<"$response"
-  exit 1
-fi
+A 5xx means *"our API broke, retry the request."* Retrying this request would start a **second pipeline run** — a second extract, a second load, a second set of rows. A failed pipeline is not a transport failure and must not be retried like one.
 
-echo "Loaded $(jq -r '.rows_loaded' <<<"$response") rows"
-```
+422 says the opposite: the request was fine, and the thing you asked about did not succeed. The failure is in your pipeline — your credentials, your SQL, your source — not in our server. Retrying blindly is exactly the wrong move, and the status code should say so.
 
-We could have made a failed run return 500 and saved you this paragraph. We didn't, because a 5xx means *"our API broke, retry the request"* — and retrying the request would start a **second** pipeline run. A failed pipeline isn't a transport failure and shouldn't be retried like one.
+`cancelled` is a 422 as well. The check is *"not success"* rather than a list of failure names, so a terminal status added later cannot quietly rejoin the success branch.
+
+### Keep the body when you fail
+
+Plain `curl --fail` discards the response body on an HTTP error, which throws away `error_message` — the one thing you want in the log.
+
+Use **`--fail-with-body`** (curl 7.76+, so every current GitHub runner) to get the non-zero exit *and* the body. If you're on something older, capture the status code explicitly, as the full workflow below does.
 
 ## The three endpoints
 
@@ -94,21 +105,20 @@ All three behave identically with respect to everything below.
 {"run_id": 43, "status": "pending"}
 ```
 
-Use this when CI's job is to *kick off* work — a nightly ingest that takes 40 minutes and nothing downstream is blocking on it.
+Use this when CI's job is to *kick off* work — a nightly ingest that takes 40 minutes and nothing downstream is blocking on it. A `202` is about dispatch only; it says nothing about the outcome, and there is nothing to check with `--fail`.
 
-**With `?wait=true`** the request blocks until the run is terminal, then returns the full run object:
+**With `?wait=true`** the request blocks until the run is terminal, then answers 200 / 408 / 422 as above.
 
-- **200** — the run reached a terminal state. Read `.status`. (See above.)
-- **408** — still running when the timeout expired. The response carries `"timed_out": true` and the run **keeps going**; you just stopped waiting.
+`timeout` is in seconds, defaults to **120**, and is clamped to **1–300**. Passing `timeout=3600` doesn't get you an hour — you get 300 seconds, then a 408. Status is polled every 2 seconds, and waiting doesn't occupy a worker, so a waiting request costs you nothing but the open connection.
 
-`timeout` is in seconds, defaults to **120**, and is clamped to a **maximum of 300**. Passing `timeout=3600` doesn't get you an hour — you get 300 seconds, then a 408. Status is polled every 2 seconds, and waiting doesn't occupy a worker, so a waiting request costs you nothing but the open connection.
+**A 408 is not a failure.** The run is still going; you just stopped waiting. The body carries `"timed_out": true`, and the run's own `status` is still `pending` or `running`. That distinction matters because the remedy is different — a 422 means fix your pipeline, a 408 means wait longer or stop blocking on it. Treating them the same is how a slow Tuesday becomes a red build.
 
 ## Runs longer than five minutes
 
 Because of that 300-second ceiling, anything longer needs the async shape: trigger, then poll.
 
 ```bash
-run_id=$(curl -sS -X POST \
+run_id=$(curl -sS --fail-with-body -X POST \
   "https://app.datanika.io/api/v1/pipelines/1/run" \
   -H "Authorization: Bearer $DATANIKA_API_KEY" | jq -r '.run_id')
 
@@ -128,6 +138,8 @@ echo "Still running after 1h — check run $run_id in the app"
 exit 1
 ```
 
+`GET /api/v1/runs/{id}` is a plain read: it returns 200 with the run whatever its status, because here you *are* asking about the row rather than asking "did it work?". The `.status` field is the answer in this shape.
+
 Note the `case` covers **every** terminal status, not just `success`. A loop that only watches for `success` runs until your CI timeout and then reports the wrong cause.
 
 If you want the run's output while debugging, `GET /api/v1/runs/{id}/logs` returns `{"run_id": …, "logs": "…"}`.
@@ -141,7 +153,8 @@ Every `POST` endpoint accepts an optional **`Idempotency-Key`** header. Replay t
 The natural key in GitHub Actions is the run identity itself:
 
 ```bash
-curl -sS -X POST "https://app.datanika.io/api/v1/pipelines/1/run?wait=true&timeout=300" \
+curl -sS --fail-with-body -X POST \
+  "https://app.datanika.io/api/v1/pipelines/1/run?wait=true&timeout=300" \
   -H "Authorization: Bearer $DATANIKA_API_KEY" \
   -H "Idempotency-Key: gha-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
 ```
@@ -178,40 +191,31 @@ jobs:
           code=$(tail -n1 <<<"$response")
           body=$(sed '$d' <<<"$response")
 
-          if [ "$code" = "408" ]; then
-            echo "::warning::Still running after 300s — run $(jq -r '.id' <<<"$body")"
-            exit 1
-          fi
-          if [ "$code" != "200" ]; then
-            echo "::error::API returned $code"; echo "$body"; exit 1
-          fi
-
-          status=$(jq -r '.status' <<<"$body")
-          if [ "$status" != "success" ]; then
-            echo "::error::Pipeline run $status — $(jq -r '.error_message // "no message"' <<<"$body")"
-            exit 1
-          fi
-
-          echo "Loaded $(jq -r '.rows_loaded' <<<"$body") rows"
+          case "$code" in
+            200) echo "Loaded $(jq -r '.rows_loaded' <<<"$body") rows" ;;
+            408) echo "::warning::Still running after 300s — run $(jq -r '.id' <<<"$body")"
+                 exit 1 ;;
+            422) echo "::error::Pipeline run $(jq -r '.status' <<<"$body") — $(jq -r '.error_message // "no message"' <<<"$body")"
+                 exit 1 ;;
+            *)   echo "::error::API returned $code"; echo "$body"; exit 1 ;;
+          esac
 ```
 
-Three separate failure paths, because there are three separate ways this fails: the API call, the wait, and the pipeline. Collapsing them into one check is how you end up trusting a green run.
+Four branches, because there are four genuinely different situations: it worked, it's still going, your pipeline broke, or our API did. `--fail-with-body` collapses the middle two into one non-zero exit, which is fine when you only need pass/fail — but the messages above are what you'll want at 2am, and the 408 branch is the one people most often want to handle differently.
 
 ## Cancelling a run
 
-If your workflow is cancelled, the pipeline it started is not — a `202` handed the work to a background worker and CI walking away doesn't reach it. Clean up explicitly:
+If your workflow is cancelled, the pipeline it started is not. A `202` handed the work to a background worker, and CI walking away doesn't reach it.
 
-```yaml
-      - name: Cancel the run if the job is cancelled
-        if: cancelled()
-        env:
-          DATANIKA_API_KEY: ${{ secrets.DATANIKA_API_KEY }}
-        run: |
-          curl -sS -X POST "https://app.datanika.io/api/v1/runs/${RUN_ID}/cancel" \
-            -H "Authorization: Bearer $DATANIKA_API_KEY" || true
-```
+**And the API cannot currently clean it up for you — plan around that rather than around the endpoint.** `POST /api/v1/runs/{id}/cancel` exists and will return `200` with `"status": "cancelled"` — but that call only writes the status onto the run row. It does not stop the worker. The extract keeps reading, the load keeps writing, and when the task finishes it overwrites the status back to `success`. Tracked as [core#657](https://github.com/datanika-io/datanika-core/issues/657), along with the reason there is no cancel button in the app either: shipping a control onto that behaviour would spread the wrong impression to every user instead of only to API callers.
 
-`POST /api/v1/runs/{id}/cancel` needs `runs:write`, and returns **409** with `"not_cancellable"` if the run already finished — which is a perfectly normal outcome in a cleanup step, and why that `|| true` is there.
+So don't wire a cleanup step and believe it. Until cancellation actually stops work:
+
+- **Bound the blast radius instead of the run.** Smaller, more frequent pipelines beat one long job you might want to kill.
+- **Assume anything you triggered will finish.** Check the app rather than your CI log for what a cancelled workflow left behind.
+- **On usage-based plans, a run you "cancelled" keeps metering** until it completes on its own. That's the practical reason this is a limitation worth stating rather than a detail.
+
+The one accurate part of the old advice: the endpoint returns **409** with `"not_cancellable"` when the run has already finished, which is a perfectly normal outcome and not something to treat as an error.
 
 ## Give CI its own key, scoped down
 
@@ -221,7 +225,6 @@ For a CI key, set the scopes explicitly rather than leaving them empty (empty me
 
 - `pipelines:write` — to trigger
 - `runs:read` — to poll status and read logs
-- `runs:write` — only if the workflow cancels
 
 That's a key that can start and observe one kind of work and cannot delete a connection, read your credentials, or create a schedule. If it leaks into a build log, the blast radius is a pipeline someone can already trigger from the UI.
 
@@ -230,6 +233,8 @@ Set an expiry on it too, and rotate it on a calendar rather than after an incide
 ## Rate limits
 
 Each key is rate-limited independently, per plan, and exceeding it returns **429** with a `Retry-After` header. Current per-plan limits are on [the API keys page](/api/keys) — a fan-out matrix build that triggers one pipeline per shard is the realistic way to hit them, so back off on 429 rather than retrying immediately.
+
+Note that 429 is a genuine transport-level "try again", unlike the 422 above. It's the one 4xx here you *should* retry.
 
 ## Why this is easier here than in a three-tool stack
 
@@ -245,4 +250,4 @@ That argument, with numbers attached, is in [Datanika vs the Modern Data Stack](
 
 ---
 
-*Every status code, header, scope name, and default in this post was read out of the API's route handlers rather than from documentation — including the 200-on-failure behaviour, which the docs did not previously spell out. If you find a discrepancy, [open an issue](https://github.com/datanika-io/datanika-landing/issues) and we'll fix the post.*
+*Every status code, header, scope name and default here was read out of the live OpenAPI document and the shipped route handlers, not out of our own docs. That matters more than usual for this post: the 200-on-failure behaviour in "the trap this replaced" was **found while writing the first draft of it**, filed as [core#663](https://github.com/datanika-io/datanika-core/issues/663), and fixed before this went out. Writing the tutorial is what surfaced the bug — so if you find a discrepancy, [open an issue](https://github.com/datanika-io/datanika-landing/issues) and we'll fix the post, or the API.*

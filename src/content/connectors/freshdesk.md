@@ -55,7 +55,7 @@ Extract-load is configured at **`/uploads`**, not on the connection. There is no
 1. Open **`/uploads`**. The **New Upload** form is rendered inline on the page.
 2. Fill in **Upload name** (letters and digits only — anything else is stripped as you type, so `freshdesk-daily-sync` becomes `freshdeskdailysync`) and an optional **Description**.
 3. Pick the **Source connection** and the **Destination connection** — the Freshdesk connection from Step 2 is the source. Each picker opens a dialog listing entries as `16 — myconnection (postgres)`, i.e. id, name, type.
-4. Because Freshdesk is a SaaS source, the form shows **Select endpoints to load** — a checkbox per resource, **all ticked by default**. For Freshdesk the list is `agents`, `companies`, `contacts`, `groups`, `tickets`. Untick anything you do not want: each ticked endpoint becomes its own table in the destination, and unticked ones are not fetched at all.
+4. Because Freshdesk is a SaaS source, the form shows **Select endpoints to load** — a checkbox per resource, **all ticked by default**. For Freshdesk the list is `agents`, `companies`, `contacts`, `groups`, `tickets`. Untick anything you do not want: each ticked endpoint becomes its own table in the destination, and unticked ones are not fetched at all — though unticking *every* box loads the full set rather than nothing.
 5. Click **Create Upload**. It appears in the table below with status `draft`.
 
 ![The New Upload form with a Freshdesk source and its endpoint checkboxes](/docs/connectors/freshdesk/03-configure-upload.png)
