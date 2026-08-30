@@ -3,7 +3,7 @@ import Layout from "../../layouts/Layout.astro";
 import Navbar from "../../components/Navbar.astro";
 import Footer from "../../components/Footer.astro";
 import ConversionCTA from "../../components/ConversionCTA.astro";
-import { connectors } from "../../data/connectors";
+import { connectors, sourceConnectors, destinationConnectors, directionLabel } from "../../data/connectors";
 import type { Connector } from "../../data/connectors";
 import { useCases } from "../../data/use-cases";
 import { templates } from "../../data/templates";
@@ -22,12 +22,37 @@ interface Props {
 }
 
 const { connector } = Astro.props;
-const directionLabel =
-  connector.direction === "both" ? "Source & Destination" : "Source";
 const directionColor =
   connector.direction === "both"
     ? "bg-violet-500/20 text-violet-300"
-    : "bg-slate-800 text-slate-400";
+    : connector.direction === "destination"
+      ? "bg-cyan-500/20 text-cyan-300"
+      : "bg-slate-800 text-slate-400";
+
+// Where this connector's data can go, derived. These pages rank for
+// destination-directed queries — `export slack to postgresql` sits at position
+// 13.5 — and the page never named a destination (#378, #379). Deriving it means
+// a `direction` change carries the copy with it, which is what the prose split
+// failed to do (#376), and it cannot name something we do not support (#391).
+// Ordering only — the SET is derived and complete; this decides which four get
+// named in the one-line summary. Taken from the destinations that actually
+// appear in our GSC queries (`export slack to postgresql` 13.5, `pipedrive to
+// bigquery` 16.6, `asana to bigquery` 18.1). Data-file order put the four
+// smallest databases first and BigQuery nowhere.
+const DESTINATION_BILLING_ORDER = ["postgresql", "bigquery", "snowflake", "clickhouse", "mysql"];
+const destinationsForThis = destinationConnectors
+  .filter((c) => c.slug !== connector.slug)
+  .sort((a, b) => {
+    const rank = (slug: string) => {
+      const i = DESTINATION_BILLING_ORDER.indexOf(slug);
+      return i === -1 ? DESTINATION_BILLING_ORDER.length : i;
+    };
+    return rank(a.slug) - rank(b.slug);
+  });
+
+// Only a SQL database source renders write-disposition / load-mode / source-schema
+// / table-name controls. See the callout carried by the other twenty-four guides.
+const isSqlSource = connector.category === "Database";
 
 const relatedConnectors = connector.related
   .map((slug) => connectors.find((c) => c.slug === slug))
@@ -95,7 +120,7 @@ const comparisonSlugs = ["airbyte", "fivetran", "stitch", "hevo"];
       <div class="flex items-center gap-3 mb-4">
         <span class="text-sm text-slate-500">{connector.category}</span>
         <span class={`text-xs px-2 py-0.5 rounded-full ${directionColor}`}>
-          {directionLabel}
+          {directionLabel(connector.direction)}
         </span>
       </div>
       <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight mb-4">
@@ -104,6 +129,20 @@ const comparisonSlugs = ["airbyte", "fivetran", "stitch", "hevo"];
       <p class="text-lg text-slate-400 leading-relaxed max-w-3xl">
         {connector.description}
       </p>
+      {connector.direction !== "destination" && (
+        <p class="mt-5 text-slate-300">
+          <span class="text-white font-medium">Where it can go:</span> load {connector.name} into
+          {" "}{destinationsForThis.slice(0, 4).map((d) => d.name).join(", ")} or any of the
+          {" "}<a href="#destinations" class="text-violet-400 underline hover:text-violet-300">{destinationsForThis.length} supported destinations</a>.
+        </p>
+      )}
+      {connector.direction === "destination" && (
+        <p class="mt-5 text-slate-300">
+          <span class="text-white font-medium">{connector.name} is a destination.</span> Load data into it
+          from any of the <a href="/connectors" class="text-violet-400 underline hover:text-violet-300">{sourceConnectors.length} source connectors</a>.
+          Datanika does not extract from {connector.name}.
+        </p>
+      )}
       <div class="flex flex-col sm:flex-row gap-4 mt-8">
         <ConversionCTA href="https://app.datanika.io" class="btn-primary">
           Connect {connector.name}
@@ -187,28 +226,38 @@ const comparisonSlugs = ["airbyte", "fivetran", "stitch", "hevo"];
             <p class="text-sm text-slate-400">Navigate to Connections, click New, select {connector.name}, and enter your credentials.</p>
           </div>
         </li>
-        {connector.direction === "both" ? (
-          <li class="flex gap-4">
-            <span class="flex items-center justify-center w-8 h-8 rounded-full bg-violet-500/20 text-violet-300 font-bold text-sm shrink-0">2</span>
-            <div>
-              <p class="text-white font-medium">Use as source, destination, or both</p>
-              <p class="text-sm text-slate-400">Extract data from {connector.name} into another destination, or load data from other sources into {connector.name}.</p>
-            </div>
-          </li>
-        ) : (
-          <li class="flex gap-4">
-            <span class="flex items-center justify-center w-8 h-8 rounded-full bg-violet-500/20 text-violet-300 font-bold text-sm shrink-0">2</span>
-            <div>
-              <p class="text-white font-medium">Choose a destination</p>
-              <p class="text-sm text-slate-400">Select where to load your {connector.name} data — BigQuery, Snowflake, PostgreSQL, or any other supported destination.</p>
-            </div>
-          </li>
-        )}
+        <li class="flex gap-4">
+          <span class="flex items-center justify-center w-8 h-8 rounded-full bg-violet-500/20 text-violet-300 font-bold text-sm shrink-0">2</span>
+          <div>
+            {connector.direction === "both" && (
+              <>
+                <p class="text-white font-medium">Use as source, destination, or both</p>
+                <p class="text-sm text-slate-400">Extract data from {connector.name} into another destination, or load data from other sources into {connector.name}.</p>
+              </>
+            )}
+            {connector.direction === "destination" && (
+              <>
+                <p class="text-white font-medium">Pick the source to load from</p>
+                <p class="text-sm text-slate-400">{connector.name} is the destination. Choose any of the {sourceConnectors.length} source connectors — databases, SaaS APIs, files or streams — as the other half of the upload.</p>
+              </>
+            )}
+            {connector.direction === "source" && (
+              <>
+                <p class="text-white font-medium">Choose a destination</p>
+                <p class="text-sm text-slate-400">Select where to load your {connector.name} data — {destinationsForThis.slice(0, 3).map((d) => d.name).join(", ")}, or any of the other {destinationsForThis.length - 3}.</p>
+              </>
+            )}
+          </div>
+        </li>
         <li class="flex gap-4">
           <span class="flex items-center justify-center w-8 h-8 rounded-full bg-violet-500/20 text-violet-300 font-bold text-sm shrink-0">3</span>
           <div>
             <p class="text-white font-medium">Create an upload and run it</p>
-            <p class="text-sm text-slate-400">Set up an upload with your source and destination, choose a load mode, and click Run. Datanika handles extraction, schema mapping, and loading automatically via dlt.</p>
+            <p class="text-sm text-slate-400">
+              Set up an upload with your source and destination{isSqlSource ? ", choose a load mode," : ""} and click Run.
+              Datanika handles extraction, schema mapping, and loading automatically via dlt.
+              {!isSqlSource && connector.direction !== "destination" && " There is no write-disposition, load-mode, source-schema or table-name field for this source — those are rendered only for SQL databases. You pick which endpoints to load instead."}
+            </p>
           </div>
         </li>
         <li class="flex gap-4">
@@ -219,6 +268,41 @@ const comparisonSlugs = ["airbyte", "fivetran", "stitch", "hevo"];
           </div>
         </li>
       </ol>
+    </div>
+  </section>
+
+  <!-- Destinations / sources: the second half of the query these pages rank for -->
+  <section id="destinations" class="py-16 border-t border-slate-800">
+    <div class="max-w-4xl mx-auto px-6">
+      {connector.direction === "destination" ? (
+        <>
+          <h2 class="text-2xl font-bold mb-3">Sources you can load into {connector.name}</h2>
+          <p class="text-slate-400 mb-6">
+            {connector.name} is a destination. Any of the {sourceConnectors.length} source connectors can
+            load into it — databases, SaaS APIs, files and streams. Datanika does not extract data
+            <em>from</em> {connector.name}.
+          </p>
+          <a href="/connectors" class="btn-secondary">Browse all {connectors.length} connectors</a>
+        </>
+      ) : (
+        <>
+          <h2 class="text-2xl font-bold mb-3">Where {connector.name} data can go</h2>
+          <p class="text-slate-400 mb-6">
+            Every destination below works with {connector.name}. Pick one when you create the upload —
+            there is nothing to configure on the {connector.name} side to enable it.
+          </p>
+          <div class="flex flex-wrap gap-2">
+            {destinationsForThis.map((d) => (
+              <a
+                href={`/connectors/${d.slug}`}
+                class="rounded-full border border-slate-700 bg-slate-900/60 px-4 py-1.5 text-sm text-slate-300 transition-colors hover:border-violet-500/50 hover:text-white"
+              >
+                {connector.name} &rarr; {d.name}
+              </a>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   </section>
 

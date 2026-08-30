@@ -248,17 +248,58 @@ describe("source/destination split in prose matches src/data/connectors.ts (#376
     ).toEqual([]);
   });
 
-  it("no page implies destination-only connectors by summing the two halves", () => {
-    /**
-     * Written in the direction we believe rather than the convenient one: the
-     * only way "N sources and M destinations" is honest is if the reader is not
-     * invited to add them. Every destination is also a source.
-     */
+  /**
+   * 🚨 This assertion started life as `toBe(0)` — "there are no destination-only
+   * connectors, so all 36 work as sources" — derived from this data file alone
+   * and written into four pages before anyone checked it against the product.
+   *
+   * Core disagrees, by name, in its own test suite
+   * (`tests/test_services/test_connection_service.py`):
+   *
+   *     assert infer_direction("bigquery")  == ConnectionDirection.DESTINATION
+   *     assert infer_direction("snowflake") == ConnectionDirection.DESTINATION
+   *     assert infer_direction("redshift")  == ConnectionDirection.DESTINATION
+   *
+   * `SOURCE_TYPES` in `connection_service.py` contains none of the five cloud
+   * warehouses, and `dlt_runner.SUPPORTED_SOURCE_TYPES` is the seven SQL
+   * databases only. So the catalogue is **25 source-only + 6 both + 5
+   * destination-only**, and the capability sets overlap by 6 rather than 11 (#391).
+   *
+   * `connector-count-parity.yml` compares the connector *count* against core's
+   * README and is structurally blind to `direction`, which is why this sat
+   * unnoticed. Changing these five slugs means the product changed — go read
+   * core, not this file.
+   */
+  const DESTINATION_ONLY = ["bigquery", "snowflake", "redshift", "databricks", "synapse"];
+
+  it("the five cloud warehouses are destination-only, as core asserts by name", () => {
     expect(
-      connectors.filter((c) => c.direction === "destination").length,
-      "A destination-only connector now exists. Every sentence phrased as 'all N work as " +
-        "sources' is now false — re-read #376 before changing this assertion.",
-    ).toBe(0);
+      connectors.filter((c) => c.direction === "destination").map((c) => c.slug).sort(),
+    ).toEqual([...DESTINATION_ONLY].sort());
+  });
+
+  it("the three capability sets partition the catalogue", () => {
+    const only = (d: string) => connectors.filter((c) => c.direction === d).length;
+    expect(only("source") + only("both") + only("destination")).toBe(connectors.length);
+    expect(sourceConnectors.length).toBe(only("source") + only("both"));
+    expect(destinationConnectors.length).toBe(only("destination") + only("both"));
+    // The overlap is real and is why the two halves must never be summed in prose.
+    expect(sourceConnectors.length + destinationConnectors.length).toBeGreaterThan(
+      connectors.length,
+    );
+  });
+
+  it("no connector marked a destination still advertises extraction", () => {
+    const offenders: string[] = [];
+    for (const c of connectors.filter((x) => x.direction === "destination")) {
+      const prose = [c.description, ...c.useCases].join(" | ");
+      const claim = /\bextract\w*|\bas a source\b|\bor a source\b/i;
+      if (claim.test(prose)) offenders.push(`${c.slug}: ${prose}`);
+    }
+    expect(
+      offenders,
+      "A destination-only connector's copy promises extraction. Core cannot extract from it.",
+    ).toEqual([]);
   });
 
   it("every SPLIT_ALLOWED entry still matches something (no stale exemptions)", () => {

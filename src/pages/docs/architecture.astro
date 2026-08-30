@@ -19,7 +19,7 @@ import { connectors, sourceConnectors, destinationConnectors } from "../../data/
   <h2>System Overview</h2>
   <p>Datanika is a multi-tenant data pipeline platform built with:</p>
   <ul>
-    <li><strong>dlt</strong> (data load tool) — Extract + Load across {sourceConnectors.length} sources and {destinationConnectors.length} destinations (every destination is also a source, so the catalogue is {connectors.length} connectors)</li>
+    <li><strong>dlt</strong> (data load tool) — Extract + Load across {sourceConnectors.length} sources and {destinationConnectors.length} destinations, out of a catalogue of {connectors.length} connectors (the six databases that do both are counted in each)</li>
     <li><strong>dbt-core</strong> — Transform (SQL models, tests, snapshots, packages)</li>
     <li><strong>Reflex</strong> — Full-stack Python UI (compiles to React, no separate JS codebase)</li>
     <li><strong>PostgreSQL</strong> — Application database + pipeline metadata</li>
