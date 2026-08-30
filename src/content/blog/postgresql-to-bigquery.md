@@ -9,6 +9,10 @@ tags: ["tutorial", "postgresql", "bigquery", "getting-started"]
 heroImage: "/logo.png"
 ---
 
+> **Looking for the short version?** [Export PostgreSQL to BigQuery](/use-cases/postgresql-to-bigquery/) is the
+> one-page summary — what the pipeline does, the four setup steps, and the connector details. This post is the
+> screen-by-screen walkthrough of the same pipeline.
+
 ## The Problem
 
 Your PostgreSQL database is great for running your app, but running heavy analytical queries against it slows down production. You need to replicate your data to a warehouse — but setting up Airbyte (Kubernetes required), writing custom scripts, or standing up a managed connector on Fivetran feels like overkill for what should be simple.

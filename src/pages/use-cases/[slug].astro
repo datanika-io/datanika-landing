@@ -3,21 +3,42 @@ import Layout from "../../layouts/Layout.astro";
 import Navbar from "../../components/Navbar.astro";
 import Footer from "../../components/Footer.astro";
 import ConversionCTA from "../../components/ConversionCTA.astro";
+import { getCollection } from "astro:content";
+import { isPostVisible } from "../../utils/blog-visibility";
 import { useCases } from "../../data/use-cases";
 import type { UseCase } from "../../data/use-cases";
 
-export function getStaticPaths() {
-  return useCases.map((uc) => ({
-    params: { slug: uc.slug },
-    props: { useCase: uc },
-  }));
+// A use case and a tutorial that share a slug are the same intent at two depths,
+// and until now they competed instead of stacking: GSC has both
+// `/use-cases/postgresql-to-bigquery/` (57.5) and `/blog/postgresql-to-bigquery/`
+// (57.3) ranking for `export postgresql to bigquery` in the same 30 days, with
+// the impressions split 28/11 and neither near the surface (#380).
+//
+// Derived by slug rather than listed by hand, so a new tutorial that matches a
+// use case is linked the day it publishes and an unpublished one is not linked
+// at all — a scheduled post is excluded from the build entirely, so a hardcoded
+// href would 404 until its publish date.
+export async function getStaticPaths() {
+  const posts = await getCollection("blog", ({ data }) => isPostVisible(data));
+  const bySlug = new Map(posts.map((p) => [p.id.replace(/\.mdx?$/, ""), p]));
+  return useCases.map((uc) => {
+    const post = bySlug.get(uc.slug);
+    return {
+      params: { slug: uc.slug },
+      props: {
+        useCase: uc,
+        deepDive: post ? { slug: uc.slug, title: post.data.title } : null,
+      },
+    };
+  });
 }
 
 interface Props {
   useCase: UseCase;
+  deepDive: { slug: string; title: string } | null;
 }
 
-const { useCase } = Astro.props;
+const { useCase, deepDive } = Astro.props;
 
 const breadcrumbs = [
   { name: "Home", url: "/" },
@@ -136,6 +157,12 @@ const pageH1 = useCase.seoH1 ?? useCase.title;
         <a href="/compare/hevo" class="text-violet-400 hover:underline">Hevo</a>.
         See the <a href="/docs/getting-started" class="text-violet-400 hover:underline">Getting Started guide</a> to build this pipeline in 5 minutes.
       </p>
+      {deepDive && (
+        <p class="mt-4 text-sm text-slate-400">
+          Want the long version? <a href={`/blog/${deepDive.slug}/`} class="text-violet-400 hover:underline">{deepDive.title}</a>{" "}
+          walks through the same pipeline screen by screen.
+        </p>
+      )}
     </div>
   </section>
 
