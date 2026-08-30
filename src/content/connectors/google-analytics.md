@@ -6,9 +6,7 @@ source_name: "Google Analytics"
 category: "saas"
 verified_by: "product-ui"
 verified_date: "2026-07-19"
-related_use_cases:
-  - "google-analytics-to-bigquery"
-  - "google-analytics-to-snowflake"
+related_use_cases: []
 related_comparisons:
   - "fivetran"
   - "airbyte"
@@ -120,7 +118,6 @@ Schedules live on their own page and reference the upload **by name**.
 
 ## Related
 
-- **Use cases:** [Google Analytics → BigQuery](/use-cases/google-analytics-to-bigquery), [Google Analytics → Snowflake](/use-cases/google-analytics-to-snowflake)
 - **Comparisons:** [Datanika vs Fivetran for Google Analytics](/compare/fivetran), [Datanika vs Airbyte](/compare/airbyte)
 - **dbt tips:** starter staging models for `raw_ga4` and attribution modeling in the [Transformations guide](/docs/transformations-guide)
 - **Connector reference:** full field-by-field [Google Analytics connector spec](/connectors/google-analytics)
