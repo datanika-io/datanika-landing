@@ -69,21 +69,30 @@ const byCategory = categoryOrder.map((category) => ({
   </table>
 
   <h3>SaaS & APIs (source only)</h3>
+  <p>
+    For these types the upload form shows <strong>Select endpoints to load</strong>, all ticked by
+    default. The names below are exactly the checkboxes offered — nothing else is fetchable, and a
+    resource missing from a row is missing on purpose rather than by omission.
+  </p>
   <table>
-    <thead><tr><th>Type</th><th>Notes</th></tr></thead>
+    <thead><tr><th>Type</th><th>Endpoints offered</th></tr></thead>
     <tbody>
-      <tr><td><code>stripe</code></td><td>Customers, invoices, subscriptions, products, charges</td></tr>
-      <tr><td><code>github</code></td><td>Issues, PRs, commits, stargazers (per repo)</td></tr>
-      <tr><td><code>hubspot</code></td><td>Contacts, companies, deals, tickets, quotes</td></tr>
-      <tr><td><code>salesforce</code></td><td>Accounts, contacts, opportunities, leads, campaigns</td></tr>
+      <tr><td><code>stripe</code></td><td>Charges, customers, invoices, prices, products, subscriptions</td></tr>
+      <tr><td><code>github</code></td><td>Issues, pulls, commits, stargazers (per repo)</td></tr>
+      <tr><td><code>hubspot</code></td><td>Companies, contacts, deals</td></tr>
+      <tr><td><code>salesforce</code></td><td>Accounts, contacts, opportunities</td></tr>
       <tr><td><code>shopify</code></td><td>Orders, products, customers</td></tr>
-      <tr><td><code>jira</code></td><td>Issues, users, workflows, projects</td></tr>
-      <tr><td><code>slack</code></td><td>Channels, messages, users, threads</td></tr>
-      <tr><td><code>google_analytics</code></td><td>GA4 reports (property ID + service account)</td></tr>
-      <tr><td><code>facebook_ads</code></td><td>Campaigns, ad sets, ads, leads, creatives</td></tr>
-      <tr><td><code>zendesk</code></td><td>Tickets, users, organizations, groups</td></tr>
+      <tr><td><code>jira</code></td><td>Issues, projects</td></tr>
+      <tr><td><code>slack</code></td><td>Channels, users</td></tr>
+      <tr><td><code>zendesk</code></td><td>Organizations, tickets, users</td></tr>
+      <tr><td><code>pipedrive</code></td><td>Activities, deals, organizations, persons, pipelines, stages, users</td></tr>
+      <tr><td><code>freshdesk</code></td><td>Agents, companies, contacts, groups, tickets</td></tr>
+      <tr><td><code>asana</code></td><td>Projects, tags, tasks, users, workspaces</td></tr>
       <tr><td><code>airtable</code></td><td>Tables from a base (API key + base ID)</td></tr>
-      <tr><td><code>notion</code></td><td>Databases and pages</td></tr>
+      <tr><td><code>notion</code></td><td>Databases, pages</td></tr>
+      <tr><td><code>facebook_ads</code></td><td>Campaigns, ad sets, ads, creatives</td></tr>
+      <tr><td><code>google_analytics</code></td><td>A single <code>report</code> resource (property ID + service account)</td></tr>
+      <tr><td><code>google_ads</code></td><td>A single <code>report</code> resource (GAQL query)</td></tr>
       <tr><td><code>rest_api</code></td><td>Any REST API with configurable endpoints</td></tr>
     </tbody>
   </table>
