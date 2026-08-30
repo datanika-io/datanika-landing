@@ -84,7 +84,10 @@ datanika-landing/
 │   ├── fonts/inter/                # Self-hosted Inter (PR #77)
 │   ├── llms.txt                    # Agent discovery doc
 │   └── logo.png
-├── tests/                      # 38 vitest files, 920 tests
+├── tests/                      # vitest guardrails — see "Testing guardrails" below
+├── docs/                        # not built, not served — contracts and rules, versioned here
+│   ├── GROWTH_RULES.md          # rules earned from incidents; read before writing a guard or a claim
+│   └── specs/                   # SPEC_PRICING_V2.md — tier structure, banned-phrase list, open decisions
 ├── astro.config.mjs
 ├── package.json
 └── tsconfig.json
