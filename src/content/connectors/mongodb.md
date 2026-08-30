@@ -24,11 +24,13 @@ MongoDB is the most common NoSQL source our users sync into a relational warehou
 > ever checked. There is also no `mongodb+srv://` support, so the seedlist hostname Atlas hands you
 > cannot be entered — the form takes **Host** and **Port** separately.
 >
-> The same applies to **Amazon DocumentDB**, **Azure Cosmos DB's Mongo API**, and any self-hosted
-> deployment running `net.tls.mode: requireTLS`. Both gaps are tracked as
-> [core#626](https://github.com/datanika-io/datanika-core/issues/626); this note comes out when it
-> closes. Nothing else on this page will help if TLS is required — the rest of the guide assumes a
-> deployment reachable without it.
+> **The rule, so you can check your own deployment: if the server requires TLS, Datanika cannot
+> reach it yet.** Atlas always requires it. **Amazon DocumentDB** enables it by default — a cluster
+> works here only if someone has explicitly set the `tls` cluster parameter to `disabled`. **Azure
+> Cosmos DB's Mongo API** and any self-hosted `net.tls.mode: requireTLS` are out for the same reason.
+> Both gaps are tracked as [core#626](https://github.com/datanika-io/datanika-core/issues/626); this
+> note comes out when it closes. Nothing else on this page will help if TLS is required — the rest of
+> the guide assumes a deployment reachable without it.
 
 ## Prerequisites
 
@@ -128,7 +130,7 @@ Only after that comes back clean is it worth re-checking the password. Full expl
 ### Connection hangs or times out
 **Fix.** Check firewall rules on port `27017` between Datanika and the MongoDB host, and confirm `mongod` is bound to an interface Datanika can reach rather than `127.0.0.1` (`net.bindIp` in `mongod.conf`).
 
-> **If the host is Atlas, DocumentDB, Cosmos DB, or anything with `requireTLS`, stop here — an allowlist will not fix it.** Those deployments require TLS and Datanika does not negotiate any yet, so the connection cannot succeed no matter how the network is configured. See the note at the top of this guide; tracked as [core#626](https://github.com/datanika-io/datanika-core/issues/626). IP allowlisting is a step you would only reach *after* the transport worked.
+> **If the host requires TLS — Atlas, Cosmos DB's Mongo API, DocumentDB with its default `tls` setting, or a self-hosted `requireTLS` — stop here; an allowlist will not fix it.** Datanika does not negotiate TLS yet, so the connection cannot succeed no matter how the network is configured. See the note at the top of this guide; tracked as [core#626](https://github.com/datanika-io/datanika-core/issues/626). IP allowlisting is a step you would only reach *after* the transport worked.
 
 ### Nested documents land as JSON strings instead of columns
 **Fix.** This shouldn't happen with dlt's default flattening. If it does, check that the `batch_size` config isn't set too low — very small batches can sometimes affect schema inference.
