@@ -74,15 +74,15 @@ const faq = [
   },
   {
     q: "What happens when I exceed my included volume?",
-    a: "On Free: hard cap — your pipeline pauses until next month. On Pro: $0.50 per extra GB, billed at the end of the billing period. On Enterprise: $0.25 per extra GB. The UI shows predicted overage cost before every run.",
+    a: "On Free: hard cap — your pipeline pauses until next month. On Pro: $0.50 per extra GB, billed at the end of the billing period. On Enterprise: $0.25 per extra GB.",
   },
   {
-    q: "Can I see my cost before I run a pipeline?",
-    a: "Yes. Pro and Enterprise pipelines display a pre-run estimate based on a moving average of your last 5 runs or an inspection of source-table size for first runs. No surprises.",
+    q: "How do I work out what a pipeline will cost?",
+    a: "Multiply. The rate is published — $0.50/GB on Pro, $0.25/GB on Enterprise — and the meter counts post-normalization output bytes, so a source you can size is a bill you can size. The calculator at /why-cheaper/ does the arithmetic for a whole month. To be clear about what we do not do: the app does not display a per-run cost forecast today.",
   },
   {
     q: "How does this compare to Fivetran's MAR pricing?",
-    a: "Fivetran charges by monthly active rows (MAR). MAR re-counts edits and punishes wide schemas. At 100 GB, Fivetran Starter costs roughly $3,800/mo; Datanika Pro costs $79. Use our calculator at /why-cheaper/ for a side-by-side comparison.",
+    a: "Fivetran charges by monthly active rows (MAR). MAR re-counts edits and punishes wide schemas. Fivetran publishes no per-MAR rate, so its side of any comparison is an estimate rather than a quote: converting 100 GB at ~200K rows/GB puts Starter in the region of $3,800/mo, against $79 for Datanika Pro. Run your own numbers through Fivetran's estimator for a binding figure, or use our calculator at /why-cheaper/ for the side-by-side.",
   },
   {
     q: `Do I still get all ${connectors.length} connectors on Free?`,
@@ -136,7 +136,7 @@ const faq = [
     <div class="max-w-6xl mx-auto px-6">
       <h2 class="text-3xl font-bold text-center mb-4">Three tiers, one meter</h2>
       <p class="text-slate-400 text-center max-w-2xl mx-auto mb-12">
-        Every plan includes a volume allowance. Go over on Pro or Enterprise and you pay a flat per-GB overage — predictable and visible before every run.
+        Every plan includes a volume allowance. Go over on Pro or Enterprise and you pay a flat per-GB overage — one published rate, applied the same way every time.
       </p>
       <div class="grid md:grid-cols-3 gap-8">
         {tiers.map((tier) => (
@@ -261,11 +261,11 @@ const faq = [
           </div>
         </div>
         <div class="rounded-xl bg-slate-800/50 border border-slate-700 p-6">
-          <h3 class="font-bold mb-3">Pre-run cost estimate</h3>
+          <h3 class="font-bold mb-3">A unit you can check</h3>
           <p class="text-sm text-slate-300">
-            Pro and Enterprise pipelines show a <code class="text-emerald-300 bg-slate-900 px-1 py-0.5 rounded text-xs">predicted_bytes</code> estimate
-            based on a moving average of your last 5 runs. If the predicted volume would push you past your included quota,
-            the UI shows the expected overage cost <strong>before</strong> you click "Run."
+            A gigabyte is something you can count yourself, and the rate is published — $0.50/GB on Pro, $0.25/GB on
+            Enterprise, against the same post-normalization output bytes as the worked example above. MAR is the opposite
+            kind of unit: it is defined and counted by the vendor, so the invoice is the first place you get to see it.
           </p>
         </div>
       </div>
@@ -312,8 +312,14 @@ const faq = [
         </table>
       </div>
       <p class="text-xs text-slate-500 mt-4">
-        Competitor estimates from published pricing pages (2026). Fivetran: Starter tier with MAR→GB conversion at ~200K rows/GB.
-        Airbyte: Cloud tier. See <a href="/why-cheaper/" class="text-emerald-400 hover:underline">/why-cheaper/</a> for the full methodology.
+        The Fivetran and Airbyte columns are illustrative estimates, not quotes. Checked in August 2026, neither vendor
+        published a rate card a bill could be computed from: Fivetran points at an estimator and a consumption table and
+        publishes no per-MAR rate, and Airbyte prices its paid tiers on compute capacity rather than data moved. Ours convert
+        GB to Fivetran-equivalent MAR at ~200K rows/GB on the Starter tier, and to an Airbyte Cloud range. See
+        <a href="/why-cheaper/" class="text-emerald-400 hover:underline">/why-cheaper/</a> for the conversion, or run your own
+        numbers through <a href="https://www.fivetran.com/pricing" class="text-slate-400 underline hover:text-slate-300" rel="nofollow">Fivetran&rsquo;s</a>
+        and <a href="https://airbyte.com/pricing" class="text-slate-400 underline hover:text-slate-300" rel="nofollow">Airbyte&rsquo;s</a>
+        own pricing pages for a binding figure. The Datanika column is exact.
       </p>
     </div>
   </section>
