@@ -191,12 +191,12 @@ export const connectors: Connector[] = [
     slug: "bigquery",
     name: "Google BigQuery",
     category: "Cloud Warehouse",
-    direction: "both",
-    description: "Connect to Google BigQuery using a service account. Use as a destination for loading data at scale or as a source to extract BigQuery datasets.",
+    direction: "destination",
+    description: "Connect to Google BigQuery using a service account and load data into it at scale. BigQuery is a destination in Datanika, not a source.",
     useCases: [
       "Centralize data from multiple sources into BigQuery",
       "Load Stripe, HubSpot, or Salesforce data for analytics",
-      "Extract BigQuery tables for cross-cloud reporting",
+      "Land Postgres, MySQL and SaaS data in one BigQuery dataset",
       "Run dbt transformations on BigQuery data",
     ],
     configFields: [
@@ -213,13 +213,13 @@ export const connectors: Connector[] = [
     slug: "snowflake",
     name: "Snowflake",
     category: "Cloud Warehouse",
-    direction: "both",
-    description: "Connect to Snowflake using account credentials. Load data from any source into Snowflake or extract Snowflake data for other destinations.",
+    direction: "destination",
+    description: "Connect to Snowflake using account credentials and load data from any source into it. Snowflake is a destination in Datanika, not a source.",
     useCases: [
       "Build a central data warehouse in Snowflake",
       "Load SaaS data (Salesforce, HubSpot) into Snowflake",
       "Run dbt transformations on Snowflake",
-      "Cross-cloud data sharing and analytics",
+      "Consolidate multi-region operational databases into one warehouse",
     ],
     configFields: [
       { name: "account", description: "Snowflake account identifier (e.g. xy12345.us-east-1)" },
@@ -239,13 +239,13 @@ export const connectors: Connector[] = [
     slug: "redshift",
     name: "Amazon Redshift",
     category: "Cloud Warehouse",
-    direction: "both",
-    description: "Connect to Amazon Redshift as a source or destination. Ideal for AWS-centric data stacks with S3 staging for fast bulk loads.",
+    direction: "destination",
+    description: "Connect to Amazon Redshift as a destination. Ideal for AWS-centric data stacks, with S3 staging for fast bulk loads.",
     useCases: [
       "Centralize AWS data in Redshift",
       "Load S3 data into Redshift via dlt",
       "Run dbt transformations on Redshift",
-      "Extract Redshift data for cross-cloud analytics",
+      "Consolidate on-premise Postgres and MySQL into Redshift",
     ],
     configFields: [
       { name: "host", description: "Redshift cluster endpoint" },
@@ -263,8 +263,8 @@ export const connectors: Connector[] = [
     slug: "databricks",
     name: "Databricks",
     category: "Cloud Warehouse",
-    direction: "both",
-    description: "Connect to Databricks Lakehouse using a personal access token. Load data into Delta tables or extract from Databricks for other destinations.",
+    direction: "destination",
+    description: "Connect to Databricks Lakehouse using a personal access token and load data into Delta tables. Databricks is a destination in Datanika, not a source.",
     useCases: [
       "Load data into Databricks Delta Lake",
       "Build a lakehouse architecture with dlt + dbt",
@@ -286,8 +286,8 @@ export const connectors: Connector[] = [
     slug: "synapse",
     name: "Azure Synapse Analytics",
     category: "Cloud Warehouse",
-    direction: "both",
-    description: "Connect to Azure Synapse Analytics (formerly SQL Data Warehouse). Load data from any source or extract Synapse data for other destinations.",
+    direction: "destination",
+    description: "Connect to Azure Synapse Analytics (formerly SQL Data Warehouse) and load data into it from any source. Synapse is a destination in Datanika, not a source.",
     useCases: [
       "Build an Azure-centric analytics platform",
       "Load data from on-premise SQL Server to Synapse",
@@ -850,20 +850,57 @@ export const connectors: Connector[] = [
 /**
  * Source-capable and destination-capable connectors, derived.
  *
- * There are **no destination-only connectors** — every destination is also a
- * source — so these two sets overlap and do NOT sum to `connectors.length`.
- * That overlap is exactly what four live pages got wrong (#376): they published
- * "30 sources and 11 destinations" beside a derived total of 36, which is an
- * arithmetically impossible sentence in a single breath.
+ * **31 source-capable, 11 destination-capable, 36 in the catalogue.** The two
+ * sets overlap by the 6 `both` databases, so they legitimately do not sum to 36:
  *
- * Derive both halves from these. The site's connector *total* has survived two
- * reversals of the Google Ads withdrawal (#291, #294) because it is bound to the
- * data file; the hand-written split rotted through both. Same lesson, one layer
- * down.
+ *     25 source-only + 6 both + 5 destination-only = 36
+ *
+ * Derive both halves from these rather than restating an integer. The connector
+ * *total* survived two reversals of the Google Ads withdrawal (#291, #294)
+ * because it is bound to this file; the hand-written split on four pages rotted
+ * through both and sat at the withdrawn 30 (#376).
+ *
+ * 🚨 **`direction` is a claim about the PRODUCT, and this file is not the
+ * product.** The five cloud warehouses were marked `both` here — with prose
+ * promising extraction — while core supports none of them as a source (#391).
+ * `connector-count-parity.yml` compares the *count* against core's README and is
+ * structurally blind to direction, so nothing caught it. Before changing a
+ * `direction`, read `datanika-core/datanika/services/connection_service.py`'s
+ * `SOURCE_TYPES` / `DESTINATION_TYPES` at `master`. `tests/connectors.test.ts`
+ * pins the five destination-only slugs against core's own tested assertion.
  *
  * ⚠️ Do not count these with `grep -c 'direction: "source"'`. The `Connector`
  * interface declares `direction: "source" | "destination" | "both"` and that
- * line matches, so the grep returns 26 for 25 sources.
+ * line matches, so the grep returns 26 for 25 source-only entries.
  */
 export const sourceConnectors = connectors.filter((c) => c.direction !== "destination");
 export const destinationConnectors = connectors.filter((c) => c.direction !== "source");
+
+/**
+ * The badge label for a connector's direction. **Three states, not two.**
+ *
+ * Both call sites — `/connectors/` and `/connectors/[slug]` — used to read
+ * `direction === "both" ? "Source & Destination" : "Source"`, which labels a
+ * destination-only connector **"Source"**: the exact inverse of the truth, and
+ * invisible for as long as the data file had no destination-only entry (#391).
+ * A two-branch ternary over a three-valued field is a bug waiting for the third
+ * value; keeping the mapping here means the next one has one place to be wrong.
+ */
+export function directionLabel(direction: Connector["direction"]): string {
+  if (direction === "both") return "Source & Destination";
+  if (direction === "destination") return "Destination";
+  return "Source";
+}
+
+/**
+ * Sources whose upload form renders the SQL controls — write disposition, load
+ * mode, source schema, table name. Everything else (SaaS, files, streaming,
+ * NoSQL) gets endpoint checkboxes instead and has **none** of those fields.
+ *
+ * Bound to `category` because that is what matches the product: core's
+ * `dlt_runner.SUPPORTED_SOURCE_TYPES` is exactly the seven `Database` entries,
+ * and the landing#272/#285 guide sweep independently put the "there is no write
+ * disposition…" callout on exactly the other 24 guides. Two derivations, same
+ * partition.
+ */
+export const sqlSourceConnectors = connectors.filter((c) => c.category === "Database");

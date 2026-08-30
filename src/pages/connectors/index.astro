@@ -3,7 +3,7 @@ import Layout from "../../layouts/Layout.astro";
 import Navbar from "../../components/Navbar.astro";
 import Footer from "../../components/Footer.astro";
 import ConversionCTA from "../../components/ConversionCTA.astro";
-import { connectors } from "../../data/connectors";
+import { connectors, directionLabel } from "../../data/connectors";
 
 const categories = [
   { label: "Databases", filter: "Database" },
@@ -52,9 +52,11 @@ const categories = [
                   <span class={`text-xs px-2 py-0.5 rounded-full ${
                     c.direction === "both"
                       ? "bg-violet-500/20 text-violet-300"
-                      : "bg-slate-800 text-slate-400"
+                      : c.direction === "destination"
+                        ? "bg-cyan-500/20 text-cyan-300"
+                        : "bg-slate-800 text-slate-400"
                   }`}>
-                    {c.direction === "both" ? "Source & Destination" : "Source"}
+                    {directionLabel(c.direction)}
                   </span>
                 </div>
                 <p class="text-sm text-slate-400 line-clamp-2">{c.description}</p>
