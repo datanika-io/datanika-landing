@@ -329,7 +329,7 @@ export const connectors: Connector[] = [
       { name: "auth_source", description: "Authentication database — the database the user is defined in (default: admin)" },
     ],
     limitations: [
-      "No TLS yet, so MongoDB Atlas does not connect. Every URI is built as a plain mongodb:// string with no transport options, and Atlas requires TLS — the handshake fails before authentication. The same applies to Amazon DocumentDB, Azure Cosmos DB's Mongo API, and any self-hosted deployment running net.tls.mode: requireTLS. Tracked as core#626.",
+      "No TLS yet, so any deployment that requires it is unreachable. Every URI is built as a plain mongodb:// string with no transport options, so the handshake fails before authentication. MongoDB Atlas always requires TLS and therefore never connects. Amazon DocumentDB enables it by default, so a cluster works only if its tls parameter was explicitly set to disabled. Azure Cosmos DB's Mongo API and any self-hosted net.tls.mode: requireTLS are out for the same reason. Tracked as core#626.",
       "No mongodb+srv:// support, so an Atlas-style seedlist hostname cannot be entered. The form takes host and port separately. Tracked as core#626 alongside the TLS gap.",
       "Test Connection does not read Auth Source yet, so it can report a failure for a connection whose runs succeed. Trust the run, not the button. Tracked as core#625.",
     ],
