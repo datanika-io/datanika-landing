@@ -2,7 +2,7 @@
 title: "Introducing the Datanika REST API v1"
 description: "Programmatic access to your data pipelines — 36 endpoints, OpenAPI docs, scoped API keys, and plan-based rate limiting."
 date: 2026-04-10
-updatedDate: 2026-04-14
+updatedDate: 2026-08-31
 author: "Datanika Team"
 category: "announcement"
 tags: ["announcement", "api", "developer-experience"]
@@ -42,17 +42,21 @@ Keys are scoped — you can limit a key to read-only access, run execution only,
 
 ### Rate Limiting
 
-Every plan gets generous API limits:
+Requests are counted per API key in a fixed 60-second window:
 
-| Plan | Requests/minute | Burst/second |
-|------|----------------|--------------|
-| Free | 30 | 5 |
-| Pro | 120 | 15 |
-| Enterprise | 300 | 30 |
+| Plan | Requests/minute |
+|------|----------------|
+| Free | 30 |
+| Pro | 120 |
+| Enterprise | 300 |
+
+Per key, not per organization — two keys get two independent budgets. A per-second burst ceiling runs alongside the per-minute limit; it is the same on every plan, so it isn't a tier dimension.
 
 Rate limit headers (`X-RateLimit-Remaining`, `Retry-After`) are included in every response so your integrations can handle throttling gracefully.
 
 Self-hosted users can configure limits via `API_RATE_LIMIT_RPM` and `API_RATE_LIMIT_BURST` environment variables.
+
+> **Corrected 2026-08-31.** This section originally published a per-plan **burst** column (5 / 15 / 30 requests per second) and described the window as sliding. Neither was true of the shipped code: the burst ceiling has always been a single setting applied identically to every plan, and the window is fixed rather than sliding. The per-minute numbers are unchanged. See [the API reference](/api/reference#rate-limits) for the current statement.
 
 ### Interactive Docs
 

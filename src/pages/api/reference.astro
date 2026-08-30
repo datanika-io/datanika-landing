@@ -473,15 +473,17 @@ Content-Type: application/json
 }`} /></pre>
 
   <h2 id="rate-limits">Rate Limits</h2>
-  <p>API requests are rate-limited per API key using a sliding window. Limits depend on your plan:</p>
+  <p>API requests are counted per API key in a fixed 60-second window. The limit depends on your plan:</p>
   <table>
-    <thead><tr><th>Plan</th><th>Requests / minute</th><th>Burst (per second)</th></tr></thead>
+    <thead><tr><th>Plan</th><th>Requests / minute</th></tr></thead>
     <tbody>
-      <tr><td>Free</td><td>30</td><td>5</td></tr>
-      <tr><td>Pro</td><td>120</td><td>15</td></tr>
-      <tr><td>Enterprise</td><td>300</td><td>30</td></tr>
+      <tr><td>Free</td><td>30</td></tr>
+      <tr><td>Pro</td><td>120</td></tr>
+      <tr><td>Enterprise</td><td>300</td></tr>
     </tbody>
   </table>
+  <p>The limit is per key, not per organization — two keys get two independent budgets.</p>
+  <p>A second, per-second ceiling runs alongside the per-minute limit to absorb bursts. It is the same on every plan, so it is not a tier dimension; exceeding it returns the same <code>429</code> with <code>Retry-After: 1</code>.</p>
   <p>Self-hosted (core edition) defaults to 60 requests/minute, configurable via <code>API_RATE_LIMIT_RPM</code> and <code>API_RATE_LIMIT_BURST</code> environment variables.</p>
 
   <h3>Rate limit headers</h3>
@@ -500,13 +502,14 @@ Content-Type: application/json
   <p>If you exceed the limit, you will receive a <code>429 Too Many Requests</code> response:</p>
   <pre><code set:html={`HTTP/1.1 429 Too Many Requests
 Retry-After: 45
-X-RateLimit-Limit: 60
+X-RateLimit-Limit: 30
 X-RateLimit-Remaining: 0
 X-RateLimit-Reset: 1711929600
 
 {
-  "error": "Rate limit exceeded (60 requests/minute). Retry after 45 seconds."
+  "error": "Rate limit exceeded (30 requests/minute). Retry after 45 seconds."
 }`} /></pre>
+  <p>The number in <code>X-RateLimit-Limit</code> and in the error message is your plan's limit — 30 above, because that response came from a Free-plan key.</p>
 
   <h3>Best practices</h3>
   <ul>
