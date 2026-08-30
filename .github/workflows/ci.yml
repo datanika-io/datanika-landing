@@ -44,3 +44,14 @@ jobs:
       # because every other available signal is green while it does nothing.
       - name: Publish-detection tests
         run: bash scripts/test-site-urls.sh
+
+      # landing#354. The step above tests the mapping against a SYNTHETIC build
+      # written from the same belief as the mapping itself, so the two can agree
+      # with each other and with nothing else — which is exactly what happened.
+      # This one tests it against the REAL `dist/` produced by the Build step
+      # above, asking which built page carries each source's own title. It must
+      # therefore run AFTER Build, and it hard-fails if `dist/` is absent rather
+      # than skipping: a harness that quietly does nothing is the failure mode
+      # being defended against.
+      - name: URL correspondence tests
+        run: bash scripts/test-url-correspondence.sh

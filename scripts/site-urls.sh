@@ -29,6 +29,29 @@
 # stays correct if the scheduling rule changes, and it answers both days.
 #
 # ---------------------------------------------------------------------------
+# What `from-sources` does and does not promise (landing#354)
+#
+# SOUND, and now asserted: every URL it emits is a URL the changed source
+# actually renders. That is the property landing#354 broke and the property
+# `scripts/test-url-correspondence.sh` checks against the built artifact.
+#
+# NOT COMPLETE, and deliberately so for now: not every changed page is
+# announced. Two known gaps, both accepted explicitly rather than half-fixed:
+#
+#   * `src/data/connectors.ts` builds all of `/connectors/*` and is under
+#     neither `src/pages` nor `src/content`, so `deploy.yml`'s pathspec never
+#     sees it. Editing one connector's blurb would have to announce ~36 URLs to
+#     be correct, and announcing 36 pages because one line moved is its own kind
+#     of wrong. Left unannounced on purpose.
+#   * A shared component (`src/components/Pricing.astro` renders on `/` AND
+#     `/pricing/`) legitimately maps to many URLs. Deriving that set is a real
+#     problem, not an oversight.
+#
+# The asymmetry is the point: a MISSED announcement costs a delayed recrawl; a
+# WRONG announcement hands a crawler a page that did not change and hides the
+# one that did. Soundness first.
+#
+# ---------------------------------------------------------------------------
 # Why there is no `sed` in the path mapping
 #
 # landing#339: `sed -E 's|\.(astro|md|mdx)$||'` used `|` as the `s` delimiter
@@ -97,15 +120,58 @@ cmd_from_dist() {
 # from-sources
 # ---------------------------------------------------------------------------
 # Pure parameter expansion. See the header for why this is not a sed pipeline.
+# Exit status is three-valued:
+#   0  -> a URL was printed
+#   1  -> this source is not routable; the caller skips it
+#   2  -> this source IS routable but we do not know where it renders. FATAL.
+#         See the collection block below for why that is not a skip.
 source_to_url() {
-    local f="$1" p
+    local f="$1" p rest coll slugpath
 
     case "$f" in
         *test-fixtures*) return 1 ;;
+    esac
+
+    # Only these three extensions describe a route at all. Checked up front so
+    # an image or a helper sitting beside a post is an ordinary skip and never
+    # reaches the fatal branch below.
+    case "$f" in
+        *.astro|*.md|*.mdx) ;;
+        *) return 1 ;;
+    esac
+
+    case "$f" in
         src/pages/*)     p="${f#src/pages/}" ;;
-        # A content collection's directory name is its route prefix:
-        # src/content/blog/x.md -> blog/x ; src/content/connectors/y.md -> connectors/y
-        src/content/*)   p="${f#src/content/}" ;;
+        src/content/*)
+            # ⚠️ A collection's DIRECTORY NAME IS NOT ITS ROUTE PREFIX. Assuming
+            # it was is landing#354. A collection is routed by wherever the page
+            # that calls `getCollection("<name>")` happens to live:
+            #
+            #   src/content/blog/x.md        src/pages/blog/[id].astro
+            #                             -> /blog/x/                    (agrees)
+            #   src/content/connectors/y.md  src/pages/docs/connectors/[slug].astro
+            #                             -> /docs/connectors/y/         (does NOT)
+            #
+            # `/connectors/y/` is a different page, built from the plain TS array
+            # in src/data/connectors.ts. It is real and serves 200 — which is
+            # exactly why the swapped mapping passed every gate for 36 guides:
+            # `from-sources` filters on ROUTABILITY, and the wrong URL is
+            # routable. Correspondence to the changed source is the invariant
+            # that matters, and `test-url-correspondence.sh` is where it is now
+            # asserted, against the built artifact rather than against this list.
+            #
+            # There is deliberately NO convention fallback. An unrecognised
+            # collection is fatal, not a silent skip: a skip is how 36 changed
+            # guides went unannounced without anything going red.
+            rest="${f#src/content/}"
+            coll="${rest%%/*}"
+            slugpath="${rest#*/}"
+            case "$coll" in
+                blog)       p="blog/$slugpath" ;;
+                connectors) p="docs/connectors/$slugpath" ;;
+                *)          return 2 ;;
+            esac
+            ;;
         *)               return 1 ;;
     esac
 
@@ -114,7 +180,6 @@ source_to_url() {
         *.astro) p="${p%.astro}" ;;
         *.mdx)   p="${p%.mdx}" ;;
         *.md)    p="${p%.md}" ;;
-        *)       return 1 ;;
     esac
 
     # index.astro is the directory itself, not a child named "index".
@@ -138,7 +203,7 @@ source_to_url() {
 
 cmd_from_sources() {
     local dist="${1:?usage: site-urls.sh from-sources <dist-dir>}"
-    local built file url kept=0 skipped=0
+    local built file url rc kept=0 skipped=0
     local out
     out="$(mktemp)"
 
@@ -148,7 +213,21 @@ cmd_from_sources() {
     # subshell, and the counters below would silently read 0.
     while IFS= read -r file; do
         [ -n "$file" ] || continue
-        if ! url="$(source_to_url "$file")"; then
+        rc=0
+        url="$(source_to_url "$file")" || rc=$?
+        if [ "$rc" -eq 2 ]; then
+            # Loud on purpose. This step runs AFTER the atomic publish, so the
+            # site is already live and correct; what is at stake is only whether
+            # the announcement is right. A red run plus a Telegram alert is the
+            # cheap outcome. Silently announcing nothing — or worse, announcing
+            # a neighbouring page that happens to exist — is landing#354.
+            printf 'FAIL: %s belongs to a content collection with no route mapping.\n' "$file" >&2
+            printf '      Add it to source_to_url() in scripts/site-urls.sh.\n' >&2
+            printf '      The route is the page that calls getCollection() on the\n' >&2
+            printf '      collection, NOT the collection directory name (landing#354).\n' >&2
+            rm -f "$out"
+            exit 1
+        elif [ "$rc" -ne 0 ]; then
             printf '  skip  %s -> (not a routable source)\n' "$file" >&2
             skipped=$((skipped + 1))
             continue
