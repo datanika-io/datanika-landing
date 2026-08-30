@@ -47,9 +47,11 @@ MongoDB is the most common NoSQL source our users sync into a relational warehou
 ## Step 2 — Add the connection in Datanika
 
 1. In Datanika, open **`/connections`** and pick `mongodb` from the type dropdown at the top of the inline New Connection form.
-2. Fill in: **Connection Name**, **Host**, **Port** (default `27017`), **User**, **Password**, **Database**.
-3. Click **Test Connection** — for a reachable database you'll see a success message.
-4. Click **Create Connection**.
+2. Fill in: **Connection Name**, **Host**, **Port** (default `27017`), **User**, **Password**, **Database**, **Auth Source**.
+3. Leave **Auth Source** at its default of `admin` unless you know otherwise. It is the database your *user* is defined in, which is a different thing from the database you are *reading* — and if you followed Step 1, or used `MONGO_INITDB_ROOT_USERNAME`, or use Atlas, your user is in `admin`. Set it to the database name only if the user was created inside the database itself. Background: [MongoDB `Authentication failed`](/blog/mongodb-authentication-failed-authsource/).
+4. Click **Test Connection**.
+   > ⚠️ **Test Connection does not read Auth Source yet** ([core#625](https://github.com/datanika-io/datanika-core/issues/625)). It builds the old-style URI, so on a standard `admin`-user deployment it can report `Connection failed` for a connection whose **runs work fine**. Until that lands, treat a failure here as inconclusive rather than as a verdict on your credentials — Step 4's first run is the real test.
+5. Click **Create Connection**.
 
 ![Adding MongoDB in Datanika](/docs/connectors/mongodb/02-add-connection.png)
 
@@ -90,7 +92,24 @@ Schedules live on their own page and reference the upload **by name**.
 ## Troubleshooting
 
 ### `Authentication failed`
-**Fix.** Verify the user was created in the `admin` database (or the auth database your cluster uses) and that the password is correct.
+**Almost always `Auth Source`, not the password.** The database in a MongoDB URI doubles as the authentication database, so a connection that names `production` tells the driver to look for your user *inside* `production`. Users are conventionally created in `admin` — that is what Step 1 does, what `MONGO_INITDB_ROOT_USERNAME` does, and what Atlas does.
+
+**Fix.** Set **Auth Source** to the database the user was created in (`admin` for the setups above — it is the default). Confirm which one that is from `mongosh`:
+
+```javascript
+use admin
+db.system.users.find({}, { user: 1, db: 1 })
+```
+
+The `db` field on the record is the value **Auth Source** needs. You can also isolate it outside Datanika entirely — if this connects, `Auth Source` is your answer:
+
+```bash
+mongosh "mongodb://<user>:<pass>@<host>:27017/<database>?authSource=admin"
+```
+
+Only after that comes back clean is it worth re-checking the password. Full explanation: [MongoDB `Authentication failed`: You're Authenticating Against the Wrong Database](/blog/mongodb-authentication-failed-authsource/).
+
+> Note the Test Connection caveat in Step 2 above: that button does not read **Auth Source** yet ([core#625](https://github.com/datanika-io/datanika-core/issues/625)), so it can fail on a connection whose runs succeed.
 
 ### Connection hangs or times out
 **Fix.** MongoDB Atlas requires allowlisting IPs. Add Datanika's egress IPs. For self-hosted MongoDB, check firewall rules on port `27017`.
