@@ -5,9 +5,16 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# A deploy is a MUTATION, not a verdict, so this group QUEUES — it must never
+# cancel (landing#301). `cancel-in-progress: true` is right for PR CI, where a
+# superseded run only computes an answer you are about to recompute anyway. Here
+# a cancelled run drops the SSH session mid-publish and leaves the live web root
+# holding two builds at once. GitHub holds one pending job per group, so the
+# newest queued run still wins; nothing is killed halfway through changing
+# something. Same lesson as core#572, which wedged staging.
 concurrency:
   group: deploy-landing
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build-and-deploy:
@@ -50,14 +57,16 @@ jobs:
           key: ${{ secrets.AWEB_SSH_KEY }}
           envs: PUBLIC_GOOGLE_ADS_CONVERSION_LABEL
           script: |
-            set -e
+            set -eu
             cd /opt/datanika/datanika-landing
             git pull origin main
             npm ci
             export PUBLIC_GOOGLE_ADS_CONVERSION_LABEL
             npm run build
-            cp -r dist/* /var/www/datanika.io/
-            echo "Landing deploy complete"
+            # Atomic publish — release dir + symlink swap, never a `cp` into the
+            # live root (landing#301). The script arrived with the `git pull`
+            # above; all the rationale lives in its header.
+            bash scripts/publish-web-root.sh dist
 
       # IndexNow: tell Bing/Yandex/Seznam/DuckDuckGo about changed URLs so they
       # recrawl in minutes instead of days. Non-blocking — failures are logged
