@@ -239,7 +239,6 @@ describe("MongoDB setup guide + blog post carry the core#626 caveat", () => {
       "utf-8",
     );
     expect(md).toContain("core#626");
-    expect(md).toContain("core#625");
   });
 
   it("does not claim Atlas is blocked by a missing dependency", () => {
@@ -255,5 +254,104 @@ describe("MongoDB setup guide + blog post carry the core#626 caveat", () => {
       expect(src).not.toMatch(/dnspython/i);
       expect(src).not.toMatch(/missing dependency/i);
     }
+  });
+});
+
+/**
+ * `auth_source` is in the connection SCHEMA and not in the connection FORM.
+ *
+ * How this went wrong, because the shape recurs. core#550 added `auth_source`
+ * to `CONFIG_SCHEMAS["mongodb"]`, and these pages were written from the schema —
+ * so they told the reader to "fill in ... Auth Source" and to "set **Auth
+ * Source** to the database the user was created in". Neither instruction is
+ * followable: `mongodb_fields()` renders host, port, user, password, database
+ * and nothing else, verified on core `master`. The schema and the Reflex form
+ * are two hand-maintained lists with no code linking them (core#638), so
+ * "the schema has it" is not evidence that a user can reach it.
+ *
+ * **Documenting a field that does not exist is worse than documenting a
+ * caveat.** A caveat costs the reader some confidence; a phantom field costs
+ * them the afternoon they spend looking for it.
+ *
+ * The retired core#625 caveat is the other half of this. Test Connection now
+ * builds the URI through the same function the run path uses, so "trust the
+ * run, not the button" is stale advice — but deleting it alone would have left
+ * these pages implying auth_source is configurable in the form, which is the
+ * *larger* error and the one a reader actually acts on.
+ */
+describe("MongoDB auth_source is documented as it actually ships", () => {
+  const FILES: Array<[string, string]> = [
+    ["guide", "../src/content/connectors/mongodb.md"],
+    ["post", "../src/content/blog/mongodb-authentication-failed-authsource.md"],
+    ["data", "../src/data/connectors.ts"],
+  ];
+
+  const read = (rel: string) => readFileSync(resolve(__dirname, rel), "utf-8");
+
+  /** Instructions that only make sense if the form has an Auth Source input. */
+  const PHANTOM_FIELD = [
+    /Fill in:[^\n]*Auth Source/i,
+    /\bSet \*\*Auth Source\*\*/i,
+    /form has an \*\*Auth Source\*\* field/i,
+    /Leave \*\*Auth Source\*\* at its default/i,
+  ];
+
+  it.each(FILES)("%s does not instruct the reader to use a form field that does not exist", (_label, rel) => {
+    const src = read(rel);
+    for (const re of PHANTOM_FIELD) {
+      expect(
+        re.test(src),
+        `${rel} matched ${re}. The mongodb form renders Host, Port, User, ` +
+          `Password, Database — there is no Auth Source input (core#638). ` +
+          `Re-derive before restoring this: gh api ` +
+          `"repos/datanika-io/datanika-core/contents/datanika/ui/components/` +
+          `connection_config_fields.py?ref=master" and read mongodb_fields().`,
+      ).toBe(false);
+    }
+  });
+
+  it.each(FILES)("%s names the raw-JSON escape hatch and cites core#638", (_label, rel) => {
+    // The positive half. Removing the phantom-field instructions without saying
+    // how auth_source IS set leaves a reader with a broken deployment and no
+    // route — and an absence-only check cannot tell that apart from a fix.
+    const src = read(rel);
+    expect(src, `${rel} no longer cites core#638`).toContain("core#638");
+    expect(
+      /raw JSON/i.test(src),
+      `${rel} no longer tells the reader how auth_source can be set at all. ` +
+        `It is reachable through the Use raw JSON checkbox; say so.`,
+    ).toBe(true);
+  });
+
+  it.each(FILES)("%s does not still say Test Connection ignores Auth Source", (_label, rel) => {
+    // core#625 closed 2026-08-30 and is live on master: _test_mongodb() calls
+    // build_connection_uri(), the same function the run path uses.
+    const src = read(rel);
+    for (const re of [
+      /does not read Auth Source/i,
+      /does not yet read Auth Source/i,
+      /trust the run, not the button/i,
+    ]) {
+      expect(re.test(src), `${rel} carries the retired core#625 caveat (${re}).`).toBe(false);
+    }
+  });
+
+  it("the matchers fire on the copy they retired", () => {
+    // Each of these was live on datanika.io on 2026-08-30.
+    const retired = [
+      "2. Fill in: **Connection Name**, **Host**, **Port** (default `27017`), **User**, **Password**, **Database**, **Auth Source**.",
+      "**Fix.** Set **Auth Source** to the database the user was created in (`admin` for the setups above — it is the default).",
+      "The MongoDB connection form has an **Auth Source** field. It defaults to `admin`.",
+      "3. Leave **Auth Source** at its default of `admin` unless you know otherwise.",
+    ];
+    for (const sample of retired) {
+      expect(
+        PHANTOM_FIELD.some((re) => re.test(sample)),
+        `no matcher catches retired copy: ${sample.slice(0, 70)}`,
+      ).toBe(true);
+    }
+    expect(/trust the run, not the button/i.test("until it closes, trust the run, not the button.")).toBe(
+      true,
+    );
   });
 });

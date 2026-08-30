@@ -103,17 +103,17 @@ We know this shape well, because we shipped it. Our own MongoDB connector built 
 
 ## How Datanika handles it now
 
-The MongoDB connection form has an **Auth Source** field. It defaults to `admin`.
+Datanika's MongoDB connector authenticates against `admin` by default, and builds `authSource` into the URI accordingly.
 
-That default is deliberate, and it is the opposite of the previous behaviour rather than a compatible extension of it. Defaulting to the target database would have been the backwards-compatible choice, and it would have meant the connector stayed broken for everyone who didn't already know about a field nobody had told them about. Defaulting to `admin` fixes the configuration almost everyone actually has. If you are the exception — your user really is defined inside the database you're reading — set **Auth Source** to that database name and you get the old behaviour back, explicitly.
+That default is deliberate, and it is the opposite of the previous behaviour rather than a compatible extension of it. Defaulting to the target database would have been the backwards-compatible choice, and it would have meant the connector stayed broken for everyone who didn't already know about a setting nobody had told them about. Defaulting to `admin` fixes the configuration almost everyone actually has.
 
-The field is exposed rather than merely defaulted for the same reason: a setting with no surface is not a setting, it's a guess that happens to be right most of the time.
+Both code paths agree on it now. The URI is assembled by one function that Test Connection and the run path both call, so the button's verdict and the run's outcome cannot disagree about the same connection. That was worth fixing on its own: for a while they *did* disagree, and in the worst direction — Test Connection reported failure for a configuration whose runs succeeded, telling users their working credentials were broken.
 
 Full walkthrough in the [MongoDB setup guide](/docs/connectors/mongodb/), and the connector's capabilities and limits are on the [MongoDB connector page](/connectors/mongodb/).
 
 > **Two caveats we owe you, because both are live right now.**
 >
-> **1. The Test Connection button does not yet read Auth Source** — it still builds the URI the old way. So on a standard `admin`-user deployment you can see Test Connection fail on a connection whose runs succeed. Tracked as [core#625](https://github.com/datanika-io/datanika-core/issues/625); until it closes, trust the run, not the button. We would rather tell you that than let you conclude your credentials are wrong for a second time in one afternoon.
+> **1. If your user is *not* in `admin`, the connection form cannot say so.** The setting exists in the config — it is `auth_source` — but the `mongodb` form renders only Host, Port, User, Password and Database, so there is no input for it. You can still set it, by ticking **Use raw JSON** on the connection form and adding the key by hand; but a connection saved that way loses it the next time it is saved from the structured form, and authentication silently reverts to `admin`. Tracked as [core#638](https://github.com/datanika-io/datanika-core/issues/638). If your user lives inside the database you are reading, keep the connection in raw-JSON mode until that lands. *A setting with no surface is not a setting — it is a guess that happens to be right most of the time, and we shipped exactly that.*
 >
 > **2. If your MongoDB is Atlas, none of this reaches the auth step at all.** We build every URI as a plain `mongodb://` string with no transport options, so the driver negotiates **no TLS** — not "TLS if the server offers it", none. Atlas requires TLS, so the handshake fails first and `authSource` never gets a chance to be wrong. There is no `mongodb+srv://` support either, so the seedlist hostname Atlas gives you cannot be entered. The general rule is *any server that requires TLS*: Azure Cosmos DB's Mongo API, a self-hosted `net.tls.mode: requireTLS`, and Amazon DocumentDB unless its `tls` cluster parameter has been explicitly disabled. Tracked as [core#626](https://github.com/datanika-io/datanika-core/issues/626).
 >
