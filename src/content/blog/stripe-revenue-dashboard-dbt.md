@@ -2,6 +2,7 @@
 title: "How to Build a Stripe Revenue Dashboard with dbt"
 description: "Stripe's dashboard can't do MRR, churn, or LTV the way you need. Here's how to pipe Stripe into your warehouse and model revenue metrics with dbt, step by step."
 date: 2026-07-20
+updatedDate: 2026-08-31
 author: "Datanika Team"
 category: "tutorial"
 tags: ["tutorial", "stripe", "dbt", "revenue", "mrr", "analytics"]
@@ -39,10 +40,17 @@ We won't repeat the full connector walkthrough here — the [Stripe setup guide]
 
 1. In Stripe, create a **restricted key** (`Developers → API keys → Create restricted key`) with **Read** permission on `Customers`, `Charges`, `Invoices`, `Subscriptions`, `Products`, and `Prices`. Never use a standard secret key — Datanika only ever reads.
 2. In Datanika, open **`/connections`**, pick **Stripe**, and paste the key (stored encrypted at rest with Fernet).
-3. Configure the pipeline to load into a schema called **`raw_stripe`** with write disposition **`merge`** — Stripe objects are keyed by `id`, and `merge` upserts changed rows (e.g. when an invoice goes from `open` to `paid`).
+3. Create the upload. Because Stripe is a SaaS source, the form shows **Select endpoints to load** — a checkbox each for `charges`, `customers`, `invoices`, `prices`, `products` and `subscriptions`, all ticked by default. Untick what you don't need; each ticked endpoint becomes its own table.
 4. Click **Run now** and watch the per-resource row counts in the **Runs** tab.
 
-When it finishes, open **Catalog → your warehouse → `raw_stripe`**. You should see one table per resource: `customers`, `invoices`, `subscriptions`, `charges`, and so on. Keep that Catalog tab open — you'll use it to confirm exact column names as you write models.
+> **Where it lands, and why there's no field for it.** A SaaS source has **no write-disposition, load-mode, source-schema or table-name control** — those are rendered only for SQL database sources, and the endpoint checkboxes are the equivalent. So the destination schema is derived, not typed:
+>
+> - **BigQuery, Snowflake, Databricks** — it's the **Dataset** / **Schema** field on the *destination connection*, not on the upload.
+> - **Postgres, MySQL, DuckDB and the rest** — it's the **upload's own name, snake-cased**. Upload names accept letters, digits and spaces only, so you can't type `raw_stripe` directly: name the upload **`Raw Stripe`** and you get the schema `raw_stripe`.
+>
+> This tutorial assumes you did one of those two things and ended up with `raw_stripe`. If you named the upload something else, substitute your schema everywhere below.
+
+When it finishes, open **Catalog → your warehouse** and find the schema. You should see one table per resource: `customers`, `invoices`, `subscriptions`, `charges`, and so on, alongside dlt's `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables. **Confirm the schema name here before you write `sources.yml`** — it is the single most common reason the models below fail to resolve. Keep that Catalog tab open; you'll use it to check exact column names as you write models too.
 
 > **Two things to know about Stripe's data before you model it.** (1) **Amounts are integers in the smallest currency unit** — `2000` means $20.00 in USD. You divide by 100 in staging (except zero-decimal currencies like JPY — more on that below). (2) **Timestamps are Unix epoch seconds** — `1719792000`, not `2024-07-01`. `dlt` sometimes types these as proper timestamps during normalization and sometimes lands them as integers; check your Catalog and convert in staging if needed.
 
@@ -295,7 +303,7 @@ Because the logic lives in dbt, not in Metabase, every tile shares one definitio
 
 ## What it costs
 
-Datanika meters **bytes processed**, not rows or connectors. The [Free plan](/pricing/) includes **10 GB/month** — plenty for a small Stripe account's daily refresh plus the dbt models on top. Pro is **$79/mo with 100 GB included** and **$0.50/GB** beyond that. Because Stripe is an ELT source (extract-load, then transform in-warehouse), it meters on the compressed post-load footprint, which for most SaaS accounts is a rounding error against the free tier.
+Datanika meters **bytes processed**, not rows or connectors. The [Free plan](/pricing/) includes **10 GB/month**. Pro is **$79/mo with 100 GB included** and **$0.50/GB** beyond that. A Stripe account's daily refresh is small — Stripe objects are narrow JSON — so for most teams the bill here is the subscription, not the volume. Check your own numbers in **Usage** rather than trusting that sentence.
 
 Compare that to [Fivetran](/compare/fivetran/), which counts each Stripe object as monthly active rows and adds a per-connection minimum — the exact pricing model this whole tutorial routes around.
 

@@ -162,16 +162,16 @@ Content-Type: application/json
       <tr>
         <th>Plan</th>
         <th>Requests/min</th>
-        <th>Burst/sec</th>
       </tr>
     </thead>
     <tbody>
-      <tr><td>Free</td><td>30</td><td>5</td></tr>
-      <tr><td>Pro</td><td>120</td><td>15</td></tr>
-      <tr><td>Enterprise</td><td>300</td><td>30</td></tr>
+      <tr><td>Free</td><td>30</td></tr>
+      <tr><td>Pro</td><td>120</td></tr>
+      <tr><td>Enterprise</td><td>300</td></tr>
     </tbody>
   </table>
-  <p>Rate limit headers (<code>X-RateLimit-Remaining</code>, <code>Retry-After</code>) are included in every response.</p>
+  <p>Counted per API key in a fixed 60-second window, so an agent on the Free plan gets roughly one call every two seconds sustained. A per-second burst ceiling runs alongside it and is the same on every plan.</p>
+  <p>Rate limit headers (<code>X-RateLimit-Remaining</code>, <code>Retry-After</code>) are included in every response. The remote MCP server forwards your key to this same API, so MCP tool calls draw on the same budget.</p>
 
   <h2>Next Steps</h2>
   <div class="mt-4 grid gap-4 sm:grid-cols-2">
