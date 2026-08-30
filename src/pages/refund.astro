@@ -2,9 +2,49 @@
 import Layout from "../layouts/Layout.astro";
 import Navbar from "../components/Navbar.astro";
 import Footer from "../components/Footer.astro";
+
+// One constant, two consumers: the sentence a human reads in §2 and the
+// `merchantReturnDays` a search engine reads. Writing the number twice is how
+// the pricing JSON-LD came to describe a model we stopped selling four months
+// earlier (#373) — and a refund window is a stronger claim than a price, because
+// it is a term of sale.
+const REFUND_WINDOW_DAYS = 14;
+
+// Paddle is the Merchant of Record, so the return policy belongs to the selling
+// entity and is linked from the Organization rather than from an Offer. No
+// `applicableCountry`: the window is worldwide and naming a subset would narrow
+// a commitment we have not narrowed.
+const merchantReturnPolicy = {
+  "@context": "https://schema.org",
+  "@type": "MerchantReturnPolicy",
+  name: "Datanika Refund Policy",
+  url: "https://datanika.io/refund/",
+  returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
+  merchantReturnDays: REFUND_WINDOW_DAYS,
+  refundType: "https://schema.org/FullRefund",
+  returnFees: "https://schema.org/FreeReturn",
+  returnMethod: "https://schema.org/ReturnByMail",
+  merchantReturnLink: "https://datanika.io/refund/",
+  inStoreReturnsOffered: false,
+  itemCondition: "https://schema.org/NewCondition",
+  merchantOfRecord: {
+    "@type": "Organization",
+    name: "Paddle.com Market Ltd",
+    url: "https://www.paddle.com/",
+  },
+  provider: {
+    "@type": "Organization",
+    name: "Datanika",
+    url: "https://datanika.io",
+  },
+};
 ---
 
-<Layout title="Refund Policy — Datanika" description="Refund Policy for Datanika data pipeline platform.">
+<Layout
+  title="Refund Policy — Datanika"
+  description="Refund Policy for Datanika data pipeline platform."
+  extraJsonLd={[merchantReturnPolicy]}
+>
   <Navbar />
   <main class="mx-auto max-w-4xl px-6 py-20">
     <h1 class="mb-2 text-4xl font-bold gradient-text">Refund Policy</h1>
@@ -19,7 +59,7 @@ import Footer from "../components/Footer.astro";
 
       <section>
         <h2>2. Refund Window</h2>
-        <p>If you are not satisfied with your purchase for any reason, you can request a full refund within <strong>14 days</strong> of the initial purchase or renewal date. No questions asked.</p>
+        <p>If you are not satisfied with your purchase for any reason, you can request a full refund within <strong>{REFUND_WINDOW_DAYS} days</strong> of the initial purchase or renewal date. No questions asked.</p>
       </section>
 
       <section>

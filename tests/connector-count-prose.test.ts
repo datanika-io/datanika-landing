@@ -33,7 +33,7 @@
 import { describe, it, expect } from "vitest";
 import { readdirSync, readFileSync, statSync } from "fs";
 import { resolve, extname, relative } from "path";
-import { connectors } from "../src/data/connectors";
+import { connectors, sourceConnectors, destinationConnectors } from "../src/data/connectors";
 
 const ROOT = resolve(__dirname, "..");
 const SCAN_DIRS = ["src/pages", "src/content", "src/components", "src/layouts"];
@@ -135,5 +135,140 @@ describe("connector count in prose matches src/data/connectors.ts", () => {
       stale,
       `Stale exemptions in ALLOWED — the text is gone, so the entry should be too: ${JSON.stringify(stale)}`
     ).toEqual([]);
+  });
+});
+
+/**
+ * The same defect one layer down (#376).
+ *
+ * `connector-count-prose.test.ts` above matches `<N> connectors` and nothing
+ * else. Two live sentences paired a **derived** total with a **hardcoded**
+ * split five words apart — `/docs/getting-started` rendered *"36 connectors (30
+ * sources and 11 destinations)"* — so the guarded half was right, the unguarded
+ * half was wrong, 30 + 11 = 41, and the suite was green throughout.
+ *
+ * Both figures are fossils with a traceable origin: #291 withdrew Google Ads and
+ * moved the site's source count 31 → 30; #294 restored the connector six weeks
+ * later and every **derived** number reverted itself, while four hand-written
+ * strings stayed at whichever value was current when each was typed.
+ *
+ * ## What the data actually says
+ *
+ * 36 entries — 25 `source`, 11 `both`, **0 `destination`**. There are no
+ * destination-only connectors, so the two sets overlap: **36 source-capable, 11
+ * destination-capable**, and they do not sum to the catalogue. Any sentence
+ * pairing the halves has to survive that, which is why the fixed copy says the
+ * destinations are *also* sources rather than putting two integers side by side
+ * and inviting the reader to add them.
+ */
+describe("source/destination split in prose matches src/data/connectors.ts (#376)", () => {
+  const files = SCAN_DIRS.flatMap((d) => walk(resolve(ROOT, d)));
+
+  /**
+   * A count attached to "sources" / "destinations", tolerating a short bridge
+   * so the copy can read like English: *"all 36 work as sources"*, *"11 of them
+   * also work as destinations"*.
+   *
+   * ⚠️ The bridge is an **explicit word list**, not a wildcard, and that is the
+   * whole design. The first draft used `[^.\d]{0,30}?` and produced 37
+   * violations, of which 30 were noise — Tailwind class numbers
+   * (`text-slate-400">source`), the phrase "open source", a `| Source |` table
+   * header, and `-d @source` inside a curl example. A guard that fires on thirty
+   * correct things gets deleted, and takes the seven real ones with it.
+   *
+   * Plural only, for the same reason: "a source", "as a source" and "open
+   * source" are not catalogue claims.
+   */
+  const BRIDGE = "(?:\\s+(?:of|them|also|work|works|as|which|are|is|and|the|both|usable|act|can))*";
+  const SOURCES_RE = new RegExp(`\\b(\\d{2,4})(${BRIDGE})\\s+(?:data\\s+)?sources\\b`, "gi");
+  const DESTS_RE = new RegExp(`\\b(\\d{2,4})(${BRIDGE})\\s+destinations\\b`, "gi");
+
+  /**
+   * Exemptions are for sentences that are **not about our catalogue**, or are
+   * deliberately about a past moment. Never for "this one is annoying".
+   */
+  const SPLIT_ALLOWED: Allowed[] = [
+    {
+      file: "src/content/blog/32-connectors-most-took-a-day.md",
+      text: "27 sources",
+      reason:
+        "Dated narrative: 32 connectors as they stood when the post was written. Already " +
+        "exempted for the total above, for the same reason.",
+    },
+    {
+      file: "src/content/blog/real-cost-modern-data-stack.md",
+      text: "10 sources",
+      reason:
+        "A hypothetical customer's stack profile ('10 sources, 10M rows/mo'), not our " +
+        "catalogue. Appears twice; the post names no destination count at all.",
+    },
+    {
+      file: "src/content/blog/datanika-vs-modern-data-stack.md",
+      text: "15 sources",
+      reason:
+        "The tail of '8–15 sources' — the reader's own stack size in the 'keep Fivetran' " +
+        "paragraph, not our catalogue.",
+    },
+  ];
+
+  function splitAllowed(file: string, text: string): boolean {
+    return SPLIT_ALLOWED.some((a) => a.file === file && a.text === text);
+  }
+
+  it(`every source count in a split reads ${sourceConnectors.length}, every destination count ${destinationConnectors.length}`, () => {
+    const violations: string[] = [];
+
+    for (const full of files) {
+      const rel = relative(ROOT, full).split("\\").join("/");
+      const body = readFileSync(full, "utf-8");
+
+      const check = (re: RegExp, expected: number, noun: string) => {
+        for (const m of body.matchAll(re)) {
+          const n = Number(m[1]);
+          if (n === expected) continue;
+          const quoted = m[0].replace(/\s+/g, " ").trim();
+          if (splitAllowed(rel, quoted)) continue;
+          const line = body.slice(0, m.index).split("\n").length;
+          violations.push(
+            `${rel}:${line} says "${m[0].replace(/\s+/g, " ")}" but connectors.ts has ${expected} ${noun}-capable`,
+          );
+        }
+      };
+
+      check(SOURCES_RE, sourceConnectors.length, "source");
+      check(DESTS_RE, destinationConnectors.length, "destination");
+    }
+
+    expect(
+      violations,
+      "The source/destination split drifted. Derive it — `sourceConnectors.length` and " +
+        "`destinationConnectors.length` are exported from src/data/connectors.ts — or, if the " +
+        "sentence is not about our catalogue, add it to SPLIT_ALLOWED with a reason.\n" +
+        violations.join("\n"),
+    ).toEqual([]);
+  });
+
+  it("no page implies destination-only connectors by summing the two halves", () => {
+    /**
+     * Written in the direction we believe rather than the convenient one: the
+     * only way "N sources and M destinations" is honest is if the reader is not
+     * invited to add them. Every destination is also a source.
+     */
+    expect(
+      connectors.filter((c) => c.direction === "destination").length,
+      "A destination-only connector now exists. Every sentence phrased as 'all N work as " +
+        "sources' is now false — re-read #376 before changing this assertion.",
+    ).toBe(0);
+  });
+
+  it("every SPLIT_ALLOWED entry still matches something (no stale exemptions)", () => {
+    const stale = SPLIT_ALLOWED.filter((a) => {
+      try {
+        return !readFileSync(resolve(ROOT, a.file), "utf-8").includes(a.text);
+      } catch {
+        return true;
+      }
+    });
+    expect(stale, `Stale SPLIT_ALLOWED: ${JSON.stringify(stale)}`).toEqual([]);
   });
 });

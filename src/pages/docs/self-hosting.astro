@@ -1,6 +1,6 @@
 ---
 import DocsLayout from "../../layouts/DocsLayout.astro";
-import { connectors } from "../../data/connectors";
+import { connectors, sourceConnectors, destinationConnectors } from "../../data/connectors";
 ---
 <DocsLayout title="Self-Hosted ELT — Deploy Datanika on Your Infrastructure" description="Self-hosted ELT with dlt + dbt-core on Docker Compose or Helm. No row-based billing, no GB meter — self-host is $0 forever. Full control, no vendor lock-in.">
   <h1>Self-Hosting</h1>
@@ -193,7 +193,7 @@ kubectl -n datanika port-forward svc/my-datanika-app 3000:3000</code></pre>
 
   <h2>What's Included</h2>
   <ul>
-    <li>All {connectors.length} connectors (30 sources, 11 destinations)</li>
+    <li>All {connectors.length} connectors — {sourceConnectors.length} usable as sources, {destinationConnectors.length} of them also as destinations</li>
     <li>dbt transformations, pipeline builder, scheduling</li>
     <li>Multi-org with RBAC</li>
     <li>9 languages</li>

@@ -55,6 +55,14 @@ asserted that `google-ads` was withdrawn. When core reversed the withdrawal — 
 test failed, and it would never have noticed a reversal it was not told about. A guard should assert
 the invariant (a slug is never in the data file *and* the redirect map), never the instance.
 
+**A guard that names a file goes blind when the claim changes file.** Extracting the pricing tiers
+out of `Pricing.astro` into `src/data/pricing-tiers.ts` moved the Enterprise feature bullet out from
+under `compliance-claims.test.ts`'s SOC 2 assertion — a refactor that made the copy *safer* and the
+guard *weaker* in one commit. Nothing about the diff looked like a compliance change. It was caught
+only because that test pins **a distinctive rendered sentence per file** as a control, so the file
+going quiet was itself a failure. Two consequences: pin a control sentence beside every
+count-is-zero sweep, and when you move copy, grep the test suite for the old path before you move it.
+
 **A cron beats a PR check when the thing that breaks you lives in another repo.**
 `connector-count-parity.yml` is deliberately a daily cron, not a required check: the change that broke
 us landed in `datanika-core`, so PR-time in `datanika-landing` could never have caught it. The cost is

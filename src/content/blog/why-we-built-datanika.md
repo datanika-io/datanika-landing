@@ -43,7 +43,7 @@ The insight isn't that any of these are novel. It's that when one system owns in
 
 ## What it looks like in practice
 
-A pipeline that would be four tools and a hundred lines of glue becomes: add a source connection, add a destination, pick tables, write a model, set a schedule. There are [36 connectors](/connectors) — 31 sources, 11 destinations — and every one of them is available on every plan, including the free one. We gate on volume, not on capability, because a connector you can't use is not a feature.
+A pipeline that would be four tools and a hundred lines of glue becomes: add a source connection, add a destination, pick tables, write a model, set a schedule. There are [36 connectors](/connectors) — all 36 work as sources and 11 of them also work as destinations — and every one of them is available on every plan, including the free one. We gate on volume, not on capability, because a connector you can't use is not a feature.
 
 When something breaks, the run history shows which step failed, with logs, in the same place you configured it. When a model is wrong, you compile it before you run it, against the warehouse, and see the SQL dbt actually generated.
 

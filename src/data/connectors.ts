@@ -846,3 +846,24 @@ export const connectors: Connector[] = [
     seoH1: "Kafka to Warehouse",
   },
 ];
+
+/**
+ * Source-capable and destination-capable connectors, derived.
+ *
+ * There are **no destination-only connectors** — every destination is also a
+ * source — so these two sets overlap and do NOT sum to `connectors.length`.
+ * That overlap is exactly what four live pages got wrong (#376): they published
+ * "30 sources and 11 destinations" beside a derived total of 36, which is an
+ * arithmetically impossible sentence in a single breath.
+ *
+ * Derive both halves from these. The site's connector *total* has survived two
+ * reversals of the Google Ads withdrawal (#291, #294) because it is bound to the
+ * data file; the hand-written split rotted through both. Same lesson, one layer
+ * down.
+ *
+ * ⚠️ Do not count these with `grep -c 'direction: "source"'`. The `Connector`
+ * interface declares `direction: "source" | "destination" | "both"` and that
+ * line matches, so the grep returns 26 for 25 sources.
+ */
+export const sourceConnectors = connectors.filter((c) => c.direction !== "destination");
+export const destinationConnectors = connectors.filter((c) => c.direction !== "source");
