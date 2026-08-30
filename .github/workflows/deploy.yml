@@ -16,6 +16,24 @@ concurrency:
   group: deploy-landing
   cancel-in-progress: false
 
+# ⚠️ `pipefail` is the point of this block (landing#339).
+#
+# GitHub's default shell is `bash -e {0}` — no `-o pipefail`. So in
+#
+#     url=$(echo "$f" | sed A | sed B | sed C)
+#
+# a failure in `sed B` is completely invisible: the pipeline's exit status is
+# `sed C`'s, which succeeded. That is exactly how a broken sed delimiter shipped
+# N copies of `https://datanika.io//` to IndexNow for four and a half months
+# under a green check. Setting it here rather than per-step means a future
+# pipeline added to this file inherits it instead of re-earning the lesson.
+defaults:
+  run:
+    shell: bash --noprofile --norc -euo pipefail {0}
+
+env:
+  SITE: https://datanika.io
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -23,7 +41,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          fetch-depth: 2  # need previous commit to diff changed files for IndexNow
+          fetch-depth: 2  # need the previous commit to diff changed content files
 
       - uses: actions/setup-node@v6
         with:
@@ -41,6 +59,66 @@ jobs:
       - name: Run tests
         id: test
         run: npm test
+
+      # -------------------------------------------------------------------
+      # The publish-detection mechanism (landing#340, #339, #336).
+      #
+      # One computation, three consumers: IndexNow submission, the Telegram
+      # "this went live" notice, and the post-deploy assertion that every URL
+      # we hand a crawler actually serves. All three read the SAME set, and
+      # that set is derived from the BUILD OUTPUT — `dist/<path>/index.html`
+      # exists — never from front matter and never from a git diff. See
+      # `scripts/site-urls.sh` for why both of those are wrong.
+      # -------------------------------------------------------------------
+      - name: Enumerate the URLs this build makes available
+        id: enumerate
+        run: |
+          bash scripts/site-urls.sh from-dist dist > "$RUNNER_TEMP/built.txt"
+          n=$(grep -c . "$RUNNER_TEMP/built.txt" || true)
+          echo "this build serves $n URLs"
+          if [ "$n" -lt 50 ]; then
+            echo "::error::only $n built URLs — the build looks truncated, refusing to reason about visibility"
+            exit 1
+          fi
+
+      # Measured BEFORE the publish, against the live origin, because
+      # "newly visible" has to mean *was not there and now is* rather than
+      # *a date matched*. Cache-busted inside the script: a 5-minute stale
+      # Cloudflare 404 would otherwise announce a page that was already live.
+      - name: Probe the live site BEFORE publishing
+        id: before
+        run: |
+          bash scripts/site-urls.sh probe "$SITE" \
+            < "$RUNNER_TEMP/built.txt" > "$RUNNER_TEMP/before-1.txt"
+
+          # A 000/5xx/403 is a failed measurement, not an absence, and it is
+          # excluded from the candidate set below — announcing a page because a
+          # probe timed out is the one mistake this design must not make. But
+          # exclusion is not free either: a URL that goes live on the day its
+          # probe flakes is never announced at all, because tomorrow it reads
+          # 200-before. So retry the inconclusive ones once, serially, before
+          # giving up on them. The retry does NOT gate the deploy: a flaky third
+          # party must not block a mutation that is otherwise ready.
+          awk '$1 == "200" || $1 == "404"' "$RUNNER_TEMP/before-1.txt" > "$RUNNER_TEMP/before.txt"
+          awk '$1 != "200" && $1 != "404" { print $2 }' "$RUNNER_TEMP/before-1.txt" > "$RUNNER_TEMP/retry.txt"
+          if [ -s "$RUNNER_TEMP/retry.txt" ]; then
+            echo "retrying $(grep -c . "$RUNNER_TEMP/retry.txt") inconclusive probe(s)"
+            PROBE_PARALLEL=1 bash scripts/site-urls.sh probe "$SITE" \
+              < "$RUNNER_TEMP/retry.txt" >> "$RUNNER_TEMP/before.txt"
+          fi
+
+          awk '$1 == "404" { print $2 }' "$RUNNER_TEMP/before.txt" \
+            | LC_ALL=C sort -u > "$RUNNER_TEMP/was-absent.txt"
+          awk '$1 != "200" && $1 != "404"' "$RUNNER_TEMP/before.txt" > "$RUNNER_TEMP/before-unknown.txt"
+          if [ -s "$RUNNER_TEMP/before-unknown.txt" ]; then
+            echo "::warning::pre-deploy probe stayed inconclusive for $(grep -c . "$RUNNER_TEMP/before-unknown.txt") URL(s); they are excluded from the candidate set"
+            cat "$RUNNER_TEMP/before-unknown.txt"
+          fi
+          echo "measured 200:$(awk '$1 == "200"' "$RUNNER_TEMP/before.txt" | grep -c . || true)" \
+               "404:$(grep -c . "$RUNNER_TEMP/was-absent.txt" || true)" \
+               "inconclusive:$(grep -c . "$RUNNER_TEMP/before-unknown.txt" || true)"
+          echo "absent before this deploy: $(grep -c . "$RUNNER_TEMP/was-absent.txt" || true)"
+          cat "$RUNNER_TEMP/was-absent.txt"
 
       - name: Deploy to Aweb
         id: deploy
@@ -68,74 +146,164 @@ jobs:
             # above; all the rationale lives in its header.
             bash scripts/publish-web-root.sh dist
 
-      # IndexNow: tell Bing/Yandex/Seznam/DuckDuckGo about changed URLs so they
-      # recrawl in minutes instead of days. Non-blocking — failures are logged
-      # but don't fail the deploy.
-      #
-      # Requires the key file at public/${INDEXNOW_KEY}.txt (committed in this
-      # repo). Google does NOT participate in IndexNow but gets the same URLs
-      # via sitemap + GSC ping.
-      - name: Diff changed URLs
-        id: diff
+      - name: Determine what this build published
+        id: published
         run: |
-          # Find added/modified .astro and .md files under src/pages, map to URLs
-          CHANGED=$(git diff --name-only --diff-filter=AMR HEAD~1 HEAD -- \
-            'src/pages/**/*.astro' 'src/pages/**/*.md' 'src/pages/**/*.mdx' \
-            'src/content/**/*.md' 'src/content/**/*.mdx' 2>/dev/null || true)
-
-          if [ -z "$CHANGED" ]; then
-            echo "No content changes — skipping IndexNow ping"
-            echo "urls=" >> $GITHUB_OUTPUT
-            exit 0
+          # CANDIDATES = (absent before this deploy) ∪ (content changed by this push)
+          #
+          # The second half is push-only on purpose. `daily-rebuild` dispatches
+          # this workflow against an UNCHANGED `main`, so `git diff HEAD~1 HEAD`
+          # there describes whatever the last real commit happened to touch —
+          # days-old URLs, resubmitted daily. On a rebuild the first half is the
+          # only meaningful signal, and it is the half that fires on publish day.
+          #
+          # ⚠️ The pathspec is `src/pages src/content`, NOT the old
+          # `src/pages/**/*.astro`-style list. Git's default pathspec glob does
+          # not treat `**` as "zero or more directories", so `src/pages/**/*.astro`
+          # requires an intermediate directory and silently misses every
+          # top-level page. Verified against d0f9f75, which changed five pages:
+          # the old filter returned three and dropped `src/pages/index.astro`
+          # and `src/pages/why-cheaper.astro`. So even with landing#339's sed
+          # repaired, the homepage could never have been submitted. Extension
+          # and routability filtering belongs in `from-sources`, which is the
+          # single place that decides it and the only one with tests.
+          : > "$RUNNER_TEMP/changed.txt"
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            git diff --name-only --diff-filter=AMR HEAD~1 HEAD -- src/pages src/content \
+              > "$RUNNER_TEMP/changed-files.txt" || : > "$RUNNER_TEMP/changed-files.txt"
+            bash scripts/site-urls.sh from-sources dist \
+              < "$RUNNER_TEMP/changed-files.txt" > "$RUNNER_TEMP/changed.txt"
+          else
+            echo "event=$GITHUB_EVENT_NAME — no git diff, visibility is the only signal"
           fi
 
-          # Convert file paths to public URLs
-          URLS=""
-          while IFS= read -r file; do
-            [ -z "$file" ] && continue
-            # Skip test fixtures
-            case "$file" in
-              *test-fixtures*) continue ;;
-            esac
-            # Strip prefix and extension, normalize index.* to directory
-            url=$(echo "$file" \
-              | sed -E 's|^src/pages/||; s|^src/content/([^/]+)/|\1/|' \
-              | sed -E 's|\.(astro|md|mdx)$||' \
-              | sed -E 's|/index$|/|' \
-              | sed -E 's|^index$|/|')
-            # Ensure leading slash and trailing slash for non-root
-            case "$url" in
-              /) ;;
-              */) ;;
-              *) url="/$url/" ;;
-            esac
-            URLS="${URLS}https://datanika.io${url}\n"
-          done <<< "$CHANGED"
+          cat "$RUNNER_TEMP/was-absent.txt" "$RUNNER_TEMP/changed.txt" \
+            | LC_ALL=C sort -u | grep . > "$RUNNER_TEMP/candidates.txt" || true
 
-          printf "Changed URLs:\n$URLS"
-          # Pack into JSON array for the output (comma-separated)
-          JSON_URLS=$(printf "$URLS" | awk 'NF' | awk '{printf "\"%s\",", $0}' | sed 's/,$//')
-          echo "urls=[$JSON_URLS]" >> $GITHUB_OUTPUT
+          # ---- structural validation ------------------------------------
+          # landing#339 shipped `https://datanika.io//` under a green check for
+          # four months. Nothing downstream may accept a path that is not a
+          # plain, single-slashed site path.
+          bad=0
+          while IFS= read -r p; do
+            case "$p" in
+              /*)  ;;
+              *)   echo "::error::not a site path: [$p]"; bad=1 ;;
+            esac
+            case "$p" in
+              *//*) echo "::error::doubled slash: [$p]"; bad=1 ;;
+            esac
+            case "$p" in
+              *[!A-Za-z0-9._~/-]*) echo "::error::unexpected character in path: [$p]"; bad=1 ;;
+            esac
+          done < "$RUNNER_TEMP/candidates.txt"
+          [ "$bad" -eq 0 ] || exit 1
 
+          {
+            echo "newly_count=$(grep -c . "$RUNNER_TEMP/was-absent.txt" || true)"
+            echo "submit_count=$(grep -c . "$RUNNER_TEMP/candidates.txt" || true)"
+          } >> "$GITHUB_OUTPUT"
+          echo "candidates:"; cat "$RUNNER_TEMP/candidates.txt"
+
+      # 🚨 The load-bearing check. IndexNow answers HTTP 200 to anything and
+      # validates asynchronously — its success code is worth nothing, which is
+      # precisely why four months of junk submissions went unnoticed. So the
+      # evidence this mechanism runs on is not IndexNow's reply: it is that
+      # every URL about to be submitted or announced is fetched from the live
+      # origin and returns 200 AFTER the publish. Had the publish not made the
+      # page real, this is red.
+      - name: Verify every announced URL actually serves
+        id: verify
+        if: steps.published.outputs.submit_count != '0'
+        run: |
+          bash scripts/site-urls.sh probe "$SITE" \
+            < "$RUNNER_TEMP/candidates.txt" > "$RUNNER_TEMP/after.txt"
+          awk '$1 != "200"' "$RUNNER_TEMP/after.txt" > "$RUNNER_TEMP/after-bad.txt"
+          cat "$RUNNER_TEMP/after.txt"
+          if [ -s "$RUNNER_TEMP/after-bad.txt" ]; then
+            echo "::error::the published site does not serve $(grep -c . "$RUNNER_TEMP/after-bad.txt") URL(s) this build produced"
+            cat "$RUNNER_TEMP/after-bad.txt"
+            exit 1
+          fi
+          echo "verified $(grep -c . "$RUNNER_TEMP/after.txt" || true) URL(s) serving 200 from the origin"
+
+      # Tell Bing/Yandex/Seznam/DuckDuckGo to recrawl. Google does not
+      # participate; it gets the same URLs via the sitemap.
+      #
+      # `continue-on-error` because a third party being unreachable must not red
+      # a deploy that already succeeded — but the step still asserts a 2xx and
+      # exits non-zero otherwise, so a rejected submission is visible as a failed
+      # step rather than swallowed. The URLs themselves were proven above.
       - name: Ping IndexNow
-        if: steps.diff.outputs.urls != '' && steps.diff.outputs.urls != '[]'
+        if: steps.published.outputs.submit_count != '0'
         continue-on-error: true
         run: |
-          PAYLOAD=$(cat <<EOF
-          {
-            "host": "datanika.io",
-            "key": "ada326ab97368636daf05cf876c0daed",
-            "keyLocation": "https://datanika.io/ada326ab97368636daf05cf876c0daed.txt",
-            "urlList": ${{ steps.diff.outputs.urls }}
-          }
-          EOF
-          )
-          echo "POSTing to IndexNow:"
+          URLS=$(awk -v s="$SITE" '{ printf "%s\"%s%s\"", (NR > 1 ? "," : ""), s, $0 }' \
+                 "$RUNNER_TEMP/candidates.txt")
+          PAYLOAD=$(printf '{"host":"datanika.io","key":"%s","keyLocation":"%s/%s.txt","urlList":[%s]}' \
+                    ada326ab97368636daf05cf876c0daed "$SITE" ada326ab97368636daf05cf876c0daed "$URLS")
           echo "$PAYLOAD"
-          curl -sS -X POST "https://api.indexnow.org/indexnow" \
-            -H "Content-Type: application/json; charset=utf-8" \
-            -d "$PAYLOAD" \
-            -w "\nHTTP %{http_code}\n" || echo "IndexNow ping failed (non-fatal)"
+          CODE=$(curl -sS -X POST "https://api.indexnow.org/indexnow" \
+                   -H "Content-Type: application/json; charset=utf-8" \
+                   -d "$PAYLOAD" -o "$RUNNER_TEMP/indexnow-body.txt" -w '%{http_code}')
+          echo "HTTP $CODE"; cat "$RUNNER_TEMP/indexnow-body.txt"; echo
+          case "$CODE" in
+            2*) echo "accepted (validation is asynchronous — this code is NOT evidence of indexing)" ;;
+            *)  echo "::error::IndexNow rejected the submission with HTTP $CODE"; exit 1 ;;
+          esac
+
+      # The founder-facing half (landing#340): a scheduled post appears because
+      # a cron rebuild crossed its `publishedAt`, with no commit and no other
+      # signal that it happened. This is that signal.
+      #
+      # Unlike IndexNow, `sendMessage` IS synchronous and its reply is meaningful,
+      # so `"ok":true` is asserted. This step only runs when something genuinely
+      # went live, so it cannot red an ordinary deploy — and when it does run, a
+      # notification we failed to deliver is exactly the failure worth being loud
+      # about. No `parse_mode`: post titles contain backticks and underscores,
+      # and a Markdown parse error would turn a delivered notice into a silent
+      # 400. Telegram linkifies bare URLs on its own.
+      - name: Telegram — announce what went live
+        if: steps.published.outputs.newly_count != '0'
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          N=$(grep -c . "$RUNNER_TEMP/was-absent.txt" || true)
+          bash scripts/site-urls.sh titles dist \
+            < "$RUNNER_TEMP/was-absent.txt" > "$RUNNER_TEMP/titled.txt"
+
+          if [ "$N" -eq 1 ]; then HEAD="Now live on datanika.io"
+          else HEAD="$N pages are now live on datanika.io"; fi
+
+          BODY=$(awk -F'\t' -v s="$SITE" 'NR <= 10 { printf "\n%s\n%s%s\n", $2, s, $1 }' \
+                 "$RUNNER_TEMP/titled.txt")
+          if [ "$N" -gt 10 ]; then
+            # `$'\n'`, not a literal newline: an unindented continuation line
+            # inside a YAML block scalar terminates the block.
+            BODY="$BODY"$'\n'"(+$((N - 10)) more — see the run)"
+            echo "::warning::$N URLs became visible in one deploy; that is not an ordinary publish"
+          fi
+
+          printf '%s\n%s\n\nBuild %s\n%s' "$HEAD" "$BODY" "${GITHUB_SHA:0:7}" "$RUN_URL" \
+            > "$RUNNER_TEMP/tg-text.txt"
+          cat "$RUNNER_TEMP/tg-text.txt"; echo
+          # `text@<file>` rather than `text=$TEXT`: the body is multi-line and
+          # carries em dashes and backticks out of post titles, and passing it
+          # through argv is one more encoding boundary for no benefit. Telegram
+          # answers `400 strings must be encoded in UTF-8` if any of it is
+          # mangled — observed while rehearsing this step.
+          curl -fsS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=1201995" \
+            --data-urlencode "disable_web_page_preview=true" \
+            --data-urlencode "text@$RUNNER_TEMP/tg-text.txt" \
+            -o "$RUNNER_TEMP/tg.json"
+          # The read-back. A 200 from Telegram with `"ok":false` is a rejected
+          # message, and until this line existed nothing in this repo had ever
+          # confirmed a Telegram delivery at all.
+          grep -q '"ok":true' "$RUNNER_TEMP/tg.json" \
+            || { echo "::error::Telegram rejected the notification"; cat "$RUNNER_TEMP/tg.json"; exit 1; }
+          echo "delivered"
 
       # Telegram alert on any build-and-deploy failure. Fires on install, build,
       # vitest, or SSH deploy failure — anything that leaves main "merged but
@@ -147,26 +315,38 @@ jobs:
           INSTALL_OUTCOME: ${{ steps.install.outcome }}
           BUILD_OUTCOME: ${{ steps.build.outcome }}
           TEST_OUTCOME: ${{ steps.test.outcome }}
+          BEFORE_OUTCOME: ${{ steps.before.outcome }}
           DEPLOY_OUTCOME: ${{ steps.deploy.outcome }}
+          PUBLISHED_OUTCOME: ${{ steps.published.outcome }}
+          VERIFY_OUTCOME: ${{ steps.verify.outcome }}
           COMMIT_SHA: ${{ github.sha }}
           COMMIT_MSG: ${{ github.event.head_commit.message }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         run: |
-          if [ "$INSTALL_OUTCOME" = "failure" ]; then STEP="Install dependencies"
-          elif [ "$BUILD_OUTCOME" = "failure" ]; then STEP="Build"
-          elif [ "$TEST_OUTCOME" = "failure" ]; then STEP="Run tests"
-          elif [ "$DEPLOY_OUTCOME" = "failure" ]; then STEP="Deploy to Aweb"
+          if   [ "$INSTALL_OUTCOME"   = "failure" ]; then STEP="Install dependencies"
+          elif [ "$BUILD_OUTCOME"     = "failure" ]; then STEP="Build"
+          elif [ "$TEST_OUTCOME"      = "failure" ]; then STEP="Run tests"
+          elif [ "$BEFORE_OUTCOME"    = "failure" ]; then STEP="Probe the live site BEFORE publishing"
+          elif [ "$DEPLOY_OUTCOME"    = "failure" ]; then STEP="Deploy to Aweb"
+          elif [ "$PUBLISHED_OUTCOME" = "failure" ]; then STEP="Determine what this build published"
+          elif [ "$VERIFY_OUTCOME"    = "failure" ]; then STEP="Verify every announced URL actually serves"
           else STEP="unknown (see run URL)"
           fi
           SHORT_SHA=${COMMIT_SHA:0:7}
-          FIRST_LINE=$(printf '%s\n' "$COMMIT_MSG" | head -1)
-          TEXT=$(printf '\xf0\x9f\x9a\xa8 *Landing deploy failed*\n\n*Step:* `%s`\n*Commit:* `%s`\n*Message:* %s\n*Run:* %s' \
-            "$STEP" "$SHORT_SHA" "$FIRST_LINE" "$RUN_URL")
+          FIRST_LINE=$(printf '%s\n' "${COMMIT_MSG:-}" | head -1)
+          # No `parse_mode`. This step used to send Markdown built from a raw
+          # commit message, so a title containing `_` or a lone `*` made Telegram
+          # answer 400 and the failure alert itself failed silently — the exact
+          # class of defect the rest of this file exists to remove.
+          printf 'Landing deploy FAILED\n\nStep: %s\nCommit: %s\nMessage: %s\nRun: %s' \
+            "$STEP" "$SHORT_SHA" "$FIRST_LINE" "$RUN_URL" > "$RUNNER_TEMP/tg-fail-text.txt"
           curl -fsS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
             --data-urlencode "chat_id=1201995" \
-            --data-urlencode "text=${TEXT}" \
-            --data-urlencode "parse_mode=Markdown"
+            --data-urlencode "text@$RUNNER_TEMP/tg-fail-text.txt" \
+            -o "$RUNNER_TEMP/tg-fail.json"
+          grep -q '"ok":true' "$RUNNER_TEMP/tg-fail.json" \
+            || { echo "::error::Telegram rejected the failure alert"; cat "$RUNNER_TEMP/tg-fail.json"; exit 1; }
 
   # Post-deploy smoke gate. Fails loud if any curated URL 404s, returns an
   # empty body, or serves the wrong content-type/body substring. See
