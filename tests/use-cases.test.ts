@@ -87,3 +87,46 @@ describe("PostgreSQL to BigQuery use-case page", () => {
     expect(html).toContain("app.datanika.io");
   });
 });
+
+// ---------------------------------------------------------------------------
+// #380 — a use case and a tutorial sharing a slug must stack, not compete
+// ---------------------------------------------------------------------------
+
+/**
+ * GSC, 2026-07-29 -> 2026-08-28: `export postgresql to bigquery` returned BOTH
+ * `/use-cases/postgresql-to-bigquery/` (pos 57.5, 28 imp) and
+ * `/blog/postgresql-to-bigquery/` (pos 57.3, 11 imp) in the same 30 days, and
+ * again in the 30 days before that. Two of our pages splitting one intent, with
+ * neither near the surface.
+ *
+ * The audit that produced this checked all 401 queries with a ranking page:
+ * **20 had more than one**, and after discounting trailing-slash pairs (already
+ * 301'd and decaying — 56 impressions in Mar-May, 8 in the last 30 days) this is
+ * the only page-vs-page overlap worth resolving. So: an inventory, not a sample.
+ *
+ * The fix is a hierarchy, not a canonical tag: these are not duplicates. The
+ * use-case page is the transactional answer and the tutorial is the depth, so
+ * each links to the other with intent-matching anchor text.
+ */
+describe("use case and tutorial pairs link to each other (#380)", () => {
+  it("a tutorial sharing a use-case slug links up to it, and back", () => {
+    const pairs = [["postgresql-to-bigquery", "PostgreSQL to BigQuery"]];
+    for (const [slug] of pairs) {
+      const post = readFileSync(
+        resolve(__dirname, `../src/content/blog/${slug}.md`),
+        "utf-8",
+      );
+      expect(
+        post,
+        `/blog/${slug}/ must link to its canonical use-case page, or the two keep ` +
+          "splitting the same query",
+      ).toContain(`/use-cases/${slug}/`);
+
+      const usecase = readFileSync(
+        resolve(__dirname, `../dist/use-cases/${slug}/index.html`),
+        "utf-8",
+      );
+      expect(usecase).toContain(`/blog/${slug}/`);
+    }
+  });
+});
