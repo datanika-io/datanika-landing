@@ -1,8 +1,8 @@
 ---
 title: "dbt Incremental Models Duplicate Rows When `unique_key` Is NULL — and the Fix Is Off by Default"
 description: "Your incremental model has a unique_key and still grows duplicates every run. The cause is three-valued logic in the MERGE predicate. dbt shipped a fix in 2025 — behind a flag that defaults to false and has no docs page."
-date: 2026-08-30
-publishedAt: 2026-08-30
+date: 2026-09-03
+publishedAt: 2026-09-03
 author: "Datanika Team"
 category: "engineering"
 tags: ["dbt", "sql", "troubleshooting", "data-modeling", "open-source"]

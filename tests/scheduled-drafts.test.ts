@@ -46,6 +46,21 @@ const scheduledPosts = [
   // was verified end-to-end against prod, so this ships 5 days after the MCP
   // launch post rather than colliding with it.
   { file: "mcp-write-tools-consent-scope.md", date: "2026-08-09", publishedAt: "2026-08-09", category: "product", titleContains: "If You Say So Once" },
+  // Founder decision 2026-08-30: at most one post every two days. Four posts
+  // landed on 2026-08-30 because agents produce in bursts and readers do not.
+  // Three were rescheduled to 09-01 / 09-03 / 09-05; the fourth
+  // (mongodb-authentication-failed-authsource) stayed on 08-30 because
+  // src/content/connectors/mongodb.md links to it twice from a live page —
+  // hiding it would have 404'd a shipped internal link, which is the exact
+  // defect tests/internal-links-resolve.test.ts exists to prevent.
+  //
+  // Safe to reschedule only because all four were `URL is unknown to Google,
+  // lastCrawl=never` when the decision was made. The publishedAt filter removes
+  // a post from static paths as well as listings, so a future date on a CRAWLED
+  // post is a 404, not a delay. Re-verify crawl state before moving any post.
+  { file: "password-reset-and-change.md", date: "2026-09-01", publishedAt: "2026-09-01", category: "changelog", titleContains: "password reset and password change are live" },
+  { file: "dbt-incremental-duplicates-null-unique-key.md", date: "2026-09-03", publishedAt: "2026-09-03", category: "engineering", titleContains: "Duplicate Rows When" },
+  { file: "trigger-pipelines-from-ci-cd.md", date: "2026-09-05", publishedAt: "2026-09-05", category: "tutorial", titleContains: "Triggering Data Pipelines from CI/CD" },
 ];
 
 const publishedScheduledPosts = [
@@ -100,23 +115,63 @@ describe("published scheduled posts have draft: false", () => {
   }
 });
 
-describe("future-dated posts are NOT in the built blog index", () => {
+// ---------------------------------------------------------------------------
+// The four surfaces the schema docstring promises publishedAt filters:
+// listings, RSS, OG, and the post's own static path. Verified in all four on
+// 2026-08-30 against a real build, plus the sitemap (which @astrojs/sitemap
+// derives from static paths, so it follows for free — asserted anyway, because
+// "follows for free" is how the /scripts/benchmark 404 survived four months).
+// ---------------------------------------------------------------------------
+const DIST = resolve(__dirname, "../dist");
+const slugOf = (file: string) => file.replace(/\.md$/, "");
+
+describe("future-dated posts are absent from every published surface", () => {
   // Date-aware: only assert absence for posts whose publishedAt is still
   // in the future. On the publish day itself (publishedAt == today), the
-  // post correctly appears in the index and must be excluded from the
-  // not-in-index check. Mirrors the isPostVisible helper logic.
+  // post correctly appears and must be excluded from the absence check.
+  // Mirrors the isPostVisible helper logic.
   const today = new Date().toISOString().slice(0, 10);
   const futureDrafts = scheduledPosts.filter((p) => p.publishedAt > today);
+  const built = existsSync(resolve(DIST, "blog/index.html"));
 
-  it(`blog index does not contain scheduled post titles (${futureDrafts.length} still future)`, () => {
-    const indexFile = resolve(__dirname, "../dist/blog/index.html");
-    if (!existsSync(indexFile)) return; // skip if dist not built
-    const html = readFileSync(indexFile, "utf-8");
-    for (const post of futureDrafts) {
-      expect(
-        html,
-        `${post.file} (publishedAt ${post.publishedAt}) should not be in blog index yet`,
-      ).not.toContain(post.titleContains);
-    }
+  // POSITIVE CONTROL. Every assertion below is an absence, and absence is
+  // exactly what an empty or missing artifact produces — so without this, a
+  // build that emitted nothing would pass the whole suite. This anchor post
+  // has no publishedAt, so it is unconditionally visible; if it is missing,
+  // the artifacts are not trustworthy and the absence checks prove nothing.
+  const ANCHOR = { slug: "introducing-datanika", titleFragment: "Introducing Datanika" };
+
+  it("dist/ was built and contains the anchor post (control for the absence checks)", () => {
+    expect(built, "dist/blog/index.html missing — run `npm run build` first").toBe(true);
+    expect(existsSync(resolve(DIST, `blog/${ANCHOR.slug}/index.html`))).toBe(true);
+    expect(readFileSync(resolve(DIST, "blog/index.html"), "utf-8")).toContain(
+      ANCHOR.titleFragment,
+    );
+    expect(readFileSync(resolve(DIST, "rss.xml"), "utf-8")).toContain(ANCHOR.slug);
+    expect(existsSync(resolve(DIST, `og/blog/${ANCHOR.slug}.png`))).toBe(true);
+    expect(readFileSync(resolve(DIST, "sitemap-0.xml"), "utf-8")).toContain(ANCHOR.slug);
   });
+
+  for (const post of futureDrafts) {
+    const slug = slugOf(post.file);
+    describe(`${post.file} (publishedAt ${post.publishedAt}, still future)`, () => {
+      it("has no static path of its own", () => {
+        expect(existsSync(resolve(DIST, `blog/${slug}/index.html`))).toBe(false);
+      });
+      it("is not in the blog index", () => {
+        expect(readFileSync(resolve(DIST, "blog/index.html"), "utf-8")).not.toContain(
+          post.titleContains,
+        );
+      });
+      it("is not in the RSS feed", () => {
+        expect(readFileSync(resolve(DIST, "rss.xml"), "utf-8")).not.toContain(slug);
+      });
+      it("has no OG image generated", () => {
+        expect(existsSync(resolve(DIST, `og/blog/${slug}.png`))).toBe(false);
+      });
+      it("is not in the sitemap", () => {
+        expect(readFileSync(resolve(DIST, "sitemap-0.xml"), "utf-8")).not.toContain(slug);
+      });
+    });
+  }
 });
