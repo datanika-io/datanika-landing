@@ -86,6 +86,28 @@ Default dbt schema: analytics`} /></pre>
   <h3>Email Verification</h3>
   <p>On the cloud edition, new accounts registered via email must verify their email address before accessing the platform. A verification link is sent automatically after registration. OAuth and SSO users are auto-verified (the provider already confirmed their email).</p>
 
+  <h3>Changing your password</h3>
+  <p>Go to <strong>Settings → Your account</strong>. Enter your current password, then the new one twice. Passwords must be at least 8 characters and no more than 72 bytes — accented characters and emoji count as more than one byte each. There are no character-class rules; length is what matters.</p>
+  <p>Changing your password does not sign you out of this browser, and it does not revoke your organization's API keys. Those are machine credentials with their own revocation screen — see <strong>Settings → API Keys</strong> if you think someone else may have had access to your account.</p>
+
+  <h3>If you signed in with Google or GitHub</h3>
+  <p>Accounts created through a social provider have no password, so <strong>Settings → Your account</strong> offers to <em>set</em> one instead of changing one — no current password required. Setting a password does not unlink the provider; you keep both ways in. This matters if you ever lose access to the Google or GitHub account you signed up with.</p>
+
+  <h3>Resetting a forgotten password</h3>
+  <p>Select <strong>Forgot your password?</strong> on the sign-in screen and enter your email address. If that address has an account, a link to set a new password arrives by email.</p>
+  <ul>
+    <li>The link <strong>expires after 60 minutes</strong> and can be used <strong>only once</strong>.</li>
+    <li>Requesting a new link <strong>invalidates any earlier one</strong>, so always use the most recent email.</li>
+    <li>An expired, used, or superseded link all show the same message. Request a new one.</li>
+    <li>The confirmation screen looks the same whether or not the address has an account. It is not telling you the address is wrong — check it for typos, and check your spam folder.</li>
+    <li>After setting a new password you are returned to the sign-in screen and sign in with it. The link never signs you in by itself.</li>
+    <li>Accounts that signed up with Google or GitHub can use this too — it is how you add a password without going through Settings.</li>
+  </ul>
+
+  <h3>Self-hosted: password reset needs SMTP</h3>
+  <p>Reset by email requires a configured mail server. On an instance where <code>SMTP_HOST</code> is empty — which is the default — the <strong>Forgot your password?</strong> link is hidden, because the flow could only ever say "check your inbox" for an email that was never sent. Configure SMTP to enable it.</p>
+  <p>Changing a password from <strong>Settings → Your account</strong> works with no mail server at all, so a self-hosted instance is never stuck: an administrator with access to the app can always change their own password.</p>
+
   <h3>SSO (Enterprise)</h3>
   <p>Organizations on the Enterprise plan can configure SAML or OIDC single sign-on. This allows team members to authenticate via your company's identity provider (Okta, Azure AD, Google Workspace, etc.).</p>
   <p>SSO is configured in <strong>Settings</strong> by an organization owner or admin. Each organization can have one active SSO configuration.</p>
