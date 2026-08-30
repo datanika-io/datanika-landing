@@ -17,7 +17,15 @@
 
 set -uo pipefail
 
-SCRIPT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/site-urls.sh"
+SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/site-urls.sh"
+
+# Invoked through `bash`, exactly as ci.yml and deploy.yml invoke it. The
+# script is committed 100644 like its sibling publish-web-root.sh, so calling
+# it directly is `Permission denied` on Linux — and MSYS fakes the exec bit,
+# so a local run passes and CI does not. Caught by CI on the first push of
+# this harness, which is the whole argument for running a new test against
+# its real consumer rather than only against the machine that wrote it.
+SCRIPT() { bash "$SCRIPT_PATH" "$@"; }
 PASS=0
 FAIL=0
 
@@ -43,7 +51,9 @@ assert_not_contains() {  # <label> <needle> <haystack>
 }
 
 TMP="$(mktemp -d)"
-trap 'rm -rf "$TMP"' EXIT
+# Tolerant on purpose: on Windows the just-killed static server can still hold
+# its cwd, and a noisy cleanup failure must not look like a test result.
+trap 'rm -rf "$TMP" 2>/dev/null || true' EXIT
 
 # ---------------------------------------------------------------------------
 # A synthetic build. `/blog/scheduled-post/` is deliberately ABSENT: that is the
@@ -70,7 +80,7 @@ printf 'body{}' > "$DIST/_astro/a.css"
 printf 'not a page' > "$DIST/404.html"
 
 echo "== from-dist =="
-ALL="$($SCRIPT from-dist "$DIST")"
+ALL="$(SCRIPT from-dist "$DIST")"
 assert_eq "root maps to /" \
     "/" "$(printf '%s\n' "$ALL" | head -1)"
 assert_contains "nested page becomes a directory URL" "/docs/guides/deep/" "$ALL"
@@ -82,12 +92,12 @@ assert_eq "one line per built page" "9" "$(printf '%s\n' "$ALL" | grep -c .)"
 assert_eq "output is sorted and unique" "$ALL" "$(printf '%s\n' "$ALL" | LC_ALL=C sort -u)"
 assert_not_contains "no doubled slash anywhere (landing#339's signature)" "//" "$ALL"
 
-OUT="$($SCRIPT from-dist "$TMP/nope" 2>&1)"; RC=$?
+OUT="$(SCRIPT from-dist "$TMP/nope" 2>&1)"; RC=$?
 assert_eq "missing dist dir is a hard failure" "1" "$RC"
 assert_contains "...and says so" "no such dist dir" "$OUT"
 
 echo "== from-sources: the mapping landing#339 broke =="
-map() { printf '%s\n' "$1" | $SCRIPT from-sources "$DIST" 2>/dev/null; }
+map() { printf '%s\n' "$1" | SCRIPT from-sources "$DIST" 2>/dev/null; }
 
 assert_eq "content collection file -> collection route" \
     "/blog/live-post/" "$(map 'src/content/blog/live-post.md')"
@@ -116,7 +126,7 @@ assert_eq "a file outside the routable trees is dropped" \
 assert_eq "a non-page file inside src/pages is dropped" \
     "" "$(map 'src/pages/styles.css')"
 assert_eq "empty input yields nothing" \
-    "" "$(printf '' | $SCRIPT from-sources "$DIST" 2>/dev/null)"
+    "" "$(printf '' | SCRIPT from-sources "$DIST" 2>/dev/null)"
 
 echo "== from-sources: the landing#339 regression pins =="
 # The broken sed produced an empty `url`, which the old `case` turned into `//`,
@@ -128,7 +138,7 @@ MANY="$(printf '%s\n' \
     'src/content/blog/quoted-post.md' \
     'src/pages/docs/getting-started.astro' \
     'src/pages/docs/guides/deep.astro' \
-    'src/content/connectors/mysql.md' | $SCRIPT from-sources "$DIST" 2>/dev/null)"
+    'src/content/connectors/mysql.md' | SCRIPT from-sources "$DIST" 2>/dev/null)"
 assert_eq "five distinct sources stay five distinct URLs" \
     "5" "$(printf '%s\n' "$MANY" | grep -c .)"
 assert_not_contains "no result is a doubled slash" "//" "$MANY"
@@ -136,58 +146,82 @@ assert_eq "a source that maps to nothing does not become the site root" \
     "" "$(map 'src/content/blog/scheduled-post.md')"
 
 echo "== from-sources: decisions are logged, and the log names the reason =="
-LOG="$(printf 'src/content/blog/scheduled-post.md\n' | $SCRIPT from-sources "$DIST" 2>&1 >/dev/null)"
+LOG="$(printf 'src/content/blog/scheduled-post.md\n' | SCRIPT from-sources "$DIST" 2>&1 >/dev/null)"
 assert_contains "a dropped URL says why" "not in build output" "$LOG"
-LOG2="$(printf 'src/content/blog/live-post.md\n' | $SCRIPT from-sources "$DIST" 2>&1 >/dev/null)"
+LOG2="$(printf 'src/content/blog/live-post.md\n' | SCRIPT from-sources "$DIST" 2>&1 >/dev/null)"
 assert_contains "a kept URL is shown with its mapping" "-> /blog/live-post/" "$LOG2"
 assert_contains "a summary count is printed" "1 kept, 0 skipped" "$LOG2"
 
 echo "== titles =="
 assert_eq "title comes out of the built HTML, site suffix trimmed" \
     "/blog/live-post/	A Live Post" \
-    "$(printf '/blog/live-post/\n' | $SCRIPT titles "$DIST")"
+    "$(printf '/blog/live-post/\n' | SCRIPT titles "$DIST")"
 assert_eq "HTML entities in a title are decoded" \
     "/blog/quoted-post/	It's Fine & Good" \
-    "$(printf '/blog/quoted-post/\n' | $SCRIPT titles "$DIST")"
+    "$(printf '/blog/quoted-post/\n' | SCRIPT titles "$DIST")"
 assert_eq "only the TRAILING site suffix is trimmed, not an interior dash" \
     "/blog/dashed-post/	Why — Datanika Style — Wins" \
-    "$(printf '/blog/dashed-post/\n' | $SCRIPT titles "$DIST")"
+    "$(printf '/blog/dashed-post/\n' | SCRIPT titles "$DIST")"
 assert_eq "the pipe-separated suffix is trimmed too" \
     "/pricing/	Pricing, Per-GB" \
-    "$(printf '/pricing/\n' | $SCRIPT titles "$DIST")"
+    "$(printf '/pricing/\n' | SCRIPT titles "$DIST")"
 assert_eq "root title" \
     "/	Datanika — Home" \
-    "$(printf '/\n' | $SCRIPT titles "$DIST")"
+    "$(printf '/\n' | SCRIPT titles "$DIST")"
 assert_eq "an unbuilt path falls back to the URL rather than an empty label" \
     "/blog/scheduled-post/	/blog/scheduled-post/" \
-    "$(printf '/blog/scheduled-post/\n' | $SCRIPT titles "$DIST")"
+    "$(printf '/blog/scheduled-post/\n' | SCRIPT titles "$DIST")"
 assert_eq "two paths in, two lines out" \
-    "2" "$(printf '/\n/blog/\n' | $SCRIPT titles "$DIST" | grep -c .)"
+    "2" "$(printf '/\n/blog/\n' | SCRIPT titles "$DIST" | grep -c .)"
 
 echo "== probe =="
 # The probe is the mechanism's only claim about the outside world, so it is
 # exercised against a real server rather than mocked: a 200 and a 404 must be
 # distinguishable, and the cache-busting query must not leak into the reported
-# path. Skipped where python3 is unavailable (local Windows shells); CI is
-# ubuntu, where it always runs.
-if command -v python3 >/dev/null 2>&1; then
-    ( cd "$DIST" && python3 -m http.server 8731 >/dev/null 2>&1 & echo $! > "$TMP/pid" )
-    for _ in 1 2 3 4 5 6 7 8 9 10; do
-        curl -sS -o /dev/null -m 2 "http://127.0.0.1:8731/" && break
+# path. Needs any Python for a throwaway static server — `python3` on CI,
+# `python` in Git Bash. Skipped, loudly, if neither is present.
+PY=""
+command -v python3 >/dev/null 2>&1 && PY=python3
+[ -n "$PY" ] || { command -v python >/dev/null 2>&1 && PY=python; }
+if [ -n "$PY" ]; then
+    PORT=$(( 8700 + (RANDOM % 900) ))
+    NONCE="harness-$$-$RANDOM"
+    printf '%s' "$NONCE" > "$DIST/sentinel.txt"
+
+    # `( cd … && exec … ) &` so `$!` is the server's own pid. The obvious
+    # `( cd … && server & echo $! )` records the *sub-subshell's* pid, the kill
+    # misses the server, and the next run silently probes the PREVIOUS run's
+    # server on the same port — which is a flaky red that looks like a logic
+    # bug. Observed once before this was written.
+    ( cd "$DIST" && exec "$PY" -m http.server "$PORT" --bind 127.0.0.1 >/dev/null 2>&1 ) &
+    SRV=$!
+
+    # Readiness is checked against a nonce unique to this run, not against a
+    # bare 200: a leftover server answers 200 too, and would be tested instead.
+    READY=""
+    for _ in $(seq 1 30); do
+        if [ "$(curl -sS -m 2 "http://127.0.0.1:$PORT/sentinel.txt" 2>/dev/null)" = "$NONCE" ]; then
+            READY=1; break
+        fi
         sleep 0.5
     done
+    [ -n "$READY" ] || bad "static server for the probe tests came up" "$NONCE on :$PORT" "(never)"
+
     PROBE="$(printf '/\n/blog/live-post/\n/blog/scheduled-post/\n' \
-             | $SCRIPT probe "http://127.0.0.1:8731" | LC_ALL=C sort -k2)"
-    kill "$(cat "$TMP/pid")" 2>/dev/null || true
+             | SCRIPT probe "http://127.0.0.1:$PORT" | LC_ALL=C sort -k2)"
+    kill "$SRV" 2>/dev/null || true
+    wait "$SRV" 2>/dev/null || true
     assert_contains "a served page probes 200" "200 /blog/live-post/" "$PROBE"
     assert_contains "an absent page probes 404" "404 /blog/scheduled-post/" "$PROBE"
     assert_contains "the site root probes 200" "200 /" "$PROBE"
     assert_not_contains "the cache-bust nonce never appears in a reported path" "cb=" "$PROBE"
     assert_eq "three paths in, three verdicts out" "3" "$(printf '%s\n' "$PROBE" | grep -c .)"
+    # Same port, now that the server is stopped — a guaranteed-closed target
+    # rather than a hardcoded one that some other process might be holding.
     assert_eq "an unreachable host reports 000, not a crash" \
-        "000 /" "$(printf '/\n' | $SCRIPT probe "http://127.0.0.1:8732" 2>/dev/null)"
+        "000 /" "$(printf '/\n' | SCRIPT probe "http://127.0.0.1:$PORT" 2>/dev/null)"
 else
-    echo "  skip probe tests (python3 not available)"
+    echo "  SKIP probe tests — no python interpreter for a throwaway static server"
 fi
 
 echo
