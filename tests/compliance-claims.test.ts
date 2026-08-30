@@ -346,7 +346,11 @@ describe("controls", () => {
     // the ratio catches gradual erosion, the sentences catch a total wipe.
     const RENDERED: Array<[string, string]> = [
       ["src/pages/trust.astro", "We hold no SOC 2 attestation"],
-      ["src/components/Pricing.astro", "Priority support with SLA"],
+      // The tier data moved to src/data/pricing-tiers.ts on 2026-08-31 (#373).
+      // Both halves are pinned: the array that holds the bullets, and the
+      // component that renders them on two pages.
+      ["src/data/pricing-tiers.ts", "Priority support with SLA"],
+      ["src/components/Pricing.astro", "Simple, transparent"],
       ["src/content/blog/pricing-v2-math-and-why.md", "The tiers haven't moved; the meter has."],
     ];
     for (const [rel, sentence] of RENDERED) {
@@ -370,6 +374,7 @@ describe("controls", () => {
     const mustCover = [
       "src/pages/trust.astro",
       "src/components/Pricing.astro",
+      "src/data/pricing-tiers.ts",
       "src/content/blog/pricing-v2-math-and-why.md",
     ];
     for (const rel of mustCover) {
@@ -410,16 +415,27 @@ describe("controls", () => {
   });
 
   it("the Enterprise pricing bullet no longer carries a compliance promise", () => {
-    // The bullet lived in a shared component, so it rendered on the homepage as
-    // well as /pricing. Pinned separately from the sweep because the sweep would
-    // also pass if Pricing.astro were deleted.
-    const pricing = FILES.find((f) => f.rel === "src/components/Pricing.astro");
-    expect(pricing, "src/components/Pricing.astro was not read").toBeDefined();
-    expect(pricing!.text).toContain("Enterprise");
-    expect(
-      /SOC\s*2/i.test(pricing!.text),
-      `src/components/Pricing.astro mentions SOC 2 again. This component renders on ` +
-        `BOTH the homepage and /pricing, so a bullet added here is a claim on two pages.`,
-    ).toBe(false);
+    // The bullet lives in a shared tier array rendered by a shared component, so
+    // it reaches the homepage as well as /pricing. Pinned separately from the
+    // sweep because the sweep would also pass if the files were deleted.
+    //
+    // ⚠️ **A guard that names a file goes blind when the claim changes file.**
+    // Extracting the tiers out of `Pricing.astro` into `src/data/pricing-tiers.ts`
+    // (#373) moved the Enterprise bullet out from under this assertion, and the
+    // refactor was only caught because the control above pins a *rendered
+    // sentence* per file rather than trusting the sweep to still be looking.
+    // Keep both paths here: one holds the bullet, the other renders it.
+    for (const rel of ["src/data/pricing-tiers.ts", "src/components/Pricing.astro"]) {
+      const f = FILES.find((x) => x.rel === rel);
+      expect(f, `${rel} was not read`).toBeDefined();
+      expect(
+        /SOC\s*2/i.test(f!.text),
+        `${rel} mentions SOC 2 again. These two files put a bullet on BOTH the ` +
+          `homepage and /pricing, so anything added here is a claim on two pages.`,
+      ).toBe(false);
+    }
+    // The bullet's own home must still contain the tier it belongs to.
+    const tiersFile = FILES.find((f) => f.rel === "src/data/pricing-tiers.ts")!;
+    expect(tiersFile.text).toContain("Enterprise");
   });
 });
