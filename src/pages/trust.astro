@@ -1,4 +1,24 @@
 ---
+// ┌───────────────────────────────────────────────────────────────────────────┐
+// │ ⚠️  THIS PAGE ASSERTS FACTS ABOUT PRODUCTION INFRASTRUCTURE.              │
+// │                                                                           │
+// │ Hosting provider, OS, country, reverse proxy, database version, backup    │
+// │ retention and the sub-processor table are all stated here as verifiable   │
+// │ claims. **A change to production is therefore also a change to this page  │
+// │ and to /privacy.**                                                        │
+// │                                                                           │
+// │ This exact drift already happened once: prod moved from Hetzner (Germany) │
+// │ to Pointer (Greece) on 2026-07-17 and both pages still named Hetzner six  │
+// │ weeks later, because nothing connected the two. See landing#343.          │
+// │                                                                           │
+// │ Every claim below was re-derived from the running system on 2026-08-30 —  │
+// │ not copied from the previous revision. How to re-derive each one:         │
+// │   plans/growth/notes/LEGAL_PAGE_FACTS_2026-08-30.md                       │
+// │                                                                           │
+// │ `tests/legal-pages-facts.test.ts` enforces that this page and /privacy    │
+// │ agree with each other and that retired claims do not come back. It cannot │
+// │ check reality — only consistency. Re-verify against the box when you edit.│
+// └───────────────────────────────────────────────────────────────────────────┘
 import Layout from "../layouts/Layout.astro";
 import Navbar from "../components/Navbar.astro";
 import Footer from "../components/Footer.astro";
@@ -6,7 +26,7 @@ import Footer from "../components/Footer.astro";
 
 <Layout
   title="Trust & Security — Datanika"
-  description="Datanika's security architecture, compliance posture, data protection practices, and infrastructure overview. 109 security tests, SOC 2 Type I in progress."
+  description="Datanika's security architecture, compliance posture, data protection practices, and infrastructure overview. Hosted in the EU, open-source and auditable, SOC 2 Type I in progress."
 >
   <Navbar />
   <main class="mx-auto max-w-4xl px-6 py-20">
@@ -85,11 +105,13 @@ import Footer from "../components/Footer.astro";
           <div class="rounded-lg border border-slate-800 bg-slate-900/50 p-5">
             <h3>Security testing</h3>
             <p class="text-sm text-slate-400">
-              <strong class="text-slate-300">109 security test functions</strong> across
-              10 dedicated test files covering authentication, injection, path traversal,
+              <strong class="text-slate-300">112 security test functions</strong> across
+              11 dedicated test files covering authentication, injection, path traversal,
               tenant isolation, rate limiting, token security, file-upload security, CSRF,
               input validation, and API-key security. Every push to <code class="text-violet-400">dev</code>
-              runs the full suite.
+              runs the full suite. Count taken 2026-08-30 — the suite grows, so
+              <a href="https://github.com/datanika-io/datanika-core/tree/master/tests/test_security" class="text-violet-400 hover:underline">count them yourself</a>
+              rather than take ours.
             </p>
           </div>
         </div>
@@ -131,25 +153,38 @@ import Footer from "../components/Footer.astro";
 
         <ul>
           <li>
-            <strong class="text-white">GDPR:</strong> data processed and stored in the EU
-            (Hetzner, Germany). Data Processing Agreement (DPA) available on request —
-            email <a href="mailto:info@datanika.io" class="text-violet-400 hover:underline">info@datanika.io</a>.
+            <strong class="text-white">GDPR:</strong> the application, its database and its
+            off-site backups are all in Greece, in the EU. Data Processing Agreement (DPA)
+            available on request — email
+            <a href="mailto:info@datanika.io" class="text-violet-400 hover:underline">info@datanika.io</a>.
           </li>
           <li>
-            <strong class="text-white">Data residency:</strong> all customer data resides
-            in Hetzner's Falkenstein data center (Germany, EU). No data is transferred
-            outside the EU unless explicitly configured by the customer (e.g., a BigQuery
-            destination in US-region).
+            <strong class="text-white">Data residency:</strong> your account data and your
+            pipeline data are stored in Greece (EU) and backed up to a second Greek provider.
+            Three sub-processors operate outside the EU and receive only what their function
+            needs — <strong class="text-slate-300">Resend</strong> (US) receives the recipient
+            address on transactional email, <strong class="text-slate-300">Cloudflare</strong>
+            (US, global points of presence) terminates TLS and so sees IP addresses and request
+            metadata, and <strong class="text-slate-300">Paddle</strong> (UK) holds billing
+            details. Those transfers rely on the Standard Contractual Clauses in each
+            provider's DPA, on their EU–U.S. Data Privacy Framework certifications, and on the
+            UK adequacy decision. Data also leaves the EU when you configure it to — pointing a
+            pipeline at a US-region BigQuery destination, for example. Full breakdown in
+            <a href="/privacy" class="text-violet-400 hover:underline">the privacy policy</a>,
+            section 9.
           </li>
           <li>
             <strong class="text-white">Data retention and deletion:</strong> pipeline run
-            logs and metadata are retained for the lifetime of the account. Organizations
-            and connections use a soft-delete model — records are marked deleted and
-            removed from all application code paths, but the underlying
-            Fernet-encrypted data remains in the database until a hard delete is triggered.
-            Customers can request hard deletion of an organization and all associated
-            data by emailing
-            <a href="mailto:security@datanika.io" class="text-violet-400 hover:underline">security@datanika.io</a>.
+            history, run logs and configuration metadata are retained for as long as the
+            organization exists — we do not currently run a time-based purge of run logs.
+            Organizations and connections use a soft-delete model: records are marked deleted
+            and removed from all application code paths, but the underlying Fernet-encrypted
+            data remains in the database until a hard delete is run. There is no self-service
+            delete button in the product yet. Hard deletion of an organization and all
+            associated data is done by us on request — email
+            <a href="mailto:security@datanika.io" class="text-violet-400 hover:underline">security@datanika.io</a>,
+            and personal data is removed within 30 days, including from the off-site backups,
+            whose retention window is exactly 30 days.
           </li>
         </ul>
       </section>
@@ -170,8 +205,13 @@ import Footer from "../components/Footer.astro";
             <tbody class="text-slate-300">
               <tr class="border-b border-slate-800/50">
                 <td class="py-3 pr-4 font-medium text-white">Application hosting</td>
-                <td class="py-3 pr-4">Hetzner</td>
-                <td class="py-3">Dedicated server, Falkenstein (Germany, EU). Ubuntu 24.04 LTS.</td>
+                <td class="py-3 pr-4">Pointer (pointer.gr)</td>
+                <td class="py-3">Virtual private server in Greece (EU). Ubuntu 22.04 LTS, 4 vCPU / 8 GB.</td>
+              </tr>
+              <tr class="border-b border-slate-800/50">
+                <td class="py-3 pr-4 font-medium text-white">Off-site backups</td>
+                <td class="py-3 pr-4">Aweb</td>
+                <td class="py-3">Second provider, also in Greece (EU). Nightly database dump, 30-day retention.</td>
               </tr>
               <tr class="border-b border-slate-800/50">
                 <td class="py-3 pr-4 font-medium text-white">CDN & DDoS protection</td>
@@ -180,23 +220,32 @@ import Footer from "../components/Footer.astro";
               </tr>
               <tr class="border-b border-slate-800/50">
                 <td class="py-3 pr-4 font-medium text-white">TLS</td>
-                <td class="py-3 pr-4">Cloudflare + Nginx</td>
-                <td class="py-3">TLS 1.2+ enforced. Cloudflare Origin Certificate for backend. HSTS enabled.</td>
+                <td class="py-3 pr-4">Cloudflare + Apache</td>
+                <td class="py-3">
+                  TLS 1.2+ enforced. Cloudflare Origin Certificate for the backend. HSTS enabled.
+                  Apache 2.4 is the reverse proxy on the application server; this marketing site is
+                  served by nginx.
+                </td>
               </tr>
               <tr class="border-b border-slate-800/50">
                 <td class="py-3 pr-4 font-medium text-white">Database</td>
                 <td class="py-3 pr-4">PostgreSQL 16</td>
-                <td class="py-3">Encrypted connections. Automated backups.</td>
+                <td class="py-3">Encrypted connections. Nightly automated backups, kept 7 days locally and 30 days off-site.</td>
+              </tr>
+              <tr class="border-b border-slate-800/50">
+                <td class="py-3 pr-4 font-medium text-white">Transactional email</td>
+                <td class="py-3 pr-4">Resend</td>
+                <td class="py-3">Password resets and team invitations, over SMTP with TLS. United States.</td>
               </tr>
               <tr class="border-b border-slate-800/50">
                 <td class="py-3 pr-4 font-medium text-white">Monitoring</td>
                 <td class="py-3 pr-4">Prometheus + Grafana</td>
-                <td class="py-3">Container metrics, resource utilization, alerting.</td>
+                <td class="py-3">Self-hosted on the application server. Container metrics, resource utilization, alerting.</td>
               </tr>
               <tr>
                 <td class="py-3 pr-4 font-medium text-white">Analytics</td>
                 <td class="py-3 pr-4">Plausible CE</td>
-                <td class="py-3">Self-hosted, cookie-free, GDPR-compliant. No third-party tracking.</td>
+                <td class="py-3">Self-hosted on our own Greek server, cookie-free, GDPR-compliant. No third-party tracking.</td>
               </tr>
             </tbody>
           </table>
@@ -204,7 +253,7 @@ import Footer from "../components/Footer.astro";
       </section>
 
       <!-- Subprocessors -->
-      <section>
+      <section id="subprocessors">
         <h2>Subprocessors</h2>
         <p class="mb-4">
           The following third-party services process data on behalf of Datanika customers:
@@ -221,29 +270,39 @@ import Footer from "../components/Footer.astro";
             </thead>
             <tbody class="text-slate-300">
               <tr class="border-b border-slate-800/50">
-                <td class="py-3 pr-4 font-medium text-white">Hetzner Online GmbH</td>
+                <td class="py-3 pr-4 font-medium text-white">
+                  Pointer (pointer.gr)
+                  <span class="block font-normal text-slate-500 text-xs mt-1">
+                    T. Papamichail – Vainas / G. Psaltakis O.E. · VAT EL998633174
+                  </span>
+                </td>
                 <td class="py-3 pr-4">Application hosting, database, worker processes</td>
-                <td class="py-3">Germany, EU</td>
+                <td class="py-3">Greece, EU</td>
+              </tr>
+              <tr class="border-b border-slate-800/50">
+                <td class="py-3 pr-4 font-medium text-white">Aweb</td>
+                <td class="py-3 pr-4">Off-site database backups (a full copy, 30-day retention); hosting for datanika.io and our self-hosted analytics</td>
+                <td class="py-3">Greece, EU</td>
               </tr>
               <tr class="border-b border-slate-800/50">
                 <td class="py-3 pr-4 font-medium text-white">Cloudflare, Inc.</td>
                 <td class="py-3 pr-4">CDN, DDoS protection, DNS, TLS termination</td>
-                <td class="py-3">Global (nearest PoP)</td>
+                <td class="py-3">United States; served from the nearest point of presence</td>
+              </tr>
+              <tr class="border-b border-slate-800/50">
+                <td class="py-3 pr-4 font-medium text-white">Resend (Plus Five Five, Inc.)</td>
+                <td class="py-3 pr-4">Transactional email delivery — password resets, team invitations</td>
+                <td class="py-3">United States</td>
               </tr>
               <tr class="border-b border-slate-800/50">
                 <td class="py-3 pr-4 font-medium text-white">Paddle.com Market Ltd</td>
                 <td class="py-3 pr-4">Payment processing (Merchant of Record)</td>
-                <td class="py-3">UK / EU</td>
-              </tr>
-              <tr class="border-b border-slate-800/50">
-                <td class="py-3 pr-4 font-medium text-white">Google Workspace</td>
-                <td class="py-3 pr-4">Business email (transactional emails via SMTP)</td>
-                <td class="py-3">EU data region</td>
+                <td class="py-3">United Kingdom</td>
               </tr>
               <tr>
                 <td class="py-3 pr-4 font-medium text-white">GitHub (Microsoft)</td>
-                <td class="py-3 pr-4">Source code hosting, CI/CD</td>
-                <td class="py-3">US</td>
+                <td class="py-3 pr-4">Source code hosting and CI/CD. Holds our code, not customer data.</td>
+                <td class="py-3">United States</td>
               </tr>
             </tbody>
           </table>
@@ -255,6 +314,25 @@ import Footer from "../components/Footer.astro";
           <a href="mailto:info@datanika.io" class="text-violet-400 hover:underline">info@datanika.io</a>
           with subject "Subprocessor updates."
         </p>
+
+        <div class="mt-6 rounded-lg border border-slate-800 bg-slate-900/50 p-5">
+          <h3 class="text-sm font-medium text-white mb-2">Change log</h3>
+          <ul class="text-sm text-slate-400 space-y-1">
+            <li>
+              <strong class="text-slate-300">2026-08-30</strong> — this list was corrected. Our
+              production host changed on 2026-07-17 and the change was not reflected here at the
+              time; we are recording it now rather than quietly editing the table. Added:
+              <strong class="text-slate-300">Pointer</strong> (application hosting, replacing
+              Hetzner), <strong class="text-slate-300">Aweb</strong> (off-site backups, previously
+              unlisted), and <strong class="text-slate-300">Resend</strong> (transactional email,
+              replacing the Google Workspace entry, which never handled it).
+            </li>
+            <li>
+              <strong class="text-slate-300">2026-07-17</strong> — application hosting moved from
+              Hetzner (Germany) to Pointer (Greece). Both are in the EU.
+            </li>
+          </ul>
+        </div>
       </section>
 
       <!-- Open Source -->
@@ -268,7 +346,7 @@ import Footer from "../components/Footer.astro";
         <ul>
           <li>
             <strong class="text-white">Auditability:</strong> every security claim on this page
-            is verifiable in the source code. The 109 security tests, the
+            is verifiable in the source code. The security test suite, the
             <code class="text-violet-400">TenantMixin</code>, the Fernet encryption layer —
             all public.
           </li>
