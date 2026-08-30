@@ -27,3 +27,11 @@ jobs:
 
       - name: Run tests
         run: npm test
+
+      # The deploy's publish step is bash on the Aweb box, so vitest cannot
+      # reach it — and it is the one step that can break the *live* web root
+      # (landing#301). Gated here rather than left to a deploy-time discovery:
+      # this harness went red against the first draft of the script and caught
+      # a live-site destroyer. Runs on ubuntu only; nothing to install.
+      - name: Deploy publish-script tests
+        run: bash scripts/test-publish-web-root.sh
