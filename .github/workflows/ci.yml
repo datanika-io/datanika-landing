@@ -35,3 +35,12 @@ jobs:
       # a live-site destroyer. Runs on ubuntu only; nothing to install.
       - name: Deploy publish-script tests
         run: bash scripts/test-publish-web-root.sh
+
+      # The publish-detection mechanism behind IndexNow submission and the
+      # "this went live" notification (landing#340 / #339 / #336). Gated here
+      # for the same reason as the publish script: it is bash driven from a
+      # workflow, so vitest cannot reach it — and landing#339 proved that a
+      # defect in exactly this code can stay green for four and a half months
+      # because every other available signal is green while it does nothing.
+      - name: Publish-detection tests
+        run: bash scripts/test-site-urls.sh
