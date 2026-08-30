@@ -45,6 +45,18 @@ const pageTitle = connector.seoTitle ?? `${connector.name} Connector — Datanik
 const pageDescription = connector.seoDescription ?? connector.description;
 const pageH1 = connector.seoH1 ?? connector.name;
 
+// Limitation copy cites tracking issues as bare `core#NNN` / `cloud#NNN` so the
+// strings stay greppable when an issue closes. Turn those into real links here
+// rather than hand-writing anchors into the data file.
+const escapeHtml = (s: string) =>
+  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const linkifyIssues = (s: string) =>
+  escapeHtml(s).replace(
+    /\b(core|cloud|landing)#(\d+)\b/g,
+    (_m, repo, num) =>
+      `<a href="https://github.com/datanika-io/datanika-${repo === "core" ? "core" : repo}/issues/${num}" class="text-violet-300 underline underline-offset-2 hover:text-violet-200">${repo}#${num}</a>`,
+  );
+
 // Auto-compute cross-type internal links
 const matchingUseCases = useCases.filter(
   (uc) => uc.sourceSlug === connector.slug || uc.destinationSlug === connector.slug
@@ -140,6 +152,26 @@ const comparisonSlugs = ["airbyte", "fivetran", "stitch", "hevo"];
       <p class="text-sm text-slate-500 mt-4">
         All credentials are <strong class="text-slate-400">encrypted at rest</strong> with Fernet before being stored in the database.
       </p>
+
+      {connector.limitations && connector.limitations.length > 0 && (
+        <div class="mt-8 rounded-2xl border border-amber-500/30 bg-amber-500/5 p-6">
+          <h3 class="text-lg font-semibold text-amber-200 mb-3">
+            Current limitations
+          </h3>
+          <p class="text-sm text-slate-400 mb-4">
+            What this connector cannot do yet. We would rather tell you here than
+            have you find out at the first run.
+          </p>
+          <ul class="space-y-3">
+            {connector.limitations.map((lim) => (
+              <li class="flex gap-3 text-sm text-slate-300 leading-relaxed">
+                <span class="text-amber-400/70 select-none">—</span>
+                <span set:html={linkifyIssues(lim)} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   </section>
 

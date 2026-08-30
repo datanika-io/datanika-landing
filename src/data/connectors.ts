@@ -6,6 +6,12 @@ export interface Connector {
   description: string;
   useCases: string[];
   configFields: { name: string; description: string }[];
+  // Optional. Known limitations of the *shipped* connector, rendered as a
+  // callout under the Configuration table. Use this for things the product
+  // genuinely cannot do yet — not for setup gotchas, which belong in the
+  // /docs/connectors/<slug>/ guide. Cite the tracking issue so the copy is
+  // greppable when it closes.
+  limitations?: string[];
   related: string[]; // slugs of related connectors
   // Optional SEO overrides. When set, the [slug].astro template uses these
   // instead of the default `${name} Connector — Datanika` / description /
@@ -305,7 +311,7 @@ export const connectors: Connector[] = [
     name: "MongoDB",
     category: "NoSQL",
     direction: "source",
-    description: "Connect to MongoDB 4.0+ to extract collections as structured data. Supports both MongoDB Atlas and self-hosted instances.",
+    description: "Connect to MongoDB 4.0+ to extract collections as structured data. Works against self-hosted and self-managed deployments reachable over a plain connection; TLS-required hosts such as MongoDB Atlas are not supported yet.",
     useCases: [
       "Extract MongoDB collections into a SQL warehouse for analytics",
       "Flatten nested document structures into tabular data",
@@ -313,8 +319,17 @@ export const connectors: Connector[] = [
       "Build reports from MongoDB application data",
     ],
     configFields: [
-      { name: "connection_string", description: "MongoDB connection URI (e.g., mongodb+srv://...)" },
+      { name: "host", description: "MongoDB host" },
+      { name: "port", description: "Port number (default: 27017)" },
+      { name: "user", description: "Username" },
+      { name: "password", description: "Password (encrypted at rest)" },
       { name: "database", description: "Database name" },
+      { name: "auth_source", description: "Authentication database — the database the user is defined in (default: admin)" },
+    ],
+    limitations: [
+      "No TLS yet, so MongoDB Atlas does not connect. Every URI is built as a plain mongodb:// string with no transport options, and Atlas requires TLS — the handshake fails before authentication. The same applies to Amazon DocumentDB, Azure Cosmos DB's Mongo API, and any self-hosted deployment running net.tls.mode: requireTLS. Tracked as core#626.",
+      "No mongodb+srv:// support, so an Atlas-style seedlist hostname cannot be entered. The form takes host and port separately. Tracked as core#626 alongside the TLS gap.",
+      "Test Connection does not read Auth Source yet, so it can report a failure for a connection whose runs succeed. Trust the run, not the button. Tracked as core#625.",
     ],
     related: ["postgresql", "bigquery", "snowflake", "mysql"],
     seoTitle: "MongoDB to Warehouse Pipeline | Datanika",

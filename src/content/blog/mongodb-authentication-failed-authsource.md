@@ -111,7 +111,13 @@ The field is exposed rather than merely defaulted for the same reason: a setting
 
 Full walkthrough in the [MongoDB setup guide](/docs/connectors/mongodb/), and the connector's capabilities and limits are on the [MongoDB connector page](/connectors/mongodb/).
 
-> **One caveat we owe you, because it is live right now.** The **Test Connection** button does not yet read **Auth Source** — it still builds the URI the old way. So on a standard `admin`-user deployment you can see Test Connection fail on a connection whose runs succeed. Tracked as [core#625](https://github.com/datanika-io/datanika-core/issues/625); until it closes, trust the run, not the button. We would rather tell you that than let you conclude your credentials are wrong for a second time in one afternoon.
+> **Two caveats we owe you, because both are live right now.**
+>
+> **1. The Test Connection button does not yet read Auth Source** — it still builds the URI the old way. So on a standard `admin`-user deployment you can see Test Connection fail on a connection whose runs succeed. Tracked as [core#625](https://github.com/datanika-io/datanika-core/issues/625); until it closes, trust the run, not the button. We would rather tell you that than let you conclude your credentials are wrong for a second time in one afternoon.
+>
+> **2. If your MongoDB is Atlas, none of this reaches the auth step at all.** We build every URI as a plain `mongodb://` string with no transport options, so the driver negotiates **no TLS** — not "TLS if the server offers it", none. Atlas requires TLS, so the handshake fails first and `authSource` never gets a chance to be wrong. There is no `mongodb+srv://` support either, so the seedlist hostname Atlas gives you cannot be entered. Same story for Amazon DocumentDB, Azure Cosmos DB's Mongo API, and any self-hosted `net.tls.mode: requireTLS`. Tracked as [core#626](https://github.com/datanika-io/datanika-core/issues/626).
+>
+> The rule above is still the rule — it is a MongoDB rule, not a Datanika one, and it will save you the same afternoon in `mongosh`, in your application code, and in whatever else you point at that cluster. It is our *connector* that cannot reach Atlas yet, and we would rather say so on the page than let you find out at the first run.
 
 ## The general version
 

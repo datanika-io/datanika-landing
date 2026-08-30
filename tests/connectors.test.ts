@@ -163,3 +163,97 @@ describe("MongoDB connector page — no template cross-links", () => {
     expect(html).not.toContain("Templates with MongoDB");
   });
 });
+
+// ---------------------------------------------------------------------------
+// MongoDB Atlas / TLS honesty guards (landing#308, core#626).
+//
+// The page previously said "Supports both MongoDB Atlas and self-hosted
+// instances" and documented a `connection_string` config field illustrated with
+// `mongodb+srv://...`. Neither is true: the shipped schema has no such field,
+// and every URI is built as a plain `mongodb://` string with no TLS, so Atlas
+// cannot connect at all (Engineering confirmed against pymongo 4.16.0 on
+// core#626). Documenting a path that cannot succeed is the same defect as the
+// pre-withdrawal Google Ads copy.
+//
+// DELETE THIS BLOCK when core#626 closes and TLS/SRV actually ship — but only
+// then, and only after re-reading the connector against the shipped schema.
+// ---------------------------------------------------------------------------
+describe("MongoDB connector page — Atlas is not claimed as supported", () => {
+  const mongo = connectors.find((c) => c.slug === "mongodb")!;
+  let html: string;
+  beforeAll(() => {
+    html = readHtml("connectors/mongodb/index.html");
+  });
+
+  it("does not claim Atlas support in the description", () => {
+    expect(mongo.description).not.toMatch(/supports both mongodb atlas/i);
+    expect(html).not.toMatch(/Supports both MongoDB Atlas/i);
+  });
+
+  it("does not document a connection_string field, which does not exist", () => {
+    const names = mongo.configFields.map((f) => f.name);
+    expect(names).not.toContain("connection_string");
+  });
+
+  it("documents the six fields the shipped schema actually has", () => {
+    const names = mongo.configFields.map((f) => f.name).sort();
+    expect(names).toEqual(
+      ["auth_source", "database", "host", "password", "port", "user"].sort(),
+    );
+  });
+
+  it("never shows a mongodb+srv:// string as something you can enter", () => {
+    // The scheme may only appear inside a limitation saying it is unsupported.
+    for (const f of mongo.configFields) {
+      expect(f.description).not.toContain("mongodb+srv");
+    }
+  });
+
+  it("renders the TLS/Atlas limitation on the page, citing core#626", () => {
+    expect(mongo.limitations ?? []).toEqual(
+      expect.arrayContaining([expect.stringContaining("core#626")]),
+    );
+    expect(html).toContain("Current limitations");
+    expect(html).toMatch(/Atlas/);
+    expect(html).toContain(
+      "https://github.com/datanika-io/datanika-core/issues/626",
+    );
+  });
+});
+
+describe("MongoDB setup guide + blog post carry the core#626 caveat", () => {
+  it("the setup guide gates Atlas before the first step", () => {
+    const md = readFileSync(
+      resolve(__dirname, "../src/content/connectors/mongodb.md"),
+      "utf-8",
+    );
+    expect(md).toContain("core#626");
+    // The old troubleshooting line implied Atlas otherwise worked — an
+    // allowlist is a step you only reach after the transport succeeded.
+    expect(md).not.toContain("MongoDB Atlas requires allowlisting IPs");
+  });
+
+  it("the authSource post says the connector cannot reach Atlas", () => {
+    const md = readFileSync(
+      resolve(__dirname, "../src/content/blog/mongodb-authentication-failed-authsource.md"),
+      "utf-8",
+    );
+    expect(md).toContain("core#626");
+    expect(md).toContain("core#625");
+  });
+
+  it("does not claim Atlas is blocked by a missing dependency", () => {
+    // dnspython is installed and resolves; only URI assembly is missing.
+    // "Atlas is unsupported" is accurate; "Atlas needs a new dependency" is not.
+    const files = [
+      "../src/content/connectors/mongodb.md",
+      "../src/content/blog/mongodb-authentication-failed-authsource.md",
+      "../src/data/connectors.ts",
+    ];
+    for (const f of files) {
+      const src = readFileSync(resolve(__dirname, f), "utf-8");
+      expect(src).not.toMatch(/dnspython/i);
+      expect(src).not.toMatch(/missing dependency/i);
+    }
+  });
+});
