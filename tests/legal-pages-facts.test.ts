@@ -232,6 +232,82 @@ describe("legal pages: the two pages must not contradict each other", () => {
   });
 });
 
+describe("legal pages: the EU-transfer claim must not come back", () => {
+  /**
+   * 🚨 The single most reinstatable false claim on these pages.
+   *
+   * Both pages used to say "No data is transferred outside the EU unless
+   * explicitly configured by the customer." It was wrong on **two independent
+   * counts**, and both survive the move to Greece:
+   *
+   *   1. **Resend** (US) receives the recipient's address on every
+   *      password-reset and invitation email. Its DPA says processing takes
+   *      place in the United States; all 22 of its own sub-processors are US.
+   *   2. **Cloudflare** proxies ALL traffic to datanika.io and app.datanika.io,
+   *      terminating TLS at the nearest point of presence. `datanika.io` is on
+   *      Cloudflare's **Free** plan (verified against the Cloudflare API), and
+   *      the Data Localization Suite is an Enterprise-only paid add-on — so the
+   *      DPA's global-processing default applies and there is no EU-confinement
+   *      to appeal to.
+   *
+   * The danger is specific: **hosting location is what someone reaches for when
+   * they want to make this claim.** "We host in Greece, so no data leaves the
+   * EU" is a tempting and wrong inference, and it is *more* tempting now that
+   * the hosting line is accurate. Correcting the host without this guard would
+   * have made the false sentence easier to re-derive, not harder.
+   *
+   * Raising the Cloudflare plan is NOT the fix — it is a paid Enterprise add-on
+   * and we are pre-revenue. Describe reality instead.
+   */
+  const FORBIDDEN = [
+    /[Nn]o data is transferred outside the EU/,
+    /[Nn]o data leaves the EU/,
+    /all (?:customer )?data (?:is )?(?:stays?|remains?|resides?) (?:in|within) the EU/i,
+  ];
+
+  it.each(both)("%s.astro does not claim data never leaves the EU", (name, src) => {
+    for (const re of FORBIDDEN) {
+      expect(
+        re.test(src),
+        `${name}.astro claims data does not leave the EU (matched ${re}).\n` +
+          `It does, on two independent paths that hosting location does not fix:\n` +
+          `  - Resend (US) gets the recipient address on every transactional email\n` +
+          `  - Cloudflare terminates TLS globally; datanika.io is on the Free plan,\n` +
+          `    so the Enterprise-only Data Localization Suite does not apply\n` +
+          `State the transfers and the safeguards instead. Do not buy a plan tier.`,
+      ).toBe(false);
+    }
+  });
+
+  it.each(both)("%s.astro still names the non-EU sub-processors", (name, src) => {
+    // The positive half. Deleting the disclosure is as bad as re-adding the
+    // false claim, and an absence-only check cannot tell the two apart.
+    for (const who of ["Resend", "Cloudflare"]) {
+      expect(
+        src.includes(who),
+        `${name}.astro no longer names ${who}. Both pages must disclose the ` +
+          `non-EU processing paths, not merely avoid denying them.`,
+      ).toBe(true);
+    }
+    expect(
+      /United States/.test(src),
+      `${name}.astro no longer says "United States" anywhere. The transfer is ` +
+        `the disclosure; naming the provider without naming the destination is ` +
+        `not one.`,
+    ).toBe(true);
+  });
+
+  it("the forbidden-phrase matchers are not inert", () => {
+    // Run them against the actual pre-fix sentence. A negative assertion that
+    // has never matched anything has not been shown to work.
+    const preFix =
+      "all customer data resides in Hetzner's Falkenstein data center " +
+      "(Germany, EU). No data is transferred outside the EU unless explicitly " +
+      "configured by the customer.";
+    expect(FORBIDDEN.some((re) => re.test(preFix))).toBe(true);
+  });
+});
+
 describe("legal pages: load-bearing numbers", () => {
   /**
    * 🚨 The 30-day erasure window is a promise another team's spec is built to
