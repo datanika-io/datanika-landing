@@ -72,7 +72,14 @@ page "blog/dashed-post/index.html"             "Why — Datanika Style — Wins 
 page "pricing/index.html"                      "Pricing, Per-GB | Datanika"
 page "docs/getting-started/index.html"         "Getting Started"
 page "docs/guides/deep/index.html"             "Deep Guide"
+# ⚠️ BOTH connector URLs are built here, on purpose (landing#354). The marketing
+# page comes from src/data/connectors.ts; the guide comes from the `connectors`
+# content collection via src/pages/docs/connectors/[slug].astro. Because both
+# exist, a mapping that filters on ROUTABILITY alone passes with either answer —
+# which is exactly how the swapped mapping stayed green across 36 guides. Only
+# a fixture containing both can tell the two apart.
 page "connectors/mysql/index.html"             "MySQL Connector"
+page "docs/connectors/mysql/index.html"        "Connect MySQL to Datanika"
 page "test-fixtures/layout-fixture/index.html" "Fixture"
 # Non-page build output must never become a URL.
 mkdir -p "$DIST/_astro"
@@ -88,7 +95,8 @@ assert_contains "collection page is present" "/connectors/mysql/" "$ALL"
 assert_not_contains "test-fixtures are excluded (mirrors the sitemap filter)" "/test-fixtures/" "$ALL"
 assert_not_contains "404.html is not a URL" "404" "$ALL"
 assert_not_contains "assets are not URLs" "_astro" "$ALL"
-assert_eq "one line per built page" "9" "$(printf '%s\n' "$ALL" | grep -c .)"
+assert_contains "the connector GUIDE route is present too" "/docs/connectors/mysql/" "$ALL"
+assert_eq "one line per built page" "10" "$(printf '%s\n' "$ALL" | grep -c .)"
 assert_eq "output is sorted and unique" "$ALL" "$(printf '%s\n' "$ALL" | LC_ALL=C sort -u)"
 assert_not_contains "no doubled slash anywhere (landing#339's signature)" "//" "$ALL"
 
@@ -101,8 +109,15 @@ map() { printf '%s\n' "$1" | SCRIPT from-sources "$DIST" 2>/dev/null; }
 
 assert_eq "content collection file -> collection route" \
     "/blog/live-post/" "$(map 'src/content/blog/live-post.md')"
-assert_eq "second collection uses its own directory name" \
-    "/connectors/mysql/" "$(map 'src/content/connectors/mysql.md')"
+# landing#354. This assertion previously read `/connectors/mysql/` and was the
+# defect written down as a requirement: it encoded the author's belief that a
+# collection's directory name is its route prefix. It passed because the
+# synthetic build contained that URL — the same reason the live deploy passed.
+# A collection is routed by the page that calls getCollection() on it.
+assert_eq "a collection is routed by its consuming page, not its directory name" \
+    "/docs/connectors/mysql/" "$(map 'src/content/connectors/mysql.md')"
+assert_eq "...and specifically NOT the same-named marketing page" \
+    "" "$(map 'src/content/connectors/mysql.md' | grep -x '/connectors/mysql/' || true)"
 assert_eq "page route, extension stripped" \
     "/docs/getting-started/" "$(map 'src/pages/docs/getting-started.astro')"
 assert_eq "deeply nested page route" \
@@ -127,6 +142,26 @@ assert_eq "a non-page file inside src/pages is dropped" \
     "" "$(map 'src/pages/styles.css')"
 assert_eq "empty input yields nothing" \
     "" "$(printf '' | SCRIPT from-sources "$DIST" 2>/dev/null)"
+
+echo "== from-sources: an unmapped collection is FATAL, not a silent skip =="
+# The convention fallback is what made landing#354 possible: a wrong guess is
+# indistinguishable from a right one when the guessed URL happens to exist.
+# A collection nobody has stated a route for must stop the run, because the
+# alternative failure — announcing nothing, or announcing a neighbour — is
+# silent by construction. Adding `src/content/<new>/` without touching
+# site-urls.sh is now red at deploy time instead of quietly wrong forever.
+UNMAPPED_OUT="$(printf 'src/content/changelog/v1.md\n' | SCRIPT from-sources "$DIST" 2>&1)"; UNMAPPED_RC=$?
+assert_eq "an unknown content collection exits non-zero" "1" "$UNMAPPED_RC"
+assert_contains "...and names the file" "src/content/changelog/v1.md" "$UNMAPPED_OUT"
+assert_contains "...and says where to fix it" "source_to_url" "$UNMAPPED_OUT"
+assert_contains "...and names the wrong assumption" "getCollection" "$UNMAPPED_OUT"
+assert_not_contains "...and does NOT guess a URL from the directory name" \
+    "/changelog/v1/" "$UNMAPPED_OUT"
+# A non-routable file in an unmapped collection is still an ordinary skip —
+# the fatal branch must not fire on an image sitting beside a post.
+NONROUTABLE_OUT="$(printf 'src/content/changelog/cover.png\n' | SCRIPT from-sources "$DIST" 2>&1)"; NONROUTABLE_RC=$?
+assert_eq "a non-routable file in an unmapped collection is a plain skip" "0" "$NONROUTABLE_RC"
+assert_contains "...logged as not routable" "not a routable source" "$NONROUTABLE_OUT"
 
 echo "== from-sources: the landing#339 regression pins =="
 # The broken sed produced an empty `url`, which the old `case` turned into `//`,
