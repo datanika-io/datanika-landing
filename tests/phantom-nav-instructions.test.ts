@@ -50,8 +50,26 @@ import { resolve } from "path";
  * silent on the denial.
  */
 
-const POST = resolve(__dirname, "../src/content/blog/stripe-revenue-dashboard-dbt.md");
-const src = readFileSync(POST, "utf-8");
+/**
+ * Both Growth posts that walk a reader through the app. `customer-360` builds
+ * on the Stripe tutorial and inherited the same Catalog instruction three
+ * times; it is scheduled for 2026-09-07 and still 404s, so it was corrected
+ * before publication rather than after.
+ *
+ * The 34 connector guides carry the Catalog defect too. They are **not** in
+ * scope here: that is a Product-owned sweep, filed separately, and adding them
+ * to this list before the sweep would fail the build on 34 files nobody is
+ * fixing today.
+ */
+const POSTS = [
+  "stripe-revenue-dashboard-dbt.md",
+  "customer-360-hubspot-stripe.md",
+] as const;
+
+const read = (name: string) =>
+  readFileSync(resolve(__dirname, "../src/content/blog", name), "utf-8");
+
+const src = read("stripe-revenue-dashboard-dbt.md");
 
 /**
  * Each entry is an instruction that only makes sense if a surface exists that
@@ -88,20 +106,21 @@ const PHANTOM_NAV: { re: RegExp; why: string }[] = [
   },
 ];
 
-describe("the Stripe dbt tutorial does not send readers to surfaces that do not exist", () => {
-  it.each(PHANTOM_NAV.map((p) => [p.re.source, p] as const))(
-    "does not match %s",
-    (_label, phantom) => {
-      expect(
-        phantom.re.test(src),
-        `stripe-revenue-dashboard-dbt.md matched ${phantom.re} — ${phantom.why}. ` +
-          `Re-derive before restoring this: gh api ` +
-          `repos/datanika-io/datanika-core/tarball/master, then read ` +
-          `datanika/ui/components/layout.py (the sidebar), datanika/i18n/en.json ` +
-          `(the labels) and datanika/services/catalog_service.py.`,
-      ).toBe(false);
-    },
+describe("the walkthrough posts do not send readers to surfaces that do not exist", () => {
+  const CASES = POSTS.flatMap((post) =>
+    PHANTOM_NAV.map((p) => [`${post} :: ${p.re.source}`, post, p] as const),
   );
+
+  it.each(CASES)("%s", (_label, post, phantom) => {
+    expect(
+      phantom.re.test(read(post)),
+      `${post} matched ${phantom.re} — ${phantom.why}. ` +
+        `Re-derive before restoring this: gh api ` +
+        `repos/datanika-io/datanika-core/tarball/master, then read ` +
+        `datanika/ui/components/layout.py (the sidebar), datanika/i18n/en.json ` +
+        `(the labels) and datanika/services/catalog_service.py.`,
+    ).toBe(false);
+  });
 
   /**
    * The positive half. Deleting the phantom instructions without naming the
@@ -110,9 +129,13 @@ describe("the Stripe dbt tutorial does not send readers to surfaces that do not 
    * is the same reason the MongoDB `auth_source` guard asserts the raw-JSON
    * escape hatch rather than only the absence of the field.
    */
-  it("names the surfaces that do exist", () => {
-    expect(src, "the post no longer points at Models").toMatch(/\*\*Models\*\*/);
-    expect(src, "the post no longer gives the /models route").toContain("`/models`");
+  it.each(POSTS)("%s names the surfaces that do exist", (post) => {
+    const body = read(post);
+    expect(body, `${post} no longer points at Models`).toMatch(/\*\*Models\*\*/);
+    expect(body, `${post} no longer gives the /models route`).toContain("`/models`");
+  });
+
+  it("the Stripe tutorial names the run and usage surfaces too", () => {
     expect(
       /the button is \*\*Run\*\*/i.test(src),
       "the post no longer tells the reader what the run control is actually called",
