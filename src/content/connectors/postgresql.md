@@ -5,7 +5,7 @@ source: "postgresql"
 source_name: "PostgreSQL"
 category: "database"
 verified_by: "product-ui"
-verified_date: "2026-07-22"
+verified_date: "2026-08-31"
 related_use_cases:
   - "postgresql-to-bigquery"
   - "postgresql-to-snowflake"
@@ -75,7 +75,7 @@ Create a **dedicated read-only role** rather than reusing an existing login. Thi
 Extract-load is configured at **`/uploads`**, not on the connection. There is no "Configure pipeline" button — connection rows offer only Test / Edit / Copy / Delete, and `/pipelines` is the **dbt** builder, which is a different thing.
 
 1. Open **`/uploads`**. The **New Upload** form is rendered inline on the page.
-2. Fill in **Upload name** (letters and digits only — anything else is stripped as you type, so `customer-orders-sync` becomes `customerorderssync`) and an optional **Description**.
+2. Fill in **Upload name** (letters and digits only — anything else is stripped as you type, so `customer-orders` becomes `customerorders`) and an optional **Description**.
 3. Pick the **Source connection** — the Postgres connection from Step 2 — and the **Destination connection**. Each picker opens a dialog listing entries as `16 — docssamplesdb (postgres)`, i.e. id, name, type.
 4. Because the source is a SQL database, you also get:
    - **Load Mode** — `full_database` (the default) or `single_table`.
@@ -96,12 +96,15 @@ Extract-load is configured at **`/uploads`**, not on the connection. There is no
 
 1. On the **`/uploads`** row for your upload, click **Run**. (There is no "Run now" on a pipeline page — the button lives on the upload's own row.)
 2. Watch **`/runs`**. The run appears with a status badge, start and finish timestamps, and a **Rows** count; the **Logs** icon on the row opens the detail.
-
-![A completed first run in Datanika's run history](/docs/connectors/postgresql/04-first-run.png)
-
 3. A typical first run takes seconds for a small database and hours for one in the hundreds of GB. Subsequent incremental runs are much faster because only new/changed rows move.
-4. When the run finishes, open **Models** (`/models`) and browse the landed tables. The upload lands them in a schema named after the upload — an upload called `customerorderssync` creates schema `customerorderssync` in the destination. dlt also creates its own `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables in that schema, but **Models does not list them** — seeing only your own tables there is correct, not a partial load.
-5. Spot-check row counts against the source: `SELECT count(*) FROM <schema>.<table>;` on both sides should match (or differ by exactly the rows written during the sync window for incremental loads). **Check this rather than trusting the status badge** — the Rows figure counts everything the run moved across all tables, so one number covers the whole sync.
+4. When the run finishes, open **Models** (`/models`) and browse the landed tables. The upload lands them in a schema named after the upload — an upload called `customerorders` creates schema `customerorders` in the destination. dlt also creates its own `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables in that schema, but **Models does not list them** — seeing only your own tables there is correct, not a partial load.
+5. **Click a table to open its model detail page, then click `Load first 100 rows`.** The **Data preview** runs a live `SELECT` against your destination, so the rows on screen are the rows in your warehouse — not a copy of what the run *reported*.
+
+![The Data preview on the landed customers table, showing 12 rows read live from the destination Postgres database](/docs/connectors/postgresql/04-first-run.png)
+
+6. Spot-check row counts against the source: `SELECT count(*) FROM <schema>.<table>;` on both sides should match (or differ by exactly the rows written during the sync window for incremental loads). **Check this rather than trusting the status badge** — the Rows figure counts everything the run moved across all tables, so one number covers the whole sync.
+
+> **A green run row is not evidence that your data arrived.** Two shipped bugs made that precise: file sources once loaded a *listing* of the files rather than their contents and reported `success` ([core#492](https://github.com/datanika-io/datanika-core/issues/492)), and a glob matching zero files still completes as `success` ([core#493](https://github.com/datanika-io/datanika-core/issues/493)) — so a wrong path and a right path look identical in `/runs`. Both are fixed, and the habit is still the right one: **the Data preview, or a `count(*)` in your own warehouse, is what confirms a load.**
 
 ## Step 5 — Schedule it
 
@@ -110,7 +113,7 @@ Schedules live on their own page and reference the upload **by name**.
 1. Open **`/schedules`**. The **New Schedule** form is rendered inline.
 2. Fill in:
    - **Target type** — `upload` (the dropdown also offers pipelines and transformations).
-   - **Target name** — the upload's name exactly as it was saved, e.g. `customerorderssync`.
+   - **Target name** — the upload's name exactly as it was saved, e.g. `customerorders`.
    - **Cron expression** — a real five-field cron string. There is no cadence picker, and no "manual only" option: leaving the upload unscheduled *is* manual-only. Common choices:
      - `0 * * * *` — hourly, for operational dashboards, Slack alerts, reverse-ETL downstream.
      - `0 */6 * * *` — every six hours, for marketing, finance and product analytics where freshness beyond ~1 hour is fine.
