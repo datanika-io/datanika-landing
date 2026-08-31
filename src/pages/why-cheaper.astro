@@ -524,11 +524,7 @@ const pageDescription =
 
     function datanikaBill(gb) {
       // Free is a hard cap, not a base-plus-overage tier: at or below its
-      // included volume the bill is $0 and no paid tier should be quoted.
-      // `pricing.freeIncludedGB` was declared and read by NOTHING, so this
-      // function could only ever return Pro or Enterprise — and the preset
-      // button labelled "10 GB / Free cap" rendered "Datanika Pro — $79" for a
-      // volume we give away. See landing#410.
+      // included volume the bill is $0 and no paid tier is quoted.
       if (gb <= pricing.freeIncludedGB) {
         return {
           tier: "Datanika Free",
@@ -540,11 +536,8 @@ const pageDescription =
         };
       }
 
-      // Overage bills in WHOLE GB. The biller ceils the cycle's total overage
-      // bytes — `gb = -(-overage_quantity // (1024**3))` in datanika-cloud
-      // `billing/tasks.py` — so a partial GB rounds up. Integer input makes
-      // this a no-op today; it is here so the published formula matches the
-      // biller by construction rather than by luck about the input type.
+      // Overage bills in WHOLE GB — the biller rounds a partial GB up, so the
+      // calculator rounds up too.
       const proOver = Math.ceil(Math.max(0, gb - pricing.proIncludedGB));
       const entOver = Math.ceil(Math.max(0, gb - pricing.entIncludedGB));
       const proTotal = pricing.proBase + proOver * pricing.proOverage;
@@ -600,13 +593,11 @@ const pageDescription =
       datanikaTierEl.textContent = bill.tier;
       datanikaBreakdownEl.textContent = bill.breakdown;
 
-      // The whole sentence is built here, not spliced into fixed words around
-      // the span: the previous shape rendered "You'd save on par with/mo vs
-      // Fivetran" whenever the first branch fired.
+      // The whole sentence is built here rather than spliced into fixed words
+      // around the span, so every branch reads as English.
       if (bill.free) {
-        // Fivetran Free (500K MAR) and Hevo Free (1M events) also cost $0 at
-        // volumes this small — this page says exactly that under "Where we are
-        // NOT cheaper". A savings figure here would contradict our own copy.
+        // Fivetran Free and Hevo Free also cost $0 at volumes this small, as
+        // the "Where we are NOT cheaper" section says. Claim no saving here.
         savingsEl.textContent =
           "Fivetran's free tier also covers this volume — we tie, we don't beat free.";
       } else if (fivetranMonthly <= bill.total) {
