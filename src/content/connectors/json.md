@@ -5,7 +5,7 @@ source: "json"
 source_name: "JSON"
 category: "file"
 verified_by: "product-ui"
-verified_date: "2026-07-22"
+verified_date: "2026-08-31"
 related_use_cases: []
 related_comparisons:
   - "airbyte"
@@ -83,8 +83,12 @@ The connection alone moves nothing — the thing that reads the JSON and writes 
 
 1. On the **`/uploads`** row for your upload, click **Run**.
 2. Watch **`/runs`**. JSON Lines streams incrementally, so even a 5 GB log file won't blow up memory — Datanika processes it in constant memory and emits rows as they're parsed.
-3. When the run finishes, open **Models** (`/models`) and you'll see the root table plus any child tables created from nested arrays.
-4. Spot-check: open the source file in a text editor, copy one record, and verify its flattened columns landed correctly in the warehouse.
+3. When the run finishes, open **Models** (`/models`) and you'll see the root table plus any child tables created from nested arrays. The tables land in a schema **named after the upload**. If you came through **Step 1a**, the root table takes **your file's name without its extension** — `warehouse-events.json` lands as `warehouse_events`. If you came through **Step 1b**, the pattern matches many files rather than one, so there is no filename to borrow and the table is called `json`; set `table_name` in the upload's **Use raw JSON config** to choose.
+4. **Open the table and click `Load first 100 rows`.** The **Data preview** on the model detail page runs a live `SELECT` against your destination, so what you are looking at is what landed — not what the run *reported*.
+
+![The Data preview on the landed warehouse_events table, showing 11 rows read live from the destination warehouse](/docs/connectors/json/04-first-run.png)
+
+5. Spot-check: open the source file in a text editor, copy one record, and compare its flattened columns against the preview. JSON carries more type information than CSV does, so timestamps generally arrive as real `TIMESTAMP` columns rather than text.
 
 ## Step 4 — Schedule it (directory watchers only)
 
