@@ -48,6 +48,20 @@ recorded as "the high-value dofollow backlink" turned out to be `rel="nofollow"`
 external README link nofollow; the HTML *mirrors* of those lists do not. **The question about a
 curated list is not "how many stars?" but "does it have an HTML mirror on its own domain?"**
 
+**And the mirror must link *your* domain — an HTML mirror is necessary, not sufficient.**
+`project-awesome.org` mirrors `awesome-data-engineering` with no `noindex`, `Allow: /`, 117 external
+anchors and **zero nofollow** — and **117 of 117 resolve to `github.com`**. It renders no project
+homepages at all, so it passes authority to our repo and never to `datanika.io`. Ask both questions.
+The corollary is about copy, not measurement: **where a list's convention permits either, the entry
+links `datanika.io`, not the GitHub repo** — a repo-linked entry cannot build the site's authority by
+any path, because GitHub is nofollow and the mirrors resolve back to GitHub.
+
+**`rel="noopener noreferrer"` is dofollow.** Only `nofollow`, `ugc` and `sponsored` are link-equity
+hints; `noopener`/`noreferrer` are window and Referer-header controls. Reading them as nofollow
+discards real links. In the other direction, **a page-wide nofollow count of `0` is not a verdict** —
+a client-rendered page has no anchors to count, so record the external-anchor count beside every
+nofollow count or the two failure modes look identical.
+
 ## Guards
 
 **A guard that names an instance goes red on the correct change.** `tests/connectors.test.ts` once
@@ -120,6 +134,14 @@ has it" was never evidence a user could reach it.
 **A delegated research result is a lead, not evidence.** A subagent fabricated `CONTRIBUTING.md`
 quotes for six backlink targets. Re-read the live file before every submission — `gh` posts under the
 founder's real identity.
+
+**Some maintainers ban AI-authored submissions, so read the CONTRIBUTING for that too — not just for
+traction and age gates.** `ripienaar/free-for-dev` (~95k★) closes AI-written PRs *"without reviewing
+it or discussing it"*; `awesome-selfhosted-data` warns that machine-generated contributions which
+miss a guideline *"will result in a ban"* — on the highest-value backlink we have queued. This does
+not change whether we submit, it changes **who**. And it forbids the obvious workaround: handing a
+human AI-written text to paste is the same violation with an extra step, so the handoff carries facts
+and the target's own requirements, never copy.
 
 **Ask what your evidence records.** GitHub code search returns 0 for a model that exists in the
 private cloud repo, and misses two of three `before_execute` call sites in core. A zero from an
