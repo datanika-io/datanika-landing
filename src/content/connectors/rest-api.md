@@ -5,7 +5,7 @@ source: "rest_api"
 source_name: "REST API"
 category: "api"
 verified_by: "product-ui"
-verified_date: "2026-07-19"
+verified_date: "2026-08-31"
 related_use_cases: []
 related_comparisons:
   - "airbyte"
@@ -69,9 +69,30 @@ Extract-load is configured at **`/uploads`**, not on the connection. There is no
 1. Open **`/uploads`**. The **New Upload** form is rendered inline on the page.
 2. Fill in **Upload name** (letters and digits only — anything else is stripped as you type, so `restapi-daily-sync` becomes `restapidailysync`) and an optional **Description**.
 3. Pick the **Source connection** and the **Destination connection** — the REST API connection from Step 2 is the source. Each picker opens a dialog listing entries as `16 — myconnection (postgres)`, i.e. id, name, type.
-4. Click **Create Upload**. It appears in the table below with status `draft`.
+4. 🚨 **Tick **Use raw JSON config** and list your endpoints under `resources`.** This step is not optional for a REST API source — see the box below. A minimal one-endpoint config:
+   ```json
+   {
+     "resources": [
+       {
+         "name": "github_labels",
+         "endpoint": {
+           "path": "repos/datanika-io/datanika-core/labels",
+           "params": { "per_page": 100 },
+           "paginator": { "type": "single_page" }
+         }
+       }
+     ]
+   }
+   ```
+   `name` becomes the destination table name. `path` is appended to the connection's **Base URL**. `params` are query-string parameters. Omit `paginator` to let dlt auto-detect the API's pagination style (`Link` headers, `next` URLs, offsets); pin `single_page` when you deliberately want one request.
+5. Click **Create Upload**. It appears in the table below with status `draft`.
 
-> **There is no write disposition, load mode, source schema or table-name field for a REST API source, and that is deliberate.** Those controls are rendered only when the source is a SQL database. Endpoints and pagination are set on the **connection** (Base URL, API Key, Extra Headers) — there is no endpoint selector on the upload form.
+> 🚨 **Endpoints are set on the UPLOAD, not on the connection — and a REST upload with no `resources` cannot run.** The connection carries only Base URL, API Key and Extra Headers; there is no endpoint field on it, and no endpoint *selector* anywhere. The runner requires a `resources` list and fails the run outright without one:
+> `REST API source requires 'resources' list in dlt_config`. The **Use raw JSON config** box on the upload form is the only place to supply it. *(This guide previously said the opposite — that endpoints live on the connection. Corrected 2026-08-31 after running the connector end-to-end on production; a reader following the old text reached a failing run with nowhere to fix it.)*
+
+> ⚠️ **Editing a REST upload afterwards will silently discard this config.** Re-opening the upload with **Edit** shows **Use raw JSON config** *unchecked* and, when you tick it, an empty `{}` — the stored `resources` are not loaded back into the form. Saving from that state writes the empty config and the next run fails. Until [core#803](https://github.com/datanika-io/datanika-core/issues/803) ships, **re-paste the full JSON every time you edit a REST upload.**
+
+> **There is no write disposition, load mode, source schema or table-name field for a REST API source, and that is deliberate.** Those controls are rendered only when the source is a SQL database — verified live: they are visible with no source selected and disappear the moment a `rest_api` source is chosen.
 
 > **Batch size** (default 10000) and the optional **Schema Contract** dropdowns — **Tables** / **Columns** / **Data Type** — are on every upload regardless of source. The contract decides whether a changed incoming shape evolves the destination or fails the run.
 
@@ -80,7 +101,11 @@ Extract-load is configured at **`/uploads`**, not on the connection. There is no
 1. On the **`/uploads`** row for your upload, click **Run**. There is no "Run now" on a pipeline page — the trigger lives on the upload's own row.
 2. Watch **`/runs`**. The run shows a status badge, start and finish timestamps and a **Rows** count; the **Logs** icon on the row opens the detail.
 3. When it finishes, open **Models** (`/models`) and browse the landed tables. The upload lands them in a schema **named after the upload** — `restapidailysync` creates schema `restapidailysync` in the destination. dlt also creates its own `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables in that schema, but **Models does not list them** — seeing only your own tables there is correct, not a partial load. There is no target-schema field to choose.
-4. Spot-check the row count against the source. **Verify in the destination rather than trusting the status badge** — a green run means the load finished, not that it moved what you expected.
+4. **Open the table and click `Load first 100 rows`.** The **Data preview** on the model detail page runs a live `SELECT` against your destination, so the rows on screen are the rows in your warehouse. **Verify there, not on the status badge** — a green run means the load finished, not that it moved what you expected.
+
+![The Data preview on the landed github_labels table, showing 14 rows read live from the destination warehouse](/docs/connectors/rest-api/04-first-run.png)
+
+5. Spot-check the row count and a few values against the API's own response (`curl` the same URL). A REST payload is nested, so expect dlt to **split it across tables**: one table per resource, plus a child table per repeated field. Our own run produced `github_issues` (100 rows, 83 columns) *and* `github_issues__labels` from a single `issues` resource, and the **Rows** figure on `/runs` was the **total across both** — so a Rows count larger than the number of records you requested is normal, not a duplicate load.
 
 ## Step 5 — Schedule it
 

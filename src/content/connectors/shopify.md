@@ -5,7 +5,7 @@ source: "shopify"
 source_name: "Shopify"
 category: "saas"
 verified_by: "product-ui"
-verified_date: "2026-07-19"
+verified_date: "2026-08-31"
 related_use_cases:
   - "shopify-to-bigquery"
 related_comparisons:
@@ -43,7 +43,7 @@ Shopify is the go-to e-commerce source for teams building revenue analytics, inv
    - **Store Name** — your Shopify store subdomain (e.g. `my-store` from `my-store.myshopify.com`). Just the subdomain, not the full URL.
 3. Click **Test Connection** (an HTTP-API source returns *"Test not applicable for this type"*), then **Create Connection**.
 
-> **Credentials are validated on the first run.** Shopify is an HTTP-API source, so the **Test Connection** button reports *"Test not applicable for this type"* — the token is validated for real when the first pipeline runs.
+> **Credentials are validated on the first run, and `Test Connection` cannot tell you otherwise.** Shopify is an HTTP-API source, so the button reports *"Test not applicable for this type"* — **in the same green as a pass**, having sent no request to Shopify at all. A revoked token, a typo, and a store that does not exist all produce that identical green line; verified here against a deliberately invalid token on 2026-08-31. Read it as *"not tested"*, never as *"tested OK"* — the first run is the first real check.
 
 ![Adding Shopify in Datanika](/docs/connectors/shopify/02-add-connection.png)
 
@@ -69,6 +69,10 @@ Extract-load is configured at **`/uploads`**, not on the connection. There is no
 2. Watch **`/runs`**. The run shows a status badge, start and finish timestamps and a **Rows** count; the **Logs** icon on the row opens the detail.
 3. When it finishes, open **Models** (`/models`) and browse the landed tables. The upload lands them in a schema **named after the upload** — `shopifydailysync` creates schema `shopifydailysync` in the destination. dlt also creates its own `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables in that schema, but **Models does not list them** — seeing only your own tables there is correct, not a partial load. There is no target-schema field to choose.
 4. Spot-check the row count against the source. **Verify in the destination rather than trusting the status badge** — a green run means the load finished, not that it moved what you expected.
+
+![The Data preview on the landed products table, showing seventeen Shopify products read live from the destination warehouse](/docs/connectors/shopify/04-first-run.png)
+
+> **The `Rows` figure is not your product count, and the gap is large.** Every product carries nested `variants`, `images` and `options`, and dlt gives each nested array its own table — so ticking `products` alone yields `products`, `products__variants`, `products__images`, `products__options` and `products__options__values`. A real run of this guide reported **109 rows** for a store holding **17 products and 3 customers**: 17 products + 26 variants + 18 images + 17 options + 26 option values + 3 customers + 2 addresses. Reconcile against the individual tables in **Models**, never against the run total — a store whose product count looks multiplied has loaded correctly.
 
 ## Step 5 — Schedule it
 

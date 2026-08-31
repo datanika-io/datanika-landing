@@ -8,11 +8,25 @@ Referenced from `src/content/connectors/duckdb.md`.
 |---|---|---|
 | `02-add-connection.png` | Step 2 | The **New Connection** form with `duckdb` selected. Captured 2026-07-18 from a real `app.datanika.io` session in light theme (the app default for a new account). Path only — no secrets in this form. |
 | `03-configure-upload.png` | Step 3 | The **New Upload** form at `/uploads` with a real DuckDB destination selected (`14 — analyticswarehouse (duckdb)`). Captured 2026-07-22. Shared with the CSV guide — it is the same screen and the same real upload, shown here for the destination side. |
-| `04-first-run.png` | Step 4 | The `/runs` table after a **real** CSV → DuckDB load on production: run 6, `success`, **12 rows**, with the Logs icon. Captured 2026-07-22, cropped to the header + the single run row. Shared with the CSV guide — same screen, same real run, shown here for the destination side. No credentials on screen. |
+| `04-first-run.png` | Step 4 | 🔴 **Still the `/runs` table, and it still FAILS the acceptance criterion.** A real CSV → DuckDB load on production (run 6, `success`, 12 rows, 2026-07-22), but a run status is not evidence that data arrived — see [landing#395](https://github.com/datanika-io/datanika-landing/issues/395). Its alt text now says what it is instead of implying more. **No longer shared with the CSV guide**: csv's was recaptured 2026-08-31 and the two images (previously byte-identical, `md5 622189bd…`) now differ. This one was deliberately left alone rather than handed a picture of a load DuckDB did not do. |
+
+## 🔴 Not yet captured — and it is blocked on a product defect, not on effort
+
+`04-first-run.png` **could not be recaptured on 2026-08-31** with the other four guides, and the reason is worth more than the screenshot: **[core#793](https://github.com/datanika-io/datanika-core/issues/793)**.
+
+The guide's recommended path, `/var/datanika/duckdb/analytics.duckdb`, is on **no volume and in no container image**. Measured on prod that day: `datanika-app-b` and `datanika-celery` each mount exactly two shared volumes (`/app/dbt_projects`, `/app/uploaded_files`), neither is `/var/datanika`, and the string appears nowhere in `docker-compose.yml`. The load runs in the worker; the Data preview and SQL Editor run in the web app. Separate containers, nothing shared — so a green run and an empty catalog are the expected pair.
+
+🔑 **The discriminating find**: there is exactly one DuckDB database in production, `/app/dbt_projects/_docs_samples/warehouse.duckdb` — the Docs-QA connection 14 behind run 6, the very run this screenshot shows. **It works because whoever made it ignored the guide and picked a path that happens to sit on a shared volume.** The only DuckDB destination that has ever worked here is the one that did not follow this documentation.
+
+A second, smaller blocker: creating a sixth connection in the prod-verify org returns **"Connection limit reached (5 on Free plan)"** — the cloud quota hook working as designed. No connection was deleted to get around it; the five in that org are cited as provenance by four guides that shipped the same day, and deleting production connections by hand is the operation that caused a past incident.
+
+**Capture this once [core#793] ships**, against the path the guide then recommends — and make it the **Data preview**, not `/runs`.
 
 ## Verification
 
-`verified_by: product-ui` / `verified_date: 2026-07-22`.
+`verified_by: product-ui` / `verified_date: 2026-08-31`.
+
+**2026-08-31 (Step 1 and Step 4 corrected, no new screenshot)** — the guide told the reader to `mkdir` in `datanika-app` (Step 1) and then read the file from `datanika-celery` (Step 4), with nothing shared between the two, so following it verbatim cannot work. Step 1 now ships the volume stanza and a two-container probe that fails loudly at the point the mistake is made; Step 4 now sends the reader to the **Data preview** and explains that for DuckDB an empty preview after a green run is the signature of exactly that mistake. The durability sentence was the guide's only mention of volumes and framed them as optional backup hygiene — **durability was the lesser half; reachability by both processes is the part that decides whether the product appears to work at all.**
 
 **2026-07-18 (Step 2)** — field labels verified against the live shipped UI (`duckdb_fields()` in `connection_config_fields.py` + `en.json` on `origin/master`). Shipped form has a single field: **Database Path** (required), plus **Connection Name** above. The type dropdown shows the lowercase key **`duckdb`**. Both **Test Connection** and **Create Connection** buttons render. Guide drift fixed: "Path to DuckDB file" → "Database Path", removed the fictional nav, "Save" → "Create Connection".
 

@@ -107,7 +107,7 @@ export const pricingFaq: FAQItem[] = [
   {
     question: "What is the difference between a GB and a row?",
     answer:
-      "A row is one record; a GB is 1 billion bytes of data. A row can be 100 bytes or 10 KB depending on schema width. We bill per GB because it tracks our real infrastructure cost.",
+      "A row is one record; a GB is 1,073,741,824 bytes (2^30) — the binary GB our meter counts, so it is 7.4% more data than a decimal GB. A row can be 100 bytes or 10 KB depending on schema width.",
   },
   {
     question: "Why is ELT cheaper than ETL in your metering?",

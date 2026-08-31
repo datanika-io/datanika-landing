@@ -116,9 +116,23 @@ rm -rf "$T/bad3"; mkdir -p "$T/bad3"; echo "<html>x</html>" > "$T/bad3/index.htm
 run_bad "$T/bad3" "no _astro directory"
 
 echo "### 4 — prune keeps KEEP releases and never removes the live one"
+# ⚠️ The `sleep 1` is REQUIRED and is not padding (landing#415). Without it all
+# five publishes land in one or two seconds, and this case failed ~1 run in 3 —
+# on a check that GATES `dev`. Diagnosed in a container rather than guessed:
+# prune frees `<stamp>-<sha>`, the collision allocator then RE-CLAIMS that
+# unsuffixed base name for the next publish, and the newest release ends up
+# sorting before its own `.1`/`.2` siblings. So it lands in the stale set, the
+# live-release guard skips it, and KEEP+1 directories survive.
+#
+# One second apart is also the only realistic shape: production deploys are
+# minutes apart. The same-second path is still covered — deliberately — by case 2,
+# which is what asserts the allocator never destroys a live release. Do NOT remove
+# the sleeps to "speed up CI": that trades five seconds for an intermittent red
+# that trains people to re-run a required check until it passes.
 for i in 5 6 7 8 9; do
     mkdist "$T/dist$i" "v$i"
     KEEP_RELEASES=2 bash "$SCRIPT" "$T/dist$i" "$LIVE" "$RELS" > "$T/logp$i" 2>&1
+    sleep 1
 done
 chk "release count == KEEP" "$(ls -1d "$RELS"/*/ 2>/dev/null | wc -l | tr -d ' ')" "2"
 chk "live target still exists on disk" \
@@ -131,6 +145,46 @@ bash "$SCRIPT" "$T/dist10" "$T/live2" "$T/rel2" > "$T/log10" 2>&1
 chk "exits 0" "$?" "0"
 chk "creates the symlink" "$([ -L "$T/live2" ] && echo yes || echo no)" "yes"
 chk "serves" "$(cat "$T/live2/index.html")" "<html><body>fresh</body></html>"
+
+echo "### 6 — the release name carries the SOURCE commit (landing#388)"
+# Since the build moved to the GitHub runner, `dist/` no longer lives inside the
+# checkout, so the script's git fallback cannot see a working tree. Every dist
+# used in this file is already in that position (parent is $T, not a repo), so
+# these two cases are the real deployed shapes rather than a contrivance.
+#
+# The negative control is the point. Without SOURCE_SHA the name degrades to
+# `-nogit`, and it degrades SILENTLY: the deploy still exits 0 and the site is
+# byte-correct, only `readlink -f` stops naming the serving commit. A test that
+# asserted "publishes successfully" would pass in both directions and prove
+# nothing, which is why these assert the NAME, not the outcome.
+mkdist "$T/dist11" sha
+SOURCE_SHA=deadbee bash "$SCRIPT" "$T/dist11" "$T/live3" "$T/rel3" > "$T/log11" 2>&1
+chk "exits 0" "$?" "0"
+chk "release dir ends with the passed sha" \
+    "$(basename "$(readlink -f "$T/live3")" | sed 's/.*-//')" "deadbee"
+
+mkdist "$T/dist12" nosha
+bash "$SCRIPT" "$T/dist12" "$T/live4" "$T/rel4" > "$T/log12" 2>&1
+chk "NEGATIVE CONTROL: without SOURCE_SHA an out-of-tree dist degrades to nogit" \
+    "$(basename "$(readlink -f "$T/live4")" | sed 's/.*-//')" "nogit"
+
+# And the fallback must still work for the manual path in CLAUDE.md, which runs
+# `publish-web-root.sh dist` from inside the checkout. Build a throwaway repo so
+# this asserts the git probe still resolves rather than merely not crashing.
+if git init -q "$T/repo" 2>/dev/null; then
+    git -C "$T/repo" config user.email t@example.com
+    git -C "$T/repo" config user.name t
+    echo x > "$T/repo/f"
+    git -C "$T/repo" add f
+    git -C "$T/repo" commit -qm init
+    EXPECT="$(git -C "$T/repo" rev-parse --short HEAD)"
+    mkdist "$T/repo/dist" inrepo
+    ( cd "$T/repo" && bash "$SCRIPT" dist "$T/live5" "$T/rel5" ) > "$T/log13" 2>&1
+    chk "in-checkout fallback still resolves the real sha" \
+        "$(basename "$(readlink -f "$T/live5")" | sed 's/.*-//')" "$EXPECT"
+else
+    echo "  SKIP  in-checkout fallback (git init unavailable)"
+fi
 
 echo
 echo "==== publish-web-root: $pass passed, $fail failed ===="

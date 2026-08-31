@@ -271,7 +271,7 @@ const pageDescription =
               <span id="result-datanika-breakdown">$79 base + 0 GB × $0.50 = $79</span>
             </p>
             <p class="mt-4 text-xs text-emerald-400">
-              You'd save <span id="result-savings">$421</span>/mo vs Fivetran
+              <span id="result-savings">You'd save $421/mo vs Fivetran</span>
             </p>
           </div>
         </div>
@@ -305,17 +305,21 @@ const pageDescription =
             <p class="text-xs uppercase tracking-widest text-slate-500 mb-2">ETL mode</p>
             <p class="text-sm text-slate-300 leading-relaxed">
               1 GB HubSpot JSON → ~3 GB of normalized tables.<br />
-              Over Pro's 100 GB quota: <span class="text-white font-mono">$1.50</span> overage per run.
+              Past Pro's 100 GB: <span class="text-white font-mono">3 GB × $0.50/GB</span> per nightly run — <span class="text-white font-mono">$45/mo</span> across 30.
             </p>
           </div>
           <div class="rounded-xl border border-violet-500/50 bg-slate-950/60 p-5">
             <p class="text-xs uppercase tracking-widest text-violet-400 mb-2">ELT mode</p>
             <p class="text-sm text-slate-300 leading-relaxed">
               1 GB HubSpot JSON → ~0.8 GB of parquet on the wire.<br />
-              Over Pro's 100 GB quota: <span class="text-white font-mono">$0.40</span> overage per run.
+              Past Pro's 100 GB: <span class="text-white font-mono">0.8 GB × $0.50/GB</span> per nightly run — <span class="text-white font-mono">$12/mo</span> across 30.
             </p>
           </div>
         </div>
+
+        <p class="text-xs text-slate-500 mt-4 leading-relaxed">
+          Overage is not charged per run. We total your metered volume for the billing cycle, subtract your plan's included allowance, round the remainder up to the next whole GB, and bill that once at the end of the cycle. The per-run figures above are that monthly total broken down — useful for sizing a pipeline, not a line on your invoice.
+        </p>
 
         <p class="text-xs text-slate-500 mt-6 leading-relaxed">
           The mode selector lives on every pipeline — it's the first switch in the UI when you create a new one. Existing pipelines can flip modes with a migrate button. See <a href="/blog/real-cost-modern-data-stack" class="text-violet-400 underline hover:text-violet-300">the dedicated post</a> on when to pick which mode.
@@ -519,8 +523,23 @@ const pageDescription =
     }
 
     function datanikaBill(gb) {
-      const proOver = Math.max(0, gb - pricing.proIncludedGB);
-      const entOver = Math.max(0, gb - pricing.entIncludedGB);
+      // Free is a hard cap, not a base-plus-overage tier: at or below its
+      // included volume the bill is $0 and no paid tier is quoted.
+      if (gb <= pricing.freeIncludedGB) {
+        return {
+          tier: "Datanika Free",
+          total: 0,
+          free: true,
+          breakdown:
+            formatNum(gb) + " GB is inside the Free plan's " +
+            pricing.freeIncludedGB + " GB/mo — $0, no card, no overage.",
+        };
+      }
+
+      // Overage bills in WHOLE GB — the biller rounds a partial GB up, so the
+      // calculator rounds up too.
+      const proOver = Math.ceil(Math.max(0, gb - pricing.proIncludedGB));
+      const entOver = Math.ceil(Math.max(0, gb - pricing.entIncludedGB));
       const proTotal = pricing.proBase + proOver * pricing.proOverage;
       const entTotal = pricing.entBase + entOver * pricing.entOverage;
 
@@ -574,10 +593,17 @@ const pageDescription =
       datanikaTierEl.textContent = bill.tier;
       datanikaBreakdownEl.textContent = bill.breakdown;
 
-      if (fivetranMonthly <= bill.total) {
-        savingsEl.textContent = "on par with";
+      // The whole sentence is built here rather than spliced into fixed words
+      // around the span, so every branch reads as English.
+      if (bill.free) {
+        // Fivetran Free and Hevo Free also cost $0 at volumes this small, as
+        // the "Where we are NOT cheaper" section says. Claim no saving here.
+        savingsEl.textContent =
+          "Fivetran's free tier also covers this volume — we tie, we don't beat free.";
+      } else if (fivetranMonthly <= bill.total) {
+        savingsEl.textContent = "On par with Fivetran at this volume.";
       } else {
-        savingsEl.textContent = "$" + formatNum(savings);
+        savingsEl.textContent = "You'd save $" + formatNum(savings) + "/mo vs Fivetran";
       }
     }
 
