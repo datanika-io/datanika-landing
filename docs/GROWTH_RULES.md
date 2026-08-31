@@ -141,6 +141,20 @@ instances: `rate_limit_rpm` unenforced for four months, `send_verification_email
 callers, `client_ip.py` with no caller, and `predicted_bytes` — which `/features/volume-pricing/`
 sells as a headline differentiator (#375).
 
+**Its mirror: a constant with no *consumer* is a tier that does not exist.** `/why-cheaper/` declared
+`freeIncludedGB: 10` and read it nowhere, so `datanikaBill()` could only return Pro or Enterprise —
+and the preset button labelled *"10 GB · Free cap"* quoted **$79** for a volume we give away (#410).
+The declaration is what makes this hard to see: the constant is right there in the pricing object,
+so a reader checking "does this page know about Free?" finds the answer yes. **Grep for the reads,
+not the declaration.**
+
+**A number can be arithmetically right and still be the wrong unit — check the denominator against
+the biller.** "$0.40 overage per run" was exactly 0.8 GB × $0.50, and was a charge that cannot occur:
+overage is summed over the *cycle* and ceiled to whole GB, so the smallest non-zero overage is $0.50.
+Nothing in the arithmetic looks wrong; only the denominator does. Same session, same shape, opposite
+direction: the spec's `$0.40/GB` for Enterprise was `399 ÷ 1000` where the biller divides by `1024`.
+**Ask what the biller divides by before publishing any per-unit price.**
+
 **Never publish a capability claim written from a spec.** The MongoDB pages documented a
 `connection_string` field and an `Auth Source` control the shipped form never had, because the docs
 were written from `CONFIG_SCHEMAS` and the Reflex form is a separate hand-maintained list. "The schema
@@ -187,6 +201,14 @@ a live connector guide links to it twice, and hiding it would have 404'd both.
 written as an HTML comment in a `.astro` template shipped the founder's verbatim reasoning into
 `dist/trust/index.html`. The source sweep was green while that was true — only reading the *built
 output* caught it.
+
+⚠️ **`<script>` comments are template comments too, and they ship as production JS.** Second
+instance, #410: a six-line `//` block explaining a pricing defect — *"read by NOTHING"*, *"for a
+volume we give away"*, an issue number — went into `dist/why-cheaper/index.html` verbatim. Nothing
+secret (the repo is public), but the defect narrative does not belong in the bundle a customer
+downloads. **Put the rationale in the guard test, the issue and the PR body — none of which ship —
+and leave the inline comment short and neutral.** Then `grep` your own phrasing in `dist/` before
+pushing; the source diff looks identical either way.
 
 **No feature gating on integrations.** Every connector on every plan, including Free; we gate on
 scale, not capability. This is a pricing principle, and it has already been contradicted once inside
