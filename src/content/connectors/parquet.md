@@ -5,7 +5,7 @@ source: "parquet"
 source_name: "Parquet"
 category: "file"
 verified_by: "product-ui"
-verified_date: "2026-07-22"
+verified_date: "2026-08-31"
 related_use_cases: []
 related_comparisons:
   - "airbyte"
@@ -83,7 +83,12 @@ The connection alone moves nothing — the thing that reads the Parquet and writ
 1. On the **`/uploads`** row for your upload, click **Run**.
 2. Parquet loads are **fast and memory-efficient** because Datanika streams row groups sequentially — a 2 GB compressed Parquet file (~8 GB raw) typically lands in under a minute, in under 500 MB of RAM.
 3. Watch **`/runs`** for progress. You'll see row counts stream in as each group is decoded and written to the destination.
-4. When the run finishes, open **Models** (`/models`) and browse the landed table. Spot-check by comparing `count(*)` against the Parquet footer's `num_rows` — they should match exactly, with no coercion losses.
+4. When the run finishes, open **Models** (`/models`) and browse the landed table. It lands in a schema **named after the upload**; the table itself takes **your file's name without its extension** if you came through Step 1a (`service-uptime.parquet` → `service_uptime`), or the connector name `parquet` if you came through Step 1b, where the pattern matches many files and there is no single filename to borrow.
+5. **Open the table and click `Load first 100 rows`.** The **Data preview** runs a live `SELECT` against your destination, so you are reading the warehouse rather than the run's own report of itself.
+
+![The Data preview on the landed service_uptime table, showing 13 rows read live from the destination warehouse](/docs/connectors/parquet/04-first-run.png)
+
+6. Spot-check by comparing `count(*)` against the Parquet footer's `num_rows` — they should match exactly, with no coercion losses. **Parquet is the format that best survives the trip**: because it carries a real schema, a `date32` column arrives as a `DATE` and a `double` as `DOUBLE PRECISION`. The same logical column exported to CSV arrives as text, since CSV carries no types at all.
 
 ## Step 4 — Schedule it (directory watchers only)
 
