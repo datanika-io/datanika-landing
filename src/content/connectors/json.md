@@ -83,7 +83,7 @@ The connection alone moves nothing — the thing that reads the JSON and writes 
 
 1. On the **`/uploads`** row for your upload, click **Run**.
 2. Watch **`/runs`**. JSON Lines streams incrementally, so even a 5 GB log file won't blow up memory — Datanika processes it in constant memory and emits rows as they're parsed.
-3. When the run finishes, open **Catalog → `<your warehouse>`** and you'll see the root table plus any child tables created from nested arrays.
+3. When the run finishes, open **Models** (`/models`) and you'll see the root table plus any child tables created from nested arrays.
 4. Spot-check: open the source file in a text editor, copy one record, and verify its flattened columns landed correctly in the warehouse.
 
 ## Step 4 — Schedule it (directory watchers only)

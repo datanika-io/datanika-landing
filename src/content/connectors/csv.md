@@ -68,7 +68,7 @@ A connection on its own moves nothing. The thing that actually reads the CSV and
 
 ![A completed CSV load in Datanika's run history](/docs/connectors/csv/04-first-run.png)
 
-3. When the run finishes, open **Catalog** and browse the new table. It lands in a schema **named after the upload**, and the table itself is named **`csv`** — the default file pattern is `*.csv`, which matches many files rather than one, so the table takes the connector's name instead of a filename. To choose the name yourself, set `table_name` in the upload's **Use raw JSON config**.
+3. When the run finishes, open **Models** (`/models`) and browse the new table. It lands in a schema **named after the upload**, and the table itself is named **`csv`** — the default file pattern is `*.csv`, which matches many files rather than one, so the table takes the connector's name instead of a filename. To choose the name yourself, set `table_name` in the upload's **Use raw JSON config**.
 4. Spot-check by opening the CSV in a spreadsheet and comparing row counts and a handful of values against the destination. Type-inference failures usually show up as null or truncated cells and are easy to catch visually.
 
 > **A run that matches no files now fails, loudly.** If the path is wrong, the export never ran, or the pattern matches nothing, the run ends `failed` with a message naming the cause — including the specific case where the path points at a *file* rather than the directory containing it, which tells you the parent directory to use instead. It used to complete as `success` with zero rows ([core#493](https://github.com/datanika-io/datanika-core/issues/493)), which was indistinguishable from a healthy load.
