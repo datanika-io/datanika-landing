@@ -101,7 +101,7 @@ Tests:
 
   <RelatedConnectors
     heading="Destinations dbt can build in"
-    description="A transformation or pipeline can only run against one of these — each ships a dbt adapter and supports materialized models (table, view, incremental) plus the full dbt macro set. Datanika loads data into more destinations than it can transform in: MySQL, SQLite, Databricks and Synapse all accept loaded data through an upload, but cannot be a transformation target. Load into them, or transform in one of the destinations below."
+    description="A transformation or pipeline can only run against one of these — each ships a dbt adapter and supports materialized models (table, view, incremental) plus the full dbt macro set. Datanika loads data into more destinations than it can transform in: Databricks and Synapse accept loaded data through an upload but cannot be a transformation target. MySQL and SQLite are neither — they are extract sources only. Load into a destination below, and transform there."
     connectors={transformationDestinationConnectors}
   />
 </DocsLayout>

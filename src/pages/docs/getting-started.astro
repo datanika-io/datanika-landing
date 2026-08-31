@@ -2,7 +2,7 @@
 import DocsLayout from "../../layouts/DocsLayout.astro";
 import ConversionCTA from "../../components/ConversionCTA.astro";
 import RelatedConnectors from "../../components/RelatedConnectors.astro";
-import { connectors, sourceConnectors, destinationConnectors } from "../../data/connectors";
+import { connectors, sourceConnectors, destinationConnectors, bidirectionalConnectors } from "../../data/connectors";
 
 // Top Tier 1 connectors by buyer intent — the five someone most likely
 // wants to wire up in their first pipeline. Curated as a slug set so
@@ -42,7 +42,7 @@ const tier1Connectors = connectors.filter((c) => TIER_1_SLUGS.has(c.slug));
     <li>Enter credentials — they are encrypted at rest</li>
     <li>Add a destination connection as well (e.g., BigQuery, Snowflake, or another PostgreSQL)</li>
   </ul>
-  <p>Datanika supports <strong>{connectors.length} connectors</strong>: {sourceConnectors.length} work as sources and {destinationConnectors.length} as destinations, with six databases doing both. See the full list at <a href="/docs/connections">Connections</a>.</p>
+  <p>Datanika supports <strong>{connectors.length} connectors</strong>: {sourceConnectors.length} work as sources and {destinationConnectors.length} as destinations, with {bidirectionalConnectors.length} databases doing both. See the full list at <a href="/docs/connections">Connections</a>.</p>
 
   <h2>4. Load Your Data</h2>
   <p>With a source and destination connected, you can start moving data:</p>

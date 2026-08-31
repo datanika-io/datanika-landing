@@ -52,8 +52,11 @@ export const connectors: Connector[] = [
     slug: "mysql",
     name: "MySQL",
     category: "Database",
-    direction: "both",
-    description: "Connect to MySQL 5.7+ or MariaDB as a source or destination. Extract full databases or individual tables with incremental loading support.",
+    // Source-only. Corrected 2026-09-01 — see the `direction` note above
+    // `sourceConnectors`. It was "both" and dlt has never had a mysql
+    // destination (core#865).
+    direction: "source",
+    description: "Connect to MySQL 5.7+ or MariaDB as a source. Extract full databases or individual tables with incremental loading support.",
     useCases: [
       "Migrate MySQL data to a cloud warehouse",
       "Replicate e-commerce MySQL databases for reporting",
@@ -68,7 +71,8 @@ export const connectors: Connector[] = [
       { name: "password", description: "Password (encrypted at rest)" },
     ],
     limitations: [
-      "Not available as a dbt transformation target. MySQL works as a source and as a load destination — an upload can extract from it and land data in it — but pipelines and transformations run dbt, and no maintained dbt adapter for MySQL exists. The only one ever published was last released in April 2024 and pins dbt-core 1.7, which held back security updates across the rest of the stack. Transform in a warehouse instead: PostgreSQL, SQL Server, ClickHouse, DuckDB, BigQuery, Snowflake and Redshift are all dbt targets. Tracked as core#825.",
+      "Extract only — MySQL cannot receive data. It is not a load destination: an upload that targets MySQL fails with an unhandled AttributeError, because dlt has no MySQL destination and never has. This was advertised for as long as the entry existed; it is absent, not degraded, and there is no configuration that works around it. Tracked as core#865.",
+      "Not available as a dbt transformation target. Pipelines and transformations run dbt, and no maintained dbt adapter for MySQL exists — the only one ever published was last released in April 2024 and pins dbt-core 1.7, which held back security updates across the rest of the stack. Extract from MySQL into a warehouse and transform there: PostgreSQL, SQL Server, ClickHouse, DuckDB, BigQuery, Snowflake and Redshift are all dbt targets. Tracked as core#825.",
     ],
     related: ["postgresql", "bigquery", "snowflake", "mssql"],
     seoTitle: "MySQL ETL Tool — Database Pipeline | Datanika",
@@ -103,18 +107,20 @@ export const connectors: Connector[] = [
     slug: "sqlite",
     name: "SQLite",
     category: "Database",
-    direction: "both",
-    description: "Connect to local SQLite database files. Useful for extracting data from embedded applications or using as a lightweight destination for development.",
+    // Source-only. Same correction and same cause as MySQL (core#865).
+    direction: "source",
+    description: "Connect to local SQLite database files as a source. Useful for extracting data from embedded applications and desktop or mobile app databases.",
     useCases: [
       "Extract data from mobile or embedded app databases",
-      "Use as a lightweight local destination for testing",
       "Migrate SQLite data to a production database",
+      "Pull a desktop application's local store into a warehouse",
     ],
     configFields: [
       { name: "path", description: "Path to the SQLite database file" },
     ],
     limitations: [
-      "Not available as a dbt transformation target. SQLite works as a source and as a load destination, but no SQLite dbt adapter ships in Datanika, so a pipeline or transformation cannot run against a SQLite file. Load it into a warehouse and transform there. Tracked as core#862.",
+      "Extract only — SQLite cannot receive data. It is not a load destination: an upload that targets a SQLite file fails with an unhandled AttributeError, because dlt has no SQLite destination. Advertised for as long as the entry existed; absent, not degraded. Tracked as core#865.",
+      "Not available as a dbt transformation target either. No SQLite dbt adapter ships in Datanika, so a pipeline or transformation cannot run against a SQLite file. Extract into a warehouse and transform there. Tracked as core#862.",
     ],
     related: ["postgresql", "duckdb", "mysql"],
     seoTitle: "SQLite Data Export & Pipeline | Datanika",
@@ -883,8 +889,39 @@ export const connectors: Connector[] = [
  * interface declares `direction: "source" | "destination" | "both"` and that
  * line matches, so the grep returns 26 for 25 source-only entries.
  */
+/**
+ * ⚠️ **`direction` states what WORKS, not what the catalogue intends.**
+ *
+ * MySQL and SQLite were `"both"` until 2026-09-01 and are now `"source"`.
+ * `dlt.destinations` has **no `mysql` and no `sqlite` attribute**, so
+ * `DltRunner.build_destination` — an unconditional
+ * `getattr(dlt.destinations, connection_type)` — raises:
+ *
+ *     AttributeError: module 'dlt.destinations' has no attribute 'mysql'.
+ *                     Did you mean: 'mssql'?
+ *
+ * Measured against dlt 1.21.0 across **all eleven** advertised destinations,
+ * with a control name that must not resolve: **9 resolve, `mysql` and `sqlite`
+ * do not.** Not a regression — it has been true for as long as the entries
+ * existed. Engineering reproduced it on the built image; Product reproduced it
+ * on the core worktree venv. Tracked as core#865.
+ *
+ * 🚨 **`"mysql" in SUPPORTED_DESTINATION_TYPES` is TRUE and is not evidence.**
+ * That set is a *claim*; the layer beneath does not provide the capability.
+ * This is the second lookup table this month to assert something the layer
+ * below it cannot do (core#845, Redshift's SQLAlchemy dialect, same shape).
+ * The cheap discriminating check is `hasattr(dlt.destinations, "<type>")`.
+ *
+ * So do not "restore" these to `"both"` from the core constant — check the
+ * destination factory resolves. If core#865 lands, this is a two-word edit and
+ * every derived surface follows: the badge, the per-page destination lists, the
+ * counts in prose, and `/docs/architecture`'s destination list.
+ */
 export const sourceConnectors = connectors.filter((c) => c.direction !== "destination");
 export const destinationConnectors = connectors.filter((c) => c.direction !== "source");
+
+/** Databases that work in both directions. Derived — never write the number in prose. */
+export const bidirectionalConnectors = connectors.filter((c) => c.direction === "both");
 
 /**
  * Destinations dbt can actually build models in — a **strict subset** of
