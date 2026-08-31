@@ -109,6 +109,30 @@ Default dbt schema: analytics`} /></pre>
   <p>Reset by email requires a configured mail server. On an instance where <code>SMTP_HOST</code> is empty — which is the default — the <strong>Forgot your password?</strong> link is hidden, because the flow could only ever say "check your inbox" for an email that was never sent. Configure SMTP to enable it.</p>
   <p>Changing a password from <strong>Settings → Your account</strong> works with no mail server at all, so a self-hosted instance is never stuck: an administrator with access to the app can always change their own password.</p>
 
+  <h3>Changing your email address</h3>
+  <p>There is <strong>no self-service control for this yet</strong>. Your sign-in address is set at signup and cannot be edited in the product. We are building it; until then, email <a href="mailto:info@datanika.io">info@datanika.io</a> and we will change it for you.</p>
+  <p>Saying this plainly rather than leaving the Settings page to imply it: if you go looking for the control, it is not hidden somewhere you have not found — it does not exist.</p>
+
+  <h3>If you cannot receive mail at your account's address</h3>
+  <p>A typo at signup, or a work address you have since lost, puts you in the one state the product cannot get you out of on its own: password reset sends a link to an address you do not control, and there is no way to change that address yourself. The route out depends on whether you can still sign in.</p>
+  <ul>
+    <li><strong>You know your password and can sign in.</strong> You are fine — nothing about the wrong address stops you using Datanika. Email us to have the address corrected. Because you can sign in, we can confirm it is your account by asking you to make a small, specific change inside it and then observing that change.</li>
+    <li><strong>You cannot sign in either.</strong> Email us from any address, name the organization, and expect to be asked for details only an account holder would know — organization name, the names of connections or pipelines you created, and billing details if you are on a paid plan. We would rather be slow here than hand an account to the wrong person.</li>
+  </ul>
+  <p>On <strong>self-hosted</strong> instances there is no "us" — an administrator with database access changes the address directly, and an administrator who can reach the app can always change their own password from Settings.</p>
+
+  <h3>Deleting your account or your organization</h3>
+  <p>There is <strong>no delete button in the product yet</strong>. Account and organization deletion is handled by us on request: email <a href="mailto:info@datanika.io">info@datanika.io</a> and we will respond within 30 days. This is the same route described in the <a href="/privacy">privacy policy</a>, and it is the one that is live today.</p>
+  <p>What to expect when you ask:</p>
+  <ul>
+    <li><strong>Deleted:</strong> your name, email address, sign-in details, API keys and personal notification settings.</li>
+    <li><strong>Kept:</strong> billing records, for 7 years, because tax law requires it.</li>
+    <li><strong>Untouched:</strong> anything a pipeline already loaded into <em>your own</em> data warehouse. We never delete from your warehouse — that data is yours and we are only the processor for it.</li>
+    <li><strong>Backups</strong> are kept for up to 30 days and then expire. We do not edit backups, so the 30 days is the real outer bound, not the deletion itself.</li>
+  </ul>
+  <p>If you are the <strong>only owner of an organization that has other members</strong>, we will ask you to choose first: transfer ownership to someone else, or delete the organization along with your account. Deleting your account on its own would leave that organization with nobody able to administer it, so we will not do it silently.</p>
+  <p>If your organization has no other members, it is deleted with your account — its connections, pipelines, uploads, schedules and run history go with it.</p>
+
   <h3>SSO (Enterprise)</h3>
   <p>Organizations on the Enterprise plan can configure SAML or OIDC single sign-on. This allows team members to authenticate via your company's identity provider (Okta, Azure AD, Google Workspace, etc.).</p>
   <p>SSO is configured in <strong>Settings</strong> by an organization owner or admin. Each organization can have one active SSO configuration.</p>
