@@ -5,7 +5,7 @@ source: "duckdb"
 source_name: "DuckDB"
 category: "database"
 verified_by: "product-ui"
-verified_date: "2026-07-22"
+verified_date: "2026-08-31"
 related_use_cases: []
 related_comparisons:
   - "airbyte"
@@ -21,19 +21,37 @@ DuckDB is an embedded columnar analytical database — think "SQLite for analyti
 
 - A **Datanika account** with permission to create connections (Admin or Editor role).
 - A **source connection** already wired up in Datanika — PostgreSQL, Stripe, a CSV upload, anything. DuckDB is a destination here, so you need data flowing *into* it from somewhere else.
-- **Write access** to a filesystem path Datanika can reach — any directory on the container's filesystem or a mounted volume on self-hosted Datanika.
+- **A volume mounted into both the web and worker containers** on self-hosted Datanika. Not just "a path Datanika can reach" — Step 1 explains why the *both* is the whole ballgame.
 - The DuckDB Python engine is bundled with Datanika — **you do not need to install it separately**. The `duckdb` standalone CLI binary is NOT bundled; if you want one for ad-hoc inspection, install it separately from [duckdb.org/docs/installation](https://duckdb.org/docs/installation).
 
 ## Step 1 — Pick a file path
 
 DuckDB stores its entire database in a single file. You just need to decide where that file lives.
 
-1. Choose a directory inside the `app` container (or a host-mounted volume). We recommend creating a dedicated directory so the file is easy to back up and hard to accidentally `rm -rf`:
-   ```bash
-   docker exec -it datanika-app mkdir -p /var/datanika/duckdb
+🚨 **The one thing to get right: the path must be on a volume mounted into *both* the web container and the worker container.** Datanika runs them as separate containers (`app` and `celery`), and a plain directory inside one of them is invisible to the other. The **load runs in the worker**; **Models, the Data preview and the SQL Editor run in the web app**. Put the file somewhere only one of them can see and you get a run that goes green while the UI shows you nothing — and the file disappears the next time that container is replaced.
+
+1. **Add a shared volume** for it in your `docker-compose.yml`, on the web service *and* the worker:
+   ```yaml
+   services:
+     app:
+       volumes:
+         - duckdb_data:/var/datanika/duckdb
+     celery:
+       volumes:
+         - duckdb_data:/var/datanika/duckdb
+   volumes:
+     duckdb_data:
    ```
+   Then `docker compose up -d app celery`. A **named volume** (rather than a directory inside the image) is what makes the file survive a rebuild.
 2. Pick a filename that describes what's going in it, for example `analytics.duckdb` or `raw_stripe.duckdb`. Full path: `/var/datanika/duckdb/analytics.duckdb`.
-3. If you mount `/var/datanika/duckdb` as a Docker volume, the file will survive container rebuilds. If you skip the volume, the file is lost when the container is replaced — fine for local experimentation, not for anything you care about.
+3. **Check it before you go further** — the same path, from both containers:
+   ```bash
+   docker exec datanika-app    touch /var/datanika/duckdb/.probe
+   docker exec datanika-celery ls    /var/datanika/duckdb/.probe
+   ```
+   If the second command says `No such file or directory`, the volume is not shared and nothing below will work as described. Fix it here rather than debugging an empty catalog later.
+
+> ⚠️ **On Datanika Cloud this is not yet wired up** — tracked as [core#793](https://github.com/datanika-io/datanika-core/issues/793). DuckDB destinations are a self-hosted feature until it ships; on the hosted plan, use one of the credentialled warehouses.
 
 > **Zero credentials.** Unlike every other database in this list, DuckDB has no user, password, host, or port. The file path IS the connection string. This is also why DuckDB is the right choice for the "zero-credentials onboarding" story — no external account to sign up for.
 
@@ -48,7 +66,7 @@ DuckDB stores its entire database in a single file. You just need to decide wher
 
 ![Adding the DuckDB connection in Datanika](/docs/connectors/duckdb/02-add-connection.png)
 
-> **"File not found"?** On self-hosted, the parent directory must exist *before* you hit Test connection. DuckDB creates the `.duckdb` file, but it does not create parent directories. Run the `mkdir -p` from Step 1 first, then retry.
+> **"File not found"?** On self-hosted, the parent directory must exist *before* you hit Test connection. DuckDB creates the `.duckdb` file, but it does not create parent directories. Mounting the volume from Step 1 creates the directory for you; if you skipped that, this is the error it produces.
 
 ## Step 3 — Point a load at it
 
@@ -71,15 +89,18 @@ DuckDB supports schemas just like a full warehouse — they're namespaces inside
 1. On the **`/uploads`** row for your upload, click **Run**.
 2. Watch **`/runs`**. DuckDB loads are typically **fast** — seconds to minutes for anything under a few GB, because there's no network round-trip, no query planner warmup, and no cloud API rate limit.
 
-![A completed load into DuckDB in Datanika's run history](/docs/connectors/duckdb/04-first-run.png)
+![The /runs table after a load into DuckDB — a run status, which is not the same thing as data having arrived](/docs/connectors/duckdb/04-first-run.png)
 
 3. When the run finishes, open **Models** (`/models`) and browse the landed tables. Each lands in a schema **named after the upload**, and you can see column counts and last-run status directly in the Data Catalog, no SQL required.
-4. For a deeper inspection without leaving Datanika, open **SQL Editor**, point it at the DuckDB connection, and run `SHOW ALL TABLES;` or `SELECT count(*) FROM <upload_name>.<table>;`. If you'd rather drive DuckDB from outside Datanika, run the Python engine that's already in the container:
+4. **Open a table and click `Load first 100 rows`.** The **Data preview** on the model detail page runs a live `SELECT` against the DuckDB file, so it is the cheapest proof that data actually arrived. **For DuckDB this step is doing double duty**: because the web app and the worker are separate containers, an empty or missing preview after a green run is the symptom of a file only the worker can see — go back to Step 1's probe.
+5. For a deeper inspection without leaving Datanika, open **SQL Editor**, point it at the DuckDB connection, and run `SHOW ALL TABLES;` or `SELECT count(*) FROM <upload_name>.<table>;`. If you'd rather drive DuckDB from outside Datanika, run the Python engine that's already in the container:
    ```bash
    docker exec -it datanika-celery /app/.venv/bin/python -c \
      "import duckdb; con = duckdb.connect('/var/datanika/duckdb/analytics.duckdb', read_only=True); print(con.execute('SHOW ALL TABLES').fetchall())"
    ```
-   > **Use `/app/.venv/bin/python`, not `python`.** The image's system interpreter has none of the app's packages and answers `ModuleNotFoundError: No module named 'duckdb'`, which looks like a far bigger problem than it is. Run it in the **worker** (`datanika-celery`): the load happens there, so that container is the one guaranteed to see the file. Open it `read_only=True` unless you mean to write — DuckDB is single-writer, and an open handle will block the next scheduled run.
+   > **Use `/app/.venv/bin/python`, not `python`.** The image's system interpreter has none of the app's packages and answers `ModuleNotFoundError: No module named 'duckdb'`, which looks like a far bigger problem than it is. Open it `read_only=True` unless you mean to write — DuckDB is single-writer, and an open handle will block the next scheduled run.
+   >
+   > **Run it in the worker (`datanika-celery`) *and* in the web app (`datanika-app`), and expect the same answer.** The load happens in the worker, so that container definitely sees the file; the web app is where Models and the preview read it. If the two disagree, your volume is not shared — that is the Step 1 mistake, showing up three steps later.
 
 ## Step 5 — Schedule it
 
