@@ -196,6 +196,15 @@ describe("source/destination split in prose matches src/data/connectors.ts (#376
         "exempted for the total above, for the same reason.",
     },
     {
+      file: "src/content/blog/32-connectors-most-took-a-day.md",
+      text: "11 destinations",
+      reason:
+        "Same sentence as the '27 sources' entry above, exempted for the same reason: a " +
+        "dated snapshot of the catalogue as it stood when the post was written. MySQL and " +
+        "SQLite left the destination set on 2026-09-01 (core#865) and the count is now 9; " +
+        "the post is narrative about the past, so it keeps its own numbers.",
+    },
+    {
       file: "src/content/blog/real-cost-modern-data-stack.md",
       text: "10 sources",
       reason:

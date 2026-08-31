@@ -6,7 +6,11 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync, existsSync, readdirSync } from "fs";
 import { resolve } from "path";
-import { connectors, transformationDestinationConnectors } from "../src/data/connectors";
+import {
+  connectors,
+  destinationConnectors,
+  transformationDestinationConnectors,
+} from "../src/data/connectors";
 
 const DIST = resolve(__dirname, "../dist");
 const BLOG_SRC = resolve(__dirname, "../src/content/blog");
@@ -199,16 +203,25 @@ describe("docs pages cross-link service connectors (#117)", () => {
     expect(links.size).toBe(5);
   });
 
-  it("/docs/architecture links to all 11 destination connectors", () => {
-    // Filter: direction !== "source". Currently 6 databases + 5 cloud
-    // warehouses = 11. If connectors.ts grows a new destination type (e.g.,
-    // Motherduck), this count changes and the test will flag it.
+  it("/docs/architecture links to every destination connector", () => {
+    // Derived, not written down. This asserted a hardcoded 11 and would have
+    // had to be hand-edited when MySQL and SQLite left the destination set
+    // (core#865) — a second copy of a number the data file already states, and
+    // the same defect this file carried for /docs/transformations.
     const html = readHtml("docs/architecture/index.html");
     const links = uniqueConnectorLinks(html);
     expect(
       links.size,
-      `/docs/architecture should link all destination connectors`
-    ).toBe(11);
+      `/docs/architecture should link all ${destinationConnectors.length} destination connectors`
+    ).toBe(destinationConnectors.length);
+    // The half with teeth: a connector that cannot receive data must not be
+    // listed here as somewhere dlt can write.
+    for (const slug of ["mysql", "sqlite"]) {
+      expect(
+        links.has(`href="/connectors/${slug}"`),
+        `/docs/architecture lists /connectors/${slug} as a destination; dlt has no ${slug} destination (core#865)`
+      ).toBe(false);
+    }
     // Sanity: must include the cloud warehouses by name.
     for (const slug of ["bigquery", "snowflake", "redshift", "databricks", "synapse"]) {
       expect(
