@@ -134,6 +134,6 @@ Schedules live on their own page and reference the upload **by name**.
 
 - **Use cases:** Pair SQLite with [DuckDB as destination](/docs/connectors/duckdb) for a fully zero-credentials pipeline, or with [PostgreSQL](/docs/connectors/postgresql) for a production warehouse.
 - **Docs:** [Connections](/docs/connections), [Pipelines](/docs/pipelines), [Self-Hosting](/docs/self-hosting) — the self-hosting guide covers Docker bind mounts in detail.
-- **Transformations:** dbt-on-SQLite works for small projects via `dbt-sqlite`, but most users load SQLite into a bigger warehouse first and transform there. See the [Transformations guide](/docs/transformations-guide).
+- **Transformations:** SQLite is **not** a transformation target — Datanika ships no SQLite dbt adapter, so a pipeline or transformation cannot run against a `.db` file. Load SQLite into a warehouse and transform there; see [the destinations dbt can build in](/docs/transformations) and the [Transformations guide](/docs/transformations-guide).
 - **Comparisons:** [Datanika vs Airbyte](/compare/airbyte), [Datanika vs Fivetran](/compare/fivetran) — neither supports SQLite files as a first-class source at time of writing, which is why this guide exists.
 - **Connector reference:** full field-by-field [SQLite connector spec](/connectors/sqlite).

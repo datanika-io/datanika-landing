@@ -14,9 +14,11 @@ related_comparisons:
 draft: false
 ---
 
-MySQL is one of the most common operational databases our users sync into their warehouse. It works as both a source (extract data from MySQL) and a destination (load data into MySQL). This guide covers the most common use case: extracting data from MySQL into a cloud warehouse.
+MySQL is one of the most common operational databases our users sync into their warehouse. It works as both a source (extract data from MySQL) and a load destination (land data into MySQL). This guide covers the most common use case: extracting data from MySQL into a cloud warehouse.
 
-> **MySQL works as source AND destination.** Datanika auto-detects the direction. This guide focuses on MySQL as a *source*. If you're loading data *into* MySQL, the same connection works — just select MySQL as the destination when configuring a pipeline.
+> **MySQL works as a source and as a load destination.** Datanika auto-detects the direction. This guide focuses on MySQL as a *source*. To load data *into* MySQL, the same connection works — pick it as the **Destination connection** on an upload at `/uploads` (Step 3 below).
+
+> **MySQL is not a transformation target.** `/pipelines` and `/transformations` run [dbt](https://www.getdbt.com), and no maintained dbt adapter for MySQL exists — the only one ever published was last released in April 2024 and pins dbt-core 1.7. So you can extract *from* MySQL and land data *in* MySQL, but you cannot run dbt models, tests or snapshots *against* a MySQL database. Transform in a warehouse instead: PostgreSQL, SQL Server, ClickHouse, DuckDB, BigQuery, Snowflake and Redshift are all [supported dbt targets](/docs/transformations).
 
 ## Prerequisites
 
@@ -107,5 +109,5 @@ Schedules live on their own page and reference the upload **by name**.
 
 - **Use cases:** [MySQL → BigQuery](/use-cases/mysql-to-bigquery)
 - **Comparisons:** [Datanika vs Fivetran](/compare/fivetran), [Datanika vs Airbyte](/compare/airbyte)
-- **dbt tips:** [Transformations guide](/docs/transformations-guide)
+- **dbt tips:** [Transformations guide](/docs/transformations-guide) — for models you build in the warehouse you loaded into, not in MySQL itself
 - **Connector reference:** [MySQL connector spec](/connectors/mysql)
