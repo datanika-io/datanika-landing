@@ -618,9 +618,14 @@ describe("controls: the matchers are not inert", () => {
   it("every legal page was actually read", () => {
     // A bad path or a renamed route would make every sweep above pass on an
     // empty string.
+    //
+    // 800 is chosen against the measured floor, not guessed: /refund is the
+    // shortest legal page at 1095 characters of body text (it is a five-section
+    // policy). A threshold above that fails on correct copy, which is how a
+    // guard gets deleted rather than fixed.
     for (const p of LEGAL) {
-      expect(p.text.length, `${p.route} main body is empty`).toBeGreaterThan(1500);
-      expect(p.mainHtml.length, `${p.route} has no <main>`).toBeGreaterThan(1500);
+      expect(p.text.length, `${p.route} main body is empty`).toBeGreaterThan(800);
+      expect(p.mainHtml.length, `${p.route} has no <main>`).toBeGreaterThan(1000);
     }
   });
 });
