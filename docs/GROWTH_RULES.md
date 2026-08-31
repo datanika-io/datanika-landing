@@ -112,7 +112,51 @@ editing for a new untracked one.
 teams should still pick managed" and the verb in "would rather not run infrastructure." Narrow to the
 quantitative use, keep an ALLOWED list with reasons, and test that no exemption has gone stale.
 
+**A guard's scope should be derived from the artifact, never listed by hand.** The `/terms` gap was
+not a wrong assertion — `legal-pages-facts.test.ts` was correct about everything it checked. It named
+two pages in a hardcoded map, so `/terms` and `/refund` were never in the net, and `/terms` carried V1
+"model run overages" *and* a `Starter` plan that never existed for four months with every build green
+(#410, #416). Adding `/terms` to a list of two produces a list of three and leaves `/refund` out.
+`legal-pages-commercial-claims.test.ts` instead selects pages by an intrinsic property — a dated
+revision marker (`Last updated` / `Change log`) inside `<main>` — which picks exactly the four policy
+documents out of 160 built routes, and fails when a fifth appears that no guard covers. **Ask what
+makes the members of your set members, and test for that.**
+
+**A short word inside a longer word is a false positive waiting to happen.** `/overages?/` matches
+inside **"c-overage"**, so a sweep for billing language flagged `/trust`'s sentence about `wrong_org
+coverage in every service test module` — a page with nothing to do with billing. Measured: 1 window on
+`/trust` before word boundaries, 0 after, `/terms` unchanged at 5. A guard that cries wolf on correct
+copy gets deleted rather than fixed, so the false-positive rate is a correctness property, not a
+polish item. Pin the real sentences that **must not** match as controls — here `Standard Contractual
+Clauses` and `Resend (Plus Five Five, Inc.)`, both of which a bare tier-name ban would have flagged.
+
+**A count that includes site chrome measures the chrome.** Checking that `/terms` links to `/pricing`
+returns 2 matches — on **every page on the site**, because the navbar and the footer both link it. A
+document-level assertion of `>= 1` therefore passes on a page that deleted the reference entirely.
+Scoped to `<main>`: `/terms` 1, `/privacy` 0, `/trust` 0, `/refund` 0. **Before asserting a count, ask
+what it reads on a page you know is wrong.**
+
+**Calibrate a floor against the measured minimum, not a round number.** A "the page was actually read"
+control set at 1500 characters failed on `/refund`, a legitimate 1095-character five-section policy. A
+floor above the real minimum fails on healthy copy; a floor far below it passes on a broken read.
+Measure the smallest true member of the set first.
+
+**An existence check is not a parity check.** The dev.to cross-poster's gate 1 proves the canonical URL
+returns 200. It does not prove the canonical *serves the text being syndicated* — landing `dev` runs
+ahead of `main`, so a post edited since the last promotion would publish under a `canonical_url`
+asserting two different documents are one. It bites hardest in the case you most want to syndicate: a
+post carrying a **correction**, published while the canonical still serves the false claim. Now gate 5
+in `devto_crosspost.py`, a `git diff` against `origin/main`, shown failing before it was trusted.
+
 ## Claims and evidence
+
+**A count of word hits is a flag, not a finding.** `open-core-plugin` was carried in the handoff as
+"23 pricing hits — read it before it goes anywhere". Reading it: one architectural table row (`Usage
+ledger + hourly overage sync`), one correct `Free / Pro / Enterprise` mention, and two links to
+`/pricing`. No rate, no unenforced claim — the 23 was a broad `pricing|price|plan|tier|paid|free|cloud`
+sweep. Same lesson as the dev.to anchor count that would not reproduce under any method: **state the
+method with the number, or the next reader inherits a figure they cannot check and must either trust
+it or redo the work.**
 
 **An issue naming one instance of a false claim is a sample, not an inventory.** Four times in one
 month: Hetzner in six statements across two pages when the issue named the host; SOC 2 in four files
