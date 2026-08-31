@@ -52,8 +52,11 @@ export const connectors: Connector[] = [
     slug: "mysql",
     name: "MySQL",
     category: "Database",
-    direction: "both",
-    description: "Connect to MySQL 5.7+ or MariaDB as a source or destination. Extract full databases or individual tables with incremental loading support.",
+    // Source-only. Corrected 2026-09-01 — see the `direction` note above
+    // `sourceConnectors`. It was "both" and dlt has never had a mysql
+    // destination (core#865).
+    direction: "source",
+    description: "Connect to MySQL 5.7+ or MariaDB as a source. Extract full databases or individual tables with incremental loading support.",
     useCases: [
       "Migrate MySQL data to a cloud warehouse",
       "Replicate e-commerce MySQL databases for reporting",
@@ -66,6 +69,10 @@ export const connectors: Connector[] = [
       { name: "database", description: "Database name" },
       { name: "user", description: "Username" },
       { name: "password", description: "Password (encrypted at rest)" },
+    ],
+    limitations: [
+      "Extract only — MySQL cannot receive data. It is not a load destination: an upload that targets MySQL fails with an unhandled AttributeError, because dlt has no MySQL destination and never has. This was advertised for as long as the entry existed; it is absent, not degraded, and there is no configuration that works around it. Tracked as core#865.",
+      "Not available as a dbt transformation target. Pipelines and transformations run dbt, and no maintained dbt adapter for MySQL exists — the only one ever published was last released in April 2024 and pins dbt-core 1.7, which held back security updates across the rest of the stack. Extract from MySQL into a warehouse and transform there: PostgreSQL, SQL Server, ClickHouse, DuckDB, BigQuery, Snowflake and Redshift are all dbt targets. Tracked as core#825.",
     ],
     related: ["postgresql", "bigquery", "snowflake", "mssql"],
     seoTitle: "MySQL ETL Tool — Database Pipeline | Datanika",
@@ -100,15 +107,20 @@ export const connectors: Connector[] = [
     slug: "sqlite",
     name: "SQLite",
     category: "Database",
-    direction: "both",
-    description: "Connect to local SQLite database files. Useful for extracting data from embedded applications or using as a lightweight destination for development.",
+    // Source-only. Same correction and same cause as MySQL (core#865).
+    direction: "source",
+    description: "Connect to local SQLite database files as a source. Useful for extracting data from embedded applications and desktop or mobile app databases.",
     useCases: [
       "Extract data from mobile or embedded app databases",
-      "Use as a lightweight local destination for testing",
       "Migrate SQLite data to a production database",
+      "Pull a desktop application's local store into a warehouse",
     ],
     configFields: [
       { name: "path", description: "Path to the SQLite database file" },
+    ],
+    limitations: [
+      "Extract only — SQLite cannot receive data. It is not a load destination: an upload that targets a SQLite file fails with an unhandled AttributeError, because dlt has no SQLite destination. Advertised for as long as the entry existed; absent, not degraded. Tracked as core#865.",
+      "Not available as a dbt transformation target either. No SQLite dbt adapter ships in Datanika, so a pipeline or transformation cannot run against a SQLite file. Extract into a warehouse and transform there. Tracked as core#862.",
     ],
     related: ["postgresql", "duckdb", "mysql"],
     seoTitle: "SQLite Data Export & Pipeline | Datanika",
@@ -267,9 +279,8 @@ export const connectors: Connector[] = [
     description: "Connect to Databricks Lakehouse using a personal access token and load data into Delta tables. Databricks is a destination in Datanika, not a source.",
     useCases: [
       "Load data into Databricks Delta Lake",
-      "Build a lakehouse architecture with dlt + dbt",
       "Sync SaaS data into Databricks for ML workflows",
-      "Run dbt transformations on Databricks SQL",
+      "Consolidate PostgreSQL, MySQL and SaaS sources into one lakehouse",
     ],
     configFields: [
       { name: "host", description: "Databricks workspace host" },
@@ -277,9 +288,12 @@ export const connectors: Connector[] = [
       { name: "token", description: "Personal access token (encrypted at rest)" },
       { name: "catalog", description: "Unity Catalog name" },
     ],
+    limitations: [
+      "Not available as a dbt transformation target. Databricks works as a load destination — dlt writes into Delta tables — but no Databricks dbt adapter ships in Datanika: dbt-databricks requires SQLAlchemy 1.x and the rest of the stack is on 2.x. So a pipeline or transformation cannot run against a Databricks workspace. Tracked as core#862.",
+    ],
     related: ["snowflake", "bigquery", "s3", "redshift"],
     seoTitle: "Databricks Data Ingestion | Datanika",
-    seoDescription: "Load data into Databricks Delta Lake from PostgreSQL, Stripe, S3, and 30+ sources. Built-in dbt transforms and scheduling. Self-hostable. Start free today.",
+    seoDescription: "Load data into Databricks Delta Lake from PostgreSQL, Stripe, S3, and 30+ sources. Incremental sync, monitoring and scheduling built in. Start free today.",
     seoH1: "Databricks Data Ingestion",
   },
   {
@@ -291,7 +305,6 @@ export const connectors: Connector[] = [
     useCases: [
       "Build an Azure-centric analytics platform",
       "Load data from on-premise SQL Server to Synapse",
-      "Run dbt transformations on Synapse",
       "Centralize Microsoft ecosystem data",
     ],
     configFields: [
@@ -301,9 +314,12 @@ export const connectors: Connector[] = [
       { name: "user", description: "Username" },
       { name: "password", description: "Password (encrypted at rest)" },
     ],
+    limitations: [
+      "Not available as a dbt transformation target. Synapse works as a load destination, but no Synapse dbt adapter ships in Datanika: dbt-synapse requires SQLAlchemy 1.x and the rest of the stack is on 2.x. So a pipeline or transformation cannot run against a Synapse pool. Tracked as core#862.",
+    ],
     related: ["mssql", "bigquery", "snowflake", "redshift"],
     seoTitle: "Azure Synapse ETL — Data Pipeline | Datanika",
-    seoDescription: "Azure Synapse ETL tool to load data from SQL Server, PostgreSQL, and 30+ other sources. Built-in dbt transforms and scheduling. Self-hostable. Start free.",
+    seoDescription: "Azure Synapse ETL tool to load data from SQL Server, PostgreSQL, and 30+ other sources. Incremental sync and scheduling built in. Self-hostable. Start free.",
     seoH1: "Azure Synapse ETL",
   },
 
@@ -873,8 +889,85 @@ export const connectors: Connector[] = [
  * interface declares `direction: "source" | "destination" | "both"` and that
  * line matches, so the grep returns 26 for 25 source-only entries.
  */
+/**
+ * ⚠️ **`direction` states what WORKS, not what the catalogue intends.**
+ *
+ * MySQL and SQLite were `"both"` until 2026-09-01 and are now `"source"`.
+ * `dlt.destinations` has **no `mysql` and no `sqlite` attribute**, so
+ * `DltRunner.build_destination` — an unconditional
+ * `getattr(dlt.destinations, connection_type)` — raises:
+ *
+ *     AttributeError: module 'dlt.destinations' has no attribute 'mysql'.
+ *                     Did you mean: 'mssql'?
+ *
+ * Measured against dlt 1.21.0 across **all eleven** advertised destinations,
+ * with a control name that must not resolve: **9 resolve, `mysql` and `sqlite`
+ * do not.** Not a regression — it has been true for as long as the entries
+ * existed. Engineering reproduced it on the built image; Product reproduced it
+ * on the core worktree venv. Tracked as core#865.
+ *
+ * 🚨 **`"mysql" in SUPPORTED_DESTINATION_TYPES` is TRUE and is not evidence.**
+ * That set is a *claim*; the layer beneath does not provide the capability.
+ * This is the second lookup table this month to assert something the layer
+ * below it cannot do (core#845, Redshift's SQLAlchemy dialect, same shape).
+ * The cheap discriminating check is `hasattr(dlt.destinations, "<type>")`.
+ *
+ * So do not "restore" these to `"both"` from the core constant — check the
+ * destination factory resolves. If core#865 lands, this is a two-word edit and
+ * every derived surface follows: the badge, the per-page destination lists, the
+ * counts in prose, and `/docs/architecture`'s destination list.
+ */
 export const sourceConnectors = connectors.filter((c) => c.direction !== "destination");
 export const destinationConnectors = connectors.filter((c) => c.direction !== "source");
+
+/** Databases that work in both directions. Derived — never write the number in prose. */
+export const bidirectionalConnectors = connectors.filter((c) => c.direction === "both");
+
+/**
+ * Destinations dbt can actually build models in — a **strict subset** of
+ * `destinationConnectors`, and the two must never be conflated.
+ *
+ * `direction` describes the **dlt load** layer: whether data can be written
+ * into that system. dbt is a separate layer with a separate requirement — an
+ * installed adapter — and eleven destinations do not mean eleven dbt targets.
+ * `/docs/architecture` asserted they were the same set for months ("the dbt
+ * transformation layer runs against the same destination"), which was already
+ * false for SQLite, Databricks and Synapse before core#825 removed MySQL.
+ *
+ * ⚠️ **The slug list below is HARDCODED on purpose. Do not derive it from
+ * `direction` or `category`.** This repo has no view of which dbt adapters the
+ * core image installs, so a filter written here would compute a claim about
+ * core's dependency tree that landing cannot check — the #391 failure mode,
+ * where binding a published claim to landing's own belief turns a visible
+ * mismatch into a coherent, machine-readable assertion of something untrue and
+ * every self-consistency guard stays green.
+ *
+ * Source of truth: `SUPPORTED_ADAPTERS` in datanika-core
+ * `datanika/services/dbt_project.py`, **intersected with the adapters the image
+ * actually installs** — those two disagree, which is core#862. Measured
+ * 2026-08-31 with `importlib.util.find_spec` against the core venv on
+ * `origin/dev`:
+ *
+ *   installed  postgres · mysql · sqlserver · clickhouse · duckdb · bigquery ·
+ *              snowflake · redshift
+ *   missing    sqlite · databricks · synapse
+ *
+ * `mysql` is omitted below because core#825 removes `dbt-mysql`; MySQL remains
+ * a fully supported **source** and **load destination**. Re-measure before
+ * editing this list — do not assume it is still current.
+ */
+const DBT_TARGET_SLUGS = [
+  "postgresql",
+  "mssql",
+  "clickhouse",
+  "duckdb",
+  "bigquery",
+  "snowflake",
+  "redshift",
+];
+export const transformationDestinationConnectors = connectors.filter((c) =>
+  DBT_TARGET_SLUGS.includes(c.slug),
+);
 
 /**
  * The badge label for a connector's direction. **Three states, not two.**

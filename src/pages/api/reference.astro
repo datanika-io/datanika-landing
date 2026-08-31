@@ -483,17 +483,27 @@ Content-Type: application/json
     </tbody>
   </table>
   <p>The limit is per key, not per organization — two keys get two independent budgets.</p>
-  <p>A second, per-second ceiling runs alongside the per-minute limit to absorb bursts. It is the same on every plan, so it is not a tier dimension; exceeding it returns the same <code>429</code> with <code>Retry-After: 1</code>.</p>
+  <p>A second limit runs alongside it: a <strong>per-second ceiling</strong>, applied to the same key in a fixed one-second window. It is the same on every plan, so it is not a tier dimension — which also means it does not grow when your per-minute allowance does. In practice it is the limit most callers meet first, so it is worth designing around before the per-minute one.</p>
   <p>Self-hosted (core edition) defaults to 60 requests/minute, configurable via <code>API_RATE_LIMIT_RPM</code> and <code>API_RATE_LIMIT_BURST</code> environment variables.</p>
+
+  <h3 id="pacing">Pacing your requests</h3>
+  <p>Your per-minute allowance is a <em>rate</em>, not a bucket you may drain at once. Because the per-second ceiling is identical on every plan while the per-minute allowance is not, the room to burst <em>relative to what your plan buys</em> shrinks as the plan grows: a Free key can spend most of its minute in one go, an Enterprise key cannot come close. Upgrading raises the allowance; it does not raise the ceiling.</p>
+  <p><strong>The rule that holds on every plan: spread requests evenly.</strong> Send at most one request every <code>60 ÷ (your plan's requests per minute)</code> seconds — 2s on Free, 0.5s on Pro, 0.2s on Enterprise. We measured each tier issuing its entire published allowance at that spacing: zero rejections on all three plans. Even pacing needs no knowledge of the ceiling, which is why we give you the rule rather than the number.</p>
+  <p><strong>Size concurrency against the ceiling, not the allowance.</strong> The per-second ceiling is what bounds how many requests you may have in flight at once, so a worker pool sized from "requests per minute" will be throttled with most of that allowance still unspent. If you fan out across workers, throttle the pool as a whole rather than each worker independently.</p>
+  <p>We deliberately do not print the ceiling as a figure here. It is an operational setting (<code>API_RATE_LIMIT_BURST</code>), not a plan entitlement, and a number on this page would be a commitment we have not made — the per-plan burst column this section used to carry was exactly that mistake. Pace evenly and you do not need it.</p>
+
+  <h3 id="which-limit">Telling the two limits apart</h3>
+  <p>Both return <code>429</code>, and both report your <em>per-minute</em> allowance — which is worth knowing before you debug one. A per-second rejection still sends <code>X-RateLimit-Limit: 300</code> and <code>Rate limit exceeded (300 requests/minute)</code> even if you have sent only a dozen requests all minute. That number is your plan's allowance, not the limit that rejected the request.</p>
+  <p><code>Retry-After</code> is what separates them. A per-second rejection sets <code>Retry-After: 1</code> and moves <code>X-RateLimit-Reset</code> one second ahead; a per-minute rejection points at the end of the current 60-second window. (The two coincide only in the final second of a window, when the per-minute limit also resets in one second.) So on <code>Retry-After: 1</code>: wait a second and resume more slowly. Do not idle for a full window, and do not assume the minute is exhausted — it usually is not.</p>
 
   <h3>Rate limit headers</h3>
   <p>Every API response includes rate limit headers:</p>
   <table>
     <thead><tr><th>Header</th><th>Description</th></tr></thead>
     <tbody>
-      <tr><td><code>X-RateLimit-Limit</code></td><td>Maximum requests allowed per minute</td></tr>
-      <tr><td><code>X-RateLimit-Remaining</code></td><td>Requests remaining in current window</td></tr>
-      <tr><td><code>X-RateLimit-Reset</code></td><td>Unix timestamp when the window resets</td></tr>
+      <tr><td><code>X-RateLimit-Limit</code></td><td>Your plan's per-minute allowance. Reported on every response, <em>including</em> a per-second rejection — see <a href="#which-limit">Telling the two limits apart</a></td></tr>
+      <tr><td><code>X-RateLimit-Remaining</code></td><td>Requests remaining in the current minute</td></tr>
+      <tr><td><code>X-RateLimit-Reset</code></td><td>Unix timestamp when the window resets — one second ahead on a per-second rejection</td></tr>
       <tr><td><code>Retry-After</code></td><td>Seconds to wait before retrying (only on <code>429</code> responses)</td></tr>
     </tbody>
   </table>
@@ -511,11 +521,24 @@ X-RateLimit-Reset: 1711929600
 }`} /></pre>
   <p>The number in <code>X-RateLimit-Limit</code> and in the error message is your plan's limit — 30 above, because that response came from a Free-plan key.</p>
 
+  <p>A per-second rejection looks almost the same, and the difference is the part worth reading:</p>
+  <pre><code set:html={`HTTP/1.1 429 Too Many Requests
+Retry-After: 1
+X-RateLimit-Limit: 300
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 1711929541
+
+{
+  "error": "Rate limit exceeded (300 requests/minute). Retry after 1 seconds."
+}`} /></pre>
+  <p>That is an Enterprise key that sent too many requests inside a single second. It has spent a small fraction of its 300/minute allowance, and the message names the allowance anyway, because the allowance is what your plan sets — not what rejected this request. <code>Retry-After: 1</code> is the tell. See <a href="#pacing">Pacing your requests</a>.</p>
+
   <h3>Best practices</h3>
   <ul>
+    <li><strong>Pace evenly</strong> — one request per <code>60 ÷ (requests per minute)</code> seconds, rather than issuing a minute's allowance at once. See <a href="#pacing">Pacing your requests</a></li>
+    <li><strong>Throttle a worker pool as a whole</strong>, not each worker — concurrency is bounded by the per-second ceiling, not by your per-minute allowance</li>
     <li>Cache responses when possible to reduce API calls</li>
-    <li>Use exponential backoff when receiving <code>429</code> responses</li>
-    <li>Respect the <code>Retry-After</code> header before retrying</li>
+    <li>Honour <code>Retry-After</code> first — on <code>Retry-After: 1</code> you need to slow down, not stand down. Reserve exponential backoff for rejections that continue <em>after</em> you have already dropped to the rate the header asks for</li>
     <li>Use separate API keys for different integrations to get independent rate limits</li>
   </ul>
 

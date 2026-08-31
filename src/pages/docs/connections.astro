@@ -40,11 +40,19 @@ const byCategory = categoryOrder.map((category) => ({
     <thead><tr><th>Type</th><th>Notes</th></tr></thead>
     <tbody>
       <tr><td><code>postgres</code></td><td>PostgreSQL 12+</td></tr>
-      <tr><td><code>mysql</code></td><td>MySQL 5.7+</td></tr>
       <tr><td><code>mssql</code></td><td>SQL Server 2016+</td></tr>
-      <tr><td><code>sqlite</code></td><td>Local SQLite files</td></tr>
       <tr><td><code>clickhouse</code></td><td>ClickHouse 21+ (supports clustered ReplicatedMergeTree)</td></tr>
       <tr><td><code>duckdb</code></td><td>DuckDB (embedded analytics)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Databases (source only)</h3>
+  <table>
+    <thead><tr><th>Type</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><code>mysql</code></td><td>MySQL 5.7+ / MariaDB. Extract only — <a href="/connectors/mysql">not a destination</a>.</td></tr>
+      <tr><td><code>sqlite</code></td><td>Local SQLite files. Extract only — <a href="/connectors/sqlite">not a destination</a>.</td></tr>
+      <tr><td><code>oracle</code></td><td>Oracle Database. Extract only.</td></tr>
     </tbody>
   </table>
 

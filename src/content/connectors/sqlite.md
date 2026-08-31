@@ -13,9 +13,9 @@ related_comparisons:
 draft: false
 ---
 
-SQLite is the embedded database you already have. Mobile apps, desktop apps, browsers, IoT devices, Django and Rails dev environments, even the Datanika CLI itself — all of them store data in a single `.sqlite` / `.db` / `.sqlite3` file. When you want to get that data into a real warehouse for reporting, Datanika treats the file as a first-class source: point at the path, pick your tables, run. This guide walks through using SQLite as a **source** — the most common direction by far.
+SQLite is the embedded database you already have. Mobile apps, desktop apps, browsers, IoT devices, Django and Rails dev environments, even the Datanika CLI itself — all of them store data in a single `.sqlite` / `.db` / `.sqlite3` file. When you want to get that data into a real warehouse for reporting, Datanika treats the file as a first-class source: point at the path, pick your tables, run. This guide walks through using SQLite as a **source**, which is the only supported direction: SQLite cannot receive data.
 
-> **Looking for the connector spec?** This is the hands-on setup guide. For the full field-by-field reference — supported SQLite versions, WAL mode, type affinity, and SQLite-as-destination notes — see the [SQLite connector page](/connectors/sqlite).
+> **Looking for the connector spec?** This is the hands-on setup guide. For the full field-by-field reference — supported SQLite versions, WAL mode, type affinity, and the current limitations — see the [SQLite connector page](/connectors/sqlite).
 
 ## Prerequisites
 
@@ -134,6 +134,7 @@ Schedules live on their own page and reference the upload **by name**.
 
 - **Use cases:** Pair SQLite with [DuckDB as destination](/docs/connectors/duckdb) for a fully zero-credentials pipeline, or with [PostgreSQL](/docs/connectors/postgresql) for a production warehouse.
 - **Docs:** [Connections](/docs/connections), [Pipelines](/docs/pipelines), [Self-Hosting](/docs/self-hosting) — the self-hosting guide covers Docker bind mounts in detail.
-- **Transformations:** dbt-on-SQLite works for small projects via `dbt-sqlite`, but most users load SQLite into a bigger warehouse first and transform there. See the [Transformations guide](/docs/transformations-guide).
+- **Not a destination:** Datanika cannot write *into* a SQLite file. An upload that targets SQLite fails with an unhandled error — the load layer (dlt) has no SQLite destination, despite SQLite having been listed as one. Absent, not degraded. Tracked as [core#865](https://github.com/datanika-io/datanika-core/issues/865).
+- **Transformations:** SQLite is **not** a transformation target — Datanika ships no SQLite dbt adapter, so a pipeline or transformation cannot run against a `.db` file. Load SQLite into a warehouse and transform there; see [the destinations dbt can build in](/docs/transformations) and the [Transformations guide](/docs/transformations-guide).
 - **Comparisons:** [Datanika vs Airbyte](/compare/airbyte), [Datanika vs Fivetran](/compare/fivetran) — neither supports SQLite files as a first-class source at time of writing, which is why this guide exists.
 - **Connector reference:** full field-by-field [SQLite connector spec](/connectors/sqlite).

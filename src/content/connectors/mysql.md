@@ -14,9 +14,16 @@ related_comparisons:
 draft: false
 ---
 
-MySQL is one of the most common operational databases our users sync into their warehouse. It works as both a source (extract data from MySQL) and a destination (load data into MySQL). This guide covers the most common use case: extracting data from MySQL into a cloud warehouse.
+MySQL is one of the most common operational databases our users sync into their warehouse. This guide covers exactly that: extracting data from MySQL into a cloud warehouse.
 
-> **MySQL works as source AND destination.** Datanika auto-detects the direction. This guide focuses on MySQL as a *source*. If you're loading data *into* MySQL, the same connection works — just select MySQL as the destination when configuring a pipeline.
+> **MySQL is an extract source. It cannot receive data.** Pick MySQL as the **Source connection** on an upload and land the rows in a warehouse — PostgreSQL, BigQuery, Snowflake, Redshift, ClickHouse, DuckDB or SQL Server. That is the whole supported shape, and the rest of this guide walks it.
+
+> **What MySQL is not, so you do not discover it on a failed run:**
+>
+> - **Not a load destination.** Datanika cannot write *into* MySQL. An upload that targets MySQL fails with an unhandled error, because the load layer ([dlt](https://dlthub.com)) has no MySQL destination — and never has, despite MySQL having been listed as one. It is absent, not degraded: there is no setting that makes it work. Tracked as [core#865](https://github.com/datanika-io/datanika-core/issues/865).
+> - **Not a transformation target.** `/pipelines` and `/transformations` run [dbt](https://www.getdbt.com), and no maintained dbt adapter for MySQL exists — the only one ever published was last released in April 2024 and pins dbt-core 1.7. Transform in the warehouse you loaded into; see [the destinations dbt can build in](/docs/transformations).
+>
+> Extraction is unaffected by either, and is what this guide is about.
 
 ## Prerequisites
 
@@ -107,5 +114,5 @@ Schedules live on their own page and reference the upload **by name**.
 
 - **Use cases:** [MySQL → BigQuery](/use-cases/mysql-to-bigquery)
 - **Comparisons:** [Datanika vs Fivetran](/compare/fivetran), [Datanika vs Airbyte](/compare/airbyte)
-- **dbt tips:** [Transformations guide](/docs/transformations-guide)
+- **dbt tips:** [Transformations guide](/docs/transformations-guide) — for models you build in the warehouse you loaded into, not in MySQL itself
 - **Connector reference:** [MySQL connector spec](/connectors/mysql)

@@ -1,18 +1,19 @@
 ---
 import DocsLayout from "../../layouts/DocsLayout.astro";
 import RelatedConnectors from "../../components/RelatedConnectors.astro";
-import { connectors } from "../../data/connectors";
+import { transformationDestinationConnectors } from "../../data/connectors";
 
-// Warehouses where dbt can materialize models. Filter is derived from the
-// data file: every non-source-only connector in the Cloud Warehouse category,
-// plus ClickHouse (which ships under "Database" because it's an OLAP DB but
-// supports materialized destinations for analytics workloads the same way).
-// Synapse is included because dbt-synapse supports materializations.
-const transformationDestinations = connectors.filter(
-  (c) =>
-    c.direction !== "source" &&
-    (c.category === "Cloud Warehouse" || c.slug === "clickhouse")
-);
+// The list is maintained in the data file, with the measurement and its date —
+// see `transformationDestinationConnectors`. It is deliberately NOT computed
+// from `direction`/`category` here.
+//
+// The previous filter was `direction !== "source" && (category === "Cloud
+// Warehouse" || slug === "clickhouse")`, and it was wrong in both directions at
+// once. It **omitted PostgreSQL, SQL Server and DuckDB**, which are installed,
+// working dbt adapters — Postgres being the target used in every example on
+// this site. And it **included Databricks and Synapse**, whose adapters are not
+// installed at all (dbt-databricks and dbt-synapse both need SQLAlchemy 1.x).
+// A category is not an adapter; only the adapter set answers this question.
 ---
 
 <DocsLayout title="Transformations">
@@ -99,8 +100,8 @@ Tests:
   <p>Install community dbt packages (e.g., <code>dbt_utils</code>, <code>dbt_date</code>) to extend your transformations with reusable macros and tests. Manage packages through the UI — Datanika handles <code>packages.yml</code> and <code>dbt deps</code> automatically.</p>
 
   <RelatedConnectors
-    heading="Warehouses for dbt transformations"
-    description="Datanika runs dbt against any of these destinations. Each supports materialized models (table, view, incremental) and the full dbt macro set."
-    connectors={transformationDestinations}
+    heading="Destinations dbt can build in"
+    description="A transformation or pipeline can only run against one of these — each ships a dbt adapter and supports materialized models (table, view, incremental) plus the full dbt macro set. Datanika loads data into more destinations than it can transform in: Databricks and Synapse accept loaded data through an upload but cannot be a transformation target. MySQL and SQLite are neither — they are extract sources only. Load into a destination below, and transform there."
+    connectors={transformationDestinationConnectors}
   />
 </DocsLayout>

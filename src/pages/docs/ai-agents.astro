@@ -170,7 +170,8 @@ Content-Type: application/json
       <tr><td>Enterprise</td><td>300</td></tr>
     </tbody>
   </table>
-  <p>Counted per API key in a fixed 60-second window, so an agent on the Free plan gets roughly one call every two seconds sustained. A per-second burst ceiling runs alongside it and is the same on every plan.</p>
+  <p>Counted per API key in a fixed 60-second window, so an agent gets roughly one sustained call every <code>60 ÷ (requests per minute)</code> seconds — two seconds on Free, half a second on Pro, a fifth of a second on Enterprise. A per-second ceiling runs alongside it and is the same on every plan, so it does not rise with your tier.</p>
+  <p>That matters most for agents, because agents fan out. An agent issuing tool calls in parallel is bounded by the per-second ceiling rather than by its per-minute allowance, and will be throttled with most of that allowance unspent — the larger the plan, the sooner. Pace the agent as a whole rather than per worker; <a href="/api/reference#pacing">Pacing your requests</a> has the rule and how to tell the two limits apart from a <code>429</code>.</p>
   <p>Rate limit headers (<code>X-RateLimit-Remaining</code>, <code>Retry-After</code>) are included in every response. The remote MCP server forwards your key to this same API, so MCP tool calls draw on the same budget.</p>
 
   <h2>Next Steps</h2>
