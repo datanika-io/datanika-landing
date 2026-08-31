@@ -188,8 +188,43 @@ describe("retired claims do not creep back", () => {
     ],
   ];
 
+  /**
+   * Source comments are stripped before matching, and that is load-bearing.
+   *
+   * `architecture.astro` deliberately QUOTES the retired sentence in a comment
+   * explaining why it was retired — which is exactly what a future reader
+   * should find, and exactly what a naive whole-file regex flags. This suite
+   * originally passed on that file **only because the quote happens to wrap
+   * across a line break in the middle of the matched phrase.** Reflowing a
+   * comment would have turned the guard red for a file that is correct, and a
+   * guard whose verdict depends on where a comment wraps is not measuring what
+   * it claims to. Markdown is left alone: it has no comment syntax here and `*`
+   * is a list marker.
+   */
+  const stripComments = (rel: string, src: string) =>
+    rel.endsWith(".md")
+      ? src
+      : src
+          .split("\n")
+          .filter((l) => !/^\s*(\/\/|\*|\/\*)/.test(l))
+          .join("\n");
+
   it.each(RETIRED)("%s", (_label, rel, re) => {
-    expect(re.test(read(rel)), `${rel} still matches ${re}`).toBe(false);
+    expect(re.test(stripComments(rel, read(rel))), `${rel} still matches ${re}`).toBe(false);
+  });
+
+  it("the comment stripper strips — it must not silently become a no-op", () => {
+    // Two-directional control. If `stripComments` degraded to identity the
+    // second assertion fails; if someone deleted the explanatory comment the
+    // first does. Without this, "no match" is satisfied by a stripper that
+    // removed the whole file.
+    const rel = "../src/pages/docs/architecture.astro";
+    const raw = read(rel);
+    const re = /transformation layer runs against the same destination/;
+    expect(re.test(raw), "architecture.astro no longer explains what it retired").toBe(true);
+    expect(re.test(stripComments(rel, raw)), "stripComments is a no-op").toBe(false);
+    // And it must not have eaten the live copy along with the comment.
+    expect(stripComments(rel, raw)).toMatch(/covers most of them but not all/);
   });
 
   it("the matchers fire on the copy they retired", () => {
