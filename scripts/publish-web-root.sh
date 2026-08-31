@@ -52,8 +52,23 @@ KEEP="${KEEP_RELEASES:-5}"
 
 # Release names sort lexically by time, and carry the source commit so the
 # serving revision is readable from `readlink` alone.
+#
+# ⚠️ `SOURCE_SHA` is load-bearing, not a convenience (landing#388). The site is
+# now built on the GitHub runner and only `dist/` is shipped here, so the commit
+# that produced these bytes is NOT necessarily the commit this box's checkout is
+# sitting on: the deploy still `git pull`s to fetch *this script*, and a queued
+# newer deploy can move `main` in between.
+#
+# The git probe below also fails in the reassuring direction. `git -C` on a
+# directory outside any working tree exits non-zero, `2>/dev/null || echo nogit`
+# swallows it, and every release silently becomes `<stamp>-nogit` — destroying
+# the single property the name exists for, which is `readlink -f` telling an
+# incident responder which commit is serving. Nothing would have reported that;
+# the deploy stays green and the site is correct. So the caller passes the SHA
+# it actually built, and the git probe is kept ONLY for the manual fallback in
+# CLAUDE.md, which still runs from inside the checkout with a relative `dist`.
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
-SHA="$(git -C "$(dirname "$DIST")" rev-parse --short HEAD 2>/dev/null || echo nogit)"
+SHA="${SOURCE_SHA:-$(git -C "$(dirname "$DIST")" rev-parse --short HEAD 2>/dev/null || echo nogit)}"
 
 mkdir -p "$RELEASES"
 
@@ -135,6 +150,21 @@ fi
 # fails the whole script *after* the swap has already succeeded, turning a
 # healthy deploy into a red run.
 CURRENT="$(readlink -f "$LIVE")"
+# ⚠️ Ordering here is NOT reliable when several releases land in the same second,
+# and the live-release guard below is what makes that survivable. Do not "tidy"
+# this into a name sort — measured, landing#415:
+#
+#   * mtimes TIE at same-second granularity, so `ls -t` falls back to a name
+#     tiebreak unrelated to creation order.
+#   * and sorting by name is no better, because the collision-suffix allocator
+#     above RECYCLES freed names: once a prune removes `<stamp>-<sha>`, the next
+#     publish in that same second re-claims the unsuffixed base, so the NEWEST
+#     release can sort before older `.1`/`.2` siblings.
+#
+# Consequence is cosmetic and bounded: the wrong directory can be pruned and one
+# extra release can survive. The live release is never removed. Real deploys are
+# minutes apart, so neither condition arises in production — it is reachable only
+# by same-second re-runs. Tracked separately rather than fixed here.
 STALE="$(ls -1dt "$RELEASES"/*/ 2>/dev/null | tail -n +"$((KEEP + 1))" || true)"
 if [ -n "$STALE" ]; then
     while read -r d; do
