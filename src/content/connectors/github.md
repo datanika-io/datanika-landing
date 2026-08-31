@@ -129,7 +129,7 @@ Schedules live on their own page and reference the upload **by name**.
 
 ## Related
 
-- **Pipeline templates:** no GitHub-specific template yet. `GitHub → BigQuery` is on the [Pipeline Templates depth spec](../../plans/product/SPEC_PIPELINE_TEMPLATES_DEPTH.md) shortlist as a candidate for the next template batch, pending measurement data.
+- **Pipeline templates:** no GitHub-specific template yet. `GitHub → BigQuery` is shortlisted as a candidate for the next template batch, pending measurement data. See the [templates gallery](/templates) for what ships today.
 - **Use cases:** GitHub → BigQuery is the classic pairing for open-source analytics. See the [Transformations guide](/docs/transformations-guide) for patterns around computing PR cycle time, first-response latency, and stars-per-day from the raw tables.
 - **Docs:** [Connections](/docs/connections), [Pipelines](/docs/pipelines), [Scheduling Guide](/docs/scheduling-guide)
 - **Related connectors:** if you're tracking developer productivity, pair GitHub with [Jira](/connectors/jira) and [Slack](/connectors/slack) for a full engineering-ops warehouse.
