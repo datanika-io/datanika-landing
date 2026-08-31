@@ -108,8 +108,13 @@ const INVENTORIED_BY_396 = ["/", "/pricing", "/features/volume-pricing"];
  *
  * `/why-cheaper` is the sharpest of them and is a different kind of exposure —
  * it is an interactive calculator that computes a personalised dollar figure
- * from the unenforced rates ("Over Pro's 100 GB quota: $1.50 overage per run"),
- * rather than merely stating them.
+ * from the unenforced rates, rather than merely stating them.
+ *
+ * ⚠️ That calculator carried a second, independent defect that this inventory
+ * cannot see: it quoted the **Free** tier at **$79**, because `freeIncludedGB`
+ * was declared and read by nothing, so `datanikaBill()` could only return Pro
+ * or Enterprise. Fixed in landing#410. The lesson for *this* file: an inventory
+ * of **where** a claim appears says nothing about whether the claim is right.
  */
 const EVERGREEN_UNINVENTORIED = [
   "/compare/airbyte",

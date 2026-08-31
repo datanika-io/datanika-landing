@@ -74,7 +74,7 @@ If you're in **ELT mode** (the dbt path with our new IR layer), your data gets s
 
 **Same source. Same data. 3.75× lower bill.**
 
-At $0.50/GB overage (Pro), the ETL pipeline costs $1.50 in overage per run past your included 100 GB. The ELT pipeline costs $0.40. Over a month of nightly runs, that's the difference between $45 and $12 in overage.
+At $0.50/GB overage (Pro), each nightly ETL run past your included 100 GB adds 3 GB to the month's metered volume — $1.50 worth. The ELT run adds 0.8 GB, or $0.40 worth. Over 30 nightly runs that's 90 GB against 24 GB: **$45 versus $12**. (Overage is totalled once per billing cycle and rounded up to the next whole GB, so those per-run figures are the monthly bill decomposed — not a charge you're billed run by run.)
 
 The mode selector is on every pipeline. We're not hiding this — it's the first switch in the UI when you create a new pipeline. Existing pipelines can flip modes with a migrate button. We've written a [dedicated post about when to pick which mode](/blog/real-cost-modern-data-stack/) — the short version: ELT is the streaming-first default, ETL is for destinations that don't support parquet writes well (almost nobody in 2026).
 

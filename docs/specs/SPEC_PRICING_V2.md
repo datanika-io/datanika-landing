@@ -11,7 +11,7 @@
 > **This repo is also where half of it was already enforced.** `tests/pricing-copy-rules.test.ts`
 > cites §4.3 by section number. The test was versioned and reviewable; the rule it enforces was not.
 >
-> **Three things to know before quoting anything below.**
+> **Four things to know before quoting anything below.**
 >
 > 1. **`plans/…` paths are local-only.** Cross-references that were links are now inline paths. The
 >    files they name still live on the founder's machine and are not in any repo.
@@ -27,6 +27,18 @@
 >    V2 P5 shipped to production on **2026-04-20** (landing#216 / #218 / #219 / #221 / #222). Those
 >    unticked boxes are the 2026-04 rollout preserved as its own record. Do not treat them as a
 >    backlog — that confusion is the exact defect this migration exists to remove.
+> 4. **§3.1's two *Datanika* effective-$/GB cells used the wrong divisor and are corrected in place
+>    (2026-08-31, [landing#410]).** They read **$0.40/GB** for Enterprise at 1 TB, which is
+>    `399 ÷ 1000`. **We bill in binary GB**: `datanika-cloud/datanika_cloud/billing/tasks.py`
+>    converts with `1024**3`, and `why-cheaper.astro` sets `entIncludedGB: 1024`. So 1 TB is 1024 GB
+>    and the figure is `399 ÷ 1024 = `**$0.39/GB** — which is exactly what the four live
+>    `/compare/*` pages publish. 🔑 **The site agreed with the biller and this spec was the outlier**,
+>    so the pages were deliberately *not* changed; correcting them would have made the published
+>    price both disagree with the code and overstate itself. The Pro row's 1 TB cell was wrong by
+>    rounding too (`$79 + 924 GB × $0.50 = $541`; `541 ÷ 1024 = `**$0.53**, printed as `$0.52`).
+>    The competitor columns are untouched and remain superseded per item 2.
+>
+>    [landing#410]: https://github.com/datanika-io/datanika-landing/issues/410
 >
 > **What is genuinely open in here is §2.5 and §12 question 0: D-RL1 / D-RL2 / D-RL3, the API rate
 > limit.** Those await a founder decision. Everything else in §12 is resolved and marked so.
@@ -247,8 +259,8 @@ All figures are illustrative, sourced from each vendor's public calculator as of
 
 | Platform | Subscription | Volume dimension | Effective $/GB at 100 GB/mo | Effective $/GB at 1 TB/mo |
 |---|---|---|---|---|
-| **Datanika Pro** | **$79/mo** | 100 GB included + $0.50/GB | **$0.79/GB** | **$0.52/GB** (crosses to Enterprise at this volume — $0.40/GB on Enterprise) |
-| **Datanika Enterprise** | $399/mo | 1 TB included + $0.25/GB | n/a (below Enterprise) | **$0.40/GB** |
+| **Datanika Pro** | **$79/mo** | 100 GB included + $0.50/GB | **$0.79/GB** | **$0.53/GB** (corrected 2026-08-31, was $0.52 — crosses to Enterprise at this volume, $0.39/GB on Enterprise) |
+| **Datanika Enterprise** | $399/mo | 1 TB included + $0.25/GB | n/a (below Enterprise) | **$0.39/GB** (corrected 2026-08-31, was $0.40 — `399 ÷ 1024`, not `÷ 1000`; see header item 4) |
 | Fivetran Starter | No subscription | MAR-based | **~$50–80/GB** (10M MAR ≈ 30 GB, ~$2,500/mo) | **~$40–60/GB** |
 | Airbyte Cloud | No subscription | Credits | **~$10–15/GB** (100 credits ≈ 100 GB, ~$250/mo) | **~$8–12/GB** |
 | Stitch Standard | $100/mo | Rows (5M rows ≈ 15 GB) | **~$6–10/GB** | Not available — would require Advanced tier ($1,500/mo) |
