@@ -5,7 +5,7 @@ source: "stripe"
 source_name: "Stripe"
 category: "saas"
 verified_by: "product-ui"
-verified_date: "2026-07-19"
+verified_date: "2026-08-31"
 related_use_cases:
   - "stripe-to-bigquery"
 related_comparisons:
@@ -48,7 +48,7 @@ Create a **dedicated restricted key** instead of reusing your secret key. Restri
    - **API Key (optional)** — paste the restricted key from Step 1 (`rk_live_…` or `rk_test_…`). Stored encrypted at rest with Fernet.
 4. Click **Create Connection**.
 
-> **Test Connection for Stripe.** The **Test Connection** button is present, but because Stripe is an HTTP-API source it returns *"Test not applicable for this type"* rather than validating the key offline. The credential is validated for real on the first pipeline run — see Step 4. If the key is bad, the run fails immediately with a clear Stripe API error.
+> **Test Connection for Stripe tells you nothing, in green.** The button is present, but because Stripe is an HTTP-API source it returns *"Test not applicable for this type"* — **styled as a pass**, having sent no request to Stripe. A revoked key, a typo and a `rk_live_` key pasted into a test account all produce that identical green line; verified against a deliberately invalid token on 2026-08-31 ([core#821](https://github.com/datanika-io/datanika-core/issues/821)). Read it as *"not tested"*. The credential is validated for real on the first pipeline run — see Step 4 — where a bad key fails immediately with a clear Stripe API error.
 
 ![Adding the Stripe connection in Datanika](/docs/connectors/stripe/02-add-connection.png)
 
@@ -74,6 +74,12 @@ Extract-load is configured at **`/uploads`**, not on the connection. There is no
 2. Watch **`/runs`**. The run shows a status badge, start and finish timestamps and a **Rows** count; the **Logs** icon on the row opens the detail.
 3. When it finishes, open **Models** (`/models`) and browse the landed tables. The upload lands them in a schema **named after the upload** — `stripedailysync` creates schema `stripedailysync` in the destination. dlt also creates its own `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables in that schema, but **Models does not list them** — seeing only your own tables there is correct, not a partial load. There is no target-schema field to choose.
 4. Spot-check the row count against the source. **Verify in the destination rather than trusting the status badge** — a green run means the load finished, not that it moved what you expected.
+
+![The Data preview on the landed customers table, showing ten Stripe customers read live from the destination warehouse](/docs/connectors/stripe/04-first-run.png)
+
+> 🚨 **Known defect — a resource with more than 10 records currently loads only the first 10, and the run still goes green.** Stripe's list endpoints return 10 items by default and set `"has_more": true`; Datanika's Stripe loader does not follow that cursor, so the rest is never fetched and nothing warns you. Measured on 2026-08-31: an account with **15 customers landed 10**, the run reported `success`, and the missing five were the *oldest*. The screenshot above shows that run — `Rows: 10`, not 15.
+>
+> This affects every Stripe resource large enough to paginate, and is tracked as [core#823](https://github.com/datanika-io/datanika-core/issues/823). **Until it ships, treat step 4 above as mandatory rather than advisory: compare the destination count against Stripe for each resource.** Supplying a `paginator` through **Use raw JSON config** does *not* work around it — the key is accepted and then ignored, so the run turns green having changed nothing.
 
 ## Step 5 — Schedule it
 
@@ -103,8 +109,17 @@ Schedules live on their own page and reference the upload **by name**.
 **Fix.** Open the restricted key in Stripe, grant `Read` on the missing resource, save. The key value itself doesn't change — your Datanika connection keeps working without re-pasting.
 
 ### Run succeeds but only a handful of rows landed
+
+**Check the count first.** If exactly **10** rows landed for a resource that has more, this is not your configuration — see the next entry.
+
 **Cause.** You set a `start_date` in Step 3 that cuts out most of your history. Stripe respects `start_date` strictly — events before the cutoff are not fetched.
 **Fix.** Clear `start_date` and re-run to backfill the full history, or set an earlier date. Subsequent incremental runs only fetch new/changed rows regardless of `start_date`.
+
+### Exactly 10 rows landed, and the run was green — [core#823]
+
+**Cause.** A product defect, not a setting. Stripe's list endpoints return 10 items by default and signal `"has_more": true`; the Stripe loader does not follow that cursor, so only the first page is fetched. Confirmed on 2026-08-31 against an account with 15 customers: 10 landed, run `success`, no warning. It applies per resource, so a run can be complete for `products` and truncated for `customers` at the same time.
+
+**Fix.** None on your side yet — tracked as [core#823](https://github.com/datanika-io/datanika-core/issues/823). ⚠️ Adding a `paginator` via **Use raw JSON config** looks like a workaround and is not one: the key is accepted, the run succeeds, and the loader never reads it. Until the fix ships, either keep the affected resource under 10 records or pull it through the [REST API connector](/docs/connectors/rest-api), where the paginator *is* honoured.
 
 ### Incremental runs seem to miss recently-updated invoices
 **Cause.** Stripe webhook events can arrive minutes after the underlying object update. If a run queries Stripe during that lag window, the updated row may be missed until the next run.
