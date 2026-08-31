@@ -103,9 +103,65 @@ Extract-load is configured at **`/uploads`**, not on the connection. There is no
 1. On the **`/uploads`** row for your upload, click **Run**. There is no "Run now" on a pipeline page — the trigger lives on the upload's own row.
 2. Watch **`/runs`**. The run shows a status badge, start and finish timestamps and a **Rows** count; the **Logs** icon on the row opens the detail. **Rows** is one total for the whole run, not a per-table breakdown.
 3. When it finishes, open **Models** (`/models`) and browse the landed tables. dlt also creates its own `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables in that schema, but **Models does not list them** — seeing only your own tables there is correct, not a partial load.
-4. Spot-check the row count against the source. **Verify in the destination rather than trusting the status badge** — a green run means the load finished, not that it moved what you expected.
+4. **Open the landed table and click `Load first 100 rows`.** The **Data preview** on the model detail page runs a live `SELECT` against your destination, so the rows on screen are the rows in your warehouse — not a copy of what the run *reported*.
+5. Spot-check the row count against the source. **Verify in the destination rather than trusting the status badge** — a green run means the load finished, not that it moved what you expected.
 
-![Inspecting the first run](/docs/connectors/<source-slug>/04-first-run.png)
+![The Data preview on the landed <table> table, showing N rows read live from the destination](/docs/connectors/<source-slug>/04-first-run.png)
+
+<!--
+🚨 04-first-run.png MUST BE THE DATA PREVIEW, NOT THE /runs TABLE.
+
+The standing acceptance criterion is **rows in the destination, verified in the
+destination** — never a green run row. It is worded that way because a green run
+has been wrong twice: core#492 (file sources loaded a *listing* of files rather
+than their contents and reported `success`) and core#493 (a zero-match glob also
+completes as `success`, so a wrong path and a right path look identical in /runs).
+
+Three guides once had a `04-first-run.png` and all three showed /runs, which is
+why landing#395 scored the set 0/36 rather than 3/36.
+
+Rules for capturing yours:
+  - Run YOUR connector. Do not reuse another guide's image, however similar the
+    screen looks. csv and duckdb were once byte-identical; that is the drift.
+  - Verify the rows in the destination itself (psql / the warehouse console),
+    not only in the app, before you take the picture.
+  - Never hand-place rows. A picture of data our pipeline did not load, published
+    as proof our pipeline loads data, is the one thing this criterion forbids.
+  - Capture gate: read every input's `.value` first and refuse the shot if a
+    credential field is non-empty. `browser_snapshot` prints input values.
+  - Record connection / upload / run ids and the destination row counts in this
+    guide's `public/docs/connectors/<source-slug>/README.md`.
+
+Worked examples: postgresql, csv, json, parquet (landing PR #407).
+-->
+
+<!--
+🚨 The landed TABLE's name depends on which branch the reader took, for file
+connectors (csv / json / parquet / s3). Say the one that applies, or both:
+  - Uploaded through the **Upload File** widget → the table takes the file's name
+    without its extension (`q3-signups.csv` -> `q3_signups`). `upload_tasks.py`
+    sets `dlt_config["table_name"]` from the stem.
+  - Pointed at a **directory path** → the glob has a wildcard, `_file_table_name()`
+    finds no single filename, and the table is named after the connector (`csv`).
+The csv guide asserted the second for both and was wrong for the branch it
+recommends first.
+-->
+
+<!--
+🚨 The destination SCHEMA is the upload's name, and on a shared destination
+database that makes the upload name a shared resource: `write_disposition:
+replace` will drop another org's tables if you reuse their upload name. Check the
+schema list before choosing one.
+-->
+
+<!--
+Type fidelity is not format-neutral and the file guides now say so, measured
+against one Postgres destination on 2026-08-31:
+  csv     `signed_up_on` -> character varying
+  json    `recorded_at`  -> timestamp with time zone
+  parquet `measured_on`  -> date
+-->
+
 
 ## Step 5 — Schedule it
 
