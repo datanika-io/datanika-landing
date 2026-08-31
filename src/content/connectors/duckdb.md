@@ -73,7 +73,7 @@ DuckDB supports schemas just like a full warehouse — they're namespaces inside
 
 ![A completed load into DuckDB in Datanika's run history](/docs/connectors/duckdb/04-first-run.png)
 
-3. When the run finishes, open **Catalog** and browse the landed tables. Each lands in a schema **named after the upload**, and you can see column counts and last-run status directly in the Data Catalog, no SQL required.
+3. When the run finishes, open **Models** (`/models`) and browse the landed tables. Each lands in a schema **named after the upload**, and you can see column counts and last-run status directly in the Data Catalog, no SQL required.
 4. For a deeper inspection without leaving Datanika, open **SQL Editor**, point it at the DuckDB connection, and run `SHOW ALL TABLES;` or `SELECT count(*) FROM <upload_name>.<table>;`. If you'd rather drive DuckDB from outside Datanika, run the Python engine that's already in the container:
    ```bash
    docker exec -it datanika-celery /app/.venv/bin/python -c \

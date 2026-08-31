@@ -13,7 +13,7 @@ Stripe's built-in dashboard is genuinely good — for operations. You can see to
 
 The fix is the same one every serious SaaS team eventually lands on: **get Stripe's raw objects into a warehouse, model them with dbt, and point a BI tool at the result.** Once the data is modeled, MRR, churn, ARR, LTV, and cohort retention are just SQL — recomputed every morning, joinable against product usage, and auditable line by line.
 
-This is the end-to-end tutorial. We'll land Stripe in a warehouse with [Datanika](/connectors/stripe/) (which wraps `dlt` for extract and `dbt-core` for transform in one app), write the staging and mart models, add tests, schedule the refresh, and connect a dashboard. Every SQL snippet below is real and runnable — adjust the column names to match what lands in your Catalog and you're done.
+This is the end-to-end tutorial. We'll land Stripe in a warehouse with [Datanika](/connectors/stripe/) (which wraps `dlt` for extract and `dbt-core` for transform in one app), write the staging and mart models, add tests, schedule the refresh, and connect a dashboard. Every SQL snippet below is real and runnable — adjust the column names to match what actually lands in your warehouse and you're done.
 
 ## What we're building
 
@@ -41,7 +41,7 @@ We won't repeat the full connector walkthrough here — the [Stripe setup guide]
 1. In Stripe, create a **restricted key** (`Developers → API keys → Create restricted key`) with **Read** permission on `Customers`, `Charges`, `Invoices`, `Subscriptions`, `Products`, and `Prices`. Never use a standard secret key — Datanika only ever reads.
 2. In Datanika, open **`/connections`**, pick **Stripe**, and paste the key (stored encrypted at rest with Fernet).
 3. Create the upload. Because Stripe is a SaaS source, the form shows **Select endpoints to load** — a checkbox each for `charges`, `customers`, `invoices`, `prices`, `products` and `subscriptions`, all ticked by default. Untick what you don't need; each ticked endpoint becomes its own table.
-4. Click **Run now** and watch the per-resource row counts in the **Runs** tab.
+4. Run it from the **`/uploads`** row for your upload — the button is **Run**, and the trigger lives on the upload's own row, not on a pipeline page. Watch it in **Runs**; the **Rows** column there is one total for the whole run, not a per-endpoint breakdown.
 
 > **Where it lands, and why there's no field for it.** A SaaS source has **no write-disposition, load-mode, source-schema or table-name control** — those are rendered only for SQL database sources, and the endpoint checkboxes are the equivalent. So the destination schema is derived, not typed:
 >
@@ -50,9 +50,9 @@ We won't repeat the full connector walkthrough here — the [Stripe setup guide]
 >
 > This tutorial assumes you did one of those two things and ended up with `raw_stripe`. If you named the upload something else, substitute your schema everywhere below.
 
-When it finishes, open **Catalog → your warehouse** and find the schema. You should see one table per resource: `customers`, `invoices`, `subscriptions`, `charges`, and so on, alongside dlt's `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables. **Confirm the schema name here before you write `sources.yml`** — it is the single most common reason the models below fail to resolve. Keep that Catalog tab open; you'll use it to check exact column names as you write models too.
+When it finishes, open **Models** — the sidebar entry for Datanika's data catalog, at **`/models`**. You should see one row per landed table: `customers`, `invoices`, `subscriptions`, `charges`, and so on, each with its **Schema** and **Columns**. dlt's `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables are created in the warehouse but filtered out of the catalog, so their absence here is expected, not a failed run. **Confirm the schema name in the Schema column before you write `sources.yml`** — it is the single most common reason the models below fail to resolve. Keep that tab open; you'll use it to check exact column names as you write models too.
 
-> **Two things to know about Stripe's data before you model it.** (1) **Amounts are integers in the smallest currency unit** — `2000` means $20.00 in USD. You divide by 100 in staging (except zero-decimal currencies like JPY — more on that below). (2) **Timestamps are Unix epoch seconds** — `1719792000`, not `2024-07-01`. `dlt` sometimes types these as proper timestamps during normalization and sometimes lands them as integers; check your Catalog and convert in staging if needed.
+> **Two things to know about Stripe's data before you model it.** (1) **Amounts are integers in the smallest currency unit** — `2000` means $20.00 in USD. You divide by 100 in staging (except zero-decimal currencies like JPY — more on that below). (2) **Timestamps are Unix epoch seconds** — `1719792000`, not `2024-07-01`. `dlt` sometimes types these as proper timestamps during normalization and sometimes lands them as integers; check the column's type in **Models** and convert in staging if needed.
 
 ## Step 2 — Declare the source
 
@@ -227,12 +227,12 @@ order by lifetime_revenue desc
 
 ### True MRR from subscription items (the honest caveat)
 
-Everything above uses top-level, high-confidence columns. **Normalized MRR is the one metric where your schema will differ from mine**, because a subscription's price lives in a *nested* array (`items.data[]`), and `dlt` flattens nested arrays into a child table — often something like `subscriptions__items__data`. Open your Catalog and find the real name before writing this model.
+Everything above uses top-level, high-confidence columns. **Normalized MRR is the one metric where your schema will differ from mine**, because a subscription's price lives in a *nested* array (`items.data[]`), and `dlt` flattens nested arrays into a child table — often something like `subscriptions__items__data`. Open **Models** and find the real name before writing this model.
 
 Once you've located it, MRR is: for every active subscription item, take `unit_amount × quantity`, normalize it to a monthly figure by the price's billing interval, and sum:
 
 ```sql
--- models/marts/finance/mrr.sql  ── adjust the source table name to your Catalog
+-- models/marts/finance/mrr.sql  ── adjust the source table name to the one in Models
 {{ config(materialized='table') }}
 
 select
@@ -303,7 +303,7 @@ Because the logic lives in dbt, not in Metabase, every tile shares one definitio
 
 ## What it costs
 
-Datanika meters **bytes processed**, not rows or connectors. The [Free plan](/pricing/) includes **10 GB/month**. Pro is **$79/mo with 100 GB included** and **$0.50/GB** beyond that. A Stripe account's daily refresh is small — Stripe objects are narrow JSON — so for most teams the bill here is the subscription, not the volume. Check your own numbers in **Usage** rather than trusting that sentence.
+Datanika meters **bytes processed**, not rows or connectors. The [Free plan](/pricing/) includes **10 GB/month**. Pro is **$79/mo with 100 GB included** and **$0.50/GB** beyond that. A Stripe account's daily refresh is small — Stripe objects are narrow JSON — so for most teams the bill here is the subscription, not the volume. Check your own numbers in the **Plan Usage** panel on the **Dashboard** rather than trusting that sentence.
 
 Compare that to [Fivetran](/compare/fivetran/), which counts each Stripe object as monthly active rows and adds a per-connection minimum — the exact pricing model this whole tutorial routes around.
 

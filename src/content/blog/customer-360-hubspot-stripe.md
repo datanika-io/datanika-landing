@@ -33,7 +33,7 @@ In Datanika, HubSpot and Stripe are SaaS sources, so the upload form shows **Sel
 
 Nine tables. Scan them for a shared key and you will not find one. `hubspot.contacts` has an email and an associated company; `stripe.customers` has an email and a name. That is the entire overlap, and both sides are free text.
 
-> **Where the tables land.** A SaaS source has no write-disposition, load-mode or target-schema field — those are rendered only for SQL database sources. On **BigQuery / Snowflake / Databricks** the schema is the **Dataset**/**Schema** field on the *destination connection*. On **Postgres / MySQL / DuckDB** it is the **upload's own name, snake-cased** — and upload names accept letters, digits and spaces only, so you name the upload **`Raw Hubspot`** and get the schema `raw_hubspot`. Check **Catalog** for the real name before writing `sources.yml`; a wrong schema name is the most common reason the models below don't resolve.
+> **Where the tables land.** A SaaS source has no write-disposition, load-mode or target-schema field — those are rendered only for SQL database sources. On **BigQuery / Snowflake / Databricks** the schema is the **Dataset**/**Schema** field on the *destination connection*. On **Postgres / MySQL / DuckDB** it is the **upload's own name, snake-cased** — and upload names accept letters, digits and spaces only, so you name the upload **`Raw Hubspot`** and get the schema `raw_hubspot`. Check the **Schema** column in **Models** — the sidebar entry for Datanika's data catalog, at **`/models`** — for the real name before writing `sources.yml`; a wrong schema name is the most common reason the models below don't resolve.
 
 Two uploads, two schemas:
 
@@ -117,7 +117,7 @@ select
 from {{ source('raw_hubspot', 'deals') }}
 ```
 
-> **Check the deal→company column before you trust it.** In HubSpot, a deal's link to a company is an *association*, not a plain property, and which column (if any) lands depends on the properties your pipeline requests. Open **Catalog** and look at the landed `deals` table. If there is no company column, either add the association to the resource config or drop the two deal columns from the final model — the customer 360 is still worth building without them. Do not join deals on company *name*.
+> **Check the deal→company column before you trust it.** In HubSpot, a deal's link to a company is an *association*, not a plain property, and which column (if any) lands depends on the properties your pipeline requests. Open **Models** and look at the landed `deals` table. If there is no company column, either add the association to the resource config or drop the two deal columns from the final model — the customer 360 is still worth building without them. Do not join deals on company *name*.
 
 ## Step 2 — Three joins, in descending order of trust
 
@@ -332,7 +332,7 @@ Sorted by revenue, because the ten unmatched customers who pay you the most are 
 ## Wire it up
 
 1. Two connections — [HubSpot](/docs/connectors/hubspot/) (private app token, `crm.objects.{contacts,companies,deals}.read`) and [Stripe](/docs/connectors/stripe/) (a **restricted** read key, never a secret key).
-2. Two uploads. Name them so the schemas come out right, and confirm in **Catalog**.
+2. Two uploads. Name them so the schemas come out right, and confirm in **Models**.
 3. The models above under **Transformations**, then schedule the transform to depend on **both** uploads — a 360 built from a fresh Stripe and yesterday's HubSpot is a 360 that disagrees with itself. See the [scheduling guide](/docs/scheduling/).
 4. Point a dashboard at `customer_360` and `customer_identity_coverage`. Put the coverage number on the dashboard, not in a runbook. A match rate nobody looks at drifts.
 

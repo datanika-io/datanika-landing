@@ -48,6 +48,35 @@ recorded as "the high-value dofollow backlink" turned out to be `rel="nofollow"`
 external README link nofollow; the HTML *mirrors* of those lists do not. **The question about a
 curated list is not "how many stars?" but "does it have an HTML mirror on its own domain?"**
 
+**And the mirror must link *your* domain — an HTML mirror is necessary, not sufficient.**
+`project-awesome.org` mirrors `awesome-data-engineering` with no `noindex`, `Allow: /`, 117 external
+anchors and **zero nofollow** — and **117 of 117 resolve to `github.com`**. It renders no project
+homepages at all, so it passes authority to our repo and never to `datanika.io`. Ask both questions.
+The corollary is about copy, not measurement: **where a list's convention permits either, the entry
+links `datanika.io`, not the GitHub repo** — a repo-linked entry cannot build the site's authority by
+any path, because GitHub is nofollow and the mirrors resolve back to GitHub.
+
+**Third question, and it reverses the corollary on the one PR we tested it against: does the mirror
+render the entry's link at all?** Applied to the pending `awesome-data-engineering` PR, the corollary
+said "amend it to `datanika.io`" — the list plainly permits either, 166 of 307 entries link off
+GitHub, and the three entries directly above ours are homepage links. Amending would have been
+strictly worse. `project-awesome.org` renders an entry **only if it resolves to a GitHub repo**: the
+entry name is an *internal* link to `/r/<owner>-<repo>`, the sole external anchor is an "Open on
+GitHub" icon the mirror synthesizes, and homepage-linked entries — Mage, SQLMesh, Prefect, SuprSend —
+are **absent from the mirror entirely**. Its project detail pages render one external anchor, GitHub
+again, dropping even the homepage the repo declares in GitHub's own API. So the amendment would have
+traded mirror presence for nothing, and `datanika.io` was unreachable from that list either way.
+
+**The general shape: a rule derived from one measurement can be exactly wrong on the next instance,
+and the cost of checking is one `curl`.** Do not apply any rule in this section mechanically to a
+submission — re-measure the specific target first.
+
+**`rel="noopener noreferrer"` is dofollow.** Only `nofollow`, `ugc` and `sponsored` are link-equity
+hints; `noopener`/`noreferrer` are window and Referer-header controls. Reading them as nofollow
+discards real links. In the other direction, **a page-wide nofollow count of `0` is not a verdict** —
+a client-rendered page has no anchors to count, so record the external-anchor count beside every
+nofollow count or the two failure modes look identical.
+
 ## Guards
 
 **A guard that names an instance goes red on the correct change.** `tests/connectors.test.ts` once
@@ -121,9 +150,29 @@ has it" was never evidence a user could reach it.
 quotes for six backlink targets. Re-read the live file before every submission — `gh` posts under the
 founder's real identity.
 
+**Some maintainers ban AI-authored submissions, so read the CONTRIBUTING for that too — not just for
+traction and age gates.** `ripienaar/free-for-dev` (~95k★) closes AI-written PRs *"without reviewing
+it or discussing it"*; `awesome-selfhosted-data` warns that machine-generated contributions which
+miss a guideline *"will result in a ban"* — on the highest-value backlink we have queued. This does
+not change whether we submit, it changes **who**. And it forbids the obvious workaround: handing a
+human AI-written text to paste is the same violation with an extra step, so the handoff carries facts
+and the target's own requirements, never copy.
+
 **Ask what your evidence records.** GitHub code search returns 0 for a model that exists in the
 private cloud repo, and misses two of three `before_execute` call sites in core. A zero from an
 instrument that also returns zero for a known-present control records nothing.
+
+**Bind a published claim to what production ENFORCES, not to what landing believes.** Twice in one
+night, in two different files. `src/data/connectors.ts` marked five cloud warehouses `direction:
+"both"` with prose promising extraction, while core's own test asserts they are destinations (#391).
+Then #373 was framed as *JSON-LD stale, page current*, so the pricing JSON-LD was bound to the page —
+and the page was the wrong half: it sells V2 bytes while production bills V1 runs, because the byte
+columns on `plans` were never seeded (#396, core#713). **Binding the derived half to the local
+source of truth is not "binding it to the fact"** — it converts a visible mismatch into a coherent,
+machine-readable assertion of something untrue, which is strictly harder to notice and, in the JSON-LD
+case, eligible for a rich result. A self-consistency guard goes **green** on all of it. The question
+to ask of any number about the product is *which artifact enforces this, and have I read it?* — the
+`plans` table, the connector enum, the running container. Not the file next to the copy.
 
 ## Publishing
 

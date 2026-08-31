@@ -83,7 +83,7 @@ The connection alone moves nothing — the thing that reads the Parquet and writ
 1. On the **`/uploads`** row for your upload, click **Run**.
 2. Parquet loads are **fast and memory-efficient** because Datanika streams row groups sequentially — a 2 GB compressed Parquet file (~8 GB raw) typically lands in under a minute, in under 500 MB of RAM.
 3. Watch **`/runs`** for progress. You'll see row counts stream in as each group is decoded and written to the destination.
-4. When the run finishes, open **Catalog → `<your warehouse>`** and browse the landed table. Spot-check by comparing `count(*)` against the Parquet footer's `num_rows` — they should match exactly, with no coercion losses.
+4. When the run finishes, open **Models** (`/models`) and browse the landed table. Spot-check by comparing `count(*)` against the Parquet footer's `num_rows` — they should match exactly, with no coercion losses.
 
 ## Step 4 — Schedule it (directory watchers only)
 

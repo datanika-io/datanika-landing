@@ -85,7 +85,7 @@ Extract-load is configured at **`/uploads`**, not on the connection. There is no
 
 1. On the **`/uploads`** row for your upload, click **Run**. There is no "Run now" on a pipeline page — the trigger lives on the upload's own row.
 2. Watch **`/runs`**. The run shows a status badge, start and finish timestamps and a **Rows** count; the **Logs** icon on the row opens the detail.
-3. When it finishes, open **Catalog** and browse the landed tables. The upload lands them in a schema **named after the upload** — `githubdailysync` creates schema `githubdailysync` in the destination, next to dlt's `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables. There is no target-schema field to choose.
+3. When it finishes, open **Models** (`/models`) and browse the landed tables. The upload lands them in a schema **named after the upload** — `githubdailysync` creates schema `githubdailysync` in the destination. dlt also creates its own `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables in that schema, but **Models does not list them** — seeing only your own tables there is correct, not a partial load. There is no target-schema field to choose.
 4. Spot-check the row count against the source. **Verify in the destination rather than trusting the status badge** — a green run means the load finished, not that it moved what you expected.
 
 ## Step 5 — Schedule it
@@ -129,7 +129,7 @@ Schedules live on their own page and reference the upload **by name**.
 
 ## Related
 
-- **Pipeline templates:** no GitHub-specific template yet. `GitHub → BigQuery` is on the [Pipeline Templates depth spec](../../plans/product/SPEC_PIPELINE_TEMPLATES_DEPTH.md) shortlist as a candidate for the next template batch, pending measurement data.
+- **Pipeline templates:** no GitHub-specific template yet. `GitHub → BigQuery` is shortlisted as a candidate for the next template batch, pending measurement data. See the [templates gallery](/templates) for what ships today.
 - **Use cases:** GitHub → BigQuery is the classic pairing for open-source analytics. See the [Transformations guide](/docs/transformations-guide) for patterns around computing PR cycle time, first-response latency, and stars-per-day from the raw tables.
 - **Docs:** [Connections](/docs/connections), [Pipelines](/docs/pipelines), [Scheduling Guide](/docs/scheduling-guide)
 - **Related connectors:** if you're tracking developer productivity, pair GitHub with [Jira](/connectors/jira) and [Slack](/connectors/slack) for a full engineering-ops warehouse.

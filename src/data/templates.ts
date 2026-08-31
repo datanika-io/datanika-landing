@@ -8,7 +8,7 @@
  * list is present). Drift is enforced by `tests/templates-consistency.test.ts`
  * — the same SoT pattern used for `src/data/agent-tiers.ts`.
  *
- * See plans/product/SPEC_PUBLIC_TEMPLATE_LANDING.md for the full architectural
+ * See docs/specs/SPEC_PUBLIC_TEMPLATE_LANDING.md for the full architectural
  * rationale (Option C).
  */
 
