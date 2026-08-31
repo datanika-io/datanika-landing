@@ -26,6 +26,25 @@
  * Re-derivation procedure for every fact asserted here — how to ask the running
  * system rather than the previous revision of the page:
  *   plans/growth/notes/LEGAL_PAGE_FACTS_2026-08-30.md
+ *
+ * ## 🚨 This file is HALF the net. Read before adding a legal page.
+ *
+ * `PAGES` below is a hardcoded map of two, and that omission is itself a
+ * shipped defect: `/terms` and `/refund` were never covered here, so `/terms`
+ * carried V1 "model run overages" AND a `Starter` plan that never existed for
+ * four months with every build green (landing#410, landing#416). This suite was
+ * 28/28 green against that page.
+ *
+ * `legal-pages-commercial-claims.test.ts` covers the other half — the billing
+ * model, plan names, restated figures, and the rule that a legal page must not
+ * restate rates — across ALL four policy documents, and it *derives* that set
+ * from the built site rather than listing it. It also reads THIS file's source
+ * to check that every legal page has a page-specific guard somewhere, so the
+ * two cannot drift apart.
+ *
+ * Practical consequence: adding a page to `PAGES` here is fine, but it is not
+ * how a new legal page gets covered — that happens automatically, and the
+ * coverage test there will tell you what is still owed.
  */
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
