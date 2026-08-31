@@ -120,7 +120,7 @@ Your PostgreSQL data will automatically sync to BigQuery every morning. If you a
 
 ## Cost
 
-Datanika's Free plan includes 10 GB of processed volume per month — enough for daily syncs of a small database — alongside a 500-run fair-use orchestration limit. Pro ($79/mo) raises that to 100 GB and 15,000 runs.
+Datanika's Free plan includes 10 GB of processed volume per month — enough for daily syncs of a small database — alongside 500 orchestration runs, which Free enforces as a ceiling. Pro ($79/mo) raises that to 100 GB and 15,000 runs; on Pro the run figure is fair use rather than a limit that halts a pipeline, and volume past 100 GB bills at $0.50/GB instead.
 
 Compare that to Fivetran, which bills by monthly active rows and publishes no per-MAR rate, or to Airbyte Cloud, which prices its paid tiers on compute capacity rather than data moved. With either, the number for this pipeline is one you find out afterwards. The [/why-cheaper/](/why-cheaper/) calculator shows the side-by-side on our estimates, and each vendor's own pricing page is where a binding figure comes from.
 
