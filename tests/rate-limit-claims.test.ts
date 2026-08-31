@@ -161,6 +161,149 @@ describe("the limit is described as per-key, because that is what it is", () => 
   });
 });
 
+/**
+ * ## The pacing claims (landing#366 / core#705, 2026-08-31)
+ *
+ * The four claims above were settled by DELETING the false per-plan burst
+ * column. What replaced it was silence, and the silence was the misleading
+ * part. QA's probe (`plans/qa/notes/probe-705/`) issued each tier's entire
+ * published minute allowance and found that **not one rejection at any tier
+ * came from the per-minute limit** — every one came from the per-second
+ * ceiling, always at request 11.
+ *
+ * The ceiling is uniform (`settings.api_rate_limit_burst`, measured at 10 on
+ * both prod and staging) while the per-minute allowance is tiered, so burst
+ * headroom relative to what a customer pays SHRINKS as they upgrade — 20x on
+ * Free, 5x on Pro, 2x on Enterprise. An Enterprise key fanning out across
+ * workers is throttled at roughly 7% of what it bought, and before this change
+ * the page gave it no number to pace to.
+ *
+ * The page now publishes the pacing RULE and deliberately not the ceiling.
+ * These assertions pin both halves.
+ *
+ * ## The asymmetry below is deliberate
+ *
+ * "Must state X" is checked as an exact computed substring; "must NOT print X"
+ * is checked with a broad pattern. That is the right way round. A rephrase of
+ * something we require fails loudly and the author updates this file. A
+ * rephrase of something we ban escapes silently — which is exactly how
+ * `overage-unit-claims.test.ts`, written for `/terms`, still missed
+ * `model run overages`: it banned "overage per run", and the real text was
+ * neither. A phrasing-specific ban is not a ban.
+ */
+describe("the pacing rule is published, and the ceiling is not", () => {
+  /** 60 / rpm — seconds between requests, derived, never restated. */
+  const SPACING = Object.fromEntries(
+    Object.entries(RPM).map(([tier, rpm]) => [tier, 60 / rpm]),
+  ) as Record<keyof typeof RPM, number>;
+
+  const NL = String.fromCharCode(10);
+  const lines = (path: string) => src(path).split(NL);
+  const join = (ls: string[]) => {
+    let t = ls.join(" ").replace(/<[^>]+>/g, " ");
+    for (const c of [13, 9]) t = t.split(String.fromCharCode(c)).join(" ");
+    return t.replace(/ +/g, " ");
+  };
+  const flatten = (path: string) => join(lines(path));
+
+  /**
+   * Markdown blockquotes are dropped first, because the announcement post's
+   * dated correction note legitimately QUOTES the retired 5 / 15 / 30 figures
+   * in order to say they were wrong. Deleting history is not honesty. The
+   * carve-out is held shut by the assertion two tests below.
+   */
+  const isQuote = (l: string) => l.trimStart().startsWith(">");
+  const currentClaims = (path: string) => join(lines(path).filter((l) => !isQuote(l)));
+  const quotedOnly = (path: string) => join(lines(path).filter(isQuote));
+
+  it("the API reference states the rule as a formula, not as three magic numbers", () => {
+    expect(
+      flatten(REFERENCE),
+      "the reference must carry a `60 / (requests per minute)` formula",
+    ).toMatch(/60 (&divide;|[/]|÷) [(]?(your plan[^ ]s )?requests per minute/i);
+  });
+
+  it.each(Object.entries(SPACING))(
+    "the reference's %s spacing agrees with that tier's rpm (60/rpm = %ss)",
+    (tier, seconds) => {
+      // Parity, not existence: edit RPM and this recomputes, so a stale number
+      // that is merely "present" fails instead of quietly passing.
+      expect(
+        flatten(REFERENCE),
+        `the reference must say "${seconds}s on ${tier}" (60 / ${RPM[tier as keyof typeof RPM]})`,
+      ).toContain(`${seconds}s on ${tier}`);
+    },
+  );
+
+  /**
+   * Any digit attached to the per-second concept, in either direction and in
+   * every word we use for it. `[^.]` keeps a match inside one sentence.
+   */
+  const CEILING =
+    "(per-second (ceiling|limit)|burst (ceiling|limit)|requests? per second|req[/]s)";
+  const printsCeilingValue = (text: string) =>
+    new RegExp(CEILING + "[^.]{0,30}[0-9]", "i").test(text) ||
+    new RegExp("[0-9][^.]{0,30}" + CEILING, "i").test(text);
+
+  it.each(SURFACES)("%s does not print the per-second ceiling as a number", (path) => {
+    expect(
+      printsCeilingValue(currentClaims(path)),
+      `${path} prints a value for the per-second ceiling — a promise we have not made. ` +
+        "It is an operational env var (load tests have moved it to 200), and core#705 may " +
+        "make it a plan dimension, at which point any constant here is false again.",
+    ).toBe(false);
+  });
+
+  it("the announcement post's retired burst figures survive ONLY inside a dated correction", () => {
+    // Proves the blockquote carve-out is not a hole. If a ceiling figure ever
+    // appears outside a correction note on that page, the middle line fails.
+    expect(
+      printsCeilingValue(flatten(ANNOUNCE_POST)),
+      "precondition: the post is supposed to still quote the retired 5 / 15 / 30",
+    ).toBe(true);
+    expect(printsCeilingValue(currentClaims(ANNOUNCE_POST))).toBe(false);
+    expect(
+      quotedOnly(ANNOUNCE_POST),
+      "a correction note must be dated, or it is just an unsourced claim",
+    ).toMatch(/Corrected 20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]/);
+  });
+
+  it("the reference says the ceiling does not scale with the plan", () => {
+    // This is WHY pacing is needed; without it the rule reads as arbitrary.
+    expect(src(REFERENCE)).toMatch(
+      /same on every plan|not a tier dimension|does not (grow|rise) when|identical on every plan/i,
+    );
+  });
+
+  it("the reference warns that a per-second 429 reports the per-minute allowance", () => {
+    // `check_window` returns `limit=limit_rpm` with `retry_after=1` on a burst
+    // rejection, so the response names a number the caller never reached. It is
+    // the most confusing thing about our 429 and must stay documented.
+    const text = flatten(REFERENCE);
+    expect(text, "Retry-After: 1 must be named as the discriminator").toMatch(/Retry-After: 1/);
+    expect(
+      text,
+      "the reference must say the per-minute allowance is reported even on a per-second rejection",
+    ).toMatch(/including a per-second rejection|not the limit that rejected/i);
+  });
+
+  it("the agent docs send readers to a pacing section that exists", () => {
+    // Verified by reading the linked file, not by trusting the href — the same
+    // discipline as the CI/CD post's link check below.
+    expect(src(AI_AGENTS), `${AI_AGENTS} must link agents to the pacing rule`).toContain(
+      "/api/reference#pacing",
+    );
+    expect(
+      src(REFERENCE),
+      `${REFERENCE} must define id="pacing" — a link is not a destination`,
+    ).toContain('id="pacing"');
+  });
+
+  it("the agent docs name the fan-out failure mode, since agents fan out", () => {
+    expect(src(AI_AGENTS)).toMatch(/parallel|fan out|worker/i);
+  });
+});
+
 describe("the CI/CD post's rate-limit section points somewhere that answers it", () => {
   const POST = "src/content/blog/trigger-pipelines-from-ci-cd.md";
 
