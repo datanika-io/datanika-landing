@@ -126,6 +126,6 @@ Schedules live on their own page and reference the upload **by name**.
 ## Related
 
 - **Comparisons:** [Datanika vs Airbyte](/compare/airbyte), [Datanika vs Fivetran](/compare/fivetran)
-- **dbt tips:** Synapse-specific materializations in the [Transformations guide](/docs/transformations-guide)
+- **Transformations:** Synapse is a **load destination only** — Datanika ships no Synapse dbt adapter (`dbt-synapse` requires SQLAlchemy 1.x and the rest of the stack is on 2.x), so a pipeline or transformation cannot run against a Synapse pool. See [the destinations dbt can build in](/docs/transformations).
 - **Connector reference:** full field-by-field [Azure Synapse connector spec](/connectors/synapse)
 - **Scheduling deep-dive:** [Scheduling guide](/docs/scheduling-guide)

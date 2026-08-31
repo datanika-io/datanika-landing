@@ -6,7 +6,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync, existsSync, readdirSync } from "fs";
 import { resolve } from "path";
-import { connectors } from "../src/data/connectors";
+import { connectors, transformationDestinationConnectors } from "../src/data/connectors";
 
 const DIST = resolve(__dirname, "../dist");
 const BLOG_SRC = resolve(__dirname, "../src/content/blog");
@@ -159,26 +159,32 @@ describe("docs pages cross-link service connectors (#117)", () => {
     }
   });
 
-  it("/docs/transformations links to 6 materialized-destination connectors", () => {
-    // Filter: direction !== "source" AND (category === "Cloud Warehouse" OR
-    // slug === "clickhouse"). Currently BigQuery, Snowflake, Redshift,
-    // Databricks, Synapse, ClickHouse.
+  it("/docs/transformations links to exactly the destinations dbt can build in", () => {
+    // Derived from `transformationDestinationConnectors`, which carries the
+    // measurement and its date. The list used to be spelled out here AND
+    // computed by a category filter on the page, and both copies were wrong the
+    // same way: Databricks and Synapse were listed as dbt targets with no
+    // adapter installed, while PostgreSQL, SQL Server and DuckDB — all
+    // installed — were missing. Two agreeing copies of a wrong list read as
+    // corroboration. Assert against the one place that states the fact.
     const html = readHtml("docs/transformations/index.html");
     const links = uniqueConnectorLinks(html);
-    for (const slug of [
-      "bigquery",
-      "snowflake",
-      "redshift",
-      "databricks",
-      "synapse",
-      "clickhouse",
-    ]) {
+    for (const c of transformationDestinationConnectors) {
       expect(
-        links.has(`href="/connectors/${slug}"`),
-        `/docs/transformations missing warehouse /connectors/${slug}`
+        links.has(`href="/connectors/${c.slug}"`),
+        `/docs/transformations missing dbt target /connectors/${c.slug}`
       ).toBe(true);
     }
-    expect(links.size).toBe(6);
+    expect(links.size).toBe(transformationDestinationConnectors.length);
+
+    // The half with teeth: a destination dbt CANNOT build in must never appear
+    // in this section. Without it the check passes on a superset (landing#427).
+    for (const slug of ["mysql", "sqlite", "databricks", "synapse"]) {
+      expect(
+        links.has(`href="/connectors/${slug}"`),
+        `/docs/transformations lists /connectors/${slug} as a dbt target; it is a load destination only`
+      ).toBe(false);
+    }
   });
 
   it("/docs/getting-started links to the 5 Tier 1 connectors", () => {

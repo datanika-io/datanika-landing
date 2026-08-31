@@ -128,6 +128,6 @@ Schedules live on their own page and reference the upload **by name**.
 ## Related
 
 - **Comparisons:** [Datanika vs Fivetran](/compare/fivetran), [Datanika vs Airbyte](/compare/airbyte)
-- **dbt tips:** Databricks-specific materializations (Delta, liquid clustering) in the [Transformations guide](/docs/transformations-guide)
+- **Transformations:** Databricks is a **load destination only** — Datanika ships no Databricks dbt adapter (`dbt-databricks` requires SQLAlchemy 1.x and the rest of the stack is on 2.x), so a pipeline or transformation cannot run against a workspace. See [the destinations dbt can build in](/docs/transformations).
 - **Connector reference:** full field-by-field [Databricks connector spec](/connectors/databricks)
 - **Scheduling deep-dive:** cron syntax, timezones, and run-queue behavior in the [Scheduling guide](/docs/scheduling-guide)
