@@ -5,7 +5,7 @@ source: "csv"
 source_name: "CSV"
 category: "file"
 verified_by: "product-ui"
-verified_date: "2026-07-22"
+verified_date: "2026-08-31"
 related_use_cases: []
 related_comparisons:
   - "airbyte"
@@ -37,7 +37,7 @@ CSV is the universal escape hatch. Every SaaS tool exports it, every analyst has
 
 > **Name + file is all you get on the form.** The CSV Connection form has exactly three inputs: Name, Upload File, and Or enter file path (plus a **Use raw JSON config** escape hatch). There is no delimiter picker, no encoding picker, no header-row override and no column-type editor.
 >
-> **What actually happens at load time:** the header row and column types are inferred for you (the reader is pandas-backed, and it is good at this). **Delimiter and encoding are *not* auto-detected** — they use pandas' defaults, comma and UTF-8. If your file is semicolon-delimited or Windows-1252, you must say so explicitly via `delimiter` / `encoding` in the upload's **Use raw JSON config**; there is no form field for them yet ([core#499](https://github.com/datanika-io/datanika-core/issues/499)). Either convert the file first (see Troubleshooting) or use the raw-config escape hatch. For per-column type control, do it downstream in a dbt model.
+> **What actually happens at load time:** the header row and column types are inferred for you (the reader is pandas-backed, and it is good at this). **Delimiter and encoding are *not* auto-detected** — they default to comma and UTF-8. If your file is semicolon-delimited or Windows-1252, say so on the **upload**, which carries a **File Format** dropdown (defaulting to *auto — detect from type or extension*), a **Delimiter (CSV)** input (`, or ; or \t — leave empty for comma`) and an **Encoding** input (`utf-8, windows-1252, latin-1 — leave empty for utf-8`). These are real form fields now, on the New Upload form beneath the destination picker — you do **not** need the raw-JSON escape hatch for them ([core#499](https://github.com/datanika-io/datanika-core/issues/499) shipped 2026-07-22). For per-column type control, do it downstream in a dbt model.
 
 > **Read-only bind mounts.** If you're pointing the path input at a directory on the host, mount it into the container read-only (`:ro` in `docker-compose.yml`). Datanika never writes back to a CSV source, and read-only makes that guarantee explicit.
 
@@ -65,11 +65,15 @@ A connection on its own moves nothing. The thing that actually reads the CSV and
 
 1. On the **`/uploads`** row for your upload, click **Run**.
 2. Watch **`/runs`**. CSV loads are usually **fast**: Datanika streams rows directly into the destination, so a 100k-row file typically lands in seconds and a 10M-row file in a few minutes.
+3. When the run finishes, open **Models** (`/models`) and browse the new table. It lands in a schema **named after the upload**. **The table's own name depends on which of Step 1's two inputs you used:**
+   - **Upload File** — the table takes your file's name without its extension. `q3-signups.csv` lands as **`q3_signups`** (non-alphanumerics become underscores).
+   - **Or enter file path** — the table is named **`csv`**, after the connector. The default pattern for a directory is `*.csv`, which matches many files rather than one, so there is no single filename to borrow.
+   - Either way you can override it by setting `table_name` in the upload's **Use raw JSON config**.
+4. **Open the table and click `Load first 100 rows`.** The **Data preview** on the model detail page runs a live `SELECT` against your destination, so the rows on screen are the rows in your warehouse.
 
-![A completed CSV load in Datanika's run history](/docs/connectors/csv/04-first-run.png)
+![The Data preview on the landed q3_signups table, showing 14 rows read live from the destination warehouse](/docs/connectors/csv/04-first-run.png)
 
-3. When the run finishes, open **Models** (`/models`) and browse the new table. It lands in a schema **named after the upload**, and the table itself is named **`csv`** — the default file pattern is `*.csv`, which matches many files rather than one, so the table takes the connector's name instead of a filename. To choose the name yourself, set `table_name` in the upload's **Use raw JSON config**.
-4. Spot-check by opening the CSV in a spreadsheet and comparing row counts and a handful of values against the destination. Type-inference failures usually show up as null or truncated cells and are easy to catch visually.
+5. Spot-check by opening the CSV in a spreadsheet and comparing row counts and a handful of values against the preview. Type-inference failures usually show up as null or truncated cells and are easy to catch visually — a date column arriving as `VARCHAR` rather than `DATE` is the common one, and is a job for a dbt model downstream, not a bug.
 
 > **A run that matches no files now fails, loudly.** If the path is wrong, the export never ran, or the pattern matches nothing, the run ends `failed` with a message naming the cause — including the specific case where the path points at a *file* rather than the directory containing it, which tells you the parent directory to use instead. It used to complete as `success` with zero rows ([core#493](https://github.com/datanika-io/datanika-core/issues/493)), which was indistinguishable from a healthy load.
 
