@@ -74,11 +74,11 @@ const faq = [
   },
   {
     q: "What happens when I exceed my included volume?",
-    a: "On Free: hard cap — your pipeline pauses until next month. On Pro: $0.50 per extra GB, billed at the end of the billing period. On Enterprise: $0.25 per extra GB.",
+    a: "On Free: hard cap — your pipeline pauses until next month. On Pro: $0.50 per extra GB, billed at the end of the billing period. On Enterprise: $0.25 per extra GB. Extra volume is totalled across the whole period and rounded up to the next whole GB, so you are billed once per cycle — never per run.",
   },
   {
     q: "How do I work out what a pipeline will cost?",
-    a: "Multiply. The rate is published — $0.50/GB on Pro, $0.25/GB on Enterprise — and the meter counts post-normalization output bytes, so a source you can size is a bill you can size. The calculator at /why-cheaper/ does the arithmetic for a whole month. To be clear about what we do not do: the app does not display a per-run cost forecast today.",
+    a: "Multiply, then round up. The rate is published — $0.50/GB on Pro, $0.25/GB on Enterprise — and the meter counts post-normalization output bytes, so a source you can size is a bill you can size. The formula is overage = ceil(metered GB − included GB) × rate, applied once to the whole billing period rather than to each run. The calculator at /why-cheaper/ does the arithmetic for a whole month. To be clear about what we do not do: the app does not display a per-run cost forecast today.",
   },
   {
     q: "How does this compare to Fivetran's MAR pricing?",
@@ -190,12 +190,12 @@ const faq = [
               <span class="text-orange-400 font-mono">→ ~3 GB metered</span>
             </div>
             <div class="flex justify-between text-sm">
-              <span class="text-slate-400">Pro overage per run</span>
-              <span class="text-orange-400 font-mono">$1.50</span>
+              <span class="text-slate-400">30 nightly runs/mo</span>
+              <span class="text-orange-400 font-mono">90 GB past quota</span>
             </div>
             <div class="flex justify-between text-sm">
-              <span class="text-slate-400">30 nightly runs/mo</span>
-              <span class="text-orange-400 font-mono">$45 overage</span>
+              <span class="text-slate-400">Billed at $0.50/GB</span>
+              <span class="text-orange-400 font-mono">$45/mo overage</span>
             </div>
           </div>
         </div>
@@ -215,12 +215,12 @@ const faq = [
               <span class="text-emerald-400 font-mono">→ ~0.8 GB metered</span>
             </div>
             <div class="flex justify-between text-sm">
-              <span class="text-slate-400">Pro overage per run</span>
-              <span class="text-emerald-400 font-mono">$0.40</span>
+              <span class="text-slate-400">30 nightly runs/mo</span>
+              <span class="text-emerald-400 font-mono">24 GB past quota</span>
             </div>
             <div class="flex justify-between text-sm">
-              <span class="text-slate-400">30 nightly runs/mo</span>
-              <span class="text-emerald-400 font-mono">$12 overage</span>
+              <span class="text-slate-400">Billed at $0.50/GB</span>
+              <span class="text-emerald-400 font-mono">$12/mo overage</span>
             </div>
           </div>
           <div class="mt-6 pt-4 border-t border-emerald-500/20 text-center">
