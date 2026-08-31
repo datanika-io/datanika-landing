@@ -9,9 +9,13 @@ tags: ["tutorial", "postgresql", "bigquery", "getting-started"]
 heroImage: "/logo.png"
 ---
 
+> **Looking for the short version?** [Export PostgreSQL to BigQuery](/use-cases/postgresql-to-bigquery/) is the
+> one-page summary — what the pipeline does, the four setup steps, and the connector details. This post is the
+> screen-by-screen walkthrough of the same pipeline.
+
 ## The Problem
 
-Your PostgreSQL database is great for running your app, but running heavy analytical queries against it slows down production. You need to replicate your data to a warehouse — but setting up Airbyte (Kubernetes required), writing custom scripts, or configuring Fivetran ($250+/mo) feels like overkill for what should be simple.
+Your PostgreSQL database is great for running your app, but running heavy analytical queries against it slows down production. You need to replicate your data to a warehouse — but setting up Airbyte (Kubernetes required), writing custom scripts, or standing up a managed connector on Fivetran feels like overkill for what should be simple.
 
 ## The Solution
 
@@ -116,9 +120,9 @@ Your PostgreSQL data will automatically sync to BigQuery every morning. If you a
 
 ## Cost
 
-Datanika's Free plan includes 500 model runs per month — enough for daily syncs of a small database. Pro ($79/mo) bumps that to 15,000 runs for larger workloads.
+Datanika's Free plan includes 10 GB of processed volume per month — enough for daily syncs of a small database — alongside a 500-run fair-use orchestration limit. Pro ($79/mo) raises that to 100 GB and 15,000 runs.
 
-Compare that to Fivetran ($250+/mo for a few connectors) or Airbyte Cloud ($10/mo minimum per connection + credit costs).
+Compare that to Fivetran, which bills by monthly active rows and publishes no per-MAR rate, or to Airbyte Cloud, which prices its paid tiers on compute capacity rather than data moved. With either, the number for this pipeline is one you find out afterwards. The [/why-cheaper/](/why-cheaper/) calculator shows the side-by-side on our estimates, and each vendor's own pricing page is where a binding figure comes from.
 
 ## Next Steps
 

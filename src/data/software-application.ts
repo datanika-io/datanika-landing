@@ -9,10 +9,22 @@
  * Content owner: Growth (pricing) + Engineering (schema shape).
  * Source: https://github.com/datanika-io/datanika-landing/issues/51.
  *
- * Prices mirror:
- * - `src/components/Pricing.astro` monthly column
- * - Annual variants from datanika-cloud#6 (Pro $790/yr,
- *   Enterprise from $3,990/yr — ~17% discount vs monthly)
+ * 🚨 **There is no longer a mirror here, and that is the point of #373.**
+ *
+ * This header used to read *"Prices mirror: `src/components/Pricing.astro`
+ * monthly column"*, and nothing checked it. The V2 bytes cutover rewrote the
+ * visible column on 2026-04-20 and left these descriptions saying *"500 model
+ * runs per month"* and *"$0.01/run overage"* — a superseded pricing model, for
+ * four months, in the field search engines and AI assistants read first.
+ *
+ * The connector count in the same object never drifted, because it is
+ * `${connectors.length}`. The bound half survived the pivot; the copied half
+ * rotted. So the plan facts now come from `src/data/pricing-tiers.ts`, the same
+ * array `Pricing.astro` renders, and `tests/software-application.test.ts` fails
+ * on any number in a description that is absent from the tier it describes.
+ *
+ * Annual variants are from datanika-cloud#6 (Pro $790/yr, Enterprise from
+ * $3,990/yr — ~17% discount vs monthly).
  *
  * No `aggregateRating` yet — Growth has no testimonials. Synthetic
  * ratings trigger Google rich-result penalties; we'll add it when
@@ -20,6 +32,37 @@
  */
 
 import { connectors } from "./connectors";
+import { tiers, type PricingTier } from "./pricing-tiers";
+
+/** The tier `Pricing.astro` renders under this name. Throws rather than drifting. */
+function tier(name: string): PricingTier {
+  const t = tiers.find((x) => x.name === name);
+  if (!t) throw new Error(`No pricing tier named "${name}" in src/data/pricing-tiers.ts`);
+  return t;
+}
+
+/**
+ * Pull one feature line out of a tier by a stable substring, so the offer
+ * description quotes the rendered copy instead of paraphrasing it.
+ *
+ * Matching on a substring rather than an index is deliberate: an index would
+ * silently point at the wrong bullet the first time someone reorders the list,
+ * which is exactly the failure mode this file is being rescued from.
+ */
+function feature(t: PricingTier, needle: string): string {
+  const hit = t.features.find((f) => f.toLowerCase().includes(needle.toLowerCase()));
+  if (!hit) throw new Error(`Tier "${t.name}" has no feature matching "${needle}"`);
+  return hit.trim();
+}
+
+/** `"10 GB processed / month"` → `"10 GB processed/month"`, for prose. */
+const tidy = (s: string) => s.replace(/\s*\/\s*/g, "/");
+
+function describeMonthly(name: string, needles: string[]): string {
+  const t = tier(name);
+  const facts = needles.map((n) => tidy(feature(t, n))).join(", ");
+  return `${facts}. All ${connectors.length} connectors included on every plan.`;
+}
 
 export interface OfferData {
   /** Plan name shown in the SERP card. */
@@ -43,16 +86,25 @@ export const PLAN_OFFERS: OfferData[] = [
     price: "0",
     priceCurrency: "USD",
     billingDuration: "P1M",
-    description:
-      `1 seat, 5 connections, 2 schedules, 500 model runs per month. All ${connectors.length} connectors included.`,
+    description: describeMonthly("Free", [
+      "GB processed",
+      "team member",
+      "connections",
+      "schedules",
+    ]),
   },
   {
     name: "Pro (monthly)",
     price: "79",
     priceCurrency: "USD",
     billingDuration: "P1M",
-    description:
-      "5 seats, 25 connections, unlimited schedules, 15,000 model runs per month. Priority email support.",
+    description: describeMonthly("Pro", [
+      "GB processed",
+      "GB overage",
+      "team members",
+      "connections",
+      "schedules",
+    ]),
   },
   {
     name: "Pro (annual)",
@@ -67,8 +119,13 @@ export const PLAN_OFFERS: OfferData[] = [
     price: "399",
     priceCurrency: "USD",
     billingDuration: "P1M",
-    description:
-      "10 seats, 50 connections, 50,000 model runs, $0.01/run overage, SSO (SAML/OIDC), priority support with SLA.",
+    description: describeMonthly("Enterprise", [
+      "TB processed",
+      "GB overage",
+      "team members included",
+      "connections",
+      "SSO",
+    ]),
   },
   {
     name: "Enterprise (annual)",

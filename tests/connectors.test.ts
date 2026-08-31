@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { readFileSync, existsSync } from "fs";
 import { resolve } from "path";
-import { connectors } from "../src/data/connectors";
+import { connectors, sourceConnectors, destinationConnectors } from "../src/data/connectors";
 
 const DIST = resolve(__dirname, "../dist");
 
@@ -353,5 +353,87 @@ describe("MongoDB auth_source is documented as it actually ships", () => {
     expect(/trust the run, not the button/i.test("until it closes, trust the run, not the button.")).toBe(
       true,
     );
+  });
+});
+
+
+// ---------------------------------------------------------------------------
+// #378 / #379 — the pages rank for destination-directed queries and never named
+// a destination
+// ---------------------------------------------------------------------------
+
+/**
+ * GSC, 2026-03-01 -> 2026-08-28: `export slack to postgresql` at position 13.5
+ * on `/connectors/slack/`, `pipedrive to bigquery` at 16.6, `asana to bigquery`
+ * at 18.1. Five page-2 positions on queries whose second half the page did not
+ * answer. A reader had to infer that PostgreSQL was even supported.
+ *
+ * The set is asserted **from the data file** rather than against a written list,
+ * so a `direction` change carries the page with it. That is the half the prose
+ * split failed at (#376), and the half that let five warehouses advertise a
+ * source capability core does not have (#391).
+ */
+describe("connector pages answer the destination question (#378, #379)", () => {
+  const SAAS_SAMPLE = ["slack", "asana", "pipedrive", "freshdesk", "stripe"];
+
+  it("every SaaS page lists the full derived destination set, and nothing else", () => {
+    for (const slug of SAAS_SAMPLE) {
+      const html = readHtml(`connectors/${slug}/index.html`);
+      const expected = destinationConnectors.filter((c) => c.slug !== slug);
+      for (const d of expected) {
+        expect(
+          html,
+          `/connectors/${slug}/ does not name ${d.name}, which is a supported destination`,
+        ).toContain(`/connectors/${d.slug}`);
+      }
+      // The inverse, which is the assertion that actually protects us: a name we
+      // do not support must never appear. 10% of our measured impressions are for
+      // Power BI, Qlik and Tableau, and some of our best positions are among
+      // them - that is product signal, not copy (landing#325).
+      for (const absent of ["Power BI", "Qlik", "Tableau", "Looker Studio", "Acumatica"]) {
+        expect(
+          html.includes(absent),
+          `/connectors/${slug}/ names ${absent}, which is not in connectors.ts`,
+        ).toBe(false);
+      }
+    }
+  });
+
+  it("a destination-only page offers sources, not destinations", () => {
+    const html = readHtml("connectors/bigquery/index.html");
+    expect(html).toContain("Sources you can load into");
+    expect(html).toContain(String(sourceConnectors.length));
+    expect(
+      /Where Google BigQuery data can go/.test(html),
+      "BigQuery is a destination; it must not be offered a destination list",
+    ).toBe(false);
+  });
+
+  it("the badge has three states, so a destination is never labelled a source", () => {
+    const bq = readHtml("connectors/bigquery/index.html");
+    const slack = readHtml("connectors/slack/index.html");
+    const pg = readHtml("connectors/postgresql/index.html");
+    // Astro emits the label with surrounding whitespace inside the span.
+    const badge = (html: string) =>
+      (html.match(/rounded-full[^>]*">\s*(Source &amp; Destination|Destination|Source)\s*</) ?? [])[1]?.replace("&amp;", "&");
+    expect(badge(bq)).toBe("Destination");
+    expect(badge(slack)).toBe("Source");
+    expect(badge(pg)).toBe("Source & Destination");
+  });
+
+  it("only SQL database sources are told to choose a load mode", () => {
+    // There is no write-disposition / load-mode / source-schema / table-name
+    // field for a SaaS, file, streaming or NoSQL source. The connector guides
+    // have said so since landing#272/#285; this template said the opposite on
+    // all 36 pages.
+    for (const c of connectors) {
+      const html = readHtml(`connectors/${c.slug}/index.html`);
+      const tellsLoadMode = /choose a load mode/i.test(html);
+      expect(
+        tellsLoadMode,
+        `/connectors/${c.slug}/ (category ${c.category}) ${tellsLoadMode ? "tells" : "does not tell"} ` +
+          "the reader to choose a load mode; only Database sources render that control",
+      ).toBe(c.category === "Database");
+    }
   });
 });

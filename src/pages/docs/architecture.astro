@@ -1,15 +1,15 @@
 ---
 import DocsLayout from "../../layouts/DocsLayout.astro";
 import RelatedConnectors from "../../components/RelatedConnectors.astro";
-import { connectors } from "../../data/connectors";
+import { connectors, sourceConnectors, destinationConnectors } from "../../data/connectors";
 
-// Every connector that can be used as a destination in Datanika's load
-// layer. Computed from the data file: a connector is a destination if its
-// direction is not "source" (i.e. "destination" or "both"). This includes
-// all databases (Postgres, MySQL, SQLite, etc.), all cloud warehouses, and
-// DuckDB. If a new destination connector is added to connectors.ts, it
-// shows up here automatically — no hardcoded list to maintain.
-const destinationConnectors = connectors.filter((c) => c.direction !== "source");
+// `sourceConnectors` / `destinationConnectors` are derived in the data file and
+// shared across pages, so a new connector carries the prose with it. This page
+// used to compute the destination half right here and then hardcode BOTH
+// numbers in the System Overview sentence below — the derived value was sitting
+// one scroll away, unused, while the sentence published a hardcoded split that
+// had not been true since #291/#294 and did not add up against the catalogue
+// total rendered elsewhere on the page (#376).
 ---
 
 <DocsLayout title="Architecture" description="Technical overview of Datanika's architecture, tech stack, data flow, and security model.">
@@ -19,7 +19,7 @@ const destinationConnectors = connectors.filter((c) => c.direction !== "source")
   <h2>System Overview</h2>
   <p>Datanika is a multi-tenant data pipeline platform built with:</p>
   <ul>
-    <li><strong>dlt</strong> (data load tool) — Extract + Load from 30 sources to 11 destinations</li>
+    <li><strong>dlt</strong> (data load tool) — Extract + Load across {sourceConnectors.length} sources and {destinationConnectors.length} destinations, out of a catalogue of {connectors.length} connectors (the six databases that do both are counted in each)</li>
     <li><strong>dbt-core</strong> — Transform (SQL models, tests, snapshots, packages)</li>
     <li><strong>Reflex</strong> — Full-stack Python UI (compiles to React, no separate JS codebase)</li>
     <li><strong>PostgreSQL</strong> — Application database + pipeline metadata</li>

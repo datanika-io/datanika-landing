@@ -17,7 +17,7 @@ Datanika takes a different approach: **one platform for the entire pipeline**.
 
 ## What Datanika Does
 
-- **Extract & Load** — Connect to 32 sources (databases, APIs, SaaS tools, files) and load data into your warehouse using [dlt](https://dlthub.com).
+- **Extract & Load** — Connect to 31 sources (databases, APIs, SaaS tools, files) and load data into your warehouse using [dlt](https://dlthub.com).
 - **Transform** — Write SQL models powered by [dbt-core](https://www.getdbt.com), with a built-in editor, tests, and snapshots.
 - **Orchestrate** — Build visual pipelines with a DAG editor, set up schedules with cron expressions, and define dependencies.
 - **Monitor** — Track every run with streaming logs, error details, and execution history.

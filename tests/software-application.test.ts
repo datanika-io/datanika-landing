@@ -6,6 +6,8 @@ import {
   buildSoftwareApplicationJsonLd,
   softwareApplicationJsonLd,
 } from "../src/data/software-application";
+import { tiers } from "../src/data/pricing-tiers";
+import { connectors } from "../src/data/connectors";
 
 const DIST = resolve(__dirname, "../dist");
 
@@ -212,5 +214,126 @@ describe("softwareApplicationJsonLd export", () => {
     expect(softwareApplicationJsonLd).toEqual(
       buildSoftwareApplicationJsonLd(),
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// #373 — the offers were a hand-maintained mirror, and it rotted
+// ---------------------------------------------------------------------------
+
+/**
+ * `PLAN_OFFERS` descriptions used to be prose copies of `Pricing.astro`'s
+ * monthly column, under a header that said so and nothing that checked it. The
+ * V2 bytes cutover (2026-04-20) rewrote the visible column and left the copies
+ * describing **V1 runs-based pricing** — "500 model runs per month", "15,000
+ * model runs per month", "$0.01/run overage" — for four months, on the
+ * homepage and `/pricing/`, in the field search engines read first.
+ *
+ * The connector count in the same object never drifted, because it was
+ * `${connectors.length}`. These tests exist to make the rest of the object
+ * behave like the count.
+ */
+describe("offer descriptions are bound to the rendered tiers (#373)", () => {
+  const MONTHLY: [offer: string, tier: string][] = [
+    ["Free", "Free"],
+    ["Pro (monthly)", "Pro"],
+    ["Enterprise (monthly)", "Enterprise"],
+  ];
+
+  it("every number in a monthly offer description appears in that tier's rendered copy", () => {
+    const drift: string[] = [];
+    for (const [offerName, tierName] of MONTHLY) {
+      const offer = PLAN_OFFERS.find((o) => o.name === offerName)!;
+      const t = tiers.find((x) => x.name === tierName)!;
+      // The tier's own strings, plus the derived connector count the copy cites.
+      const rendered = [t.monthlyPrice, ...t.features, String(connectors.length)]
+        .join(" | ")
+        .toLowerCase();
+      for (const n of offer.description.match(/\d[\d,.]*\d|\d/g) ?? []) {
+        if (!rendered.includes(n.toLowerCase())) {
+          drift.push(`"${offerName}" claims ${n}, absent from the ${tierName} tier`);
+        }
+      }
+    }
+    expect(
+      drift,
+      "A number reached the structured data that is not on the pricing page. Build the " +
+        "description from src/data/pricing-tiers.ts rather than restating it.\n" +
+        drift.join("\n"),
+    ).toEqual([]);
+  });
+
+  it("no offer prices an overage per run — V2 bills bytes", () => {
+    const offenders = PLAN_OFFERS.filter((o) =>
+      /\$[\d.]+\s*(\/|per )\s*run\b|runs? overage/i.test(o.description),
+    ).map((o) => `${o.name}: ${o.description}`);
+    expect(
+      offenders,
+      "V1's $0.01/run overage was replaced outright by per-GB overage on 2026-04-20.",
+    ).toEqual([]);
+  });
+
+  it("every monthly offer leads with the included volume, which is the billed dimension", () => {
+    for (const [offerName] of MONTHLY) {
+      const offer = PLAN_OFFERS.find((o) => o.name === offerName)!;
+      expect(
+        offer.description,
+        `${offerName} must state its included volume; runs are a secondary fair-use ` +
+          "quota in V2 (SPEC_PRICING_V2 §3.2) and must never lead.",
+      ).toMatch(/\d+\s*(GB|TB)\s+processed/i);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// #373 (second instance) — /refund/ had no return-policy schema
+// ---------------------------------------------------------------------------
+
+/**
+ * For a Paddle merchant-of-record business, `MerchantReturnPolicy` linked to the
+ * Organization is the ordinary trust signal on the refund page, and `/refund/`
+ * emitted only the site-wide `Organization` and `WebSite` objects.
+ *
+ * The assertion that matters is the last one: the window in the schema and the
+ * window in the sentence are one constant. A refund window is a **term of
+ * sale** — two copies of it disagreeing is worse than two copies of a price.
+ */
+describe("/refund/ emits a return policy bound to its own copy (#373)", () => {
+  let html: string;
+  let policy: Record<string, unknown>;
+
+  beforeAll(() => {
+    html = readHtml("refund/index.html");
+    const blocks = [...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)];
+    const parsed = blocks.map((m) => JSON.parse(m[1]));
+    policy = parsed.find((o) => o["@type"] === "MerchantReturnPolicy");
+  });
+
+  it("emits a MerchantReturnPolicy", () => {
+    expect(policy, "/refund/ emits no MerchantReturnPolicy").toBeTruthy();
+  });
+
+  it("declares a finite window with a full, free refund", () => {
+    expect(policy.returnPolicyCategory).toBe(
+      "https://schema.org/MerchantReturnFiniteReturnWindow",
+    );
+    expect(policy.refundType).toBe("https://schema.org/FullRefund");
+    expect(policy.returnFees).toBe("https://schema.org/FreeReturn");
+  });
+
+  it("names Paddle as merchant of record, matching the visible copy", () => {
+    expect(JSON.stringify(policy)).toContain("Paddle");
+    expect(html).toContain("Merchant of Record");
+  });
+
+  it("states the same window the page states in prose", () => {
+    const days = policy.merchantReturnDays as number;
+    expect(days).toBeGreaterThan(0);
+    expect(
+      html,
+      `Schema says ${days} days. The visible §2 sentence must say the same number — ` +
+        "both come from REFUND_WINDOW_DAYS in refund.astro, so a mismatch means " +
+        "someone reintroduced a second copy.",
+    ).toContain(`<strong>${days} days</strong>`);
   });
 });

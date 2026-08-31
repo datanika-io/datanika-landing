@@ -1,80 +1,8 @@
 ---
 import ConversionCTA from "./ConversionCTA.astro";
 
-// DRAFT — Pricing V2 (volume-aware). Held on branch 182-pricing-v2-copy-draft
-// until cloud volume metering is green in staging for >=14 days (see
-// plans/growth/SPEC_PRICING_V2.md §11). Do not merge before P5 cutover.
-const tiers = [
-  {
-    name: "Free",
-    monthlyPrice: "$0",
-    annualPrice: "$0",
-    period: "forever",
-    annualPeriod: "forever",
-    description: "For evaluation and side projects.",
-    features: [
-      "10 GB processed / month",
-      "1 team member",
-      "5 connections",
-      "2 schedules",
-      "500 model runs / month",
-      "All integrations",
-      "Social login (Google, GitHub)",
-      "Community support",
-    ],
-    cta: "Get Started",
-    highlighted: false,
-  },
-  {
-    name: "Pro",
-    monthlyPrice: "$79",
-    annualPrice: "$66",
-    period: "/month",
-    annualPeriod: "/month, billed annually",
-    annualTotal: "$790/year",
-    description: "For teams running production pipelines.",
-    features: [
-      "100 GB processed / month",
-      "$0.50 / GB overage",
-      "5 team members",
-      "25 connections",
-      "Unlimited schedules",
-      "15,000 model runs / month",
-      "All integrations",
-      "Social login (Google, GitHub)",
-      "Priority support",
-    ],
-    cta: "Start Free Trial",
-    highlighted: true,
-  },
-  {
-    name: "Enterprise",
-    monthlyPrice: "From $399",
-    annualPrice: "From $333",
-    period: "/month",
-    annualPeriod: "/month, billed annually",
-    annualTotal: "From $3,990/year",
-    description: "For organizations with advanced needs. Extra seats at $25/mo each.",
-    features: [
-      "1 TB processed / month",
-      "$0.25 / GB overage",
-      "10 team members included",
-      "50 connections",
-      "Unlimited schedules",
-      "50,000 model runs / month",
-      "SSO (SAML/OIDC)",
-      // No compliance bullet here. The SOC 2 Type I claim was withdrawn on
-      // 2026-08-30 (founder decision) and this component renders on BOTH the
-      // homepage and /pricing, so anything added to this list is a claim on two
-      // pages at once. Compliance posture lives on /trust, where it can be
-      // stated with its caveats. See tests/compliance-claims.test.ts.
-      "Priority support with SLA",
-    ],
-    cta: "Contact Us",
-    ctaHref: "mailto:info@datanika.io",
-    highlighted: false,
-  },
-];
+import { tiers } from "../data/pricing-tiers";
+
 ---
 
 <section id="pricing" class="relative py-24">
@@ -84,7 +12,7 @@ const tiers = [
         Simple, transparent <span class="gradient-text">pricing</span>
       </h2>
       <p class="mx-auto mt-4 max-w-2xl text-lg text-slate-400">
-        You pay for bytes, not tables. Start free with 10 GB, see the cost before you run, no MAR surprises.
+        You pay for bytes, not tables. Start free with 10 GB, one published rate per GB after that, no MAR surprises.
       </p>
 
       <!-- Monthly / Annual Toggle -->

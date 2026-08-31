@@ -1,6 +1,6 @@
 ---
 title: "The Real Cost of Your Modern Data Stack in 2026"
-description: "Fivetran + dbt Cloud + a data warehouse used to cost a growing team $800–$2,000/mo. In 2026, with open-source ELT and AI coding agents, the honest number is closer to $15. Here's the line-by-line math."
+description: "A Fivetran + dbt Cloud + warehouse stack ran a growing team four figures a month. In 2026, with open-source ELT and AI coding agents, the honest number is closer to $15. Here's the line-by-line math, and where each figure comes from."
 date: 2026-04-13
 author: "Datanika Team"
 category: "business"
@@ -34,6 +34,8 @@ Here's what that looked like on a "default" managed stack eighteen months ago:
 | BI | Looker / Metabase Cloud | $200–$400 |
 | Observability | Monte Carlo Entry / Elementary Cloud | $200–$500 |
 | **Total** | | **$1,320 – $1,820/mo** |
+
+**Where these numbers come from**, because it is the weakest part of the post and worth saying plainly: they are our estimates for the profile above, not quotes. Checked in August 2026, most of these vendors publish no rate card you can compute a bill from — Fivetran points at an estimator and a consumption table with no per-MAR rate, Airbyte prices its paid tiers on compute capacity rather than data moved, and Snowflake's pricing-options page carries no dollar figure at all. dbt Cloud Starter at $100/seat/month is the one line here taken from a published price. Your own bill will differ, sometimes by a lot; run the numbers through [Fivetran's estimator](https://www.fivetran.com/pricing) and [Airbyte's pricing page](https://airbyte.com/pricing) for a binding figure. The Datanika rows below are exact, because [our rate is published](/pricing/).
 
 Nobody budgets for this up front. It creeps in one invoice at a time until someone in finance prints all five of them on the same page.
 

@@ -38,7 +38,7 @@ This is the piece every other ELT tool is missing. An LLM without a discovery do
 GET /api/v1/meta/connection-types
 ```
 
-Returns JSON for all 32 sources with full config schemas. Claude picked `stripe` and `bigquery`, read the schemas, and knew exactly which fields to set. No guessing `api_key` vs `secret_key` vs `token` — the schema said `api_key`, so `api_key` it was.
+Returns JSON for every connector in the catalogue, with full config schemas. Claude picked `stripe` and `bigquery`, read the schemas, and knew exactly which fields to set. No guessing `api_key` vs `secret_key` vs `token` — the schema said `api_key`, so `api_key` it was.
 
 This is the thing I was most skeptical about before we built it. "Why not just document the endpoints?" we thought. Because documentation doesn't compile. A schema does.
 
