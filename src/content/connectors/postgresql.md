@@ -100,7 +100,7 @@ Extract-load is configured at **`/uploads`**, not on the connection. There is no
 ![A completed first run in Datanika's run history](/docs/connectors/postgresql/04-first-run.png)
 
 3. A typical first run takes seconds for a small database and hours for one in the hundreds of GB. Subsequent incremental runs are much faster because only new/changed rows move.
-4. When the run finishes, open **Catalog** and browse the landed tables. The upload lands them in a schema named after the upload — an upload called `customerorderssync` creates schema `customerorderssync` in the destination, alongside dlt's own `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables.
+4. When the run finishes, open **Models** (`/models`) and browse the landed tables. The upload lands them in a schema named after the upload — an upload called `customerorderssync` creates schema `customerorderssync` in the destination. dlt also creates its own `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables in that schema, but **Models does not list them** — seeing only your own tables there is correct, not a partial load.
 5. Spot-check row counts against the source: `SELECT count(*) FROM <schema>.<table>;` on both sides should match (or differ by exactly the rows written during the sync window for incremental loads). **Check this rather than trusting the status badge** — the Rows figure counts everything the run moved across all tables, so one number covers the whole sync.
 
 ## Step 5 — Schedule it
