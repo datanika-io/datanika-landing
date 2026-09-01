@@ -946,15 +946,25 @@ export const bidirectionalConnectors = connectors.filter((c) => c.direction === 
  * `datanika/services/dbt_project.py`, **intersected with the adapters the image
  * actually installs** — those two disagree, which is core#862. Measured
  * 2026-08-31 with `importlib.util.find_spec` against the core venv on
- * `origin/dev`:
+ * `origin/dev`, then re-measured 2026-09-01 after core#825 landed and removed
+ * `dbt-mysql` from the lock:
  *
- *   installed  postgres · mysql · sqlserver · clickhouse · duckdb · bigquery ·
- *              snowflake · redshift
- *   missing    sqlite · databricks · synapse
+ *   installed  postgres · sqlserver · clickhouse · duckdb · bigquery ·
+ *              snowflake · redshift          (7)
+ *   missing    mysql · sqlite · databricks · synapse
  *
- * `mysql` is omitted below because core#825 removes `dbt-mysql`; MySQL remains
- * a fully supported **source** and **load destination**. Re-measure before
- * editing this list — do not assume it is still current.
+ * 🚨 **This paragraph used to end "MySQL remains a fully supported source and
+ * load destination". That was RETRACTED by core#865 and it contradicted line 74
+ * of this same file, which already says MySQL cannot receive data at all.** dlt
+ * has no `mysql` destination factory and never has, so the load half was never
+ * true; only the source half survived measurement. Two answers in one file is
+ * the state this comment existed to prevent, and a comment is an instruction to
+ * whoever edits the list next — it does not get a pass for not rendering.
+ *
+ * `mysql` is therefore omitted below for **two** independent reasons, and
+ * removing either one would not put it back: no dbt adapter (core#825) and no
+ * dlt destination (core#865). Re-measure before editing this list — do not
+ * assume it is still current.
  */
 const DBT_TARGET_SLUGS = [
   "postgresql",
