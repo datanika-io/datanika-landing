@@ -112,7 +112,7 @@ const byCategory = categoryOrder.map((category) => ({
       <tr><td><code>csv</code></td><td>CSV files (local or uploaded)</td></tr>
       <tr><td><code>json</code></td><td>JSON files (local or uploaded)</td></tr>
       <tr><td><code>parquet</code></td><td>Parquet files (local or uploaded)</td></tr>
-      <tr><td><code>s3</code></td><td>Amazon S3 bucket (CSV/JSON/Parquet)</td></tr>
+      <tr><td><code>s3</code></td><td><strong>Temporarily unavailable.</strong> An upstream dependency conflict removed the S3 transport from the shipped image, so new S3 connections cannot be created and existing ones will not run until it is restored.</td></tr>
       <tr><td><code>google_sheets</code></td><td>Google Sheets (service account)</td></tr>
       <tr><td><code>kafka</code></td><td>Streaming consumer (bootstrap servers + topics)</td></tr>
     </tbody>
@@ -136,7 +136,7 @@ Config:
     <li>Navigate to <strong>Connections</strong> in the sidebar</li>
     <li>Click <strong>New Connection</strong></li>
     <li>Enter a descriptive name (e.g., "Production Postgres")</li>
-    <li>Select the connection type from the dropdown (e.g., <code>postgres</code>, <code>bigquery</code>, <code>s3</code>)</li>
+    <li>Select the connection type from the dropdown (e.g., <code>postgres</code>, <code>bigquery</code>, <code>parquet</code>)</li>
     <li>Fill in the required fields — host, port, database, credentials, etc. Fields change based on the selected type</li>
     <li>Click <strong>Test Connection</strong> to verify credentials are correct</li>
     <li>Click <strong>Create Connection</strong> to save</li>
