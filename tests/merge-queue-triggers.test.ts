@@ -36,6 +36,25 @@ import { resolve } from "node:path";
  *   gh api repos/datanika-io/datanika-landing/branches/dev/protection \
  *     -q '[.required_status_checks.checks[].context]'
  *
+ * Measured on this repo 2026-09-01, when the queue was switched on, because two of these
+ * facts are not what you would guess and one of them changes what the guard is FOR:
+ *
+ *  - GitHub reads workflow triggers from the merge-group ref's OWN tree, not from the base
+ *    branch. The PR that added the trigger bootstrapped itself through the queue: run
+ *    33523211167, event `merge_group`, branch `gh-readonly-queue/dev/pr-440-8d93a238`.
+ *    `build` reported on the merge-group commit `bac02c24`, and that same commit became
+ *    `dev`'s head — so the thing that was tested is exactly the thing that merged.
+ *
+ *  - The merge-group ref is suffixed with the BASE sha, not the PR head. Two entries for
+ *    the same PR against an unchanged base therefore share a `github.ref`, which is why
+ *    the `cancel-in-progress` assertion below is load-bearing rather than the belt-and-
+ *    braces this file originally called it.
+ *
+ *  - A queued PR reports `autoMergeRequest: null`. The queue entry is visible ONLY via
+ *    `repository.mergeQueue(branch:).entries` in GraphQL, and `gh pr merge --auto` exits
+ *    **0 with a warning** whether or not it enqueued anything. A script that reads either
+ *    of those as its outcome signal will report a queued PR as un-queued.
+ *
  * (core#904)
  */
 
