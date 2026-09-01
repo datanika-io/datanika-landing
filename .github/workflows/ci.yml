@@ -25,9 +25,12 @@ concurrency:
   #   merge_group  — nothing recomputes it. The queue waits out its check-response
   #                  timeout and ejects the entry. Runner minutes are cheaper than
   #                  a merge that silently did not happen, so never cancel.
-  # `github.ref` is already unique per queue entry (`refs/heads/gh-readonly-queue/
-  # dev/pr-N-<sha>`), so this is belt and braces — but the failure it guards against
-  # is invisible, and the expression costs nothing. (core#904)
+  # ⚠️ This comment used to say `github.ref` is unique per queue entry, so the guard was
+  # "belt and braces". MEASURED, and it is not: the ref is
+  # `refs/heads/gh-readonly-queue/dev/pr-N-<BASE sha>` — the base commit, not the PR
+  # head. Two entries for the same PR against an unchanged base therefore share this
+  # group key, which is exactly the re-queue case (an entry ahead of you is ejected and
+  # the group re-forms). The guard is load-bearing. (core#904)
   cancel-in-progress: ${{ github.event_name != 'merge_group' }}
 
 jobs:
