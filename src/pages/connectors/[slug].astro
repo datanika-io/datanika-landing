@@ -3,7 +3,7 @@ import Layout from "../../layouts/Layout.astro";
 import Navbar from "../../components/Navbar.astro";
 import Footer from "../../components/Footer.astro";
 import ConversionCTA from "../../components/ConversionCTA.astro";
-import { connectors, sourceConnectors, destinationConnectors, directionLabel } from "../../data/connectors";
+import { connectors, availableConnectors, sourceConnectors, destinationConnectors, directionLabel } from "../../data/connectors";
 import type { Connector } from "../../data/connectors";
 import { useCases } from "../../data/use-cases";
 import { templates } from "../../data/templates";
@@ -129,6 +129,12 @@ const comparisonSlugs = ["airbyte", "fivetran", "stitch", "hevo"];
       <p class="text-lg text-slate-400 leading-relaxed max-w-3xl">
         {connector.description}
       </p>
+      {connector.withdrawn && (
+        <div class="mt-6 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-5 max-w-3xl">
+          <p class="text-sm font-semibold text-amber-200 mb-2">Temporarily unavailable</p>
+          <p class="text-sm text-slate-300 leading-relaxed" set:html={linkifyIssues(connector.withdrawn)} />
+        </div>
+      )}
       {connector.direction !== "destination" && (
         <p class="mt-5 text-slate-300">
           <span class="text-white font-medium">Where it can go:</span> load {connector.name} into
@@ -282,7 +288,7 @@ const comparisonSlugs = ["airbyte", "fivetran", "stitch", "hevo"];
             load into it — databases, SaaS APIs, files and streams. Datanika does not extract data
             <em>from</em> {connector.name}.
           </p>
-          <a href="/connectors" class="btn-secondary">Browse all {connectors.length} connectors</a>
+          <a href="/connectors" class="btn-secondary">Browse all {availableConnectors.length} connectors</a>
         </>
       ) : (
         <>

@@ -3,7 +3,7 @@ import Layout from "../../layouts/Layout.astro";
 import Navbar from "../../components/Navbar.astro";
 import Footer from "../../components/Footer.astro";
 import ConversionCTA from "../../components/ConversionCTA.astro";
-import { connectors, directionLabel } from "../../data/connectors";
+import { connectors, availableConnectors, directionLabel } from "../../data/connectors";
 
 const categories = [
   { label: "Databases", filter: "Database" },
@@ -17,7 +17,7 @@ const categories = [
 
 <Layout
   title="Connectors — Datanika"
-  description={`${connectors.length} connectors for databases, cloud warehouses, SaaS APIs, and files. Extract and load data with Datanika's open-source pipeline platform.`}
+  description={`${availableConnectors.length} connectors for databases, cloud warehouses, SaaS APIs, and files. Extract and load data with Datanika's open-source pipeline platform.`}
 >
   <Navbar />
 
@@ -26,7 +26,7 @@ const categories = [
     <div class="glow bg-cyan-600 -bottom-40 -right-40"></div>
     <div class="relative max-w-5xl mx-auto px-6 text-center">
       <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-6">
-        <span class="gradient-text">{connectors.length} Connectors</span>
+        <span class="gradient-text">{availableConnectors.length} Connectors</span>
       </h1>
       <p class="text-lg sm:text-xl text-slate-400 max-w-3xl mx-auto leading-relaxed">
         Databases, cloud warehouses, SaaS APIs, files, and streaming — connect to your data wherever it lives.
@@ -50,13 +50,15 @@ const categories = [
                 <div class="flex items-center justify-between mb-2">
                   <h3 class="font-semibold text-white">{c.name}</h3>
                   <span class={`text-xs px-2 py-0.5 rounded-full ${
-                    c.direction === "both"
-                      ? "bg-violet-500/20 text-violet-300"
-                      : c.direction === "destination"
-                        ? "bg-cyan-500/20 text-cyan-300"
-                        : "bg-slate-800 text-slate-400"
+                    c.withdrawn
+                      ? "bg-amber-500/20 text-amber-300"
+                      : c.direction === "both"
+                        ? "bg-violet-500/20 text-violet-300"
+                        : c.direction === "destination"
+                          ? "bg-cyan-500/20 text-cyan-300"
+                          : "bg-slate-800 text-slate-400"
                   }`}>
-                    {directionLabel(c.direction)}
+                    {c.withdrawn ? "Unavailable" : directionLabel(c.direction)}
                   </span>
                 </div>
                 <p class="text-sm text-slate-400 line-clamp-2">{c.description}</p>
