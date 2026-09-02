@@ -47,14 +47,21 @@ JSON is the format your APIs already speak, your logs already emit, and your Saa
 
 The classic use case: an upstream job writes one `.jsonl` file per hour or per day to a shared directory, and you want Datanika to pick each one up exactly once.
 
-1. On self-hosted Datanika, mount a directory into the `app` container read-only:
+1. On self-hosted Datanika, mount a directory into **both** the web app and the worker, read-only:
    ```yaml
    services:
      app:
        volumes:
          - /opt/datanika/inbox-json:/var/datanika/inbox-json:ro
+     celery:
+       volumes:
+         - /opt/datanika/inbox-json:/var/datanika/inbox-json:ro
    ```
-2. Restart the container to pick up the mount.
+   🚨 **Both, not just `app`.** Datanika runs the web app and the worker as separate containers with separate filesystems, and **the load runs in the worker**. Mount this into `app` alone and the run fails on a path the worker has never had.
+2. Restart both containers to pick up the mount (`docker compose up -d app celery`), then confirm the worker can see it:
+   ```bash
+   docker exec datanika-celery ls /var/datanika/inbox-json
+   ```
 3. In Datanika, open **`/connections`**, pick `json` from the type dropdown.
 4. Skip the file upload area. Below it, you'll see the **Or enter file path** input — enter the path to the **directory** inside the container:
    - **Or enter file path** — `/var/datanika/inbox-json`. **A directory, not a file and not a glob.** Datanika matches `*.json` *inside* whatever you type, so a path ending in a filename or a pattern matches nothing.
