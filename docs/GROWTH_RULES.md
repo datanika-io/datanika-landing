@@ -276,18 +276,28 @@ number in a migration is not a number in a table, and the exposure grows with ev
 
 **When the page and the product disagree, which one moves is a decision, not a default.** The
 founder's 2026-08-31 pricing decision (option (c)) makes the published page the acceptance criteria,
-so the reflex "the page is wrong, correct the page" is backwards here. Writing *"9,999 schedules"*
-would publish an implementation accident as a product boundary and retreat from a promise one
-data-only change keeps. Correct the page when the claim is **unfulfillable** (see the seat rule
-below); route the row when the claim is one we intend to honour.
+so the reflex "the page is wrong, correct the page" is backwards for a promise we intend to keep —
+*"Unlimited schedules"* stays and Engineering makes it true (Product, landing#396). Correct the page
+only when the claim is one we have decided **not** to build. Those are different judgements and they
+came out opposite ways on the same issue in the same hour.
 
-**A claim the product cannot complete is different in kind from a claim that is merely imprecise, and
-only the first is urgent.** *"Extra seats at $25/mo each"* had the right price —
-`extra_seat_price_cents` is 2500 on both Enterprise rows — and described a checkout that exists in no
-form: `check_seat_quota` raises rather than bills, and `seats_included` is on the *plan*, shared by
-every subscriber on it, so nothing a buyer does raises their own. The interim fix is not to delete
-the price but to **name a channel a human can actually complete** — here, the contact route that is
-already the tier's CTA.
+🚨 **"Route it to a human" is not a safe default for an unfulfillable claim — it fails less
+visibly.** *"Extra seats at $25/mo each"* had the right price and described a checkout that exists in
+no form. My replacement, *"contact us to add them"*, was **also untrue**: `seats_included` is a
+**plan** column shared by every org on the slug and `Subscription` has no allowance column, so there
+is no operator action behind a contact request either (cloud#150). The first version is discovered by
+anyone who reads the code; the second is discovered only when a real buyer asks and the founder has
+nothing to do. **A promise routed to a human is still a promise — check that the human has an
+action.** What shipped is the removal: the page states the included seats and offers nothing more.
+
+**Before citing a schema convention as a reason, grep for the reader.** I argued that
+`max_schedules` should become NULL because *"`max_api_keys` already establishes NULL = uncapped and
+cloud reads it that way"*. **`max_api_keys` has zero readers in `datanika-cloud`** — the convention
+is true of no code — and `check_schedule_quota` has no `None` guard, so NULLing first is
+`int >= None`, a TypeError on the first schedule a paid customer creates (cloud#151). I had read the
+claim in a handoff and repeated it as a property of the code; it was a property of a *sentence*. The
+standing rule says a published claim must be bound to what production **enforces**. A *routing* claim
+must be bound to what the code **reads**, and the reader ships before the migration.
 
 **A second, hand-maintained copy of a page's facts is a drift generator, and a stale DRAFT marker
 keeps it that way.** `/features/volume-pricing/` duplicates the tier table by hand rather than

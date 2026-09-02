@@ -77,11 +77,9 @@ export const tiers: PricingTier[] = [
     period: "/month",
     annualPeriod: "/month, billed annually",
     annualTotal: "From $3,990/year",
-    // ⚠️ Said "Extra seats at $25/mo each" until 2026-09-02. The price is right;
-    // the purchase does not exist. Why, and who owns which half: landing#368 and
-    // the header of tests/seat-purchase-claim.test.ts, which pins this line.
-    description:
-      "For organizations with advanced needs. Additional seats $25/mo each — contact us to add them.",
+    // ⚠️ No extra-seat offer, and the omission IS the decision — landing#396,
+    // cloud#150. Reasoning in tests/seat-purchase-claim.test.ts, which pins it.
+    description: "For organizations with advanced needs.",
     features: [
       "1 TB processed / month",
       "$0.25 / GB overage",
