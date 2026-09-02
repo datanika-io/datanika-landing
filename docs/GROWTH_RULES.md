@@ -264,6 +264,52 @@ published number comes from the second. The parity cron subtracts the withdrawn 
 comparing with core, so a withdrawal no longer reports as drift and then gets "fixed" by deleting a
 ranking page.
 
+**A sentinel is not a promise.** `/pricing/`, the homepage and `/features/volume-pricing/` all say
+*"Unlimited schedules"* on Pro and Enterprise. `plans.max_schedules` is **9999** on all four paid
+rows and `check_schedule_quota` hard-blocks there — no overage path, no flag. Nobody will reach it,
+which is exactly why it survived: an absolute word is only ever falsified by a customer hitting the
+ceiling, and ours has none. **Before publishing "unlimited", "all", "any" or "never", read the
+enforcing row.** The general mechanism, from core#928, is worth more than the instance: *no migration
+creates the paid plan rows*, so an out-of-band creator sets whatever columns existed when it was
+written and **every column a later migration adds falls to its `server_default` on paid rows**. A
+number in a migration is not a number in a table, and the exposure grows with every new column.
+
+**When the page and the product disagree, which one moves is a decision, not a default.** The
+founder's 2026-08-31 pricing decision (option (c)) makes the published page the acceptance criteria,
+so the reflex "the page is wrong, correct the page" is backwards here. Writing *"9,999 schedules"*
+would publish an implementation accident as a product boundary and retreat from a promise one
+data-only change keeps. Correct the page when the claim is **unfulfillable** (see the seat rule
+below); route the row when the claim is one we intend to honour.
+
+**A claim the product cannot complete is different in kind from a claim that is merely imprecise, and
+only the first is urgent.** *"Extra seats at $25/mo each"* had the right price —
+`extra_seat_price_cents` is 2500 on both Enterprise rows — and described a checkout that exists in no
+form: `check_seat_quota` raises rather than bills, and `seats_included` is on the *plan*, shared by
+every subscriber on it, so nothing a buyer does raises their own. The interim fix is not to delete
+the price but to **name a channel a human can actually complete** — here, the contact route that is
+already the tier's CTA.
+
+**A second, hand-maintained copy of a page's facts is a drift generator, and a stale DRAFT marker
+keeps it that way.** `/features/volume-pricing/` duplicates the tier table by hand rather than
+deriving it from `src/data/pricing-tiers.ts`, under a comment reading *"DRAFT — Do NOT merge before
+…"* that had been stale for four months. A marker saying a live file is unfinished tells the next
+reader it does not need maintaining. **Either derive the duplicate or label it as a duplicate** —
+never leave a lifecycle marker that the file's own deploy history contradicts.
+
+**A guard bound to one spelling is blind to the others, and `dist/` is where you find out.** A `grep`
+of `src/data/` for the seat claim returned **one** call site; a `grep` of `dist/` returned **three
+pages**, because the duplicate table spells it `+$25/seat`. Same lesson as landing#443's connector
+count arriving by a different route: there the guard matched a literal digit against a template
+expression, here it matched one phrasing against two. **Quantify over the built output and over the
+*price*, not over the sentence.**
+
+**Restore a mutation from a commit, not from the index.** `git restore --staged --worktree -- <path>`
+is the documented restore in `WORKFLOW_RULES.md` §1, and it restores from the **index** — which, if
+your edits are uncommitted, holds `HEAD`. A mutation harness that "restores the original" that way
+silently reverts your session's own work on every file it touches. **Commit first, then mutate**, and
+make the harness assert `git hash-object` returns to the pre-mutation value — that assertion is the
+only thing that reported it here.
+
 ## Publishing
 
 **Date-relative copy couples a post to its publish date.** "Until today…" had to be reworded when a

@@ -86,7 +86,12 @@ export const pricingFaq: FAQItem[] = [
   {
     question: "Is there a trial for Pro?",
     answer:
-      "The Free tier (10 GB/mo) is effectively an unlimited trial of core features. For Pro-specific scale limits (100 GB included, 5 seats, 25 connections), contact us — we can extend Free.",
+      // ⚠️ Said "effectively an unlimited trial of core features" until 2026-09-02.
+      // Every fact survives; the ambiguous word does not. It sat one clause after
+      // "(10 GB/mo)" on the one tier that genuinely hard-blocks, so it was true
+      // about the duration and false about the dimension printed beside it.
+      // SPEC_PRICING_V2 §4.3 as revised on landing#368.
+      "No separate Pro trial. Free is the evaluation — core features at 10 GB/mo, no time limit, no card. For Pro-scale limits (100 GB, 5 seats, 25 connections), contact us — we can extend Free.",
   },
   // --- GA4: V2 migration/explainer FAQ entries (added 2026-04-16) ---
   {
