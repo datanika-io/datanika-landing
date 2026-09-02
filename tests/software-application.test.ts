@@ -7,7 +7,7 @@ import {
   softwareApplicationJsonLd,
 } from "../src/data/software-application";
 import { tiers } from "../src/data/pricing-tiers";
-import { connectors } from "../src/data/connectors";
+import { availableConnectors } from "../src/data/connectors";
 
 const DIST = resolve(__dirname, "../dist");
 
@@ -230,7 +230,7 @@ describe("softwareApplicationJsonLd export", () => {
  * homepage and `/pricing/`, in the field search engines read first.
  *
  * The connector count in the same object never drifted, because it was
- * `${connectors.length}`. These tests exist to make the rest of the object
+ * `${availableConnectors.length}`. These tests exist to make the rest of the object
  * behave like the count.
  */
 describe("offer descriptions are bound to the rendered tiers (#373)", () => {
@@ -246,7 +246,7 @@ describe("offer descriptions are bound to the rendered tiers (#373)", () => {
       const offer = PLAN_OFFERS.find((o) => o.name === offerName)!;
       const t = tiers.find((x) => x.name === tierName)!;
       // The tier's own strings, plus the derived connector count the copy cites.
-      const rendered = [t.monthlyPrice, ...t.features, String(connectors.length)]
+      const rendered = [t.monthlyPrice, ...t.features, String(availableConnectors.length)]
         .join(" | ")
         .toLowerCase();
       for (const n of offer.description.match(/\d[\d,.]*\d|\d/g) ?? []) {
