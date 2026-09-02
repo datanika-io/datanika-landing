@@ -30,8 +30,20 @@
 # post-deploy `smoke` gate against the live origin — so a successful conclusion means the
 # site is genuinely serving, not merely that a symlink moved.
 #
-# ⚠️ `workflow_run` only fires for the copy of this file on the DEFAULT branch, so it takes
-# effect from the promotion *after* the one that ships it. The same was true on core.
+# 🔑 `workflow_run` uses the copy of this file on the DEFAULT branch — and it resolves that
+# copy when the TRIGGERING workflow completes, not when it starts. So a promotion that ships
+# this file is already on `main` by the time `Deploy Landing` finishes, and this fires on
+# **its own shipping promotion**, not the one after.
+#
+# ⚠️ That is a correction, recorded because the opposite was written here first and in the
+# PR body. Measured 2026-09-02: promotion PR #463 merged at 17:13:03Z, `Deploy Landing`
+# 33659697390 went green, and run 33659849995 fired at 17:14:36Z — labelling #395, #449 and
+# #457 and commenting on #463 fourteen seconds later. Core's copy still carries the wrong
+# version of this note; the same measurement applies there.
+#
+# The practical consequence is the useful half: **do not skip reading the reconciler's
+# comment on the promotion PR you just merged**, on the assumption that it cannot have run
+# yet. It can, and it did.
 #
 # ⚠️ `daily-rebuild.yml` dispatches `Deploy Landing` against an unchanged `main`, so this
 # fires daily as well as on promotions. That is harmless and mildly useful: the label is the
