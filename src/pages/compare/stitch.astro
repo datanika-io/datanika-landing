@@ -3,7 +3,7 @@ import Layout from "../../layouts/Layout.astro";
 import Navbar from "../../components/Navbar.astro";
 import Footer from "../../components/Footer.astro";
 import ConversionCTA from "../../components/ConversionCTA.astro";
-import { connectors } from "../../data/connectors";
+import { availableConnectors, connectors } from "../../data/connectors";
 
 const features = [
   { name: "Data extraction & loading", datanika: true, stitch: true },
@@ -216,7 +216,7 @@ const gbPricingRows = [
           <ul class="space-y-3 text-slate-300 text-sm">
             <li class="flex justify-between"><span class="text-slate-400">Type</span><span>All-in-one EL+T+Scheduling</span></li>
             <li class="flex justify-between"><span class="text-slate-400">Transforms</span><span>dbt built-in</span></li>
-            <li class="flex justify-between"><span class="text-slate-400">Connectors</span><span>{connectors.length}</span></li>
+            <li class="flex justify-between"><span class="text-slate-400">Connectors</span><span>{availableConnectors.length}</span></li>
             <li class="flex justify-between"><span class="text-slate-400">Deployment</span><span>Docker self-host</span></li>
             <li class="flex justify-between"><span class="text-slate-400">License</span><span>AGPL-3.0</span></li>
             <li class="flex justify-between"><span class="text-slate-400">Development</span><span>Active</span></li>

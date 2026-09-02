@@ -3,7 +3,7 @@ import Layout from "../../layouts/Layout.astro";
 import Navbar from "../../components/Navbar.astro";
 import Footer from "../../components/Footer.astro";
 import ConversionCTA from "../../components/ConversionCTA.astro";
-import { connectors } from "../../data/connectors";
+import { availableConnectors, connectors } from "../../data/connectors";
 
 // DRAFT — Ships on branch 182-pricing-v2-copy-draft, merges at P5 cutover day.
 // Do NOT merge before cloud volume metering is green in staging for >=14 days
@@ -23,7 +23,7 @@ const tiers = [
       "1 team member",
       "5 connections",
       "2 schedules",
-      `All ${connectors.length} connectors`,
+      `All ${availableConnectors.length} connectors`,
     ],
   },
   {
@@ -85,8 +85,8 @@ const faq = [
     a: "Fivetran charges by monthly active rows (MAR). MAR re-counts edits and punishes wide schemas. Fivetran publishes no per-MAR rate, so its side of any comparison is an estimate rather than a quote: converting 100 GB at ~200K rows/GB puts Starter in the region of $3,800/mo, against $79 for Datanika Pro. Run your own numbers through Fivetran's estimator for a binding figure, or use our calculator at /why-cheaper/ for the side-by-side.",
   },
   {
-    q: `Do I still get all ${connectors.length} connectors on Free?`,
-    a: `Yes. We never gate connectors by plan. Free, Pro, and Enterprise all have access to all ${connectors.length} sources and destinations. We gate on volume, not capabilities.`,
+    q: `Do I still get all ${availableConnectors.length} connectors on Free?`,
+    a: `Yes. We never gate connectors by plan. Free, Pro, and Enterprise all have access to all ${availableConnectors.length} sources and destinations. We gate on volume, not capabilities.`,
   },
 ];
 ---

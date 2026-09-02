@@ -3,7 +3,7 @@ import Layout from "../../layouts/Layout.astro";
 import Navbar from "../../components/Navbar.astro";
 import Footer from "../../components/Footer.astro";
 import ConversionCTA from "../../components/ConversionCTA.astro";
-import { connectors } from "../../data/connectors";
+import { availableConnectors, connectors } from "../../data/connectors";
 
 const features = [
   { name: "Data extraction & loading", datanika: true, hevo: true },
@@ -217,7 +217,7 @@ const gbPricingRows = [
           <ul class="space-y-2 text-slate-300 text-sm">
             <li><span class="text-slate-500">Type:</span> All-in-one EL+T+Scheduling</li>
             <li><span class="text-slate-500">Transforms:</span> dbt built-in</li>
-            <li><span class="text-slate-500">Connectors:</span> {connectors.length}</li>
+            <li><span class="text-slate-500">Connectors:</span> {availableConnectors.length}</li>
             <li><span class="text-slate-500">Deployment:</span> Docker self-host</li>
             <li><span class="text-slate-500">License:</span> AGPL-3.0</li>
             <li><span class="text-slate-500">Pricing:</span> Free $0 (10 GB/mo) · Pro $79 (100 GB + $0.50/GB) · Ent. from $399 (1 TB + $0.25/GB)</li>

@@ -120,7 +120,7 @@ The mental model is: **core defines what's possible; plugins choose what to acti
 
 Because the plugin only loads when `DATANIKA_EDITION=cloud` is set, self-hosted users running `docker compose up` get:
 
-- All 36 connectors — PostgreSQL, BigQuery, Stripe, Salesforce, everything
+- All 35 connectors — PostgreSQL, BigQuery, Stripe, Salesforce, everything
 - dbt transformations, tests, snapshots, packages
 - The full visual pipeline builder
 - Scheduling with cron + dependency DAGs
@@ -169,7 +169,7 @@ For anyone curious about where the line falls:
 | Feature | Open-core (AGPL) | Cloud plugin (private) |
 |---------|------------------|------------------------|
 | Pipeline builder, scheduling, dbt | ✅ | — |
-| 36 connectors | ✅ | — |
+| 35 connectors | ✅ | — |
 | SSO (SAML + OIDC) code | ✅ | — |
 | Notification channels | ✅ | — |
 | REST API v1 | ✅ | — |

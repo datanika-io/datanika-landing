@@ -3,7 +3,7 @@ import Layout from "../../layouts/Layout.astro";
 import Navbar from "../../components/Navbar.astro";
 import Footer from "../../components/Footer.astro";
 import ConversionCTA from "../../components/ConversionCTA.astro";
-import { connectors } from "../../data/connectors";
+import { availableConnectors, connectors } from "../../data/connectors";
 
 const features = [
   { name: "Data extraction & loading", datanika: true, airbyte: true },
@@ -221,7 +221,7 @@ const gbPricingRows = [
           <ul class="space-y-3 text-slate-300 text-sm">
             <li><span class="text-slate-500 font-medium">Scope:</span> All-in-one EL + Transform + Scheduling</li>
             <li><span class="text-slate-500 font-medium">Transforms:</span> dbt built-in (SQL editor, tests, snapshots)</li>
-            <li><span class="text-slate-500 font-medium">Connectors:</span> {connectors.length} (focused, curated)</li>
+            <li><span class="text-slate-500 font-medium">Connectors:</span> {availableConnectors.length} (focused, curated)</li>
             <li><span class="text-slate-500 font-medium">Self-hosting:</span> Single Docker Compose</li>
             <li><span class="text-slate-500 font-medium">License:</span> AGPL-3.0 (truly open source)</li>
             <li><span class="text-slate-500 font-medium">Stack:</span> Python (Reflex), dlt, dbt-core</li>

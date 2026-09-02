@@ -1,0 +1,107 @@
+name: Plan catalogue parity
+
+# `/pricing/` publishes three volume allowances, two overage rates and three run
+# figures. Production enforces them from the `plans` table, which is seeded by a
+# migration in `datanika-core`. Until 2026-09-01 nothing compared the two, and the
+# consequence is documented: the page sold a bytes model that the product did not
+# bill for four months, because the byte columns were never seeded (landing#396,
+# core#713).
+#
+# `tests/byte-pricing-surface-inventory.test.ts` now computes every rendered
+# string from a `PRODUCT` constant, so a tier edit fails loudly instead of leaving
+# a stale-but-present number green. But that constant is a *transcription* of
+# core's migration, and `docs/GROWTH_RULES.md` is explicit about what happens to
+# transcriptions: "the derived half survives and the hand-written half rots."
+#
+# This job is the binding. Same reasoning as `connector-count-parity.yml`, and the
+# same deliberate choice: a **cron that files an issue**, not a required check.
+# The change that breaks us lands in another repo, where a PR-time check here
+# could never see it — and a required check that depends on a network call to
+# someone else's repo blocks merges on things unrelated to the PR.
+#
+# ⚠️ Separate workflow rather than a third job on connector-count-parity.yml, so
+# that it files under its own title and cannot collide with that file's dedup
+# search (core#818: give each auto-filer its own dedup channel).
+#
+# The minute is deliberately arbitrary and must not be tidied to :00 or :30 —
+# GitHub delays scheduled runs at the top of the hour, which is how landing#305's
+# cron produced zero runs. Offset from connector-count-parity's :17 as well, so
+# the two do not contend.
+#
+# Verifying this fires needs `event == schedule` specifically; a manual dispatch
+# run sits in the same list and looks identical at a glance:
+#   gh api "repos/datanika-io/datanika-landing/actions/workflows/pricing-catalogue-parity.yml/runs" \
+#     --jq '.workflow_runs[] | select(.event=="schedule") | .created_at'
+
+on:
+  schedule:
+    - cron: "43 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  catalogue:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Fetch core's seeded plan catalogue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # `master`, deliberately — that is the SHA production runs, and a plan
+          # row is a commitment the moment it is enforced, not when it is merged.
+          gh api "repos/datanika-io/datanika-core/contents/datanika/migrations/versions/c1d2e3f4a5b6_seed_plan_byte_allotments.py?ref=master" \
+            --jq '.content' | base64 -d > /tmp/seed_plan_byte_allotments.py
+          # Non-empty is not enough: `gh api` on a missing path prints an error
+          # object that base64-decodes to something, so assert the shape too.
+          test -s /tmp/seed_plan_byte_allotments.py
+          grep -q "_CATALOGUE" /tmp/seed_plan_byte_allotments.py
+
+      - name: Compare against the published catalogue
+        id: check
+        run: |
+          set +e
+          python scripts/check-plan-catalogue-parity.py \
+            --migration /tmp/seed_plan_byte_allotments.py \
+            --guard tests/byte-pricing-surface-inventory.test.ts > /tmp/catalogue.txt 2>&1
+          echo "rc=$?" >> "$GITHUB_OUTPUT"
+          cat /tmp/catalogue.txt
+
+      - name: File an issue on drift
+        if: steps.check.outputs.rc != '0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          existing=$(gh issue list --state open --search "in:title Plan catalogue drift" \
+            --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            echo "Already tracked in #$existing; not filing again."
+            exit 1
+          fi
+
+          {
+            echo 'The plan catalogue `datanika-core` seeds into production no longer matches the one `datanika.io` publishes.'
+            echo
+            echo '```'
+            cat /tmp/catalogue.txt
+            echo '```'
+            echo
+            echo '**Core is almost always the side that moved.** Read `datanika/migrations/versions/c1d2e3f4a5b6_seed_plan_byte_allotments.py` at core `master` first, then reconcile landing:'
+            echo
+            echo '1. Update `PRODUCT` in `tests/byte-pricing-surface-inventory.test.ts` to the enforced values.'
+            echo '2. Run `npm run build && npx vitest run tests/byte-pricing-surface-inventory.test.ts`. Every rendered string is computed from `PRODUCT`, so the pages that need rewriting will name themselves.'
+            echo '3. Sweep the routes it names. `src/data/pricing-tiers.ts` feeds the homepage *and* `/pricing/`; the `/compare/*` tables carry effective per-GB rates derived from the list price and the included volume, so those move too.'
+            echo
+            echo '⚠️ This job compares the page against the **seeded plan rows**. It cannot see whether enforcement is switched on — `bytes_quota_enforce` and `overage_charge_enable` are environment variables on the production box, both defaulting `False`.'
+            echo
+            echo 'Filed automatically by `.github/workflows/pricing-catalogue-parity.yml`.'
+          } > /tmp/catalogue-issue.md
+
+          gh issue create \
+            --title "Plan catalogue drift: datanika.io publishes terms core does not seed" \
+            --body-file /tmp/catalogue-issue.md
+          exit 1

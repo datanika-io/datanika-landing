@@ -17,7 +17,7 @@ Datanika takes a different approach: **one platform for the entire pipeline**.
 
 ## What Datanika Does
 
-- **Extract & Load** — Connect to 31 sources (databases, APIs, SaaS tools, files) and load data into your warehouse using [dlt](https://dlthub.com).
+- **Extract & Load** — Connect to 30 sources (databases, APIs, SaaS tools, files) and load data into your warehouse using [dlt](https://dlthub.com).
 - **Transform** — Write SQL models powered by [dbt-core](https://www.getdbt.com), with a built-in editor, tests, and snapshots.
 - **Orchestrate** — Build visual pipelines with a DAG editor, set up schedules with cron expressions, and define dependencies.
 - **Monitor** — Track every run with streaming logs, error details, and execution history.
@@ -31,6 +31,6 @@ Datanika's core is open source under AGPL-3.0. You can [self-host it with Docker
 Sign up for free at [app.datanika.io](https://app.datanika.io) — no credit card required. Your first 500 model runs per month are free, forever.
 
 - [Getting Started Guide](/docs/getting-started) — first pipeline in 5 minutes
-- [36 Connectors](/connectors) — databases, SaaS APIs, files, and streaming
+- [35 Connectors](/connectors) — databases, SaaS APIs, files, and streaming
 - [Pricing](/pricing) — Free / Pro / Enterprise tiers
 - [Architecture Overview](/docs/architecture) — how the pieces fit together

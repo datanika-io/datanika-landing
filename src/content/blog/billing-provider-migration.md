@@ -41,6 +41,14 @@ The decisive factor was payout coverage. Everything else was near-identical. Pad
 
 ## The Pricing Model Survived Unchanged
 
+> **Corrected 2026-08-31.** The table and the run caps below are the **V1** plan
+> catalogue as it stood in April 2026, and they are kept because they are what
+> this migration ran against. They are no longer what the product does. V2 bills
+> **data volume**, not runs: Free includes 10 GB/month, Pro 100 GB with $0.50/GB
+> overage, Enterprise 1 TB with $0.25/GB. The `$0.01/run` overage is gone, and
+> Pro and Enterprise are **no longer hard-capped on runs** — their run figures
+> are fair-use, and only Free still stops. [/pricing](/pricing) is current.
+
 The pricing tiers didn't change at all during the migration:
 
 | Plan | Price | Members | Connections | Schedules | Runs/month |
@@ -59,7 +67,7 @@ Metering was the most interesting part of the billing implementation, and it sur
 - **Transformation run** = 1 model run
 - **Pipeline run** = M + T model runs (M = successful dbt models, T = tests executed)
 
-An hourly Celery task syncs overages to Paddle for Enterprise customers. Free and Pro plans are hard-capped — runs stop once you hit the limit, no billing surprises.
+An hourly Celery task syncs overages to Paddle for Enterprise customers. Under V1, Free and Pro were both hard-capped on runs; see the correction above for what V2 does instead.
 
 The metering hooks (`run.models_completed`, `run.upload_completed`, `run.transformation_completed`) record every unit into a `UsageLedger` table. The Celery task reads the ledger and reports to Paddle. Swapping Paddle for any other provider would only touch the reporting step, not the recording step.
 

@@ -96,4 +96,4 @@ And the general lesson isn't ours alone. If you have a connector, an SDK wrapper
 
 ---
 
-*Datanika is an open-source platform that runs dlt extract-and-load and dbt-core transformations behind one UI, with [36 connectors](/connectors), scheduling and run history. [Self-host it](/docs/self-hosting/) or [start free](https://app.datanika.io/register).*
+*Datanika is an open-source platform that runs dlt extract-and-load and dbt-core transformations behind one UI, with [35 connectors](/connectors), scheduling and run history. [Self-host it](/docs/self-hosting/) or [start free](https://app.datanika.io/register).*

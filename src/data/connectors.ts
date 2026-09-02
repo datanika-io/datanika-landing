@@ -12,6 +12,21 @@ export interface Connector {
   // /docs/connectors/<slug>/ guide. Cite the tracking issue so the copy is
   // greppable when it closes.
   limitations?: string[];
+  // Optional. Set when core has WITHDRAWN the connector from the picker, i.e.
+  // it cannot be created in the app at all right now. This is a different fact
+  // from `limitations`, which describes a connector you can create that cannot
+  // do some particular thing.
+  //
+  // The page stays published — a withdrawal is temporary and 301ing away a
+  // ranking connector page is the landing#294 mistake — but the entry drops out
+  // of `availableConnectors`, which is what every published count derives from.
+  // Core does exactly this with `WITHDRAWN_SOURCE_TYPES` in
+  // `connection_service.py`, and its README count is `len(ConnectionType)` minus
+  // that set. Ours has to move the same way or the two numbers diverge, which is
+  // landing#294 in the opposite direction.
+  //
+  // Cite the tracking issue in the text so the copy is greppable when it closes.
+  withdrawn?: string;
   related: string[]; // slugs of related connectors
   // Optional SEO overrides. When set, the [slug].astro template uses these
   // instead of the default `${name} Connector — Datanika` / description /
@@ -813,6 +828,8 @@ export const connectors: Connector[] = [
       { name: "region_name", description: "AWS region, e.g. us-east-1 (optional, auto-detected)" },
       { name: "endpoint_url", description: "S3-compatible endpoint URL (MinIO, Backblaze B2, Cloudflare R2) (optional)" },
     ],
+    withdrawn:
+      "S3 connections cannot currently be created. The S3 transport left the shipped image when an upstream dependency conflict removed s3fs from the lockfile, so fsspec raises ImportError on any s3:// path — the connector is hidden in the app and existing S3 connections will not run. Restoring it is tracked as core#863; this page and the setup guide stay published because the steps are unchanged for when it returns.",
     related: ["csv", "json", "parquet", "redshift"],
     seoTitle: "S3 to Warehouse — Load S3 Data | Datanika",
     seoDescription: "Load CSV, JSON, and Parquet files from Amazon S3 into Snowflake, BigQuery, or PostgreSQL. Incremental file discovery and scheduling. Start free on Datanika.",
@@ -917,11 +934,29 @@ export const connectors: Connector[] = [
  * every derived surface follows: the badge, the per-page destination lists, the
  * counts in prose, and `/docs/architecture`'s destination list.
  */
-export const sourceConnectors = connectors.filter((c) => c.direction !== "destination");
-export const destinationConnectors = connectors.filter((c) => c.direction !== "source");
+/**
+ * The catalogue as a **marketing claim**: everything a reader can actually go
+ * and create today. `connectors` is the full set of pages we publish, which is
+ * deliberately wider — a withdrawn connector keeps its page.
+ *
+ * 🚨 **Every published count comes from here, never from `connectors.length`.**
+ * That distinction is the whole point of `withdrawn`. Core's README derives its
+ * number as `len(ConnectionType) - len(UNMARKETED_TYPES | WITHDRAWN_SOURCE_TYPES)`
+ * and guards it in `tests/test_docs/test_readme_claims.py`, so core self-corrects
+ * the moment Engineering withdraws or restores something. Landing's number has to
+ * follow the same fact or the two drift — which is landing#294 exactly, where
+ * core moved 36 → 35 → 36 on its own and landing sat at 35 for five weeks,
+ * publicly understating the product with every build green.
+ *
+ * `connector-count-parity.yml` compares *this* number against core's README.
+ */
+export const availableConnectors = connectors.filter((c) => !c.withdrawn);
+
+export const sourceConnectors = availableConnectors.filter((c) => c.direction !== "destination");
+export const destinationConnectors = availableConnectors.filter((c) => c.direction !== "source");
 
 /** Databases that work in both directions. Derived — never write the number in prose. */
-export const bidirectionalConnectors = connectors.filter((c) => c.direction === "both");
+export const bidirectionalConnectors = availableConnectors.filter((c) => c.direction === "both");
 
 /**
  * Destinations dbt can actually build models in — a **strict subset** of
@@ -946,15 +981,25 @@ export const bidirectionalConnectors = connectors.filter((c) => c.direction === 
  * `datanika/services/dbt_project.py`, **intersected with the adapters the image
  * actually installs** — those two disagree, which is core#862. Measured
  * 2026-08-31 with `importlib.util.find_spec` against the core venv on
- * `origin/dev`:
+ * `origin/dev`, then re-measured 2026-09-01 after core#825 landed and removed
+ * `dbt-mysql` from the lock:
  *
- *   installed  postgres · mysql · sqlserver · clickhouse · duckdb · bigquery ·
- *              snowflake · redshift
- *   missing    sqlite · databricks · synapse
+ *   installed  postgres · sqlserver · clickhouse · duckdb · bigquery ·
+ *              snowflake · redshift          (7)
+ *   missing    mysql · sqlite · databricks · synapse
  *
- * `mysql` is omitted below because core#825 removes `dbt-mysql`; MySQL remains
- * a fully supported **source** and **load destination**. Re-measure before
- * editing this list — do not assume it is still current.
+ * 🚨 **This paragraph used to end "MySQL remains a fully supported source and
+ * load destination". That was RETRACTED by core#865 and it contradicted line 74
+ * of this same file, which already says MySQL cannot receive data at all.** dlt
+ * has no `mysql` destination factory and never has, so the load half was never
+ * true; only the source half survived measurement. Two answers in one file is
+ * the state this comment existed to prevent, and a comment is an instruction to
+ * whoever edits the list next — it does not get a pass for not rendering.
+ *
+ * `mysql` is therefore omitted below for **two** independent reasons, and
+ * removing either one would not put it back: no dbt adapter (core#825) and no
+ * dlt destination (core#865). Re-measure before editing this list — do not
+ * assume it is still current.
  */
 const DBT_TARGET_SLUGS = [
   "postgresql",

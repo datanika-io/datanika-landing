@@ -4,9 +4,34 @@ on:
   pull_request:
     branches: [dev, main]
 
+  # `build` is the ONLY required status check on `dev`, so a merge queue on that
+  # branch is entirely dependent on this trigger existing. Without it GitHub never
+  # starts a run for a queue entry, the required check is never reported, and the
+  # entry sits until `check_response_timeout_minutes` expires and is ejected — a
+  # PR that stops progressing for no visible reason. That is strictly worse than
+  # the `strict`-mode livelock this queue exists to remove, which a human clears
+  # in seconds. Deliberately unfiltered by branch: this repo only ever queues on
+  # `dev`, and a wrong filter here fails in exactly the silent direction above.
+  # Guarded by tests/merge-queue-triggers.test.ts. (core#904)
+  merge_group:
+    types: [checks_requested]
+
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # ⚠️ NOT a bare `true`. A cancelled run is an ABSENT verdict, and the two events
+  # here pay wildly different prices for one:
+  #   pull_request — a superseded run computes an answer you are about to recompute
+  #                  on the new head. Cancelling is free, so cancel.
+  #   merge_group  — nothing recomputes it. The queue waits out its check-response
+  #                  timeout and ejects the entry. Runner minutes are cheaper than
+  #                  a merge that silently did not happen, so never cancel.
+  # ⚠️ This comment used to say `github.ref` is unique per queue entry, so the guard was
+  # "belt and braces". MEASURED, and it is not: the ref is
+  # `refs/heads/gh-readonly-queue/dev/pr-N-<BASE sha>` — the base commit, not the PR
+  # head. Two entries for the same PR against an unchanged base therefore share this
+  # group key, which is exactly the re-queue case (an entry ahead of you is ejected and
+  # the group re-forms). The guard is load-bearing. (core#904)
+  cancel-in-progress: ${{ github.event_name != 'merge_group' }}
 
 jobs:
   build:

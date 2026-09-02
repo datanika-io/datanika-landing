@@ -20,7 +20,7 @@
  * annual discount, change plans.
  */
 
-import { connectors } from "./connectors";
+import { availableConnectors } from "./connectors";
 
 export interface FAQItem {
   question: string;
@@ -56,7 +56,7 @@ export const pricingFaq: FAQItem[] = [
   {
     question: "Can I use Datanika for free?",
     answer:
-      `Yes — Free tier includes 1 seat, 5 connections, 2 schedules, and 10 GB/mo processed (hard-capped). No credit card required. All ${connectors.length} connectors are available on every plan.`,
+      `Yes — Free tier includes 1 seat, 5 connections, 2 schedules, and 10 GB/mo processed (hard-capped). No credit card required. All ${availableConnectors.length} connectors are available on every plan.`,
   },
   {
     question: "Can I self-host Datanika?",
@@ -76,7 +76,7 @@ export const pricingFaq: FAQItem[] = [
   {
     question: "Do you charge per connector?",
     answer:
-      `No. Unlike Fivetran's per-connection minimums, Datanika bills per GB processed only. All ${connectors.length} connectors work on every plan — including Free. Use as many as you need.`,
+      `No. Unlike Fivetran's per-connection minimums, Datanika bills per GB processed only. All ${availableConnectors.length} connectors work on every plan — including Free. Use as many as you need.`,
   },
   {
     question: "Can I change plans anytime?",

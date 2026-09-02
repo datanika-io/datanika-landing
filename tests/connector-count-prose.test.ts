@@ -33,7 +33,12 @@
 import { describe, it, expect } from "vitest";
 import { readdirSync, readFileSync, statSync } from "fs";
 import { resolve, extname, relative } from "path";
-import { connectors, sourceConnectors, destinationConnectors } from "../src/data/connectors";
+import {
+  connectors,
+  availableConnectors,
+  sourceConnectors,
+  destinationConnectors,
+} from "../src/data/connectors";
 
 const ROOT = resolve(__dirname, "..");
 const SCAN_DIRS = ["src/pages", "src/content", "src/components", "src/layouts"];
@@ -85,7 +90,18 @@ function isAllowed(file: string, text: string): boolean {
 }
 
 describe("connector count in prose matches src/data/connectors.ts", () => {
-  const expected = connectors.length;
+  /**
+   * `availableConnectors`, **not** `connectors` — the marketed count excludes a
+   * connector core has withdrawn from the picker.
+   *
+   * This read `connectors.length` until landing#443, and the difference was not
+   * hypothetical: core withdrew `s3` (core#863, `s3fs` left `uv.lock`), its own
+   * README moved to 35 on its own guard, and every sentence on this site kept
+   * saying 36 with this test green. The count was bound to landing's catalogue
+   * of *pages*, which is the #391 failure mode — a published claim bound to what
+   * landing believes rather than to what production offers.
+   */
+  const expected = availableConnectors.length;
 
   const files = SCAN_DIRS.flatMap((d) => walk(resolve(ROOT, d)));
 
@@ -288,14 +304,22 @@ describe("source/destination split in prose matches src/data/connectors.ts (#376
   });
 
   it("the three capability sets partition the catalogue", () => {
-    const only = (d: string) => connectors.filter((c) => c.direction === d).length;
-    expect(only("source") + only("both") + only("destination")).toBe(connectors.length);
+    // Over `availableConnectors`, not `connectors`. There are two catalogues
+    // since landing#443: the pages we publish, and the connectors a reader can
+    // create. `sourceConnectors` / `destinationConnectors` describe the second,
+    // because they are what the copy claims — a withdrawn connector is not a
+    // source you can load from today, whatever its `direction` says.
+    const only = (d: string) => availableConnectors.filter((c) => c.direction === d).length;
+    expect(only("source") + only("both") + only("destination")).toBe(availableConnectors.length);
     expect(sourceConnectors.length).toBe(only("source") + only("both"));
     expect(destinationConnectors.length).toBe(only("destination") + only("both"));
     // The overlap is real and is why the two halves must never be summed in prose.
     expect(sourceConnectors.length + destinationConnectors.length).toBeGreaterThan(
-      connectors.length,
+      availableConnectors.length,
     );
+    // The published set is a subset of the pages, never the other way round: a
+    // withdrawal removes a connector from the copy and keeps the page.
+    expect(availableConnectors.length).toBeLessThanOrEqual(connectors.length);
   });
 
   it("no connector marked a destination still advertises extraction", () => {

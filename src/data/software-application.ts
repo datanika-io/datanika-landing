@@ -31,7 +31,7 @@
  * the first 5 real reviews land (tracked in PLAN_HUMAN_LOCKERS.md).
  */
 
-import { connectors } from "./connectors";
+import { availableConnectors } from "./connectors";
 import { tiers, type PricingTier } from "./pricing-tiers";
 
 /** The tier `Pricing.astro` renders under this name. Throws rather than drifting. */
@@ -61,7 +61,7 @@ const tidy = (s: string) => s.replace(/\s*\/\s*/g, "/");
 function describeMonthly(name: string, needles: string[]): string {
   const t = tier(name);
   const facts = needles.map((n) => tidy(feature(t, n))).join(", ");
-  return `${facts}. All ${connectors.length} connectors included on every plan.`;
+  return `${facts}. All ${availableConnectors.length} connectors included on every plan.`;
 }
 
 export interface OfferData {

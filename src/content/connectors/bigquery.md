@@ -5,7 +5,7 @@ source: "bigquery"
 source_name: "BigQuery"
 category: "database"
 verified_by: "product-ui"
-verified_date: "2026-07-19"
+verified_date: "2026-08-31"
 related_use_cases:
   - "postgresql-to-bigquery"
   - "stripe-to-bigquery"
@@ -78,8 +78,16 @@ A destination is chosen per **upload**, at **`/uploads`** — not on the connect
 
 1. On the **`/uploads`** row for your upload, click **Run**. There is no "Run now" on a pipeline page — the trigger lives on the upload's own row.
 2. Watch **`/runs`**. The run shows a status badge, start and finish timestamps and a **Rows** count; the **Logs** icon on the row opens the detail.
-3. When it finishes, open **Models** (`/models`) and browse the landed tables. The upload lands them in a schema **named after the upload** — `warehousedailyload` creates schema `warehousedailyload` in the destination. dlt also creates its own `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables in that schema, but **Models does not list them** — seeing only your own tables there is correct, not a partial load. There is no target-schema field to choose.
-4. Spot-check the row count against the source. **Verify in the destination rather than trusting the status badge** — a green run means the load finished, not that it moved what you expected.
+3. Your tables land in **the dataset you named on the connection** in Step 2 — not in a dataset named after the upload. An upload called `customerstobigquery` writing through a connection whose **Dataset** is `analytics_raw` creates its tables in `analytics_raw`. dlt also creates its own `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables alongside them, but **Models does not list them** — seeing only your own tables there is correct, not a partial load.
+4. Browse what landed in **Models** (`/models`), then spot-check the row count against the source. **Verify in the destination rather than trusting the status badge** — a green run means the load finished, not that it moved what you expected. ⚠️ **On BigQuery, Models is empty today** — read the callout below before concluding anything from it, and use the BigQuery Console for the count.
+
+> ⚠️ **Known issue — your tables will not appear under Models yet, and the data is still there.**
+> Measured on 2026-08-31: a BigQuery upload loads correctly and then the catalog sync fails, so
+> **`/models` stays empty** for that upload and the **Data preview** is unavailable. The run's own
+> **Logs** say so explicitly, ending in `catalog sync failed … DefaultCredentialsError`. Your rows are
+> in BigQuery — confirm with `SELECT count(*)` in the BigQuery Console. Tracked as
+> [core#869](https://github.com/datanika-io/datanika-core/issues/869); this callout comes out when
+> that closes. Other destinations (PostgreSQL, Snowflake, Redshift, ClickHouse…) are unaffected.
 
 ## Step 5 — Schedule it
 
