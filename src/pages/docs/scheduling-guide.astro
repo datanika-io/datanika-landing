@@ -102,4 +102,17 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
     </tbody>
   </table>
   <p>Upgrade at any time from Settings &rarr; Billing. See <a href="/pricing">pricing</a> for details.</p>
+
+  <h3>Running at the same time</h3>
+  <p>
+    How many schedules you can create is a separate limit from how many runs execute
+    <em>at once</em>. Each organization has a concurrency ceiling, and a run that arrives over it is
+    not dropped &mdash; it waits and starts automatically as soon as a slot frees, retrying for up to
+    30&nbsp;minutes. On the Free plan the ceiling is <strong>2 concurrent runs</strong>; paid plans
+    are higher.
+  </p>
+  <p>
+    If a scheduled run sits waiting longer than you expect, the usual cause is several schedules
+    firing on the same minute. Staggering the cron minutes is the fix.
+  </p>
 </DocsLayout>
