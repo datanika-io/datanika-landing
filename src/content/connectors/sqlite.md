@@ -28,25 +28,43 @@ SQLite is the embedded database you already have. Mobile apps, desktop apps, bro
 
 SQLite is a file, not a server. The only thing that varies by environment is how Datanika gets to that file.
 
+🚨 **The one thing to get right: the file must be visible to *both* containers.** Datanika runs the web app (`app`) and the worker (`celery`) as separate containers with separate filesystems. **The load runs in the worker**; **Test Connection, the Data preview and the SQL Editor run in the web app.** Put the file where only the web app can see it and Test Connection goes green while every run fails — the check you would naturally trust is the one that cannot tell you.
+
 **Self-hosted Datanika — file already on the host**
 
-1. Copy the file into the Datanika container's filesystem or a mounted volume:
+1. Give both services a shared volume for your SQLite sources in `docker-compose.yml`:
+   ```yaml
+   services:
+     app:
+       volumes:
+         - sqlite_sources:/var/datanika/sources
+     celery:
+       volumes:
+         - sqlite_sources:/var/datanika/sources
+   volumes:
+     sqlite_sources:
+   ```
+   Then `docker compose up -d app celery`. A **named volume** (rather than a directory inside the image) is also what makes the file survive a rebuild.
+2. Copy the file in:
    ```bash
    docker cp ./app.sqlite datanika-app:/var/datanika/sources/app.sqlite
    ```
-   If you've mounted `/var/datanika/sources` as a Docker volume, the copy survives container rebuilds.
-2. Verify the path is readable from inside the container:
+3. **Verify it from the worker, not from the web app** — the web app is where you just put it, so checking there tells you nothing:
    ```bash
-   docker exec -it datanika-app ls -l /var/datanika/sources/app.sqlite
+   docker exec datanika-celery ls -l /var/datanika/sources/app.sqlite
    ```
-3. Take the full path — you'll paste it into Datanika in Step 2.
+   `No such file or directory` means the volume is not shared and nothing below will work as described. Fix it here rather than debugging an empty load later.
+4. Take the full path — you'll paste it into Datanika in Step 2.
 
 **Self-hosted Datanika — file produced by another container on the same host**
 
-Mount the directory containing the SQLite file into the `datanika-app` container with a read-only bind mount in `docker-compose.yml`:
+Mount the directory containing the SQLite file into **both** containers with a read-only bind mount in `docker-compose.yml`:
 ```yaml
 services:
   app:
+    volumes:
+      - /opt/myapp/data:/mnt/myapp:ro
+  celery:
     volumes:
       - /opt/myapp/data:/mnt/myapp:ro
 ```
@@ -62,6 +80,7 @@ Then use `/mnt/myapp/app.sqlite` as the path in Step 2. Read-only is enough — 
    - **Connection Name** — a label you'll recognize, e.g. `sqlite-myapp`.
    - **Database Path** — the full path from Step 1. Include the extension. Examples: `/var/datanika/sources/app.sqlite`, `/mnt/myapp/data.db`.
 4. Click **Test Connection**. Datanika opens the file and reports success or an error. Because SQLite has no credentials, any failure here is a path or permission issue — not an auth problem.
+   > ⚠️ **A green Test Connection does not mean the load will work.** Test Connection runs in the **web app** container; the load runs in the **worker**. If you skipped the shared volume in Step 1, this button opens the file it can see and reports success, and the run then fails on a path the worker has never had. The probe in Step 1 step 3 is the one that answers the question this button looks like it is answering.
 5. Click **Create Connection**.
 
 > **Name + path is all you get on the form.** The SQLite Connection form has exactly two inputs: Connection Name and Database Path (plus a **Use raw JSON config** escape hatch for advanced cases). Datanika never writes to a SQLite source — the connector opens the file read-only at pipeline runtime, enforced by the source role, so no UI toggle is needed.
@@ -111,8 +130,13 @@ Schedules live on their own page and reference the upload **by name**.
 ## Troubleshooting
 
 ### `unable to open database file`
-**Cause.** The path is wrong, the file doesn't exist, or the `datanika-app` container can't see it. This is the single most common failure mode.
-**Fix.** Run `docker exec -it datanika-app ls -l <path>` — if the file isn't there, your bind mount or `docker cp` didn't land where you expected. If the file IS there but Datanika still can't open it, check permissions (`chmod 644 <file>` as the file owner on the host).
+**Cause.** The path is wrong, the file doesn't exist, or the container asking for it can't see it. This is the single most common failure mode.
+**Fix.** Check the path from **both** containers, because they have separate filesystems and the load runs in the worker:
+```bash
+docker exec datanika-app    ls -l <path>
+docker exec datanika-celery ls -l <path>
+```
+If it is missing from `datanika-celery` but present in `datanika-app`, your volume is not shared — go back to Step 1. That combination is the one worth recognising: it is also the state in which **Test Connection succeeds and every run fails**. If the file is in both but Datanika still can't open it, check permissions (`chmod 644 <file>` as the file owner on the host).
 
 ### `database disk image is malformed`
 **Cause.** The SQLite file was truncated or corrupted, usually because it was copied while another process was mid-write.

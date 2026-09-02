@@ -54,6 +54,35 @@ DECLARATION = re.compile(
     re.IGNORECASE | re.MULTILINE,
 )
 
+# -----------------------------------------------------------------------------------
+# landing#455 -- the NON-closing half.
+#
+# For five promotions this script reported `success` while deriving nothing, because it
+# matches only closing keywords and every commit here writes `refs #N`. That is not a
+# convention to correct: WORKFLOW_RULES §4 records landing#273, where `closes #272` on a
+# 4-of-36 partial fix retired the whole issue and 31 guides stopped existing as tracked
+# work. Departments write `refs` *because they were told to*.
+#
+# So the answer is not to widen the closing regex -- that reintroduces #273 exactly. It is
+# to derive the `refs` set as well and print it **without a keyword**, as candidates the
+# promoter reviews. Both rules survive: the derivation is mechanical (which is what §8
+# automated) and the closure stays a judgement (which is what §4 protects).
+#
+# ⚠️ A bare `#N` in a PR body does NOT close anything -- only keyword+`#N` does. That is
+# what makes the candidate list safe to render, and it is the same reason the
+# already-closed branch below renders `- #N —` rather than a struck-through keyword.
+#
+# `see` is deliberately absent: it marks background reading, not authorship.
+TRACKING = re.compile(
+    r"\b(?:refs?|part\s+of|towards?|addresses|implements)\s*:?\s+#(\d+)\b",
+    re.IGNORECASE,
+)
+
+TRACKING_DECLARATION = re.compile(
+    r"^\s*(?:[-*]\s*)?(?:refs?|part\s+of|towards?|addresses|implements)\s*:?\s+#(\d+)\b",
+    re.IGNORECASE | re.MULTILINE,
+)
+
 
 def strip_non_declarative(text: str) -> str:
     """Remove code blocks, inline code and block quotes before scanning for keywords."""
@@ -75,8 +104,28 @@ def find_refs(subject: str, body: str) -> set[int]:
     return found
 
 
+def find_tracking_refs(subject: str, body: str) -> set[int]:
+    """Non-closing references (`refs`/`part of`/`towards`/…) -- candidates, not closures.
+
+    Same subject/body asymmetry as `find_refs`, and for the same measured reason: the
+    subject is short and deliberate so it is scanned whole, while a body is prose and is
+    scanned only for line-initial declarations after code and quotes are stripped. Reusing
+    that shape rather than inventing a second one means the false-positive class this
+    script already closed stays closed on the new path too.
+    """
+    found = {int(n) for n in TRACKING.findall(subject or "")}
+    found |= {int(n) for n in TRACKING_DECLARATION.findall(strip_non_declarative(body or ""))}
+    return found
+
+
 def run(*args: str) -> str:
-    result = subprocess.run(args, capture_output=True, text=True)
+    # `encoding="utf-8"` is not cosmetic. Without it `text=True` decodes with the platform
+    # locale codec, which on a Windows dev box is cp1251: every em dash in an issue title
+    # comes back as `вЂ”`. On the ubuntu runner it happens to be right, so the defect is
+    # invisible in CI and appears only in the local rehearsal path below -- i.e. exactly
+    # where someone is checking the block before a promotion. `reconcile_shipped_issues.py`
+    # already passes it; this file did not.
+    result = subprocess.run(args, capture_output=True, text=True, encoding="utf-8")
     if result.returncode != 0:
         print(f"  ! command failed: {' '.join(args)}\n    {result.stderr.strip()[:300]}")
         return ""
@@ -141,6 +190,7 @@ def main() -> int:
     print(f"  commits being promoted: {len(commits)}")
 
     refs: dict[int, set[str]] = {}
+    tracking: dict[int, set[str]] = {}
     shas = []
     for entry in commits:
         sha, _, message = entry.strip().partition("\x1f")
@@ -148,6 +198,8 @@ def main() -> int:
         subject, _, msg_body = message.strip().partition("\n")
         for num in find_refs(subject, msg_body):
             refs.setdefault(num, set()).add(f"commit {sha[:7]}")
+        for num in find_tracking_refs(subject, msg_body):
+            tracking.setdefault(num, set()).add(f"commit {sha[:7]}")
 
     # Also consult the source PRs: a rebase-merge can leave the keyword only on the PR.
     for sha in shas:
@@ -159,9 +211,39 @@ def main() -> int:
                 continue
             for num in find_refs(pull.get("title", ""), pull.get("body") or ""):
                 refs.setdefault(num, set()).add(f"#{pull['number']}")
+            for num in find_tracking_refs(pull.get("title", ""), pull.get("body") or ""):
+                tracking.setdefault(num, set()).add(f"#{pull['number']}")
 
-    if not refs:
-        print("  no closing references found; leaving the body unchanged")
+    # An issue that some commit genuinely closes is not also a candidate.
+    for num in refs:
+        tracking.pop(num, None)
+
+    print(f"  closing references: {len(refs)}; tracking references: {len(tracking)}")
+
+    # -------------------------------------------------------------------------------
+    # landing#455 -- this check exists so the workflow can go RED.
+    #
+    # Reporting `success` on every run *was* the defect: five consecutive promotions
+    # derived nothing, wrote an empty block, and exited 0, which is indistinguishable
+    # from a promotion that genuinely closes nothing. Nothing was ever red, so nobody
+    # looked, and the issues stayed open for weeks.
+    #
+    # Every commit in this project carries a `[Dept]` tag and, by convention, an issue
+    # reference. Three or more commits yielding NO reference of any kind is a convention
+    # breakdown or a broken parser, not a normal promotion -- and either way the promoter
+    # should be told before merging rather than after.
+    #
+    # The threshold is deliberately conservative: a one- or two-commit hotfix promotion
+    # with no issue is legitimate and must not go red.
+    if not refs and not tracking:
+        if len(commits) >= 3:
+            print(
+                f"::error::{len(commits)} commits promoted and NOT ONE issue reference was "
+                "derived. Either the commit convention has drifted or this parser is broken. "
+                "Refusing to report success on an empty derivation (landing#455)."
+            )
+            return 1
+        print("  no references found in a short promotion; leaving the body unchanged")
         return 0
 
     # Don't re-list issues that are already closed -- keeps the block honest about what
@@ -185,14 +267,29 @@ def main() -> int:
         else:
             lines.append(f"- Closes #{num} — {title} · via {via}")
 
-    if not lines:
-        print("  references found, but none resolve to issues; body unchanged")
+    # The candidate half. NO closing keyword on any of these lines, by design: a bare
+    # `#N` in a PR body closes nothing, which is exactly the property that lets this list
+    # be generated mechanically without re-creating landing#273.
+    candidate_lines = []
+    for num in sorted(tracking):
+        issue = gh_api(f"repos/{repo}/issues/{num}")
+        if not isinstance(issue, dict) or "number" not in issue:
+            continue
+        if issue.get("pull_request"):
+            continue
+        if issue.get("state") == "closed":
+            continue  # already reconciled; saying so again is noise
+        title = (issue.get("title") or "").strip()
+        via = ", ".join(sorted(tracking[num]))
+        candidate_lines.append(f"- #{num} — {title} · via {via}")
+
+    if not lines and not candidate_lines:
+        print("  references found, but none resolve to open issues; body unchanged")
         return 0
 
-    block = "\n".join(
-        [
-            START,
-            "",
+    sections = [START, ""]
+    if lines:
+        sections += [
             "### Issues closed by this promotion",
             "",
             "_Generated from the commits being promoted. Feature PRs merge into `dev`, "
@@ -201,9 +298,39 @@ def main() -> int:
             "",
             *lines,
             "",
-            END,
         ]
-    )
+    if candidate_lines:
+        sections += [
+            "### Promoted, close by hand if complete",
+            "",
+            "_These commits reference the issues below with `refs` / `part of` / "
+            "`towards`, which closes nothing **on purpose**: `WORKFLOW_RULES` §4 records "
+            "landing#273, where `closes #272` on a 4-of-36 partial fix retired the whole "
+            "issue. So the list is derived mechanically and the closure stays a "
+            "judgement — review each and close the ones whose acceptance criteria are "
+            "fully met._",
+            "",
+            *candidate_lines,
+            "",
+            "_After the deploy goes green, `post-promotion-reconcile.yml` labels whatever "
+            "is still open here `shipped-to-prod`. Standing queue, any time: "
+            "`gh issue list --state open --label shipped-to-prod`._",
+            "",
+        ]
+    sections.append(END)
+    block = "\n".join(sections)
+
+    # Rehearsal path. The promoter can see the exact block a promotion would generate
+    # BEFORE opening the PR -- which is the only way to notice an empty derivation at a
+    # moment when it is still cheap to do something about it. Writes nothing.
+    #
+    #   REPO=datanika-io/datanika-landing PR_NUMBER=0 \
+    #   BASE_SHA=origin/main HEAD_SHA=origin/dev DRY_RUN=1 \
+    #     python .github/scripts/promotion_refs.py
+    if os.environ.get("DRY_RUN", "").lower() in ("1", "true", "yes"):
+        print("  DRY RUN — the block that would be written:\n")
+        print(block)
+        return 0
 
     current = run("gh", "pr", "view", pr_number, "--repo", repo, "--json", "body", "-q", ".body") or ""
     if START in current and END in current:
@@ -221,8 +348,8 @@ def main() -> int:
     with open(path, "w", encoding="utf-8") as handle:
         handle.write(body)
     run("gh", "pr", "edit", pr_number, "--repo", repo, "--body-file", path)
-    print(f"  wrote {len(lines)} reference(s) into the PR body:")
-    for line in lines:
+    print(f"  wrote {len(lines)} closing + {len(candidate_lines)} candidate reference(s):")
+    for line in lines + candidate_lines:
         print(f"    {line}")
     return 0
 

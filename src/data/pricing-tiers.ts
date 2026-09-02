@@ -77,7 +77,9 @@ export const tiers: PricingTier[] = [
     period: "/month",
     annualPeriod: "/month, billed annually",
     annualTotal: "From $3,990/year",
-    description: "For organizations with advanced needs. Extra seats at $25/mo each.",
+    // ⚠️ No extra-seat offer, and the omission IS the decision — landing#396,
+    // cloud#150. Reasoning in tests/seat-purchase-claim.test.ts, which pins it.
+    description: "For organizations with advanced needs.",
     features: [
       "1 TB processed / month",
       "$0.25 / GB overage",

@@ -5,9 +5,23 @@ import Footer from "../../components/Footer.astro";
 import ConversionCTA from "../../components/ConversionCTA.astro";
 import { availableConnectors, connectors } from "../../data/connectors";
 
-// DRAFT — Ships on branch 182-pricing-v2-copy-draft, merges at P5 cutover day.
-// Do NOT merge before cloud volume metering is green in staging for >=14 days
-// per SPEC_PRICING_V2 §11.
+// 🚨 THIS IS A HAND-MAINTAINED SECOND COPY OF THE PRICING TIERS. It is NOT
+// derived from `src/data/pricing-tiers.ts`, and it renders a third published
+// tier table alongside `/` and `/pricing/`.
+//
+// The comment that stood here until 2026-09-02 said "DRAFT — ... Do NOT merge
+// before cloud volume metering is green in staging for >=14 days". That was
+// written on branch 182-pricing-v2-copy-draft and was stale from the P5 cutover
+// on 2026-04-20: the page has been live for four months. A stale DRAFT marker is
+// worse than no marker, because it tells the next reader this file does not need
+// maintaining — and that is precisely how it drifted. A `grep` of `src/data/` for
+// the seat claim found ONE call site; `grep dist/` found THREE pages, because
+// this file spells it `+$25/seat` instead of `Extra seats at $25/mo each`
+// (landing#443's connector-count lesson, arriving by a different spelling).
+//
+// ⚠️ Any tier fact edited in `src/data/pricing-tiers.ts` must be edited here too
+// until this table is derived. Guards that quantify over `dist/` rather than over
+// one source file are what catch the miss: tests/seat-purchase-claim.test.ts.
 
 const tiers = [
   {
@@ -54,7 +68,8 @@ const tiers = [
       "1 TB processed per month",
       "$0.25 per extra GB",
       "50,000 model runs",
-      "10 team members (+$25/seat)",
+      // No per-seat price: there is no mechanism behind one (cloud#150, landing#396).
+      "10 team members included",
       "50 connections",
       "Unlimited schedules",
       "SSO (SAML/OIDC)",

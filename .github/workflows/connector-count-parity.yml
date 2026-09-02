@@ -112,8 +112,17 @@ jobs:
           existing=$(gh issue list --state open --search "in:title Connector count drift" \
             --json number --jq '.[0].number // empty')
           if [ -n "$existing" ]; then
+            # ⚠️ This exited 1 until 2026-09-02, which made the job red for the
+            # whole lifetime of the drift issue — see the config-fields job's
+            # copy of this block, which was red on every run while #449 was open.
+            # "Already tracked" is the check working: nothing changed today and
+            # nothing needs doing. A red that repeats forever stops discriminating,
+            # and then a genuine break in the steps above it — the README fetch,
+            # the slug parse — arrives on a check nobody looks at any more.
+            # Filing a NEW issue still exits 1 below: that one means something
+            # changed today. Guarded by tests/parity-workflow-exit-codes.test.ts.
             echo "Already tracked in #$existing; not filing again."
-            exit 1
+            exit 0
           fi
 
           # Heredoc, not an inline string: continuation lines in a quoted shell
@@ -179,8 +188,13 @@ jobs:
           existing=$(gh issue list --state open --search "in:title Connector config field drift" \
             --json number --jq '.[0].number // empty')
           if [ -n "$existing" ]; then
+            # ⚠️ Exited 1 until 2026-09-02. Measured on run 33631848187: this job
+            # read `failure` while every step that does real work read `success`,
+            # and the only red step logged "Already tracked in #449; not filing
+            # again." The job had been red on every run for as long as #449 was
+            # open. See the count job's copy for the reasoning.
             echo "Already tracked in #$existing; not filing again."
-            exit 1
+            exit 0
           fi
 
           {

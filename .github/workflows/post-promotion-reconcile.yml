@@ -1,0 +1,85 @@
+# Post-promotion issue reconciliation — core#773 (landing half)
+#
+# Why this exists here
+# --------------------
+# `promotion-pr-refs.yml` writes `Closes #N` for the promoted commits that used a *closing*
+# keyword, and merging the promotion PR closes those. Almost every commit in this project
+# writes `refs #N` instead, which closes nothing — deliberately, because WORKFLOW_RULES §4
+# records a real incident where `closes #272` on a 4-of-36 partial fix retired the whole
+# issue and 31 guides stopped existing as tracked work.
+#
+# Core has had this reconciler since 2026-08-31 and it works: 62 issues surfaced, 13 of them
+# on the 2026-09-02 promotion, with a grouped comment on the promotion PR. **Landing had
+# nothing.** The 2026-08-31 landing promotion generated a completely EMPTY references block
+# and the workflow still reported `success`, and the 2026-09-02 promotion shipped five
+# issues (#443, #403, #396, #435, #446) that are open right now with their work live.
+#
+# So the gap this closes is not "the automation is broken" — it is that the automation only
+# ever existed in one of the two repos that promote.
+#
+# It does not close anything and does not lint commit messages. It labels, so that
+# "shipped but still open" becomes a query instead of an archaeology exercise:
+#
+#     gh issue list --repo datanika-io/datanika-landing --state open --label shipped-to-prod
+#
+# Trigger
+# -------
+# `workflow_run` on the CD workflow rather than on the promotion merge, because
+# WORKFLOW_RULES §8 ties closure to "live in production", not to `main` moving. `Deploy
+# Landing` reaches `success` only when BOTH its jobs pass, and the second one is the
+# post-deploy `smoke` gate against the live origin — so a successful conclusion means the
+# site is genuinely serving, not merely that a symlink moved.
+#
+# ⚠️ `workflow_run` only fires for the copy of this file on the DEFAULT branch, so it takes
+# effect from the promotion *after* the one that ships it. The same was true on core.
+#
+# ⚠️ `daily-rebuild.yml` dispatches `Deploy Landing` against an unchanged `main`, so this
+# fires daily as well as on promotions. That is harmless and mildly useful: the label is the
+# memory, so an unchanged `main` finds nothing new and exits 0 — but an issue *opened today*
+# against work that shipped last week is detected the next morning rather than never.
+name: Post-promotion issue reconciliation
+
+on:
+  workflow_run:
+    workflows: ["Deploy Landing"]
+    types: [completed]
+  workflow_dispatch: {}
+
+# Labelling issues is a mutation, so it queues rather than cancelling: WORKFLOW_RULES §2's
+# rule is that `cancel-in-progress: true` is for verdicts you can recompute, never for
+# something that changes state halfway through.
+concurrency:
+  group: reconcile-shipped-issues
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  reconcile:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          # `main`, not core's `master`. Porting core's file verbatim would check out a ref
+          # that does not exist here and the whole job would fail — which is at least loud.
+          # The same substitution one line down in `PROD_REF` is the silent one.
+          ref: main
+          # The script walks every commit reachable from `main`. A shallow checkout would
+          # scan a truncated range and under-report — which is why the script fails on a
+          # zero-commit scan rather than reporting a clean run.
+          fetch-depth: 0
+
+      - name: Reconcile the tracker against what is deployed
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PROD_REF: main
+          DEPLOY_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: python3 .github/scripts/reconcile_shipped_issues.py

@@ -47,14 +47,21 @@ Apache Parquet is the "production-grade CSV" — a columnar file format with str
 
 Use this for landing-zone patterns: a data lake, an hourly Spark export, a nightly dbt snapshot that drops a partitioned set of Parquet files into a shared directory.
 
-1. Mount a directory into the `datanika-app` container read-only:
+1. Mount a directory into **both** the web app and the worker, read-only:
    ```yaml
    services:
      app:
        volumes:
          - /opt/datalake/raw:/var/datanika/parquet-lake:ro
+     celery:
+       volumes:
+         - /opt/datalake/raw:/var/datanika/parquet-lake:ro
    ```
-2. Restart the container.
+   🚨 **Both, not just `app`.** Datanika runs the web app and the worker as separate containers with separate filesystems, and **the load runs in the worker**. Mount this into `app` alone and the run fails on a path the worker has never had.
+2. Restart both containers (`docker compose up -d app celery`), then confirm the worker can see it:
+   ```bash
+   docker exec datanika-celery ls /var/datanika/parquet-lake
+   ```
 3. In Datanika, open **`/connections`**, pick `parquet` from the type dropdown.
 4. Skip the file upload area. Below it, you'll see the **Or enter file path** input — enter the path to the **directory** inside the container:
    - **Or enter file path** — `/var/datanika/parquet-lake`. **A directory, not a file and not a glob.** Datanika matches `*.parquet` *inside* whatever you type, so a path ending in a filename or a pattern matches nothing.
