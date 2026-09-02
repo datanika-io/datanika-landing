@@ -55,11 +55,31 @@ jobs:
       - name: Read landing's connector count
         id: landing
         run: |
-          # Count top-level `slug:` keys in the connectors array. Comment lines
-          # are skipped by the leading-whitespace + quote shape.
-          count=$(grep -cE '^\s{4}slug: "' src/data/connectors.ts)
+          # The MARKETED count: top-level `slug:` keys minus the entries core
+          # has withdrawn from the picker. Comment lines are skipped by the
+          # leading-whitespace + quote shape.
+          #
+          # The subtraction is not cosmetic. Core derives its README number as
+          # `len(ConnectionType) - len(UNMARKETED_TYPES | WITHDRAWN_SOURCE_TYPES)`,
+          # so a withdrawal moves core's side on its own. Landing keeps the page
+          # for a withdrawn connector — it ranks, and the withdrawal is temporary
+          # — so counting pages would report drift on every withdrawal and then
+          # get "fixed" by deleting a ranking page, which is landing#294 with the
+          # sign flipped. Count what a reader can go and create (landing#443).
+          #
+          # `^\s{4}withdrawn:` matches the entry field only; the interface
+          # declaration is `  withdrawn?: string;` — two spaces and a `?`.
+          slugs=$(grep -cE '^\s{4}slug: "' src/data/connectors.ts)
+          withdrawn=$(grep -cE '^\s{4}withdrawn:' src/data/connectors.ts || true)
+          if [ "$slugs" -lt 20 ]; then
+            echo "::error::Parsed $slugs slugs out of connectors.ts — the file shape changed."
+            echo "A count that silently collapses is worse than no check: it would file"
+            echo "drift every morning against a number nobody can reproduce."
+            exit 1
+          fi
+          count=$(( slugs - withdrawn ))
           echo "count=$count" >> "$GITHUB_OUTPUT"
-          echo "landing: $count"
+          echo "landing: $count ($slugs entries - $withdrawn withdrawn)"
 
       - name: Read core's connector count
         id: core

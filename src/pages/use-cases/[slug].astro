@@ -7,6 +7,7 @@ import { getCollection } from "astro:content";
 import { isPostVisible } from "../../utils/blog-visibility";
 import { useCases } from "../../data/use-cases";
 import type { UseCase } from "../../data/use-cases";
+import { connectors } from "../../data/connectors";
 
 // A use case and a tutorial that share a slug are the same intent at two depths,
 // and until now they competed instead of stacking: GSC has both
@@ -51,6 +52,15 @@ const breadcrumbs = [
 const pageTitle = useCase.seoTitle ?? `${useCase.title} Pipeline — Datanika`;
 const pageDescription = useCase.seoDescription ?? useCase.description;
 const pageH1 = useCase.seoH1 ?? useCase.title;
+
+// A use case is a promise about two connectors, so it inherits their
+// availability. Derived from `connectors.ts` rather than flagged on the use case
+// itself: a hand-set flag here would be a second copy of the same fact, and the
+// one that rots is always the copy. When core#863 restores S3 the notice
+// disappears from every page that names it, with no edit here.
+const withdrawnHalves = [useCase.sourceSlug, useCase.destinationSlug]
+  .map((slug) => connectors.find((c) => c.slug === slug))
+  .filter((c): c is NonNullable<typeof c> => Boolean(c?.withdrawn));
 ---
 
 <Layout
@@ -78,6 +88,19 @@ const pageH1 = useCase.seoH1 ?? useCase.title;
       <p class="text-lg text-slate-400 leading-relaxed max-w-3xl">
         {useCase.description}
       </p>
+      {withdrawnHalves.length > 0 && (
+        <div class="mt-6 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-5 max-w-3xl">
+          <p class="text-sm font-semibold text-amber-200 mb-2">
+            This pipeline cannot be built right now
+          </p>
+          {withdrawnHalves.map((c) => (
+            <p class="text-sm text-slate-300 leading-relaxed">{c.withdrawn}</p>
+          ))}
+          <p class="text-sm text-slate-400 leading-relaxed mt-2">
+            The steps below are unchanged and stay published for when it returns.
+          </p>
+        </div>
+      )}
       <div class="flex flex-col sm:flex-row gap-4 mt-8">
         <ConversionCTA href="https://app.datanika.io" class="btn-primary">Start Free</ConversionCTA>
         <a href="/use-cases" class="btn-secondary">View all use cases</a>

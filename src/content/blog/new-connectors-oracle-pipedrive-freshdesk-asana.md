@@ -9,7 +9,7 @@ heroImage: "/logo.png"
 publishedAt: 2026-07-17
 ---
 
-Datanika just gained four new connectors: [Oracle](/connectors/oracle), [Pipedrive](/connectors/pipedrive), [Freshdesk](/connectors/freshdesk), and [Asana](/connectors/asana). That brings us to 36 connectors — and, like most of the [others](/blog/32-connectors-most-took-a-day), each one was mostly a config exercise on top of [dlt](https://dlthub.com), not a from-scratch integration.
+Datanika just gained four new connectors: [Oracle](/connectors/oracle), [Pipedrive](/connectors/pipedrive), [Freshdesk](/connectors/freshdesk), and [Asana](/connectors/asana). That brings us to 35 connectors — and, like most of the [others](/blog/32-connectors-most-took-a-day), each one was mostly a config exercise on top of [dlt](https://dlthub.com), not a from-scratch integration.
 
 Here's what each one unlocks.
 
