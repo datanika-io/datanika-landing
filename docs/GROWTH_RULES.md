@@ -232,6 +232,38 @@ case, eligible for a rich result. A self-consistency guard goes **green** on all
 to ask of any number about the product is *which artifact enforces this, and have I read it?* — the
 `plans` table, the connector enum, the running container. Not the file next to the copy.
 
+**"Derived" is not a synonym for "correct" — ask *derived from what*.** The rule above says bind the
+claim to what production enforces. This is its sharp edge, and it caught the person applying it,
+inside the same session. Core withdrew `s3` from the picker (core#863) and its README moved 36 → 35
+on its own guard, because that number is `len(ConnectionType)` minus the withdrawn set. Landing's
+count was `connectors.length` — **derived, guarded, and bound to our catalogue of published pages
+rather than to what a reader can create.** #444 fixed the hardcoded prose and its own body asserted
+the pricing FAQ *"followed on its own"*; a `grep` of `dist/` a minute later found **sixteen call
+sites still reading `connectors.length`, publishing 36 across nine built pages**, the homepage and
+both JSON-LD blocks among them.
+
+This is harder to see than a hardcoded number, not easier: a reader checking *"is this derived?"*
+finds **yes** and stops. Two consequences worth keeping:
+
+- **A guard that matches a literal `<N> foo` in source is blind by construction to every `${…}` call
+  site**, because those contain no digit. `connector-count-prose.test.ts` was written to catch
+  hand-typed counts and had never once been able to see a derived one. That is not a bug in the
+  guard; it is a limit nobody had stated.
+- **So assert on the built output too.** `dist/` is the artifact the reader receives and is blind to
+  no call-site spelling. It cannot tell you *which* source file is wrong — keep the source guard for
+  that — but it is the only one of the two that could have caught this.
+  `tests/connector-count-dist.test.ts`, with the two vacuity controls that a `dist/` sweep needs: the
+  walk must find >100 pages, and the expected value must actually be rendered somewhere, because a
+  broken walk and a regex that matches nothing both report zero violations.
+
+**A withdrawal is not a deletion, and the count has to know the difference.** When core withdraws a
+connector, the page stays — it ranks, the withdrawal is temporary, and 301ing it away is landing#294
+with the sign flipped. What changes is the *marketed* set. Hence `withdrawn` on the entry and
+`availableConnectors` beside `connectors`: two catalogues, one of pages and one of claims, and every
+published number comes from the second. The parity cron subtracts the withdrawn entries before
+comparing with core, so a withdrawal no longer reports as drift and then gets "fixed" by deleting a
+ranking page.
+
 ## Publishing
 
 **Date-relative copy couples a post to its publish date.** "Until today…" had to be reworded when a
