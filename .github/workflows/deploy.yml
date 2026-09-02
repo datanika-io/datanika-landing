@@ -210,6 +210,64 @@ jobs:
           cat "$RUNNER_TEMP/dist.tgz" | ssh -i ~/.ssh/deploy "root@${{ secrets.AWEB_HOST }}" \
             'set -eu; rm -rf /opt/datanika/landing-dist.incoming; mkdir -p /opt/datanika/landing-dist.incoming; tar xzf - -C /opt/datanika/landing-dist.incoming; echo "received $(find /opt/datanika/landing-dist.incoming -type f | wc -l) files"'
 
+      # ---------------------------------------------------------------------
+      # landing#453 — ship the publisher WITH the build, so the box never has to
+      # reach GitHub to deploy.
+      #
+      # Until now the remote block began `cd /opt/datanika/datanika-landing &&
+      # git pull origin main`, for exactly one reason: to obtain
+      # `publish-web-root.sh` at a current revision. landing#388 moved the build
+      # to the runner and left that checkout behind, so a deploy whose bytes were
+      # already built, tested and transferred could still die on a network call
+      # for a 100-line shell script. It did, on run 33628141542 (2026-09-02
+      # 12:06Z): `fatal: could not read Username for 'https://github.com'`, and
+      # because the remote block is `set -eu` the publish never ran. It fails
+      # safe — the symlink is untouched and the previous release keeps serving —
+      # but a dispatched deploy silently became a no-op and it paged. 1 of the
+      # last 4 runs.
+      #
+      # Shipping the script has a second, better property the issue argues for:
+      # the publisher is now versioned WITH the build that uses it, instead of
+      # being "whatever `main` happened to hold at pull time" — which under a
+      # queued second deploy is not the same commit.
+      #
+      # Its own step, not folded into the `dist` tarball, on purpose:
+      #   * that tarball is extracted straight into the staging tree and every
+      #     file in it gets published, so the script would end up served at
+      #     https://datanika.io/publish-web-root.sh;
+      #   * the failure-alert chain below attributes by step id, and "the
+      #     publisher did not arrive" is a different incident from "the site did
+      #     not arrive".
+      #
+      # No race with a concurrent deploy writing the same path: `concurrency:
+      # deploy-landing` is `cancel-in-progress: false`, so runs queue and never
+      # overlap. `daily-rebuild.yml` dispatches this same workflow and therefore
+      # joins the same group.
+      #
+      # ⚠️ The Aweb checkout is NOT removed. `git pull` is gone from the deploy
+      # path; the checkout stays for the manual fallback in CLAUDE.md, which is
+      # still the one path that builds on the box.
+      - name: Ship the publish script to Aweb
+        id: ship_script
+        run: |
+          LOCAL=$(sha256sum scripts/publish-web-root.sh | cut -d' ' -f1)
+          # stdin carries the file, so the remote command is a quoted argument
+          # and not a `bash -s` heredoc — same reason as the tarball step above.
+          # Written to a temp name and `mv`d so a truncated transfer can never
+          # leave a half-written publisher at the real path.
+          REMOTE_SUM=$(ssh -i ~/.ssh/deploy "root@${{ secrets.AWEB_HOST }}" \
+            'set -eu; mkdir -p /opt/datanika; cat > /opt/datanika/publish-web-root.sh.incoming; chmod 0755 /opt/datanika/publish-web-root.sh.incoming; mv -f /opt/datanika/publish-web-root.sh.incoming /opt/datanika/publish-web-root.sh; sha256sum /opt/datanika/publish-web-root.sh | cut -d" " -f1' \
+            < scripts/publish-web-root.sh)
+          echo "local  $LOCAL"
+          echo "remote $REMOTE_SUM"
+          # Assert a positive artifact, not the absence of an error: ssh exiting
+          # 0 says the session closed, not that the right bytes landed.
+          if [ "$LOCAL" != "$REMOTE_SUM" ]; then
+            echo "::error::publish-web-root.sh did not arrive intact on Aweb (local $LOCAL, remote $REMOTE_SUM)"
+            exit 1
+          fi
+          echo "publisher shipped and verified"
+
       # Atomic publish — release dir + symlink swap, never a `cp` into the live
       # root (landing#301). All the rationale lives in the script's header.
       #
@@ -219,6 +277,9 @@ jobs:
       # one property the name exists for, which is `readlink -f` telling an
       # incident responder which commit is serving. Pinned by
       # `scripts/test-publish-web-root.sh` case 6, negative control included.
+      # That matters more now, not less: with the checkout out of the deploy path
+      # there is no `git` for the fallback to find at all, so SOURCE_SHA is the
+      # only thing standing between us and every release being named `-nogit`.
       - name: Publish on Aweb
         id: publish
         run: |
@@ -230,9 +291,7 @@ jobs:
           ssh -i ~/.ssh/deploy "root@${{ secrets.AWEB_HOST }}" \
             env "SOURCE_SHA=$SHORT_SHA" bash -s <<'REMOTE'
           set -eu
-          cd /opt/datanika/datanika-landing
-          git pull origin main
-          bash scripts/publish-web-root.sh /opt/datanika/landing-dist.incoming
+          bash /opt/datanika/publish-web-root.sh /opt/datanika/landing-dist.incoming
           echo "serving: $(readlink -f /var/www/datanika.io)"
           REMOTE
 
@@ -411,6 +470,7 @@ jobs:
           PACKAGE_OUTCOME: ${{ steps.package.outcome }}
           SSH_CONFIG_OUTCOME: ${{ steps.ssh_config.outcome }}
           SHIP_OUTCOME: ${{ steps.ship.outcome }}
+          SHIP_SCRIPT_OUTCOME: ${{ steps.ship_script.outcome }}
           PUBLISH_OUTCOME: ${{ steps.publish.outcome }}
           PUBLISHED_OUTCOME: ${{ steps.published.outcome }}
           VERIFY_OUTCOME: ${{ steps.verify.outcome }}
@@ -432,6 +492,7 @@ jobs:
           elif [ "$PACKAGE_OUTCOME"      = "failure" ]; then STEP="Package the built site"
           elif [ "$SSH_CONFIG_OUTCOME"   = "failure" ]; then STEP="Configure SSH"
           elif [ "$SHIP_OUTCOME"         = "failure" ]; then STEP="Ship the built site to Aweb"
+          elif [ "$SHIP_SCRIPT_OUTCOME"  = "failure" ]; then STEP="Ship the publish script to Aweb"
           elif [ "$PUBLISH_OUTCOME"      = "failure" ]; then STEP="Publish on Aweb"
           elif [ "$PUBLISHED_OUTCOME"    = "failure" ]; then STEP="Determine what this build published"
           elif [ "$VERIFY_OUTCOME"       = "failure" ]; then STEP="Verify every announced URL actually serves"
