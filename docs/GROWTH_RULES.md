@@ -157,6 +157,38 @@ asserting two different documents are one. It bites hardest in the case you most
 post carrying a **correction**, published while the canonical still serves the false claim. Now gate 5
 in `devto_crosspost.py`, a `git diff` against `origin/main`, shown failing before it was trusted.
 
+**A guard scoped to the document cannot see a row deleted from the table inside it.** The `/dpa`
+guard asserted that every sub-processor named on `/trust` also appears on `/dpa`, scoped to the
+page's text. Deleting the **Resend row from Annex III** left the whole suite green, because "Resend"
+also appears five times in the transfer clause and the measures annex. So a legal document whose
+operative list had lost an entry read as correct. The recorded rule *a count that includes site
+chrome measures the chrome* is the same defect with louder noise; here the noise was the page's own
+on-topic prose, which is far harder to notice. **Scope the assertion to the artifact that is
+operative, not to the document containing it — and pin a control that exactly one such artifact
+exists**, or the extraction silently starts reading the wrong one the day a second table is added.
+
+**A banned-word rule fires inside its own negation, and on a compliance page the negation is the
+sentence you most need to write.** A bare ban on `ISO ?27001[- ]certified` matched `/dpa`'s own
+honest line — *"we are not SOC 2 audited and not ISO 27001 certified"* — and failed the correct copy
+on the first run. This is the recorded *"a banned-word rule needs the context, not just the word"*
+rule reappearing in the place it costs most. **Anchor every ban to the affirmative form, then pin
+both controls: one asserting it fires on a real affirmative claim, one asserting it does *not* fire
+on the honest negation.** A guard that fails on correct copy gets deleted rather than narrowed.
+
+**Adding a legal page should break the legal-page guard, and if it doesn't, the derivation is
+decorative.** `/dpa` was picked up automatically by `legal-pages-commercial-claims.test.ts` — which
+selects policy documents by an intrinsic property (a dated revision marker inside `<main>`) rather
+than a path list — and the coverage test went red on arrival demanding page-specific assertions.
+That red is the feature. **When you add a page to a derived set, the correct experience is a failure
+telling you what the set expects of it.**
+
+**A `git restore` of a file you have uncommitted edits in destroys them, silently.** The mutation
+harness pattern — mutate the real artifact, prove the guard fails, restore — is only safe on a
+**committed** file, because the restore comes from `HEAD` and not from your work. Run it on a file
+still carrying your unpushed edits and the "restore" is a revert to something older than the change
+you are testing. **Commit first, then mutate, then restore.** The tell is that the suite goes green
+again and your feature is quietly gone.
+
 ## Claims and evidence
 
 **A count of word hits is a flag, not a finding.** `open-core-plugin` was carried in the handoff as
@@ -376,3 +408,33 @@ an `event=schedule` run today — a `workflow_dispatch` proves nothing about the
 **No feature gating on integrations.** Every connector on every plan, including Free; we gate on
 scale, not capability. This is a pricing principle, and it has already been contradicted once inside
 our own backlog — a "premium connectors" add-on line, culled 2026-08-31.
+
+**The gate for updating a published copy is the INVERSE of the gate for publishing a new one.**
+Gate 5 refuses to syndicate text production does not serve. Correct for a new post. Applied unchanged
+to an *update* it is actively harmful: it refuses to fix an article that is **staler** than
+production, which is the only reason an update path exists at all. `devto_update.py` therefore
+defaults its source to `origin/main` — what production actually serves — and makes pushing the
+worktree an explicit, delta-printed acknowledgement. **A safety check copied into the opposite
+operation can enforce the harm it was written to prevent.**
+
+**An acknowledgement flag must gate the send, not the dry run.** The first version of
+`--from-worktree` refused without `--i-know-it-is-ahead` even with no `--post`, which is a catch-22:
+reading the delta is how you earn the acknowledgement, and the dry run is what prints it. A gate that
+blocks the inspection makes the acknowledgement a formality typed blind.
+
+**A published copy's URL slug does not follow its title.** Retitling a dev.to article leaves the slug
+untouched — Forem derives it at creation. Good for link stability, and it means an update tool must
+locate an article by **`canonical_url`, never by slug**: the slug is derived from the very field the
+tool exists to change. Generalise it — **never key a lookup on the thing you are about to mutate.**
+
+**Probe a route's existence unauthenticated: `401` means it exists, `404` means it does not.** This
+settles "can the API do X?" in one call, with zero risk of a mutation, and it needs a positive
+control to be worth anything. Used to establish that dev.to has no profile-write endpoint —
+`GET /api/users/me` and `POST /api/articles` answered 401 while four candidate write routes answered
+404 — which turned an assumption into a measurement and correctly moved the task to a human.
+
+**A 404 is not an availability answer, and one endpoint is not a namespace.** On Forem, users and
+organizations share `dev.to/<slug>`, so a user-lookup 404 says nothing about an organization holding
+the handle. Check every namespace that can occupy the name, each against a control known to exist —
+and know what is still unresolved afterwards: a reserved word and a suspended account both 404 from
+outside, and both are enforced only at write time. **The residual doubt is part of the finding.**
