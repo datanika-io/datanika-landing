@@ -92,6 +92,15 @@ only because that test pins **a distinctive rendered sentence per file** as a co
 going quiet was itself a failure. Two consequences: pin a control sentence beside every
 count-is-zero sweep, and when you move copy, grep the test suite for the old path before you move it.
 
+**A guard's scope is a path set as much as a phrasing.** `legal-pages-facts.test.ts` was written for
+#343, when `/privacy` and `/trust` named the wrong hosting provider. It holds those two pages
+consistent with each other and stops retired claims returning *there* — and it was entirely blind to
+two blog posts still describing production as running on Hetzner in Nuremberg six weeks after it
+moved, both of which were then syndicated to dev.to (#467). The rule already recorded here is *"a
+guard matching one phrasing is blind to the second spelling"*; this is the same defect one level up,
+where the blind spot is the walk rather than the pattern. **When a fact about us changes, ask which
+surfaces assert it — not which pages you remember writing.**
+
 **A cron beats a PR check when the thing that breaks you lives in another repo.**
 `connector-count-parity.yml` is deliberately a daily cron, not a required check: the change that broke
 us landed in `datanika-core`, so PR-time in `datanika-landing` could never have caught it. The cost is
@@ -157,6 +166,13 @@ ledger + hourly overage sync`), one correct `Free / Pro / Enterprise` mention, a
 sweep. Same lesson as the dev.to anchor count that would not reproduce under any method: **state the
 method with the number, or the next reader inherits a figure they cannot check and must either trust
 it or redo the work.**
+
+**"We checked and found nothing" decays into "there is nothing" unless you write down the date and
+the scope.** The backlink inventory recorded *"the directory lane is ~exhausted"*, which was true of
+the targets then in hand. A fresh sweep four days later found thirteen candidates, two of them
+filable that afternoon against lists with no eligibility gate at all. A negative result is a
+measurement and ages like one. **Put the date and the set you searched into the conclusion**, or the
+next reader inherits a permanent no and stops looking.
 
 **An issue naming one instance of a false claim is a sample, not an inventory.** Four times in one
 month: Hetzner in six statements across two pages when the issue named the host; SOC 2 in four files
@@ -341,6 +357,21 @@ secret (the repo is public), but the defect narrative does not belong in the bun
 downloads. **Put the rationale in the guard test, the issue and the PR body — none of which ship —
 and leave the inline comment short and neutral.** Then `grep` your own phrasing in `dist/` before
 pushing; the source diff looks identical either way.
+
+**A dated post's body is a historical record; its metadata is not.** When a fact inside an old post
+goes stale, a dated update note is the honest fix for the *body* — readers are entitled to see what
+we actually published, and a cost post that quietly edits its own numbers is not worth reading. It
+does nothing for `<meta name="description">`, `og:description`, `twitter:description` and the JSON-LD,
+which are generated from frontmatter and travel into every social card and structured-data reader
+**without the note attached**. In #467 the false host was in four generated tags and one markdown
+line. **The body may stay wrong-and-dated; the metadata has to become true.**
+
+**A scheduled post's lane reopens on a build, not on a date.** `publishedAt` is evaluated when the
+site is built, so a post dated today 404s until the day's rebuild runs — and that rebuild is a cron
+measured between 4h49m and 7h48m late, which once stopped firing entirely for 71 days (#387,
+core#691). Our syndication gate requires the canonical to return 200, so **"not built yet" and "not
+publishable" fail identically.** Before concluding a post is blocked, check that the rebuild has had
+an `event=schedule` run today — a `workflow_dispatch` proves nothing about the schedule.
 
 **No feature gating on integrations.** Every connector on every plan, including Free; we gate on
 scale, not capability. This is a pricing principle, and it has already been contradicted once inside
