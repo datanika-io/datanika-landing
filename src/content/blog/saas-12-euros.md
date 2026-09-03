@@ -1,11 +1,17 @@
 ---
 title: "My SaaS Runs on €12 a Month. Here's the Full Stack."
-description: "Hetzner CPX31, Cloudflare free tier, Paddle for billing, Resend for email. The complete monthly cost breakdown for an open-source data pipeline platform."
+description: "One small VPS, Cloudflare free tier, Paddle for billing, Resend for email. The complete monthly cost breakdown for an open-source data pipeline platform, as it stood in April 2026."
 date: 2026-04-12
 author: "Datanika Team"
 category: "business"
 tags: ["bootstrap", "infrastructure", "cost", "self-hosted", "indie-hacking"]
 ---
+
+> **Update — 3 September 2026.** This is the stack as it stood in **April 2026**, and the hosting line has since changed. Production moved off Hetzner in July 2026 and now runs on a VPS with **Pointer (`pointer.gr`), in Athens** — still one box, still Docker Compose, still the EU. So the Hetzner rows below, and the snapshot-retention row with them, are historical: €11.49 is Hetzner's price, not what we pay today. Everything else — the container layout, the free tiers, the reasoning about when this stops working — still holds.
+>
+> The current provider, country and backup arrangement are listed on [our trust page](/trust/), and that page is the one to believe if it ever disagrees with this one.
+>
+> We have left the original figures in the table rather than quietly restating them. A cost post that edits its own numbers after the fact is not worth reading.
 
 People assume you need hundreds of dollars in cloud bills to run a SaaS. Here's what [Datanika](https://datanika.io) actually costs to operate, line by line, with no hand-waving.
 
