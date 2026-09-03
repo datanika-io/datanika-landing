@@ -1,5 +1,5 @@
 ---
-title: "My SaaS Runs on €12 a Month. Here's the Full Stack."
+title: "My SaaS Ran on €12 a Month (April 2026). Here's the Full Stack."
 description: "One small VPS, Cloudflare free tier, Paddle for billing, Resend for email. The complete monthly cost breakdown for an open-source data pipeline platform, as it stood in April 2026."
 date: 2026-04-12
 author: "Datanika Team"
@@ -7,7 +7,7 @@ category: "business"
 tags: ["bootstrap", "infrastructure", "cost", "self-hosted", "indie-hacking"]
 ---
 
-> **Update — 3 September 2026.** This is the stack as it stood in **April 2026**, and the hosting line has since changed. Production moved off Hetzner in July 2026 and now runs on a VPS with **Pointer (`pointer.gr`), in Athens** — still one box, still Docker Compose, still the EU. So the Hetzner rows below, and the snapshot-retention row with them, are historical: €11.49 is Hetzner's price, not what we pay today. Everything else — the container layout, the free tiers, the reasoning about when this stops working — still holds.
+> **Update — 3 September 2026.** This is the stack as it stood in **April 2026**, and the hosting line has since changed. Production moved off Hetzner in July 2026 and now runs on a VPS with **Pointer (`pointer.gr`), in Athens** — still one box, still Docker Compose, still the EU. So the Hetzner rows below, and the snapshot-retention row with them, are historical: €11.49 is Hetzner's price, not what we pay today. **What we pay today is €22.20 a month** for the Pointer Gold VPS — the figure on the renewal invoice dated 6 August 2026, covering 15 August to 15 September 2026. Everything else — the container layout, the free tiers, the reasoning about when this stops working — still holds.
 >
 > The current provider, country and backup arrangement are listed on [our trust page](/trust/), and that page is the one to believe if it ever disagrees with this one.
 >
