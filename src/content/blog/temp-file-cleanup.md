@@ -78,6 +78,6 @@ The three-layer cleanup — in-task, hourly sweep, race-condition protection —
 ## Related
 
 - [dbt Per-Tenant Architecture](/blog/dbt-per-tenant) — the `tenant_{org_id}/` pattern that makes this cleanup necessary
-- [My SaaS Runs on €12 a Month](/blog/saas-12-euros) — the infrastructure that this cleanup protects
+- [My SaaS Ran on €12 a Month (April 2026)](/blog/saas-12-euros) — the infrastructure that this cleanup protects
 - [Architecture Overview](/docs/architecture) — where the maintenance Celery Beat task fits in the system
 - [Self-Hosting Guide](/docs/self-hosting) — tuning these thresholds for your deployment
