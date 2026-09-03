@@ -255,24 +255,65 @@ describe("/dpa: the Article 28 addendum", () => {
     expect(t).toMatch(/Individual Entrepreneur Evgenii Timofeev/);
   });
 
+  /**
+   * 🚨 Scoped to the ANNEX TABLE, not to the page — and the first version of
+   * this test was scoped to the page and could not fail.
+   *
+   * Measured: deleting the Resend row from the annex left the whole suite green,
+   * because "Resend" also appears four times in the transfer clause and the
+   * measures annex. A page-level `includes` therefore passes on a document
+   * whose legally operative list has lost an entry. That is the recorded rule
+   * one level in — *a count that includes site chrome measures the chrome* —
+   * except here the noise is the page's own prose.
+   *
+   * The annex is the list a customer relies on. Assert on the annex.
+   */
+  const annexRows = () => {
+    const tables = [...dpa().mainHtml.matchAll(/<table[\s\S]*?<\/table>/g)].map((m) => m[0]);
+    // Control: if a second table is ever added, the extraction below silently
+    // starts reading the wrong one, and every assertion under it goes quiet.
+    expect(
+      tables.length,
+      "/dpa no longer has exactly one table. The sub-processor annex is " +
+        "located by being the only table on the page; disambiguate it before " +
+        "adding another, or this guard reads the wrong list.",
+    ).toBe(1);
+    return strip(tables[0]);
+  };
+
   it("names every sub-processor that /trust names — a superset, never a subset", () => {
     const trust = legalRoute("/trust");
     expect(trust, "/trust is missing from dist/").toBeDefined();
 
-    // Derived from /trust's own published table, not restated here. The names
-    // are the distinctive token of each row; matching the whole legal name
-    // would break on a formatting change and teach nothing.
+    // Derived from /trust's own published table, not restated as a belief here.
+    // The names are the distinctive token of each row; matching whole legal
+    // names would break on a formatting change and teach nothing.
     const onTrust = ["Pointer", "Aweb", "Cloudflare", "Resend", "Paddle", "GitHub"];
+    const annex = annexRows();
     for (const name of onTrust) {
       expect(
         trust!.text.includes(name),
         `${name} is no longer on /trust — this control is stale, re-derive the list.`,
       ).toBe(true);
       expect(
-        dpa().text.includes(name),
-        `/trust discloses ${name} as a subprocessor and /dpa does not. An ` +
-          `Article 28 annex that under-lists what the trust page already ` +
-          `admits is the landing#343 failure with a legal instrument attached.`,
+        annex.includes(name),
+        `/trust discloses ${name} as a subprocessor and /dpa's Annex III does ` +
+          `not list it. An Article 28 annex that under-lists what the trust ` +
+          `page already admits is the landing#343 failure with a legal ` +
+          `instrument attached.`,
+      ).toBe(true);
+    }
+  });
+
+  it("the annex discloses the recipients established outside the EEA", () => {
+    // The rows whose absence would be the #343 error again. Asserted on the
+    // annex for the same reason as above.
+    const annex = annexRows();
+    expect(annex).toMatch(/United States/);
+    for (const name of ["Resend", "Cloudflare", "Google"]) {
+      expect(
+        annex.includes(name),
+        `${name} is established outside the EEA and is missing from Annex III.`,
       ).toBe(true);
     }
   });
