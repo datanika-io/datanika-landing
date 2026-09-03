@@ -73,7 +73,7 @@ But if you're running dlt or dbt in production with any kind of frequency — es
 - Celery tasks fail silently (no disk to write logs to)
 - Even `docker logs` might not capture the error (log rotation relies on disk space)
 
-The three-layer cleanup — in-task, hourly sweep, race-condition protection — keeps disk usage **predictable** regardless of tenant count or run frequency. On the [€12/mo Hetzner box](/blog/saas-12-euros), disk usage has been flat at ~20 GB for weeks, even with daily runs.
+The three-layer cleanup — in-task, hourly sweep, race-condition protection — keeps disk usage **predictable** regardless of tenant count or run frequency. On the [single-VPS setup](/blog/saas-12-euros), disk usage has been flat at ~20 GB for weeks, even with daily runs.
 
 ## Related
 
