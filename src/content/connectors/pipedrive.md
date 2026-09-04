@@ -44,7 +44,7 @@ Pipedrive personal API tokens authenticate as a specific user and inherit that u
 
 > **The token is all you need.** Datanika calls the global Pipedrive API host, so there's no company-domain field — the personal API token is already scoped to its own company.
 >
-> **Test Connection doesn't apply here.** Pipedrive is an HTTP-API source; clicking **Test Connection** shows *"Test not applicable for this type."* The credential is validated on the first run instead.
+> **Test Connection really checks this credential.** Clicking it sends one authenticated request to the Pipedrive API (it reads your own user record). A revoked, mistyped or suspended credential comes back **red**, naming the status Pipedrive returned — it is no longer styled as a pass. What it does not check is **scope**: a credential that passes here can still lack access to the specific deals or contacts you name on the upload, and that surfaces on the first run.
 
 ![Adding Pipedrive in Datanika](/docs/connectors/pipedrive/02-add-connection.png)
 

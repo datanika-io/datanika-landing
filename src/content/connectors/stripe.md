@@ -48,7 +48,7 @@ Create a **dedicated restricted key** instead of reusing your secret key. Restri
    - **API Key (optional)** — paste the restricted key from Step 1 (`rk_live_…` or `rk_test_…`). Stored encrypted at rest with Fernet.
 4. Click **Create Connection**.
 
-> **Test Connection for Stripe tells you nothing, in green.** The button is present, but because Stripe is an HTTP-API source it returns *"Test not applicable for this type"* — **styled as a pass**, having sent no request to Stripe. A revoked key, a typo and a `rk_live_` key pasted into a test account all produce that identical green line; verified against a deliberately invalid token on 2026-08-31 ([core#821](https://github.com/datanika-io/datanika-core/issues/821)). Read it as *"not tested"*. The credential is validated for real on the first pipeline run — see Step 4 — where a bad key fails immediately with a clear Stripe API error.
+> **Test Connection really checks this credential.** Clicking it sends one authenticated request to the Stripe API (it lists a single customer). A revoked, mistyped or suspended key comes back **red**, naming the status Stripe returned — it is no longer styled as a pass. What it does not check is **scope**: a restricted key that passes here can still lack the permissions that the resources you name on the upload require, and that surfaces on the first run.
 
 ![Adding the Stripe connection in Datanika](/docs/connectors/stripe/02-add-connection.png)
 

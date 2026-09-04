@@ -45,9 +45,9 @@ Notion uses "internal integrations" for programmatic access. Each integration ge
 3. Fill in:
    - **Connection Name** — a label you'll recognize, e.g. `notion-workspace` or `notion-product-team`.
    - **API Key (optional)** — paste the integration secret from Step 1 (`ntn_…`). Stored encrypted at rest with Fernet.
-4. Click **Test Connection** (an HTTP-API source returns *"Test not applicable for this type"*), then **Create Connection**.
+4. Click **Test Connection** — it really calls the Notion API — then **Create Connection**.
 
-> **Credentials are validated on the first run.** Notion is an HTTP-API source, so the **Test Connection** button reports *"Test not applicable for this type"* — the token is validated for real when the first pipeline runs.
+> **Test Connection really checks this credential.** Clicking it sends one authenticated request to the Notion API (it reads your own user record). A revoked, mistyped or suspended credential comes back **red**, naming the status Notion returned — it is no longer styled as a pass. What it does not check is **scope**: a credential that passes here can still lack access to the specific database or page you name on the upload, and that surfaces on the first run.
 
 ![Adding the Notion connection in Datanika](/docs/connectors/notion/02-add-connection.png)
 

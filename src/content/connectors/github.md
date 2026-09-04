@@ -57,7 +57,7 @@ GitHub has two kinds of tokens: **classic** PATs (broad, all-or-nothing scopes) 
    - **Access Token** — paste the PAT from Step 1. Stored encrypted at rest with Fernet.
    - **Owner / Organization** — the GitHub user or organization that owns the repo, e.g. `datanika-io` or `octocat`.
    - **Repository** — the repository name, e.g. `datanika-core` or `hello-world`.
-4. Click **Test Connection** (an HTTP-API source returns *"Test not applicable for this type"*), then **Create Connection**.
+4. Click **Test Connection** — it really calls the GitHub API — then **Create Connection**.
 
 > **Multiple repos?** Create one connection per repository. Each connection targets a single `owner/repo` pair. If you need to sync several repos from the same org, create one connection per repo and wire each into its own pipeline (or combine them into a single pipeline with multiple sources).
 

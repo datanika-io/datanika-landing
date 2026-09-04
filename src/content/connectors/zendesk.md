@@ -44,9 +44,9 @@ Zendesk API tokens authenticate as a specific user via email + token. Create a d
    - **Subdomain** — just the subdomain, not the full URL. If your Zendesk is at `acme.zendesk.com`, enter `acme`.
    - **Email** — the email of the Zendesk user whose permissions the API token inherits.
    - **API Key (optional)** — paste the API token from Step 1. Stored encrypted at rest with Fernet.
-4. Click **Test Connection** (an HTTP-API source returns *"Test not applicable for this type"*), then **Create Connection**.
+4. Click **Test Connection** — it really calls the Zendesk API — then **Create Connection**.
 
-> **Credentials are validated on the first run.** Zendesk is an HTTP-API source, so the **Test Connection** button reports *"Test not applicable for this type"* — the subdomain/email/token are validated for real when the first pipeline runs.
+> **Test Connection really checks this credential.** Clicking it sends one authenticated request to the Zendesk API (it reads your own user record on the subdomain you gave). A revoked, mistyped or suspended credential comes back **red**, naming the status Zendesk returned — it is no longer styled as a pass. What it does not check is **scope**: a credential that passes here can still lack access to the specific tickets or users you name on the upload, and that surfaces on the first run.
 
 ![Adding Zendesk in Datanika](/docs/connectors/zendesk/02-add-connection.png)
 
