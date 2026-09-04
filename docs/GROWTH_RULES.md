@@ -654,3 +654,89 @@ carrying `Layout.astro` have a `<main>` element (68 of all 165 do — the docs p
 beacon), and the beacon is on **101 of 165**, not all of them. A `<main>`-scoped guard therefore
 covers far fewer pages than the page count suggests, and an anti-vacuity control has to be picked
 from a very short list.
+
+## Guards, continued — the Kafka authentication batch (2026-09-04)
+
+**A guard that pins the honest sentence of the day ends up enforcing yesterday's product.** The Kafka
+guard required the literal *"cannot currently connect to a SASL, SSL or mTLS broker"*. That was true
+when written and false four days later, the moment core#1054 shipped the credential fields — so the
+guard's effect was to **go red on correct copy**. Pin what must be true of the *thing being described*
+(credentials live on the connection, and are refused in `dlt_config`) affirmatively, and pin the
+**retired claims** at zero. Those two survive a change in either direction; a sentence does not.
+
+**🚨 Shiki emits one `<span>` per token, so a multi-token literal never matches the built page.** The
+ban on `{"security_protocol": "SASL_SSL"}` was written as *quote, key, quote, colon*. In `dist/` that
+fence is `<span …>"security_protocol"</span><span …>: </span>` — quote and colon in different
+elements. Reinstating the exact banned payload left **every `dist/`-side assertion green**; only the
+source-markdown check caught it, i.e. the assertion whose own comment called `dist/` *"what a reader
+receives, and the primary one"* was the one incapable of failing, and had been since the guard shipped.
+**Match the page's text, not its markup** (`html.replace(/<[^>]*>/g, " ")`).
+
+**Replace a tag with a space, not with nothing — then make every separator whitespace-tolerant.**
+Stripping to nothing lets `Docker</p><p>Hub` fuse into a match no reader ever saw. Stripping to a
+space is safe but turns `<code>ghcr.io</code>/<code>datanika-io/…</code>` into `ghcr.io / datanika-io/…`,
+so a pattern needing the slash adjacent misses. Both directions were hit on the same day, in two
+different files.
+
+**A self-test control must exercise the shape the assertion actually meets.** The dead-regex control
+tested each pattern against a raw string and passed throughout the defect above, because a pre-render
+sample is not what the assertion meets. Every ban now carries a **rendered** sample — real Shiki output
+copied from a build — beside its raw one. That control caught a second live defect on its own first
+run, in the file written immediately afterwards.
+
+**An ineffective mutation and a guard that does not bind produce identical output.** Proving the
+table-count pin, the first attempt appended markdown with no blank line; it never rendered as a second
+`<table>`, and the assertion stayed green. That reads exactly like a count pin that does not work.
+**Print the intermediate artifact** — here, the number of `<table>` elements containing the key — so a
+green mutation run names which of the two happened.
+
+**Sharpening the "commit before you mutate" rule above: assert the restore against the PRE-MUTATION
+state, not against the index.** Today's harness *did* assert the restore, with `git diff --quiet`, and
+printed `RESTORED` while an uncommitted fix had just been destroyed by `git checkout --`. *Restored to
+`HEAD`* is the wrong invariant when `HEAD` is not where you were. Hash the file **before** mutating and
+compare to that hash.
+
+**On Windows, a `sha256sum` restore check cries wolf.** `git checkout --` rewrites line endings under
+`autocrlf`, so a perfectly restored file reports `DIFFERS`. Compare CR-stripped content
+(`tr -d '\r' | sha256sum`) against `git show HEAD:<path>` similarly stripped — otherwise the check
+trains you to ignore it, which is worse than not having it.
+
+**Never read a test runner's verdict through `grep`.** `npx vitest run | grep -E "Tests "` printed
+`Tests 1858 passed` while one file failed to **collect** — a syntax error, zero tests run, and a
+commit made on the strength of that line. The filter dropped `Test Files 1 failed`. Read the
+unfiltered tail; the summary is four lines.
+
+## Claims and evidence, continued — versioned capability
+
+**When a capability is on `dev` but not on production, write availability so the copy is true under
+either promotion order.** core promotes on Infra's cadence and landing on its own, so a page
+documenting a new field is read either by someone who has it or by someone who does not, and you
+cannot know which. A version number would then need maintaining and would be wrong for self-hosters
+anyway. **Give the reader a self-check from their own screen** — *count the fields on your connection
+form: three means a build that predates this, seven means you have it.* It needs no upkeep and it is
+falsifiable by the person holding the question.
+
+**Document a credential as the field that stores it safely, never as the field that happens to
+accept it.** Kafka's SASL password goes on the connection — Fernet-encrypted, redacted out of errors
+and out of `BackupService.export_backup` — and **not** in an upload's `dlt_config`, a plain JSON
+column with neither property. The convenient path is the one that leaks. Put the *reason* in the copy,
+not just the instruction: a page that says "use the connection" without saying why invites the next
+writer to re-add the convenient fallback, which is how the same Kafka fiction shipped four times in
+five months.
+
+**A "not tested" verdict is neither a pass nor a failure, and copy must not render it as either.**
+`/docs/connectors/kafka` said Test Connection "checks connectivity" and hung two troubleshooting
+entries off `Test connection failed: …` strings the button cannot produce — `kafka` is in core's
+`SAAS_PROBE_EXEMPT` and never opens a broker connection. Core's own framing is the one to reuse:
+reporting an unverified connection as working and reporting it as failed are the same lie told in
+opposite directions.
+
+**When a guide cites a reference page, the reference is part of the guide.** The Kafka guide called
+`/connectors/kafka` *"the full field-by-field reference"* while `connectors.ts` listed three fields
+against the shipped seven — landing#449's drift with a citation attached, which is worse than the drift
+alone. Assert the agreement rather than remembering it.
+
+**Do not bump `verified_date` for work you derived from source.** `verified_by: "product-ui"` asserts
+a UI walkthrough. Re-deriving a page against `origin/dev` is a different and weaker claim, and
+stamping today's date on it converts landing#439 and landing#385 from open questions into false answers. Leave
+the field and say what you actually checked.
