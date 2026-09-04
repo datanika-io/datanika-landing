@@ -4,7 +4,16 @@ import { resolve, join } from "path";
 
 // Regression coverage for #109 — every Start free / Get started / Try
 // free / Get Started Free CTA on the site must use <ConversionCTA>, not
-// a plain <a>, so the Google Ads conversion event fires on click.
+// a plain <a>.
+//
+// ⚠️ That rule's ORIGINAL reason is gone: the sweep existed so the Google Ads
+// conversion event would fire on every CTA, and landing#481 removed the tag
+// because it contradicted /privacy section 8. The rule is kept on a different
+// and still-live reason — every signup CTA goes through ONE component, which is
+// the single place CTA-level measurement is attached (Plausible today) and the
+// single place any future tag would go. Written down because a rule whose reason
+// has silently expired is the kind that gets deleted by the next person to ask
+// why it exists.
 //
 // We test at the source level (not the built dist) so the test runs
 // without depending on a particular build environment or env-var
@@ -48,27 +57,34 @@ describe("ConversionCTA component", () => {
 
   const source = readFileSync(ctaPath, "utf-8");
 
-  it("reads PUBLIC_GOOGLE_ADS_CONVERSION_LABEL from import.meta.env", () => {
-    expect(source).toContain("import.meta.env.PUBLIC_GOOGLE_ADS_CONVERSION_LABEL");
+  // landing#481 — these four assertions used to require the Google Ads half of
+  // this component. They are inverted rather than deleted, so re-adding the tag
+  // fails here as well as in tests/no-advertising-tag.test.ts, and so the reason
+  // it went is readable from the file that used to demand it.
+  it("reads no Google Ads conversion label", () => {
+    expect(source).not.toContain("PUBLIC_GOOGLE_ADS_CONVERSION_LABEL");
   });
 
-  it("emits a gtag conversion event on click when label is set", () => {
-    // gtag fires from the component's inline <script> block (post-#212
-    // sendBeacon refactor) rather than an onclick attribute — the check
-    // is the same either way.
-    expect(source).toMatch(/gtag\(['"]event['"],\s*['"]conversion['"]/);
+  it("emits no gtag conversion event", () => {
+    expect(source).not.toMatch(/\bgtag\s*\(/);
+    expect(source).not.toContain("data-gtag-send-to");
   });
 
-  it("uses the AW-18081528527 account ID prefix", () => {
-    expect(source).toContain("AW-18081528527");
+  it("carries no Google Ads account ID", () => {
+    expect(source).not.toMatch(/\bAW-\d{6,}\b/);
   });
 
-  it("falls back to plain anchor when label is unset (no data-gtag-send-to attribute)", () => {
-    // Post-#212 pattern: data-gtag-send-to={sendTo || undefined} on the
-    // rendered <a>. Astro omits attributes whose value is undefined, so
-    // when PUBLIC_GOOGLE_ADS_CONVERSION_LABEL is unset the anchor has no
-    // send-to and the script's sendGtag() short-circuits. No JS error.
-    expect(source).toMatch(/sendTo\s*\|\|\s*undefined/);
+  it("still renders a plain <a> when no plausibleEvent is supplied", () => {
+    // The fallback survives the removal: Astro drops an attribute whose value is
+    // undefined, so a CTA without an event name is an ordinary anchor and the
+    // click handler's selector does not match it — no interception, no 50 ms
+    // navigation delay. Previously those anchors were intercepted anyway,
+    // because the gtag attribute was always present in a production build.
+    expect(source).toMatch(/data-plausible-event=\{plausibleEvent \|\| undefined\}/);
+  });
+
+  it("the click handler matches on the Plausible attribute alone", () => {
+    expect(source).toContain('"a[data-plausible-event]"');
   });
 
   it("uses navigator.sendBeacon for Plausible events (race-free vs XHR — #212)", () => {
