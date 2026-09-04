@@ -82,6 +82,16 @@ function py(name: string, src = source): string {
   return parts.map((m) => m[1]).join("");
 }
 
+/**
+ * The one condition three tests anchor on, written once.
+ *
+ * It gained `and not elsewhere` in landing#493 and two tests had it spelled out verbatim,
+ * in five places between them — so the correct change went red in two and would have gone
+ * silently vacuous in the others, because `indexOf` on a missing anchor returns -1 and
+ * `slice(-1, n)` is an empty string that matches nothing without complaining.
+ */
+const EMPTY_DERIVATION_GUARD = "if not refs and not tracking and not elsewhere:";
+
 function trackedIn(subject: string): number[] {
   return [...subject.matchAll(new RegExp(py("TRACKING"), "gi"))]
     .map((m) => Number(m[1]))
@@ -128,8 +138,158 @@ describe("promotion_refs.py — tracking references (landing#455)", () => {
 
   it("skips already-closed issues in the candidate list", () => {
     const at = source.indexOf("    for num in sorted(tracking):");
-    const block = source.slice(at, source.indexOf("\n    if not lines", at));
+    expect(at, "the candidate loop moved — re-derive this anchor").toBeGreaterThan(-1);
+    // ⚠️ The end anchor was `"\n    if not lines"` and landing#493 turned that `if` into a
+    // multi-line condition, so `indexOf` returned -1 and `slice(at, -1)` silently took the
+    // REST OF THE FILE. The assertion then passed by matching the *closing* loop instead —
+    // green, and measuring nothing. Anchor on the next thing that is genuinely a boundary,
+    // and assert the anchor was found.
+    const end = source.indexOf("\n    # Computed AFTER the two loops", at);
+    expect(end, "the candidate loop's end anchor moved — re-derive it").toBeGreaterThan(at);
+    const block = source.slice(at, end);
     expect(block).toContain('issue.get("state") == "closed"');
+    // And prove the slice is the candidate loop, not a superset that happens to contain
+    // the string: the closing loop's distinctive line must NOT be in it.
+    expect(block).not.toContain("- Closes #{num}");
+  });
+});
+
+/**
+ * landing#493 — the 142-line divergence, and the bucket neither repo had.
+ *
+ * `promotion-pr-refs.yml` is 50 lines in both repos and delegates to the same path, so
+ * *"landing has the same workflow"* was true and misleading; this script was 142 lines
+ * behind core's for a week and nothing said so. Landing PR #492 then promoted 9 commits
+ * while its block spoke for 3.
+ *
+ * These tests pin the FEATURES that divergence removed, not byte-equality with core —
+ * landing legitimately differs (`main` vs `master`, the `post-promotion-reconcile.yml`
+ * prose). A cross-repo byte comparison is not buildable here anyway: core is a different
+ * repository and is not checked out during `npm test`.
+ */
+describe("promotion_refs.py — every promoted commit is accounted for (landing#493)", () => {
+  function crossRepoIn(text: string): string[] {
+    return [...text.matchAll(new RegExp(py("CROSS_REPO"), "gi"))].map((m) => `${m[1]}#${m[2]}`);
+  }
+
+  it("matches a keyword-qualified cross-repo reference", () => {
+    expect(crossRepoIn("[Growth] Fix the annex (refs cloud#163)")).toEqual(["cloud#163"]);
+    expect(crossRepoIn("[Infra] Port it (closes core#1040)")).toEqual(["core#1040"]);
+  });
+
+  it("does NOT match a bare cross-repo mention — a citation is not a declaration", () => {
+    // Core measured this: an unqualified `([A-Za-z][\w.-]*)#(\d+)` harvested issue numbers
+    // out of a body that merely cited them as already-shipped background, and reported the
+    // batch fully accounted. A flattering coverage number is worse than a low one.
+    expect(crossRepoIn("[QA] Same family as core#992, and see cloud#160")).toEqual([]);
+    expect(crossRepoIn("Background: core#1040 explains the mechanism.")).toEqual([]);
+  });
+
+  it("treats `landing#N` as this repo, not another one", () => {
+    // `repo_aliases` exists so our own prose does not render under "referenced in another
+    // repository" — a confident wrong line is worse than a missing one.
+    expect(source).toContain("def repo_aliases(");
+    expect(source).toContain("if owner.lower() in mine:");
+    const at = source.indexOf("def repo_aliases(");
+    const block = source.slice(at, source.indexOf("\ndef ", at + 10));
+    // {"datanika-landing", "landing"} — the split is what makes the short form work.
+    expect(block).toContain('name.rsplit("-", 1)[-1]');
+  });
+
+  it("names commits it could not classify instead of dropping them", () => {
+    expect(source).toContain("No issue reference derived");
+    expect(source).toContain("unaccounted = [s for s in shas if not accounted.get(s)]");
+    expect(source).toMatch(/Coverage: \*\*\{len\(shas\) - len\(unaccounted\)\}/);
+  });
+
+  it("gives an unresolvable reference its own bucket rather than silence", () => {
+    // The open question in landing#493. Both alternatives are wrong in opposite
+    // directions: rendering `#676` invites closing an issue in the wrong repo, and
+    // dropping it silently is what already happened.
+    expect(source).toContain("Referenced an issue that does not exist in this repository");
+    expect(source).toContain("def _unresolve(");
+  });
+
+  it("un-accounts a commit whose only reference resolves to nothing", () => {
+    // 🔑 The load-bearing half, and the behavioural difference from core's version.
+    // Without it a commit whose sole reference is `refs #676` counts toward the coverage
+    // line while appearing in no section — landing#493 restated.
+    const at = source.indexOf("def _unresolve(");
+    const block = source.slice(at, source.indexOf("\n    # Don't re-list", at));
+    expect(block.length, "the _unresolve body anchor moved").toBeGreaterThan(100);
+    expect(block).toContain('accounted.get(sha, set()).discard(f"refs #{num}")');
+    expect(block).toContain('accounted.get(sha, set()).discard(f"closes #{num}")');
+  });
+
+  it("computes `unaccounted` AFTER resolution, not before", () => {
+    // Ordering is the whole correctness of the previous test: computed earlier, it reports
+    // the pre-resolution view and the un-accounting has no effect on the coverage line.
+    const unresolveAt = source.indexOf("def _unresolve(");
+    const unaccountedAt = source.indexOf("unaccounted = [s for s in shas");
+    expect(unresolveAt).toBeGreaterThan(-1);
+    expect(unaccountedAt).toBeGreaterThan(unresolveAt);
+  });
+
+  it("distinguishes a 404 from a failed API call", () => {
+    // 🚨 Conflating them renders a transient error as "this issue does not exist" — a
+    // confident, wrong, permanent-looking line in a promotion body. Only a literal Not
+    // Found makes a reference unresolvable; anything else leaves the commit unaccounted,
+    // which is the honest state and is itself reported.
+    expect(source).toContain("def gh_issue(");
+    const at = source.indexOf("def gh_issue(");
+    const block = source.slice(at, source.indexOf("\ndef main(", at));
+    expect(block).toContain('"not found" in stderr or "http 404" in stderr');
+    expect(block).toContain('return ("error", None)');
+    expect(block).toContain('return ("missing", None)');
+    // A PR is not an issue: repos/{r}/issues/{n} returns PRs too, and a promotion body
+    // must never list one as an issue to close.
+    expect(block).toContain('data.get("pull_request")');
+  });
+
+  it("keeps a cross-repo-only batch out of the red check (would be a FALSE red)", () => {
+    // Three commits all carrying `refs core#1040` derive no same-repo reference of either
+    // kind. Without `elsewhere` in this condition the job fails saying not one reference
+    // was derived, while every commit referenced something — and a job that goes red when
+    // nothing is wrong teaches people to merge past it.
+    expect(source).toContain("if not refs and not tracking and not elsewhere:");
+  });
+});
+
+describe("promotion_refs.py — the landing#493 guards can fail", () => {
+  const mutate = (from: string, to: string) => {
+    expect(source.includes(from), `mutation anchor absent: ${from}`).toBe(true);
+    return source.replace(from, to);
+  };
+
+  it("control: dropping the keyword requirement from CROSS_REPO is caught", () => {
+    // The over-broad pattern core measured. It must harvest a bare mention, which is the
+    // property the shipped assertions forbid.
+    const loose = /([A-Za-z][\w.-]*)#(\d+)\b/gi;
+    expect([..."[QA] Same family as core#992".matchAll(loose)].length).toBe(1);
+    // ...and the shipped one must not.
+    expect([..."[QA] Same family as core#992".matchAll(new RegExp(py("CROSS_REPO"), "gi"))]
+      .length).toBe(0);
+  });
+
+  it("control: removing the un-accounting makes the coverage line lie", () => {
+    const broken = mutate('accounted.get(sha, set()).discard(f"refs #{num}")', "pass");
+    expect(broken).not.toContain('accounted.get(sha, set()).discard(f"refs #{num}")');
+  });
+
+  it("control: collapsing the 404 distinction is caught", () => {
+    const broken = mutate('"not found" in stderr or "http 404" in stderr', "True");
+    expect(broken).not.toContain('"not found" in stderr or "http 404" in stderr');
+  });
+
+  it("control: computing `unaccounted` before resolution is detectable by order", () => {
+    // The one defect the text assertions above genuinely could not see is a reordering,
+    // so it is asserted positionally rather than by presence — this proves the check is
+    // an ordering check and not another substring test.
+    const a = source.indexOf("def _unresolve(");
+    const b = source.indexOf("unaccounted = [s for s in shas");
+    const swapped = a > b;
+    expect(swapped, "if this is ever true the coverage line reports a pre-resolution view")
+      .toBe(false);
   });
 });
 
@@ -138,18 +298,28 @@ describe("promotion_refs.py — it can report failure (landing#455)", () => {
     // Reporting success on every run WAS the defect. Proven by execution, not only here:
     // run against three real reference-free commits with the source-PR lookup unreachable,
     // the script prints ::error:: and exits 1.
-    expect(source).toContain("if not refs and not tracking:");
+    // ⚠️ `and not elsewhere` was added in landing#493 — a batch whose commits all carry
+    // `refs core#1040` references something, so firing here would be a FALSE red. These
+    // two assertions pinned the pre-#493 condition verbatim and went red on the correct
+    // change, which is the guard working: the same shape as the deploy step that asserted
+    // the Google Ads tag was PRESENT (landing#481), where a correct removal would have
+    // failed every deploy. Updated deliberately, not widened.
+    expect(source).toContain("if not refs and not tracking and not elsewhere:");
     expect(source).toMatch(/if len\(commits\) >= 3:/);
     expect(source).toContain("::error::");
-    const at = source.indexOf("if not refs and not tracking:");
-    const block = source.slice(at, at + 1200);
-    expect(block).toMatch(/return 1/);
+    const at = source.indexOf(EMPTY_DERIVATION_GUARD);
+    // 🚨 Assert the anchor was FOUND. Without this, `indexOf` returning -1 makes
+    // `slice(-1, …)` an empty string and every assertion below it fails for a reason that
+    // reads like the script losing the feature — or, with a `not.toMatch`, passes on
+    // nothing at all. Two tests here already drifted that way.
+    expect(at, "the empty-derivation guard moved — re-derive this anchor").toBeGreaterThan(-1);
+    expect(source.slice(at, at + 1400)).toMatch(/return 1/);
   });
 
   it("keeps the threshold conservative — a 1- or 2-commit hotfix must not go red", () => {
-    const at = source.indexOf("if not refs and not tracking:");
-    const block = source.slice(at, at + 1400);
-    expect(block).toMatch(/return 0/);
+    const at = source.indexOf(EMPTY_DERIVATION_GUARD);
+    expect(at, "the empty-derivation guard moved — re-derive this anchor").toBeGreaterThan(-1);
+    expect(source.slice(at, at + 1600)).toMatch(/return 0/);
   });
 
   it("decodes subprocess output as UTF-8", () => {
