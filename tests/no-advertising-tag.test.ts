@@ -33,17 +33,63 @@ const DIST = resolve(ROOT, "dist");
 const SRC = resolve(ROOT, "src");
 
 /**
- * The COMPLETE set of third-party origins this site may load a script from.
+ * The COMPLETE set of third-party origins this site may load a script from —
+ * and, for each, the published sentence that licenses it.
  *
  * An allowlist rather than a blocklist, because a blocklist only catches vendors
- * someone thought to enumerate — and the next tracker added here will be one
- * nobody listed. Both entries are cookie-free, which is what makes section 8 true
- * as written; adding a third entry is a legal-page change, not a build change.
+ * someone thought to enumerate, and the next tracker added here will be one
+ * nobody listed.
+ *
+ * 🚨 The `disclosedOn` half was added in the Cloudflare Web Analytics
+ * disclosure. The bare allowlist was insufficient in a way that had already
+ * happened: `static.cloudflareinsights.com` sat on it, correctly, while
+ * `/privacy` section 8 said traffic *"is measured with a self-hosted Plausible
+ * instance"* and `/trust`'s Analytics row said *"No third-party tracking"* —
+ * naming one of the two measurements. Nothing was false about the allowlist; it
+ * simply had no opinion about whether the origin was disclosed, so an origin
+ * could be legitimised in a test file and remain unnamed on the legal pages.
+ *
+ * Coupling them here makes that impossible: adding an origin to this array
+ * without adding published text that names it fails the build.
+ *
+ * ⚠️ Each needle must be narrow enough that deleting the disclosure makes it
+ * fail, and they are matched against `<main>` — NOT the document. Both halves
+ * were forced by measurement against the live pre-change pages:
+ *
+ *   - A bare `/Cloudflare/` matches the CDN sub-processor row on both pages, so
+ *     it passes with the analytics disclosure gone.
+ *   - `/Cloudflare Web Analytics/` against the whole document ALSO passed on the
+ *     pre-change pages, and on all 101 pages carrying the shared layout, because
+ *     `Layout.astro` wraps the beacon in an HTML comment naming it. Astro does
+ *     not strip template comments — the layout says so itself, one block below
+ *     the beacon. A guard reading the document is therefore satisfied by the
+ *     tag it is supposed to be demanding a disclosure for.
  */
-const ALLOWED_SCRIPT_ORIGINS = new Set([
-  "plausible.datanika.io",
-  "static.cloudflareinsights.com",
-]);
+const DISCLOSED_SCRIPT_ORIGINS: {
+  origin: string;
+  vendor: string;
+  disclosedOn: { page: string; needle: RegExp }[];
+}[] = [
+  {
+    origin: "plausible.datanika.io",
+    vendor: "Plausible CE, self-hosted",
+    disclosedOn: [
+      { page: "privacy/index.html", needle: /self-hosted[\s\S]{0,40}Plausible/i },
+      { page: "trust/index.html", needle: /Plausible CE/ },
+    ],
+  },
+  {
+    origin: "static.cloudflareinsights.com",
+    vendor: "Cloudflare Web Analytics",
+    disclosedOn: [
+      { page: "privacy/index.html", needle: /Cloudflare Web Analytics/ },
+      { page: "trust/index.html", needle: /Cloudflare Web Analytics/ },
+    ],
+  },
+];
+
+/** Derived, never written twice — the two lists cannot drift apart. */
+const ALLOWED_SCRIPT_ORIGINS = new Set(DISCLOSED_SCRIPT_ORIGINS.map((d) => d.origin));
 
 /** `<script src="https://host/…">`, protocol-relative `//host/…` included. */
 const SCRIPT_SRC_RE = /<script[^>]*\ssrc=["'](?:https?:)?\/\/([^/"'?#]+)/gi;
@@ -145,8 +191,10 @@ const CLAIMS = [
   },
   {
     page: "trust/index.html",
-    text: "No third-party tracking",
-    quote: '/trust sub-processor table, Analytics row: "No third-party tracking."',
+    text: "no cross-site identifier",
+    quote:
+      '/trust sub-processor table, Analytics row: "Both are cookie-free: no cookies, no ' +
+      'browser storage, no cross-site identifier, no advertising or behavioural profile."',
   },
 ];
 
@@ -163,6 +211,18 @@ function originsIn(html: string): string[] {
   const out: string[] = [];
   for (const m of html.matchAll(SCRIPT_SRC_RE)) out.push(m[1].toLowerCase());
   return out;
+}
+
+/**
+ * `<main>` only — the region a reader is shown, with no `<head>` and no chrome.
+ *
+ * Every disclosure assertion goes through this. Reading the document instead is
+ * what made the first version of the Cloudflare needle unfalsifiable; the same
+ * scoping is why `legal-pages-commercial-claims.test.ts` reads `<main>` too.
+ */
+function mainOf(html: string): string {
+  const m = html.match(/<main[\s\S]*?<\/main>/);
+  return m ? m[0] : "";
 }
 
 describe("no built page ships an advertising tag (landing#481)", () => {
@@ -207,8 +267,10 @@ describe("no built page ships an advertising tag (landing#481)", () => {
     // without this file being revisited.
     const file = resolve(DIST, claim.page);
     expect(existsSync(file), `${claim.page} is not in dist/`).toBe(true);
+    // <main>, for the same reason the disclosure needles are: a claim satisfied
+    // by chrome or by a comment in <head> is not a published claim.
     expect(
-      readFileSync(file, "utf-8"),
+      mainOf(readFileSync(file, "utf-8")),
       `${claim.page} no longer contains "${claim.text}" — ${claim.quote}`,
     ).toContain(claim.text);
   });
@@ -231,6 +293,84 @@ describe("no built page ships an advertising tag (landing#481)", () => {
         "must change in the SAME commit — see landing#481. If it is genuinely cookie-free " +
         "and disclosed, add it to ALLOWED_SCRIPT_ORIGINS with the reason.\n" +
         violations.join("\n"),
+    ).toEqual([]);
+  });
+
+  it.each(DISCLOSED_SCRIPT_ORIGINS)(
+    "$vendor is both loaded and disclosed by name on the legal pages",
+    (entry) => {
+      // Two halves, and the ORDER matters. First establish the origin is really
+      // loaded — otherwise the disclosure half is an assertion about a vendor we
+      // do not use, which passes for the wrong reason and would let a retired
+      // vendor sit here forever pinning copy nobody needs.
+      let loadedOn = 0;
+      for (const html of read.values()) {
+        if (originsIn(html).includes(entry.origin)) loadedOn += 1;
+      }
+      expect(
+        loadedOn,
+        `${entry.origin} is on the allowlist but no built page loads it. Either the ` +
+          `script was removed — in which case delete this entry AND the published ` +
+          `sentences it protects — or the extractor is broken.`,
+      ).toBeGreaterThan(50);
+
+      for (const { page, needle } of entry.disclosedOn) {
+        const file = resolve(DIST, page);
+        expect(existsSync(file), `${page} is not in dist/`).toBe(true);
+        expect(
+          needle.test(mainOf(readFileSync(file, "utf-8"))),
+          `${page} loads ${entry.origin} and does not name it in <main>. A third-party ` +
+            `script origin may only be allowlisted if the legal pages disclose it: ` +
+            `/privacy section 8 and the /trust Analytics row both have to say what is ` +
+            `measuring visitors, and /trust needs a dated Change log entry. Looked for ` +
+            `${needle}.`,
+        ).toBe(true);
+      }
+    },
+  );
+
+  it("the disclosure needles are narrow enough to fail (anti-vacuity)", () => {
+    // The control page must LOAD the beacon and carry the shared layout — so the
+    // layout's own `<!-- Cloudflare Web Analytics … -->` comment is present — and
+    // must carry no analytics disclosure of its own. If a needle matches here,
+    // it is satisfied by the tag rather than by the disclosure, and the
+    // assertion above cannot fail. That is not hypothetical: it is what the
+    // first version of this guard did, on all 101 layout pages at once.
+    //
+    // The homepage, because it is the largest `<main>` in the build (~41 KB of
+    // marketing prose) and therefore the most likely to catch a needle broad
+    // enough to match arbitrary copy. Only 5 of the 101 layout pages have a
+    // `<main>` element at all; `/terms` and `/404` are the other viable ones.
+    const control = resolve(DIST, "index.html");
+    expect(existsSync(control), "the control page moved — pick another layout route").toBe(true);
+    const html = readFileSync(control, "utf-8");
+
+    // Arm the control: it is only evidence if this page really does load the
+    // beacon and really does carry the layout comment.
+    expect(
+      originsIn(html),
+      "the control page does not load the beacon, so it cannot detect a needle satisfied by it",
+    ).toContain("static.cloudflareinsights.com");
+    expect(
+      html.includes("Cloudflare Web Analytics"),
+      "the layout comment is gone from the control page — re-derive this control",
+    ).toBe(true);
+
+    const main = mainOf(html);
+    expect(main.length, "the control page has no <main>").toBeGreaterThan(500);
+
+    const tooBroad: string[] = [];
+    for (const entry of DISCLOSED_SCRIPT_ORIGINS) {
+      for (const { page, needle } of entry.disclosedOn) {
+        if (needle.test(main)) tooBroad.push(`${entry.vendor} (${page}) -> ${needle}`);
+      }
+    }
+    expect(
+      tooBroad,
+      `these needles also match the <main> of a page that carries no analytics ` +
+        `disclosure, so they would pass with the disclosure deleted:\n${tooBroad.join("\n")}\n` +
+        `If the homepage has legitimately gained an analytics disclosure, move this ` +
+        `control to /terms or /404 rather than loosening the needles.`,
     ).toEqual([]);
   });
 
