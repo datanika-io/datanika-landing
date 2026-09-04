@@ -272,12 +272,22 @@ describe("no built page ships an advertising tag (landing#481)", () => {
     // failed alongside the real violations. That made "a marker is over-broad"
     // indistinguishable from "there is a real tag here", which is the one
     // distinction this control exists to draw.
+    //
+    // ⚠️ indexOf, not a regex. The first version built
+    // `new RegExp(".{0,60}" + name + ".{0,60}", "g")` and ran it over every one
+    // of ~165 full HTML documents. That backtracks, took 5116 ms in isolation,
+    // and TIMED OUT once 67 test files ran in parallel - failing in a way that
+    // reads exactly like the violation it exists to detect. A control that is
+    // sometimes slow is not a control.
     const NAMES = ["google-analytics", "google-ads", "facebook-ads"];
+    const PAD = 60;
     const windows: string[] = [];
     for (const html of read.values()) {
       for (const name of NAMES) {
-        for (const m of html.matchAll(new RegExp(`.{0,60}${name}.{0,60}`, "g"))) {
-          windows.push(m[0]);
+        let at = html.indexOf(name);
+        while (at !== -1) {
+          windows.push(html.slice(Math.max(0, at - PAD), at + name.length + PAD));
+          at = html.indexOf(name, at + name.length);
         }
       }
     }
