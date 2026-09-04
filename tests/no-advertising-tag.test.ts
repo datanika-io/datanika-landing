@@ -64,26 +64,79 @@ const SRC = resolve(ROOT, "src");
  *     not strip template comments — the layout says so itself, one block below
  *     the beacon. A guard reading the document is therefore satisfied by the
  *     tag it is supposed to be demanding a disclosure for.
+ *
+ * 🚨 And every assertion is scoped to a REGION — the single element that carries
+ * the claim — never to `<main>` as a whole. Measured, twice, on this change:
+ * dropping *"cookie-free web analytics"* from the Cloudflare sub-processor row
+ * on `/trust` and again on `/privacy` left a page-level needle GREEN both times,
+ * because the same words appear in the Change log and in section 9. That is
+ * `SPEC_SUBPROCESSOR_REGISTER` G1's finding — deleting the Resend row from the
+ * DPA annex left the suite green because *"Resend"* appears five more times in
+ * prose — reproduced here before it was read.
  */
+type Region = { tag: "tr" | "li" | "section"; containing: RegExp };
+
 const DISCLOSED_SCRIPT_ORIGINS: {
   origin: string;
   vendor: string;
-  disclosedOn: { page: string; needle: RegExp }[];
+  disclosedOn: { page: string; what: string; region: Region; needle: RegExp }[];
 }[] = [
   {
     origin: "plausible.datanika.io",
     vendor: "Plausible CE, self-hosted",
     disclosedOn: [
-      { page: "privacy/index.html", needle: /self-hosted[\s\S]{0,40}Plausible/i },
-      { page: "trust/index.html", needle: /Plausible CE/ },
+      {
+        page: "privacy/index.html",
+        what: "section 8 names the tool",
+        region: { tag: "section", containing: /8\. Cookies/ },
+        needle: /self-hosted[\s\S]{0,40}Plausible/i,
+      },
+      {
+        page: "trust/index.html",
+        what: "the Analytics row names the tool",
+        region: { tag: "tr", containing: />Analytics</ },
+        needle: /Plausible CE/,
+      },
     ],
   },
   {
     origin: "static.cloudflareinsights.com",
     vendor: "Cloudflare Web Analytics",
     disclosedOn: [
-      { page: "privacy/index.html", needle: /Cloudflare Web Analytics/ },
-      { page: "trust/index.html", needle: /Cloudflare Web Analytics/ },
+      // Half one: the vendor, named where we say what measures visitors.
+      {
+        page: "privacy/index.html",
+        what: "section 8 names the tool",
+        region: { tag: "section", containing: /8\. Cookies/ },
+        needle: /Cloudflare Web Analytics/,
+      },
+      {
+        page: "trust/index.html",
+        what: "the Analytics row names the tool",
+        region: { tag: "tr", containing: />Analytics</ },
+        needle: /Cloudflare Web Analytics/,
+      },
+      // 🔑 Half two: the FUNCTION, recorded against the company in the
+      // sub-processor list. These protect different things and neither implies
+      // the other — reverting /trust's Analytics row to "Plausible CE" left half
+      // one green, because the row's prose still named the vendor.
+      //
+      // Cloudflare was already a sub-processor before the beacon, so adding a
+      // function does not add a name to any list. That is exactly why the
+      // function column is the half that can be dropped with no name
+      // disappearing from any page, and why it needs its own assertion.
+      {
+        page: "privacy/index.html",
+        what: "the Cloudflare bullet records the function",
+        region: { tag: "li", containing: /Cloudflare, Inc\./ },
+        needle: /cookie-free web analytics/,
+      },
+      {
+        page: "trust/index.html",
+        what: "the Cloudflare sub-processor row records the function",
+        region: { tag: "tr", containing: /Cloudflare, Inc\./ },
+        needle: /cookie-free web analytics/,
+      },
     ],
   },
 ];
@@ -225,6 +278,20 @@ function mainOf(html: string): string {
   return m ? m[0] : "";
 }
 
+/**
+ * The one element inside `<main>` that carries a claim — a table row, a list
+ * item, a numbered section.
+ *
+ * Returns the matches rather than a string, so the caller can insist there is
+ * **exactly one**. Zero means the anchor has rotted and the assertion would have
+ * been vacuous; two means it is ambiguous and a green tells you nothing about
+ * which. Both are failures, and neither is visible if you take `[0]`.
+ */
+function regionsIn(main: string, region: Region): string[] {
+  const all = main.match(new RegExp(`<${region.tag}[\\s>][\\s\\S]*?</${region.tag}>`, "g")) ?? [];
+  return all.filter((el) => region.containing.test(el));
+}
+
 describe("no built page ships an advertising tag (landing#481)", () => {
   const pages = existsSync(DIST) ? walkHtml(DIST) : [];
   const read = new Map<string, string>();
@@ -314,16 +381,25 @@ describe("no built page ships an advertising tag (landing#481)", () => {
           `sentences it protects — or the extractor is broken.`,
       ).toBeGreaterThan(50);
 
-      for (const { page, needle } of entry.disclosedOn) {
+      for (const { page, what, region, needle } of entry.disclosedOn) {
         const file = resolve(DIST, page);
         expect(existsSync(file), `${page} is not in dist/`).toBe(true);
+        const found = regionsIn(mainOf(readFileSync(file, "utf-8")), region);
         expect(
-          needle.test(mainOf(readFileSync(file, "utf-8"))),
-          `${page} loads ${entry.origin} and does not name it in <main>. A third-party ` +
-            `script origin may only be allowlisted if the legal pages disclose it: ` +
-            `/privacy section 8 and the /trust Analytics row both have to say what is ` +
-            `measuring visitors, and /trust needs a dated Change log entry. Looked for ` +
-            `${needle}.`,
+          found.length,
+          `the <${region.tag}> matching ${region.containing} in ${page} matched ` +
+            `${found.length} elements, not 1. The page structure moved; re-derive ` +
+            `this anchor rather than widening it, or the assertion below is ` +
+            `either vacuous (0) or ambiguous (2+).`,
+        ).toBe(1);
+        expect(
+          needle.test(found[0]),
+          `${page} loads ${entry.origin} and ${what.replace(/^the /, "its ")} does not. ` +
+            `A third-party script origin may only be allowlisted if the legal pages ` +
+            `disclose it — the vendor where we say what measures visitors, AND the ` +
+            `function against the company in the sub-processor list. /trust also needs ` +
+            `a dated Change log entry. Looked for ${needle} inside the ` +
+            `<${region.tag}> matching ${region.containing}.`,
         ).toBe(true);
       }
     },
