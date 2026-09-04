@@ -531,3 +531,30 @@ rather than trying to match the working copy's endings byte for byte.
 `why-cheaper`. Third instance: a note explaining *why* the ad tag is absent, written as `<!-- -->` in
 `Layout.astro`, would have gone into the `<head>` of every built page. Converted to an expression
 comment and **asserted absent from `dist/`** — the source diff looks identical either way.
+
+**A control that is sometimes slow is not a control, because a timeout reads as a violation.** The
+false-positive control in `no-advertising-tag.test.ts` built
+`new RegExp(".{0,60}" + name + ".{0,60}", "g")` and ran it over ~165 full HTML documents. It took
+**5116 ms** against vitest's 5000 ms default — already borderline — and tipped over once 67 test files
+ran in parallel, failing as a **timeout** in the same red as a real finding. `indexOf` + `slice` took
+it to 465 ms with identical windows and an identical assertion. **Time your guards on the tree they
+will actually run on, and treat a run near the limit as already broken.**
+
+**A guard can pass on every branch it was written on and fail only on the MERGED tree.** Three guards
+shipped in one session, each green on its own branch off `dev`; the first run of all three together
+went red. Each half was internally consistent and they were mutually blind — the same shape as the
+connector-count drift, one level up. **Before calling a multi-branch session done, rebase onto the
+tree that will exist after the others land and run the suite there.** It is also the only way to get
+a real total: adding branch counts together predicted 1833 and measuring it produced 1833, but only
+one of those was evidence.
+
+**Rewriting a control's extraction can leave it fast and dead.** Changing the window-collection from a
+regex to `indexOf` preserved the assertion on paper. What proved it still worked was injecting an
+over-broad marker — a bare `/google-analytics/i` hostname, which matches our own catalogue URLs — and
+watching that control, and only it, go red. **A performance fix to a test is a change to the test.**
+
+**A branch in the merge queue cannot be pushed to.** `remote rejected … (protected branch hook
+declined)`, with *"Branches that are queued for merging cannot be updated."* So a fix discovered while
+a PR is mid-queue either waits for that PR to land or goes on its own branch. Prefer its own branch
+when the fix is to something **already on `dev`**, since it is then blocking every PR in the repo and
+should not be hostage to unrelated content.
