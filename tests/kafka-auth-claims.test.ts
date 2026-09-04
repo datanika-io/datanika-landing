@@ -57,23 +57,49 @@ const AUTH_KEYS = [
  * outlives the fix. `&quot;` is matched too, in case the renderer ever escapes
  * inside <code>.
  */
+const QUOTE = `(?:"|&quot;|&#34;)`;
+
 const BANNED_INSTRUCTION = [
   {
     name: 'a JSON payload supplying "security_protocol"',
-    re: /(?:"|&quot;)security_protocol(?:"|&quot;)\s*:/,
+    re: new RegExp(`${QUOTE}security_protocol${QUOTE}\s*:`),
     sample: '{"bootstrap_servers": "...", "security_protocol": "SASL_SSL"}',
   },
   {
     name: 'a JSON payload supplying "sasl_username" / "sasl_password"',
-    re: /(?:"|&quot;)sasl_(?:username|password|mechanism|plain_username|plain_password)(?:"|&quot;)\s*:/,
+    re: new RegExp(
+      `${QUOTE}sasl_(?:username|password|mechanism|plain_username|plain_password)${QUOTE}\s*:`,
+    ),
     sample: '{"sasl_mechanism": "PLAIN", "sasl_username": "u", "sasl_password": "p"}',
   },
   {
     name: "the claim that extra keys reach the dlt kafka_consumer resource",
-    re: /pass(?:es)?\s+through\s+to\s+the\s+dlt\s*<?[^>]*>?\s*kafka_consumer/i,
+    re: /pass(?:es)?\s+through\s+to\s+the\s+dlt\s+kafka_consumer/i,
     sample: "These extra keys pass through to the dlt kafka_consumer resource.",
   },
 ];
+
+/**
+ * 🚨 The bans run against the page's **text**, not its markup, and that is not
+ * tidiness — it is the whole reason they work.
+ *
+ * Shiki highlights a JSON fence token by token, so
+ * `{"security_protocol": "SASL_SSL"}` reaches `dist/` as
+ * `…<span …>"security_protocol"</span><span …>: </span>…`. The quote and the
+ * colon end up in different elements, and a pattern requiring them adjacent
+ * matches the markdown and **not** the built page. Measured on this very file:
+ * reinstating the banned payload left every dist-side assertion green and was
+ * caught only by the source-markdown check at the bottom — i.e. the assertion
+ * documented above as "what a reader receives, and the primary one" was the one
+ * that could not fail.
+ *
+ * Stripping tags cannot make a ban fire on honest copy: the prose names
+ * `security_protocol` inside `<code>` with no quotes and no colon, and every
+ * ban requires both.
+ */
+function textOf(html: string): string {
+  return html.replace(/<[^>]*>/g, "");
+}
 
 /**
  * Claims that were true before core#1054 and are false after it. Zero each.
@@ -124,6 +150,25 @@ describe("the Kafka guide describes the auth the connector actually performs (#4
     // tests/no-advertising-tag.test.ts on its first run.
     const dead = BANNED_INSTRUCTION.filter((b) => !b.re.test(b.sample)).map((b) => b.name);
     expect(dead, `these patterns no longer match their own sample: ${dead.join(", ")}`).toEqual([]);
+  });
+
+  it("every banned pattern survives the RENDERER, not just the raw sample", () => {
+    // 🚨 This control exists because the raw-sample control above passed while
+    // the dist-side ban was dead. A guard's self-test has to exercise the shape
+    // the assertion actually meets: markdown goes through Shiki before it
+    // reaches a reader, and Shiki splits `"key":` across two <span>s. Anything
+    // that only ever sees the pre-render string cannot notice.
+    const rendered = [
+      // Shiki's actual output shape for a JSON fence, copied from a build.
+      '<span style="color:#79B8FF">"security_protocol"</span><span style="color:#E1E4E8">: </span><span style="color:#9ECBFF">"SASL_SSL"</span>',
+      '<span style="color:#79B8FF">"sasl_plain_password"</span><span style="color:#E1E4E8">: </span><span style="color:#9ECBFF">"p"</span>',
+      "<p>These extra keys pass <em>through</em> to the dlt <code>kafka_consumer</code> resource.</p>",
+    ];
+    const missed = rendered.filter((r) => !BANNED_INSTRUCTION.some((b) => b.re.test(textOf(r))));
+    expect(
+      missed,
+      `a banned instruction is invisible once rendered — the dist assertions below cannot fail:\n${missed.join("\n")}`,
+    ).toEqual([]);
   });
 
   it("carries exactly one table documenting all four connection auth fields", () => {
@@ -186,7 +231,12 @@ describe("the Kafka guide describes the auth the connector actually performs (#4
   });
 
   it("does not repeat any retired capability claim", () => {
-    const hits = RETIRED_CLAIM.filter((c) => c.re.test(html) || c.re.test(md)).map((c) => c.name);
+    // textOf for the same reason as the bans: these are multi-word sentences,
+    // and `**bold**` or `` `code` `` anywhere inside one splits it with markup
+    // in dist while leaving it intact in the markdown.
+    const hits = RETIRED_CLAIM.filter((c) => c.re.test(textOf(html)) || c.re.test(md)).map(
+      (c) => c.name,
+    );
     expect(
       hits,
       "The Kafka guide is still asserting something core#1054 made false. A reader who believes " +
@@ -207,7 +257,7 @@ describe("the Kafka guide describes the auth the connector actually performs (#4
   });
 
   it("instructs no auth configuration through raw JSON anywhere on the page", () => {
-    const hits = BANNED_INSTRUCTION.filter((b) => b.re.test(html)).map((b) => b.name);
+    const hits = BANNED_INSTRUCTION.filter((b) => b.re.test(textOf(html))).map((b) => b.name);
     expect(
       hits,
       "The Kafka guide is instructing broker authentication through the pipeline config. The " +
