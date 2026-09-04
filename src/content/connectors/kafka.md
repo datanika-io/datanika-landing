@@ -28,13 +28,17 @@ Apache Kafka is the backbone of most event-driven architectures — teams use Da
 - **Network reachability** from Datanika to your Kafka bootstrap servers. For managed services, this means the cluster must be reachable over the internet or via VPC peering. Self-hosted Datanika just needs the container to reach the brokers.
 - **Topic-level ACLs** granting the Datanika consumer `READ` on the topics you want to sync, plus `READ` on the consumer group.
 
-> **Broker authentication note.** The structured Kafka connection form currently supports **PLAINTEXT** brokers only — there are no UI fields for SASL, SSL, or mTLS credentials (see [datanika-core#198 KF-1](https://github.com/datanika-io/datanika-landing/issues/198) for the full scope). For SASL/SSL/mTLS brokers, use the **Use raw JSON config** escape hatch on the connection form to pass the underlying `dlt` kafka options directly. If you're on Confluent Cloud or Amazon MSK Serverless today and need SASL auth surfaced in the UI, please +1 the tracking issue.
+> 🚨 **Broker authentication: PLAINTEXT only, and there is no workaround.** Datanika cannot currently connect to a SASL, SSL or mTLS broker by any route. The connection form has no credential fields, and the **Use raw JSON config** escape hatch does not close the gap — the Kafka source builds its consumer from a fixed set of options, so `security_protocol` and the `sasl_*` keys never reach it. Supplying them makes the run fail with `Pipeline.run() got an unexpected keyword argument`.
+>
+> In practice that rules out every managed cloud Kafka, since they all require TLS: **Confluent Cloud, Amazon MSK Serverless, Aiven and Redpanda Serverless are not usable with this connector yet.** What works today is a **PLAINTEXT** broker that Datanika can reach — typically self-hosted Kafka on a private network, or a broker behind a tunnel you terminate yourself.
+>
+> This page previously documented the raw-JSON route as a workaround. It was never functional, and following it produced a crash rather than a connection ([#486](https://github.com/datanika-io/datanika-landing/issues/486)).
 
 ## Step 1 — Prepare the Kafka cluster
 
-You don't need to generate API keys or certificates for the structured flow — the current Datanika Kafka form connects anonymously (PLAINTEXT). What you do need:
+You don't need to generate API keys or certificates — Datanika connects to the broker anonymously, over PLAINTEXT. What you do need:
 
-1. **Bootstrap server addresses** — the host:port pairs for your broker(s), e.g. `broker1.internal:9092, broker2.internal:9092`. Confluent Cloud bootstrap servers look like `pkc-abc12.us-east-1.aws.confluent.cloud:9092`.
+1. **Bootstrap server addresses** — the host:port pairs for your broker(s), e.g. `broker1.internal:9092, broker2.internal:9092`. These must be the **advertised** listeners, and they must be PLAINTEXT ones.
 2. **Topic names** — the exact names of the topics you want to sync (e.g. `events`, `orders`). The Datanika form does **not** discover topics from the broker — you enter them manually.
 3. **ACLs** — ensure your broker allows the anonymous principal (or whichever principal Datanika connects as) to `READ` the target topics and the consumer group prefix you'll use.
 
@@ -48,14 +52,14 @@ You don't need to generate API keys or certificates for the structured flow — 
    - **Bootstrap Servers** *(required)* — comma-separated list of broker addresses. Example: `broker1:9092, broker2:9092`.
    - **Topics (comma-separated)** *(required)* — the topics you want to sync. Example: `events, orders`.
    - **Consumer Group ID** *(optional)* — a group identifier Datanika uses to track consumption offsets. Example: `datanika-consumer`. Leave blank to use the default.
-4. Click **Test Connection**. For a reachable PLAINTEXT broker this checks connectivity; the real connection (and any SASL/SSL supplied via raw JSON) is made on the first pipeline run.
+4. Click **Test Connection**. For a reachable PLAINTEXT broker this checks connectivity; the real connection is made on the first pipeline run.
 5. Click **Create Connection**.
 
 ![Adding the Kafka connection in Datanika — three fields only](/docs/connectors/kafka/02-add-connection.png)
 
 > **Test connection fails?** Jump to [Troubleshooting](#troubleshooting) — most first-time failures are DNS resolution (advertised listeners mismatch), a PLAINTEXT-vs-SSL broker mismatch, or missing topics ACLs.
 
-> **Need SASL/SSL/mTLS?** Toggle **Use raw JSON config** at the top of the form and provide a JSON payload with the dlt kafka options you need (e.g. `{"bootstrap_servers": "...", "topics": [...], "group_id": "...", "security_protocol": "SASL_SSL", "sasl_mechanism": "PLAIN", "sasl_username": "...", "sasl_password": "..."}`). These extra keys pass through to the dlt `kafka_consumer` resource. The Test Connection button may fail on the raw-JSON path — the first pipeline run will attempt the real connection.
+> **Need SASL/SSL/mTLS?** Not supported yet — see the broker authentication note above. **Use raw JSON config** accepts the keys and then fails the run; it is not a workaround. The raw-JSON escape hatch is still useful for the Kafka options this connector *does* read, such as `idle_timeout_ms`, `start_from` and `enable_auto_commit`.
 
 ## Step 3 — Configure the upload
 
@@ -98,11 +102,11 @@ Schedules live on their own page and reference the upload **by name**.
 
 ### `Test connection failed: Connection refused` or `SSL handshake failed`
 **Cause.** The broker requires SASL/SSL/mTLS but the structured form connects as PLAINTEXT. Or vice versa — the broker is PLAINTEXT-only and something upstream is terminating TLS.
-**Fix.** For SASL/SSL/mTLS brokers, switch the connection to the **Use raw JSON config** escape hatch and supply `security_protocol`, `sasl_mechanism`, `sasl_username`, and `sasl_password` (or the mTLS equivalents) directly. For PLAINTEXT brokers, verify no proxy is upgrading the connection.
+**Fix.** If the broker requires SASL/SSL/mTLS, there is nothing to configure — this connector cannot reach it yet, and the raw-JSON escape hatch will not help. See the broker authentication note above. If the broker is PLAINTEXT, verify that nothing between Datanika and the broker is upgrading the connection, and that the advertised listener is the PLAINTEXT one rather than an SSL listener on another port.
 
 ### `TOPIC_AUTHORIZATION_FAILED`
 **Cause.** The principal Datanika connects as doesn't have `READ` ACL on the topic.
-**Fix.** Add the ACL. For Confluent Cloud (raw-JSON path): grant Consumer access to the service account for the specific topic. For self-hosted: `kafka-acls.sh --add --allow-principal User:datanika-consumer --operation Read --topic <topic-name>`.
+**Fix.** Add the ACL for the principal Datanika actually connects as — with PLAINTEXT and no credentials that is the anonymous principal, `User:ANONYMOUS` on most brokers. For self-hosted: `kafka-acls.sh --add --allow-principal User:ANONYMOUS --operation Read --topic <topic-name>`, plus `--operation Read --group <group-id>`.
 
 ### `GROUP_AUTHORIZATION_FAILED`
 **Cause.** The consumer doesn't have `READ` ACL on the consumer group ID you entered in the form.
