@@ -349,15 +349,33 @@ describe("/dpa: the Article 28 addendum", () => {
    * different branches; `/dpa` should join `DISCLOSED_SCRIPT_ORIGINS` once both
    * are on `dev`.
    */
-  const annexRow = (name: string) => {
+  const annexTableRows = () => {
     const table = dpa().mainHtml.match(/<table[\s\S]*?<\/table>/)![0];
-    const rows = [...table.matchAll(/<tr[\s>][\s\S]*?<\/tr>/g)]
-      .map((m) => m[0])
-      .filter((r) => r.includes(name));
+    return [...table.matchAll(/<tr[\s>][\s\S]*?<\/tr>/g)].map((m) => m[0]);
+  };
+
+  /**
+   * 🚨 Keyed on `(recipient, function)`, NOT on the recipient name.
+   *
+   * This helper used to take a name alone and assert exactly one match. That is
+   * the recipient key, and it is the exact inference `SPEC_SUBPROCESSOR_REGISTER`
+   * D2 exists to prevent: a recipient performing several functions supplies its
+   * own name to a name-matched assertion, so a *deleted function* on a recipient
+   * that still has another entry leaves the guard green. Here the failure was
+   * the loud kind rather than the silent one — Annex III went from one Cloudflare
+   * row to three and the name key returned 3 — but the silent direction is the
+   * one that matters, and the same key produces both.
+   *
+   * The anti-vacuity check below therefore still asserts exactly 1, because the
+   * PAIR is unique even though the name is not.
+   */
+  const annexRow = (name: string, fn: string) => {
+    const rows = annexTableRows().filter((r) => r.includes(name) && r.includes(fn));
     expect(
       rows.length,
-      `Annex III has ${rows.length} rows naming "${name}", not 1. Zero makes the ` +
-        `assertion below vacuous; two makes a green say nothing about which.`,
+      `Annex III has ${rows.length} rows for ("${name}", "${fn}"), not 1. Zero makes ` +
+        `the assertion below vacuous; two means the (recipient, function) pair is no ` +
+        `longer unique and a green says nothing about which row satisfied it.`,
     ).toBe(1);
     return strip(rows[0]);
   };
@@ -402,12 +420,12 @@ describe("/dpa: the Article 28 addendum", () => {
   });
 
   it("records web analytics as a Cloudflare function in the annex row", () => {
-    const row = annexRow("Cloudflare");
+    const row = annexRow("Cloudflare", "Web analytics");
     expect(
       /cookie-free web analytics/i.test(row),
-      `Annex III's Cloudflare row no longer records web analytics as one of its ` +
-        `functions. Cloudflare was already a sub-processor, so this change never ` +
-        `added a name to the list — the function column is the only place it is ` +
+      `Annex III's Cloudflare web-analytics row no longer records what that ` +
+        `function does. Cloudflare was already a sub-processor, so this change ` +
+        `never added a name to the list — its own row is the only place it is ` +
         `visible. Row read: ${row.slice(0, 300)}`,
     ).toBe(true);
     // And the vendor is named where we describe what measures visitors.
@@ -415,6 +433,77 @@ describe("/dpa: the Article 28 addendum", () => {
       /Cloudflare Web Analytics/.test(dpa().text),
       "/dpa loads the beacon and never names it.",
     ).toBe(true);
+  });
+
+  /**
+   * 🚨 The control that makes the two-part key load-bearing rather than decorative.
+   *
+   * `SPEC_SUBPROCESSOR_REGISTER` D2: one entry per function a recipient performs.
+   * If Annex III ever collapses back to one row per recipient, the assertion above
+   * becomes satisfiable by a row that no longer describes the function it names —
+   * and nothing else on this page would notice, because the recipient is still
+   * listed and the page still reads as accurate.
+   *
+   * Asserted the way the spec requires: the anti-vacuity case must be a recipient
+   * with MORE THAN ONE entry, so that a name-only lookup is genuinely ambiguous.
+   */
+  it("Annex III is keyed on (recipient, function) — a recipient may appear more than once", () => {
+    const rows = annexTableRows();
+    const cloudflare = rows.filter((r) => r.includes("Cloudflare"));
+    expect(
+      cloudflare.length,
+      "Annex III has collapsed Cloudflare back to one row. Edge delivery, inbound " +
+        "mail routing and web analytics are three functions with three different " +
+        "data flows; merging them lets the least-alarming one define the row.",
+    ).toBeGreaterThan(1);
+
+    // The mechanical half: prove the NAME alone cannot address a row, so the
+    // second argument to annexRow() is doing work rather than decorating.
+    expect(
+      cloudflare.length,
+      "a name-only key would be unique here, so this control proves nothing",
+    ).not.toBe(1);
+
+    // And the pair is unique for each function we assert on elsewhere.
+    for (const fn of ["Edge delivery", "Inbound mail routing", "Web analytics"]) {
+      expect(
+        cloudflare.filter((r) => r.includes(fn)).length,
+        `("Cloudflare", "${fn}") does not address exactly one row.`,
+      ).toBe(1);
+    }
+  });
+
+  /**
+   * The reason the split is a PRECONDITION and not a refinement: `Google LLC`
+   * delivers our contact mail for every data subject, and provides identity only
+   * for users who choose Google sign-in. Those are different scopes, and a single
+   * row would have to claim one of them and be wrong for somebody.
+   */
+  it("distinguishes unconditional functions from opt-in ones in the table", () => {
+    const rows = annexTableRows();
+    for (const name of ["Google", "GitHub"]) {
+      const identity = rows.filter((r) => r.includes(name) && r.includes("Identity provider"));
+      expect(
+        identity.length,
+        `${name}'s identity-provider function has no row of its own. It applies only ` +
+          `to users who opt in, and merging it with an unconditional function states ` +
+          `something untrue about one of the two.`,
+      ).toBe(1);
+      expect(
+        /Optional/.test(identity[0]),
+        `${name}'s identity-provider row is not marked as optional, so a reader ` +
+          `cannot tell it from a function we use for every customer.`,
+      ).toBe(true);
+    }
+
+    // Control: the marker must NOT be on an unconditional function, or it means
+    // nothing. Google's contact-mail delivery is unconditional.
+    const mail = rows.filter((r) => r.includes("Google") && r.includes("Contact mailbox"));
+    expect(mail.length, "Google's mail-delivery row is missing").toBe(1);
+    expect(
+      /Optional/.test(mail[0]),
+      "an unconditional function is marked optional — the marker no longer discriminates",
+    ).toBe(false);
   });
 
   it("states plainly that personal data reaches the United States", () => {

@@ -2,58 +2,30 @@
 import Layout from "../layouts/Layout.astro";
 import Navbar from "../components/Navbar.astro";
 import Footer from "../components/Footer.astro";
+import { subprocessors } from "../data/subprocessors";
 
 /**
  * Article 28 GDPR Data Processing Addendum.
  *
  * 🚨 EVERY FACT ON THIS PAGE IS A LEGAL REPRESENTATION, NOT MARKETING COPY.
  *
- * The sub-processor annex below was derived from measurement on 2026-09-03, not
- * from memory, using the procedure in `plans/growth/notes/LEGAL_PAGE_FACTS_2026-08-30.md`.
- * Two of its rows are here specifically because this project has already shipped a
- * false one: `/privacy` and `/trust` claimed for six weeks that no data leaves the
- * EU while every password-reset mail went through a US provider (landing#343).
+ * The sub-processor annex is rendered from `src/data/subprocessors.ts`, which is the
+ * register. It was derived from measurement, not from memory, using the procedure in
+ * `plans/growth/notes/LEGAL_PAGE_FACTS_2026-08-30.md`. Several of its entries exist
+ * specifically because this project has already shipped a false one: `/privacy` and
+ * `/trust` claimed for six weeks that no data leaves the EU while every password-reset
+ * mail went through a US provider (landing#343).
  *
- * Re-derivation, per row. ⚠️ Re-run IN FULL on 2026-09-04, immediately before this
- * page left draft, because the founder's approval made it the one artifact here
- * where being wrong is expensive. The sweep found a false sentence — see the
- * beacon entry — which had survived the draft by being re-read rather than
- * re-derived.
+ * ⚠️ **The per-entry derivations live ON the entries** (`derivation`), not in a comment
+ * block here. A derivation kept beside the thing it derives is the one that gets re-run;
+ * this file used to hold them as a list, and a list drifts from the rows it describes.
+ * See `docs/specs/SPEC_SUBPROCESSOR_REGISTER.md` D3.
  *
- *   Pointer   — `curl -s https://rdap.db.ripe.net/ip/185.25.22.188`  -> GR-POINTER-CLOUD2, country GR
- *   Aweb      — `curl -s https://rdap.db.ripe.net/ip/185.226.65.96`  -> GR-AWEB-185-226-65, country GR
- *   Cloudflare— `Server: cloudflare` + `CF-RAY` on both hosts; CF Origin cert on both origins
- *   Resend    — SMTP_HOST=smtp.resend.com in the running container's env.
- *               ⚠️ Growth has no SSH to the app box, so this was re-derived from DNS:
- *               `send.datanika.io` TXT = `v=spf1 include:amazonses.com ~all`, and
- *               `resend._domainkey.datanika.io` present. That evidences the Amazon SES
- *               onward leg, which is the part this row actually claims.
- *   Google    — `datanika.io` MX -> route{1,2,3}.mx.cloudflare.net. So inbound mail is
- *               ROUTED by Cloudflare and forwarded to a Google-operated mailbox. The MX is
- *               Cloudflare's, not Google's; both rows are worded to match that.
- *   Paddle    — datanika_cloud/billing/paddle.py: the account email is the only PII we send
- *   Cloudflare Web Analytics
- *             — `static.cloudflareinsights.com/beacon.min.js`, 30,294 bytes: document.cookie 0,
- *               localStorage 0, sessionStorage 0, indexedDB 0, the string "cookie" any-case 0,
- *               no canvas/WebGL/fingerprinting API. Positive control on the same bytes, so the
- *               zeros are not an empty file or an error page: 56 "function", sendBeacon 3,
- *               cfBeacon 3, navigator 16. It POSTs to cloudflareinsights.com/cdn-cgi/rum.
- *               🚨 This row is what caught the false sentence. Annex III's footnote read
- *               "Our website analytics are self-hosted" — true of Plausible, false of the
- *               beacon, which this page loads like every other layout page. Same defect as
- *               /privacy section 8 and /trust's Analytics row, in the document where it costs
- *               the most.
- *
- * ⚠️ Three things deliberately NOT said here, each because the evidence does not exist:
- *   1. No city for Pointer. "Athens" is our own note, not a measurement, and their
- *      registered office is Thessaloniki. RDAP evidences the country and no more.
- *   2. No AWS region for Resend's onward delivery. `include:amazonses.com` is
- *      region-agnostic and cannot distinguish one; Resend's own sub-processor list is
- *      entirely US.
- *   3. No characterisation of Pointer's legal role (cloud#128): their Greek and English
- *      pages assert opposite roles in the same sentence, their Greek text is operative
- *      by their own choice of law, and they publish no DPA. We state the factual
- *      relationship — we operate a VPS with them — and nothing more.
+ * ⚠️ **The register is keyed on (recipient, function), so a recipient appears more than
+ * once.** That is deliberate and is the point of the split — read D2 in the spec before
+ * "tidying" three Cloudflare entries back into one. `Google LLC` is the entry that forces
+ * it mechanically: its mail delivery is unconditional and its identity provision is
+ * opt-in, so one row would have to claim one `scope` and be wrong for somebody.
  *
  * ⚠️ No retention window is promised here that we do not operate. In particular this
  * page makes NO claim about pipeline run-log retention: that is `/privacy`'s to state,
@@ -70,64 +42,6 @@ const DELETION_DAYS = 30;
 const BACKUP_OFFSITE_DAYS = 30;
 const BACKUP_LOCAL_DAYS = 7;
 
-const subprocessors = [
-  {
-    name: "Pointer",
-    legal: "T. Papamichail – Vainas / G. Psaltakis O.E. · VAT EL998633174",
-    purpose:
-      "Virtual private server hosting the application, the production database and the background workers.",
-    location: "Greece (EU)",
-  },
-  {
-    name: "Aweb",
-    legal: "Greek sole proprietorship, RIPE netname GR-AWEB-185-226-65",
-    purpose:
-      "Encrypted off-site database and file-volume backups. Also hosts datanika.io and our self-hosted analytics.",
-    location: "Greece (EU)",
-  },
-  {
-    name: "Cloudflare, Inc.",
-    legal: "Delaware, United States",
-    purpose:
-      "CDN, DDoS protection, DNS and TLS termination for datanika.io and app.datanika.io; inbound routing of mail sent to our published contact addresses; cookie-free web analytics on datanika.io.",
-    location: "United States",
-  },
-  {
-    name: "Resend",
-    legal: "Plus Five Five, Inc., United States",
-    purpose:
-      "Transactional email delivery — password resets, email verification and team invitations. Resend delivers through Amazon Web Services (Amazon SES) as its own sub-processor.",
-    location: "United States",
-  },
-  {
-    name: "Paddle.com Market Ltd",
-    legal: "England and Wales, company 8172165",
-    purpose:
-      "Payment processing as Merchant of Record. Receives the account holder's email address and our internal organisation identifier. Card details are entered in Paddle's own checkout and never reach our servers.",
-    location: "United Kingdom",
-  },
-  {
-    name: "Google LLC",
-    legal: "United States",
-    purpose:
-      "Delivery of mail sent to our published contact addresses, including data subject requests sent to info@datanika.io and security@datanika.io. Also an identity provider, but only for users who choose Google sign-in.",
-    location: "United States",
-  },
-  {
-    name: "GitHub, Inc. (Microsoft)",
-    legal: "United States",
-    purpose:
-      "Source code hosting and CI/CD. Holds our code and deployment credentials, not customer pipeline data. Also an identity provider, but only for users who choose GitHub sign-in.",
-    location: "United States",
-  },
-  {
-    name: "Telegram",
-    legal: "Telegram FZ-LLC",
-    purpose:
-      "Delivery of infrastructure alerts to our on-call channel. Alert payloads carry service and container identifiers, not customer records.",
-    location: "Outside the EEA",
-  },
-];
 ---
 
 <Layout
@@ -414,11 +328,19 @@ const subprocessors = [
           Current as of {LAST_UPDATED}. Each row states where the recipient is established, which is
           what determines whether a transfer leaves the EEA.
         </p>
+        <p class="mt-2">
+          There is <strong>one row per function</strong>, so a recipient that performs more than one
+          appears more than once. This is deliberate: a recipient may perform one function for every
+          customer and another only for customers who opt in, and a single row would have to describe
+          both as though they were the same. Rows marked <strong>Optional</strong> apply only if you
+          use that feature.
+        </p>
         <div class="mt-4 overflow-x-auto">
           <table class="w-full border-collapse text-sm">
             <thead>
               <tr class="border-b border-slate-700 text-left text-slate-400">
                 <th class="py-2 pr-4 font-medium">Sub-processor</th>
+                <th class="py-2 pr-4 font-medium">Function</th>
                 <th class="py-2 pr-4 font-medium">Purpose</th>
                 <th class="py-2 font-medium">Location</th>
               </tr>
@@ -431,6 +353,17 @@ const subprocessors = [
                       <span class="font-medium text-white">{s.name}</span>
                       <br />
                       <span class="text-xs text-slate-500">{s.legal}</span>
+                    </td>
+                    <td class="py-3 pr-4">
+                      {s.fn}
+                      {s.scope === "conditional" && (
+                        <>
+                          <br />
+                          <span class="text-xs font-medium text-amber-400">
+                            Optional — only if you use it
+                          </span>
+                        </>
+                      )}
                     </td>
                     <td class="py-3 pr-4">{s.purpose}</td>
                     <td class="py-3 whitespace-nowrap">{s.location}</td>
@@ -453,6 +386,14 @@ const subprocessors = [
       <section>
         <h2>Change log</h2>
         <ul>
+          <li>
+            <strong>{LAST_UPDATED}</strong> — Annex III restated with one row per function rather
+            than one per recipient. <strong>No sub-processor was added or removed and no fact
+            changed</strong>: recipients that perform several functions, which the previous rows
+            described in a single sentence, now have one row each. This makes the distinction between
+            a function we use for every customer and one that applies only if you opt in — Google and
+            GitHub sign-in — visible in the table rather than only inside a sentence.
+          </li>
           <li>
             <strong>{LAST_UPDATED}</strong> — First publication. Sub-processor annex derived from
             measurement rather than from our earlier notes; Google, GitHub and Telegram named for the
