@@ -8,6 +8,22 @@ category: "engineering"
 tags: ["dlt", "dbt", "maintenance", "ops", "engineering"]
 ---
 
+> **Update — 4 September 2026.** The **run-record sweep described below no longer exists.**
+> `purge_old_runs`, and the `MAINTENANCE_RUN_RETENTION_DAYS` / `maintenance_run_retention_days`
+> setting that configured it, were **removed from Datanika on 3 September 2026**. Run history is now
+> kept for as long as the organization exists and is deleted when the organization is deleted — which
+> is what [our privacy page](/privacy/) and [trust page](/trust/) say, and those are the pages to
+> believe if they ever disagree with this one.
+>
+> ⚠️ **Setting `MAINTENANCE_RUN_RETENTION_DAYS` today does nothing.** The variable is gone from
+> `config.py`, so a self-hosted deployment will read it, find no consumer, and ignore it silently.
+>
+> The two *file* cleanups this post is actually about are unchanged and still run:
+> `cleanup_orphaned_dlt_dirs` at 24 hours and `cleanup_dbt_targets` at 48 hours.
+>
+> The rows below are left exactly as published rather than quietly restated. This post documented a
+> real job accurately at the time; editing it now would hide that the policy changed.
+
 After running pipelines for a few days in production, disk usage was climbing steadily. Turns out both [dlt](https://dlthub.com) and [dbt](https://www.getdbt.com) leave temporary files everywhere, and neither cleans up after itself.
 
 ## The Problem
