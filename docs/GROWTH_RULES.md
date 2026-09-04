@@ -558,3 +558,12 @@ declined)`, with *"Branches that are queued for merging cannot be updated."* So 
 a PR is mid-queue either waits for that PR to land or goes on its own branch. Prefer its own branch
 when the fix is to something **already on `dev`**, since it is then blocking every PR in the repo and
 should not be hostage to unrelated content.
+
+**`removed_from_merge_queue` fires on a SUCCESSFUL merge too, so it is not an ejection signal.**
+`CLAUDE.md` records that the REST timeline carries no reason for that event and only GraphQL's
+`RemovedFromMergeQueueEvent.reason` does — true, and it leaves the trap open: PR #490's timeline read
+`added_to_merge_queue 06:35:22Z` then `removed_from_merge_queue 06:40:48Z`, which looks exactly like
+the ejection the merge-queue runbook warns about. It had **merged**. **Settle it against
+`git log origin/dev` and the file contents, never against the timeline or the PR JSON** — and note
+that acting on the wrong reading would mean re-pushing the branch, which a queued branch rejects
+anyway.
