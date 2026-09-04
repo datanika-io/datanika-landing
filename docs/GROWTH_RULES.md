@@ -567,3 +567,176 @@ the ejection the merge-queue runbook warns about. It had **merged**. **Settle it
 `git log origin/dev` and the file contents, never against the timeline or the PR JSON** — and note
 that acting on the wrong reading would mean re-pushing the branch, which a queued branch rejects
 anyway.
+
+## Guards, continued — the disclosure batch (2026-09-04)
+
+**Astro publishes template comments, so a guard reading the whole document can be satisfied by
+the tag it exists to demand a disclosure for.** `Layout.astro` wraps the Cloudflare beacon in
+`<!-- Cloudflare Web Analytics … -->`. A needle looking for that phrase to prove the legal pages
+disclose the beacon therefore matched **on all 101 layout pages**, including the pre-change ones —
+measured against the live `/privacy` and `/trust` before publishing, which is the only reason it
+was caught. The file even says so about itself, one block below the beacon. **Scope every claim
+assertion to `<main>`**, and note the general form: *the thing you are demanding a disclosure of is
+often present in the page as a token, and a token is not a disclosure.*
+
+**`<main>` is still too wide for a claim that lives in a list.** After the above fix, dropping
+*"cookie-free web analytics"* from the Cloudflare sub-processor row on `/trust`, and again on
+`/privacy`, left the guard **green both times** — satisfied by the same words in a Change log entry
+and a transfers clause, both written in the same commit. `SPEC_SUBPROCESSOR_REGISTER` G1 records the
+identical finding from the DPA annex (*"Resend"* appears five more times in prose). **Name the
+element that carries the claim** — a `<tr>`, an `<li>`, a numbered `<section>` — select it by
+content, and **assert the match count is exactly 1**: zero means the anchor rotted and the assertion
+was vacuous, two means a green tells you nothing about which. Taking `[0]` hides both.
+
+**The defences stack, and each is only visible once the previous is fixed.** Page → region →
+`(recipient, function)`. Product hit the third level the same day: a recipient with two entries
+supplies its own name to a name-matched assertion, so region-scoping does not save you when the
+duplicate is *inside* the region and legitimate. Do not stop at the first one that goes red.
+
+**An anchor that rots turns a guard vacuous rather than red, because `slice(at, -1)` takes the rest
+of the file.** `skips already-closed issues in the candidate list` anchored on `"\n    if not
+lines"`; a change made that condition multi-line, `indexOf` returned `-1`, and the assertion passed
+by matching a *different* loop further down. Green, measuring nothing. **Assert every `indexOf`
+anchor was found**, and add a negative control proving the slice is the region you meant and not a
+superset containing it. Same family as `grep -c` printing `0` for a failed command.
+
+**A guard that pins the old code goes red on the correct change — that is it working, not
+breaking.** Two assertions pinned `if not refs and not tracking:` verbatim and failed when the
+condition correctly gained a third clause. Identical in shape to the deploy step that asserted the
+Google Ads tag was **present**, where a correct removal would have failed every deploy. **Update
+deliberately; never widen to make the red go away.** And when one condition is spelled out in five
+places, put it in a constant — the drift is what made two of the five silently vacuous rather than
+loudly red.
+
+## Claims and evidence, continued
+
+**Re-reading is not re-deriving, and only one of them finds a false sentence.** The DPA annex was
+carefully derived on 2026-09-03 and read over several times. Re-deriving every row before
+publication — one day later — found `Annex III`'s footnote asserting *"Our website analytics are
+self-hosted"*: true of Plausible, false of the Cloudflare beacon, which that page loads like every
+other. **Before publishing a legal page, re-run each derivation rather than re-reading the
+conclusion.** The cost was about twenty minutes and the artifact was the one where being wrong is
+most expensive.
+
+**A derivation nobody in your lane can run is not a derivation.** The annex's Resend row cited
+`SMTP_HOST` in the running container, and Growth has no SSH to the app box. Replaced with
+`send.datanika.io` TXT → `v=spf1 include:amazonses.com ~all` plus a present `resend._domainkey`,
+which evidences the Amazon SES onward leg — the part the row actually claims. **Write the derivation
+the next reader can execute, not the one you happened to use.**
+
+**When a measurement is available, publish the number rather than the adjective.** A Change log
+entry saying a measurement *"had been running without being named here"* is true and vague in the
+direction that flatters us. It was **143 days** (`ab71c35`, 2026-04-14, the only commit that has
+ever introduced that origin). *"We did not name it"* and *"we did not name it for five months"*
+support different judgements, and only one of them is evidence.
+
+**Prove a negative with a positive control on the same bytes.** *"The beacon sets no cookies"* rests
+on `document.cookie` → 0, `localStorage` → 0, the string `cookie` in any case → 0 in a 30,294-byte
+file. Those zeros are equally consistent with having fetched an error page. The control is
+`function` → 56, `sendBeacon` → 3, `cfBeacon` → 3 in the same bytes.
+
+## Measuring your own tools, continued
+
+**Commit before you mutate, or the restore destroys your work.** The mutation loop
+`mutate → build → test → git restore --staged --worktree -- <path>` is correct **only if the file is
+committed**; run against uncommitted edits it restores to `HEAD` and silently discards them. It cost
+five re-applied edits on `dpa.astro`. The `sha256` check in the harness is what reported `DAMAGED`
+rather than a cheerful `RESTORED` — **make the harness assert the restore, not just perform it.**
+
+**`gh pr update-branch` being refused is confirmation the PR is queued, not a failure.** A PR reading
+`mergeStateStatus: BEHIND` with auto-merge armed **had already entered the queue**; the nudge came
+back *"Branches that are queued for merging cannot be updated."* `BEHIND` is not a reason to
+intervene on a queued repo — the queue rebases before testing. Read the queue with the GraphQL
+`mergeQueue(branch:"dev")` query before touching anything.
+
+**Structural facts about the build that will mislead the next person:** only **5 of the 101** pages
+carrying `Layout.astro` have a `<main>` element (68 of all 165 do — the docs pages have one and no
+beacon), and the beacon is on **101 of 165**, not all of them. A `<main>`-scoped guard therefore
+covers far fewer pages than the page count suggests, and an anti-vacuity control has to be picked
+from a very short list.
+
+## Guards, continued — the Kafka authentication batch (2026-09-04)
+
+**A guard that pins the honest sentence of the day ends up enforcing yesterday's product.** The Kafka
+guard required the literal *"cannot currently connect to a SASL, SSL or mTLS broker"*. That was true
+when written and false four days later, the moment core#1054 shipped the credential fields — so the
+guard's effect was to **go red on correct copy**. Pin what must be true of the *thing being described*
+(credentials live on the connection, and are refused in `dlt_config`) affirmatively, and pin the
+**retired claims** at zero. Those two survive a change in either direction; a sentence does not.
+
+**🚨 Shiki emits one `<span>` per token, so a multi-token literal never matches the built page.** The
+ban on `{"security_protocol": "SASL_SSL"}` was written as *quote, key, quote, colon*. In `dist/` that
+fence is `<span …>"security_protocol"</span><span …>: </span>` — quote and colon in different
+elements. Reinstating the exact banned payload left **every `dist/`-side assertion green**; only the
+source-markdown check caught it, i.e. the assertion whose own comment called `dist/` *"what a reader
+receives, and the primary one"* was the one incapable of failing, and had been since the guard shipped.
+**Match the page's text, not its markup** (`html.replace(/<[^>]*>/g, " ")`).
+
+**Replace a tag with a space, not with nothing — then make every separator whitespace-tolerant.**
+Stripping to nothing lets `Docker</p><p>Hub` fuse into a match no reader ever saw. Stripping to a
+space is safe but turns `<code>ghcr.io</code>/<code>datanika-io/…</code>` into `ghcr.io / datanika-io/…`,
+so a pattern needing the slash adjacent misses. Both directions were hit on the same day, in two
+different files.
+
+**A self-test control must exercise the shape the assertion actually meets.** The dead-regex control
+tested each pattern against a raw string and passed throughout the defect above, because a pre-render
+sample is not what the assertion meets. Every ban now carries a **rendered** sample — real Shiki output
+copied from a build — beside its raw one. That control caught a second live defect on its own first
+run, in the file written immediately afterwards.
+
+**An ineffective mutation and a guard that does not bind produce identical output.** Proving the
+table-count pin, the first attempt appended markdown with no blank line; it never rendered as a second
+`<table>`, and the assertion stayed green. That reads exactly like a count pin that does not work.
+**Print the intermediate artifact** — here, the number of `<table>` elements containing the key — so a
+green mutation run names which of the two happened.
+
+**Sharpening the "commit before you mutate" rule above: assert the restore against the PRE-MUTATION
+state, not against the index.** Today's harness *did* assert the restore, with `git diff --quiet`, and
+printed `RESTORED` while an uncommitted fix had just been destroyed by `git checkout --`. *Restored to
+`HEAD`* is the wrong invariant when `HEAD` is not where you were. Hash the file **before** mutating and
+compare to that hash.
+
+**On Windows, a `sha256sum` restore check cries wolf.** `git checkout --` rewrites line endings under
+`autocrlf`, so a perfectly restored file reports `DIFFERS`. Compare CR-stripped content
+(`tr -d '\r' | sha256sum`) against `git show HEAD:<path>` similarly stripped — otherwise the check
+trains you to ignore it, which is worse than not having it.
+
+**Never read a test runner's verdict through `grep`.** `npx vitest run | grep -E "Tests "` printed
+`Tests 1858 passed` while one file failed to **collect** — a syntax error, zero tests run, and a
+commit made on the strength of that line. The filter dropped `Test Files 1 failed`. Read the
+unfiltered tail; the summary is four lines.
+
+## Claims and evidence, continued — versioned capability
+
+**When a capability is on `dev` but not on production, write availability so the copy is true under
+either promotion order.** core promotes on Infra's cadence and landing on its own, so a page
+documenting a new field is read either by someone who has it or by someone who does not, and you
+cannot know which. A version number would then need maintaining and would be wrong for self-hosters
+anyway. **Give the reader a self-check from their own screen** — *count the fields on your connection
+form: three means a build that predates this, seven means you have it.* It needs no upkeep and it is
+falsifiable by the person holding the question.
+
+**Document a credential as the field that stores it safely, never as the field that happens to
+accept it.** Kafka's SASL password goes on the connection — Fernet-encrypted, redacted out of errors
+and out of `BackupService.export_backup` — and **not** in an upload's `dlt_config`, a plain JSON
+column with neither property. The convenient path is the one that leaks. Put the *reason* in the copy,
+not just the instruction: a page that says "use the connection" without saying why invites the next
+writer to re-add the convenient fallback, which is how the same Kafka fiction shipped four times in
+five months.
+
+**A "not tested" verdict is neither a pass nor a failure, and copy must not render it as either.**
+`/docs/connectors/kafka` said Test Connection "checks connectivity" and hung two troubleshooting
+entries off `Test connection failed: …` strings the button cannot produce — `kafka` is in core's
+`SAAS_PROBE_EXEMPT` and never opens a broker connection. Core's own framing is the one to reuse:
+reporting an unverified connection as working and reporting it as failed are the same lie told in
+opposite directions.
+
+**When a guide cites a reference page, the reference is part of the guide.** The Kafka guide called
+`/connectors/kafka` *"the full field-by-field reference"* while `connectors.ts` listed three fields
+against the shipped seven — landing#449's drift with a citation attached, which is worse than the drift
+alone. Assert the agreement rather than remembering it.
+
+**Do not bump `verified_date` for work you derived from source.** `verified_by: "product-ui"` asserts
+a UI walkthrough. Re-deriving a page against `origin/dev` is a different and weaker claim, and
+stamping today's date on it converts landing#439 and landing#385 from open questions into false answers. Leave
+the field and say what you actually checked.

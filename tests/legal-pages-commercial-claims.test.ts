@@ -137,7 +137,7 @@ function windows(text: string, trigger: RegExp, width: number): string[] {
  * Pages this file makes page-specific assertions about. The blanket rules
  * apply to every derived legal page regardless of this list.
  */
-const PAGE_SPECIFIC_HERE = ["/terms", "/refund", "/privacy"];
+const PAGE_SPECIFIC_HERE = ["/terms", "/refund", "/privacy", "/dpa"];
 
 /** The sibling guard, read as text so the two files cannot drift apart. */
 const SIBLING = resolve(ROOT, "tests/legal-pages-facts.test.ts");
@@ -158,6 +158,7 @@ describe("legal pages: the guard knows which pages are legal pages", () => {
     // A new legal page SHOULD break this — that is the point. Add it here and
     // give it page-specific assertions below.
     expect(LEGAL.map((p) => p.route).sort()).toEqual([
+      "/dpa",
       "/privacy",
       "/refund",
       "/terms",
@@ -211,6 +212,350 @@ describe("legal pages: the guard knows which pages are legal pages", () => {
         "load-bearing on the page and pin it — the billing model, the plan " +
         "names, and any figure it restates.",
     ).toEqual([]);
+  });
+});
+
+/* ------------------------------------------------------------------ *
+ * 0. /dpa — the Article 28 addendum
+ * ------------------------------------------------------------------ */
+
+/**
+ * Why a DPA needs its own assertions rather than only the blanket rules.
+ *
+ * Every sentence on /dpa is a legal representation to a customer, and its
+ * sub-processor annex is the exact artifact landing#343 was about: /privacy and
+ * /trust asserted for six weeks that no data leaves the EU while every
+ * password-reset mail went through a United States provider. An Article 28
+ * annex that under-lists is worse than no annex, because a customer relies on
+ * it to decide whether they may use the Service at all.
+ *
+ * So the assertions below are of three kinds, and the third is the one that
+ * cannot go stale:
+ *
+ *   1. The retired EU-only claim must not come back — a phrasing ban.
+ *   2. The two facts we deliberately do NOT have evidence for must stay out.
+ *   3. /dpa must be a SUPERSET of /trust's sub-processor table. That is a
+ *      cross-page invariant derived from the other page rather than from a list
+ *      here, so adding a sub-processor to /trust and forgetting the DPA fails,
+ *      and so does the reverse drift. `docs/GROWTH_RULES.md`: *ask what makes
+ *      the members of your set members, and test for that.*
+ */
+describe("/dpa: the Article 28 addendum", () => {
+  const dpa = () => {
+    const p = legalRoute("/dpa");
+    expect(p, "/dpa is missing from dist/").toBeDefined();
+    return p!;
+  };
+
+  it("identifies both parties, which is what makes it an Article 28 document", () => {
+    const t = dpa().text;
+    // An addendum that does not say who processes and who controls is not one.
+    expect(t).toMatch(/\bProcessor\b/);
+    expect(t).toMatch(/\bController\b/);
+    expect(t).toMatch(/Individual Entrepreneur Evgenii Timofeev/);
+  });
+
+  /**
+   * 🚨 Scoped to the ANNEX TABLE, not to the page — and the first version of
+   * this test was scoped to the page and could not fail.
+   *
+   * Measured: deleting the Resend row from the annex left the whole suite green,
+   * because "Resend" also appears four times in the transfer clause and the
+   * measures annex. A page-level `includes` therefore passes on a document
+   * whose legally operative list has lost an entry. That is the recorded rule
+   * one level in — *a count that includes site chrome measures the chrome* —
+   * except here the noise is the page's own prose.
+   *
+   * The annex is the list a customer relies on. Assert on the annex.
+   */
+  const annexRows = () => {
+    const tables = [...dpa().mainHtml.matchAll(/<table[\s\S]*?<\/table>/g)].map((m) => m[0]);
+    // Control: if a second table is ever added, the extraction below silently
+    // starts reading the wrong one, and every assertion under it goes quiet.
+    expect(
+      tables.length,
+      "/dpa no longer has exactly one table. The sub-processor annex is " +
+        "located by being the only table on the page; disambiguate it before " +
+        "adding another, or this guard reads the wrong list.",
+    ).toBe(1);
+    return strip(tables[0]);
+  };
+
+  it("names every sub-processor that /trust names — a superset, never a subset", () => {
+    const trust = legalRoute("/trust");
+    expect(trust, "/trust is missing from dist/").toBeDefined();
+
+    // Derived from /trust's own published table, not restated as a belief here.
+    // The names are the distinctive token of each row; matching whole legal
+    // names would break on a formatting change and teach nothing.
+    const onTrust = ["Pointer", "Aweb", "Cloudflare", "Resend", "Paddle", "GitHub"];
+    const annex = annexRows();
+    for (const name of onTrust) {
+      expect(
+        trust!.text.includes(name),
+        `${name} is no longer on /trust — this control is stale, re-derive the list.`,
+      ).toBe(true);
+      expect(
+        annex.includes(name),
+        `/trust discloses ${name} as a subprocessor and /dpa's Annex III does ` +
+          `not list it. An Article 28 annex that under-lists what the trust ` +
+          `page already admits is the landing#343 failure with a legal ` +
+          `instrument attached.`,
+      ).toBe(true);
+    }
+  });
+
+  it("the annex discloses the recipients established outside the EEA", () => {
+    // The rows whose absence would be the #343 error again. Asserted on the
+    // annex for the same reason as above.
+    const annex = annexRows();
+    expect(annex).toMatch(/United States/);
+    for (const name of ["Resend", "Cloudflare", "Google"]) {
+      expect(
+        annex.includes(name),
+        `${name} is established outside the EEA and is missing from Annex III.`,
+      ).toBe(true);
+    }
+  });
+
+  /**
+   * 🚨 The analytics disclosure, and the sentence it replaced.
+   *
+   * Annex III's footnote read *"Our website analytics are self-hosted."* That was
+   * true of Plausible and **false of the Cloudflare Web Analytics beacon**, which
+   * this page loads like every other layout page. It is the same defect as
+   * `/privacy` section 8 and `/trust`'s Analytics row, in the one document a
+   * customer relies on contractually — and it survived the draft because it was
+   * re-read rather than re-derived.
+   *
+   * Two assertions, because they protect different things:
+   *
+   *   1. The retired sentence must not come back — an affirmative-claim ban,
+   *      anchored so the corrected copy, which must still contain the words
+   *      "self-hosted" and "analytics", does not trip it.
+   *   2. The FUNCTION must be recorded against Cloudflare in the annex ROW.
+   *      Cloudflare was already a sub-processor, so adding web analytics adds no
+   *      name to any list; the function column is therefore the only place the
+   *      change is visible, and the only place it can be silently dropped.
+   *
+   * ⚠️ Scoped to the Cloudflare `<tr>`, not to the annex and not to the page.
+   * The equivalent guard on `/privacy` and `/trust` was measured GREEN twice at
+   * page level, satisfied by the same words in a Change log entry and in a
+   * transfers clause. Same finding as `annexRows()` above, one level in.
+   *
+   * ⚠️ The cross-page half of this invariant — *an allowlisted script origin must
+   * be disclosed* — lives in `tests/no-advertising-tag.test.ts`, which owns
+   * `/privacy` and `/trust`. It is split because the two pages arrived on
+   * different branches; `/dpa` should join `DISCLOSED_SCRIPT_ORIGINS` once both
+   * are on `dev`.
+   */
+  const annexRow = (name: string) => {
+    const table = dpa().mainHtml.match(/<table[\s\S]*?<\/table>/)![0];
+    const rows = [...table.matchAll(/<tr[\s>][\s\S]*?<\/tr>/g)]
+      .map((m) => m[0])
+      .filter((r) => r.includes(name));
+    expect(
+      rows.length,
+      `Annex III has ${rows.length} rows naming "${name}", not 1. Zero makes the ` +
+        `assertion below vacuous; two makes a green say nothing about which.`,
+    ).toBe(1);
+    return strip(rows[0]);
+  };
+
+  it("does not claim our analytics are self-hosted, which stopped being true", () => {
+    const banned = [
+      /\bour (?:website |web )?analytics (?:are|is) self-?hosted\b/i,
+      /\banalytics (?:are|is) (?:entirely |fully |all )?self-?hosted\b/i,
+      /\bwe (?:self-?host|only self-?host) (?:all )?(?:our )?analytics\b/i,
+    ];
+    for (const re of banned) {
+      expect(
+        re.test(dpa().text),
+        `/dpa claims all website analytics are self-hosted. Plausible is; ` +
+          `Cloudflare Web Analytics is not, and the beacon ships on this page. ` +
+          `Pattern: ${re}`,
+      ).toBe(false);
+    }
+  });
+
+  it("control: the self-hosted ban fires on the sentence that was live in the draft", () => {
+    // The exact string this page carried until 2026-09-04. A ban that cannot
+    // catch the text it was written for is decoration.
+    const banned = [
+      /\bour (?:website |web )?analytics (?:are|is) self-?hosted\b/i,
+      /\banalytics (?:are|is) (?:entirely |fully |all )?self-?hosted\b/i,
+      /\bwe (?:self-?host|only self-?host) (?:all )?(?:our )?analytics\b/i,
+    ];
+    const wasLive =
+      "We do not use a third-party error tracking, product analytics or session " +
+      "recording service, and we send no customer data to any AI or model provider. " +
+      "Our website analytics are self-hosted.";
+    expect(
+      banned.some((re) => re.test(wasLive)),
+      "the ban would not have caught the sentence it was written for",
+    ).toBe(true);
+    // And it must NOT fire on the correction, which still says "self-hosted".
+    expect(
+      banned.some((re) => re.test(dpa().text)),
+      "false positive on the corrected copy, which legitimately says 'self-hosted Plausible'",
+    ).toBe(false);
+  });
+
+  it("records web analytics as a Cloudflare function in the annex row", () => {
+    const row = annexRow("Cloudflare");
+    expect(
+      /cookie-free web analytics/i.test(row),
+      `Annex III's Cloudflare row no longer records web analytics as one of its ` +
+        `functions. Cloudflare was already a sub-processor, so this change never ` +
+        `added a name to the list — the function column is the only place it is ` +
+        `visible. Row read: ${row.slice(0, 300)}`,
+    ).toBe(true);
+    // And the vendor is named where we describe what measures visitors.
+    expect(
+      /Cloudflare Web Analytics/.test(dpa().text),
+      "/dpa loads the beacon and never names it.",
+    ).toBe(true);
+  });
+
+  it("states plainly that personal data reaches the United States", () => {
+    // The sentence that matters. /privacy and /trust were corrected on
+    // 2026-08-30 precisely for the opposite claim; getting it wrong twice, in a
+    // document a customer signs, would be worse than never publishing one.
+    const t = dpa().text;
+    expect(t).toMatch(/United States/);
+    expect(t).toMatch(/Standard Contractual Clauses/);
+  });
+
+  it("does not reinstate the retired 'no data leaves the EU' claim", () => {
+    const banned = [
+      /no (?:customer )?data (?:is transferred|leaves|ever leaves)[^.]{0,40}(?:outside the EU|the EU|EEA)/i,
+      /(?:all|every) (?:customer )?data (?:stays|remains|is kept) (?:in|within) the (?:EU|EEA)/i,
+      /never (?:transferred|transfer) (?:personal )?data outside the (?:EU|EEA)/i,
+    ];
+    for (const re of banned) {
+      expect(
+        re.test(dpa().text),
+        `/dpa reinstates a form of the EU-only claim that was false and was ` +
+          `retired in landing#343: ${re}`,
+      ).toBe(false);
+    }
+  });
+
+  /**
+   * 🚨 The first shape of this check FAILED ON THE CORRECT COPY, and that is
+   * worth keeping in the file rather than quietly fixing.
+   *
+   * The ban was `/\bISO ?27001[- ]certified\b/i`, and the page's own honest
+   * sentence is *"We are not SOC 2 audited and not ISO 27001 certified"*. The
+   * bare phrasing matches inside its own negation. `docs/GROWTH_RULES.md`
+   * already records the rule — *a banned-word rule needs the context, not just
+   * the word* — and on an audit clause the negation is the sentence you most
+   * want to be able to write.
+   *
+   * So every pattern is anchored to an AFFIRMATIVE claim, and the negations are
+   * pinned as controls below.
+   */
+  const CERT_CLAIMS = [
+    /(?:^|[^t] )we are (?:SOC ?2|ISO ?27001)[- ]?(?:Type ?[I1]{1,3} )?(?:certified|compliant|audited)\b/i,
+    /\b(?:holds?|have|has) (?:an? )?(?:SOC ?2|ISO ?27001)[- ]?(?:Type ?[I1]{1,3} )?(?:certificate|certification|attestation)\b/i,
+    /\bSOC ?2 (?:Type ?[I1]{1,3} )?(?:report|attestation) (?:is )?available\b/i,
+  ];
+
+  it("claims no certification we do not hold", () => {
+    const t = dpa().text;
+    for (const re of CERT_CLAIMS) {
+      expect(re.test(t), `/dpa asserts a certification we do not hold: ${re}`).toBe(false);
+    }
+  });
+
+  it("control: the certification ban fires on an affirmative claim", () => {
+    // A suite of absences passes on an empty page. This is the positive control.
+    for (const claim of [
+      "Datanika is SOC 2 Type II certified and we are ISO 27001 certified.",
+      "We hold an ISO 27001 certification for the production environment.",
+      "A SOC 2 Type II report is available on request.",
+    ]) {
+      expect(
+        CERT_CLAIMS.some((re) => re.test(claim)),
+        `the certification ban would not have caught: ${claim}`,
+      ).toBe(true);
+    }
+  });
+
+  it("control: the certification ban does NOT fire on the honest negation", () => {
+    // Live copy on this page. If this starts failing, the ban has been widened
+    // into the sentence it exists to protect.
+    for (const honest of [
+      "We are not SOC 2 audited and not ISO 27001 certified, and we will not present either as pending.",
+      "We hold no third-party security certification.",
+    ]) {
+      expect(
+        CERT_CLAIMS.some((re) => re.test(honest)),
+        `false positive on correct copy: ${honest}`,
+      ).toBe(false);
+    }
+  });
+
+  it("keeps out the two facts we have no evidence for", () => {
+    /**
+     * Both are things a well-meaning editor would add because they sound more
+     * precise, and neither is measurable from anything we hold:
+     *
+     *  - a city for the hosting provider. RDAP evidences country GR and no
+     *    more; "Athens" is our own note and their registered office is
+     *    Thessaloniki.
+     *  - an AWS region for Resend's onward delivery. `include:amazonses.com` is
+     *    region-agnostic and cannot distinguish one, and Resend's own
+     *    sub-processor list is entirely United States.
+     *
+     * Precision we cannot derive is not precision.
+     */
+    const t = dpa().text;
+    expect(/\bAthens\b/i.test(t), "/dpa names a city for the host that RDAP does not evidence").toBe(false);
+    expect(
+      /\beu-(?:west|central|north|south)-\d\b/i.test(t),
+      "/dpa names an AWS region for email delivery that nothing on file evidences",
+    ).toBe(false);
+  });
+
+  it("does not characterise the hosting provider's legal role (cloud#128)", () => {
+    // Their Greek and English pages assert opposite roles in the same sentence,
+    // their Greek text is operative by their own choice of law, and they
+    // publish no DPA. We state the factual relationship and stop.
+    const t = dpa().text;
+    for (const re of [
+      /Pointer[^.]{0,60}\bas (?:a |our )?(?:data )?(?:processor|controller)\b/i,
+      /Pointer(?:'s)?[^.]{0,30}\bDPA\b/i,
+    ]) {
+      expect(re.test(t), `/dpa characterises the hosting provider's legal role: ${re}`).toBe(false);
+    }
+  });
+
+  it("promises no retention window it does not also state elsewhere", () => {
+    // The deletion window is a commitment made on three pages. Two figures for
+    // one commitment means at least one is wrong and the reader cannot tell
+    // which. The coupling test below reads /dpa too, but only if /dpa phrases
+    // it in the shared form — so assert the number is present at all.
+    expect(dpa().text).toMatch(/within 30 days/i);
+  });
+
+  it("makes no claim about pipeline run-log retention", () => {
+    /**
+     * Deliberate absence, and the reason outlives the current state.
+     *
+     * Run-log retention is /privacy's to state, and it has been contested:
+     * a 90-day sweep existed that soft-deleted rows nothing filtered on, so
+     * retention read as enforced and was not (core#1000). A DPA is the wrong
+     * place to freeze a number that is mid-change, because a customer holds us
+     * to it.
+     */
+    const t = dpa().text;
+    for (const re of [
+      /run logs? (?:are|is) (?:retained|purged|deleted) (?:for |after |within )?\d+ days/i,
+      /\d+ days,? then automatically purged/i,
+    ]) {
+      expect(re.test(t), `/dpa states a run-log retention window: ${re}`).toBe(false);
+    }
   });
 });
 

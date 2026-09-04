@@ -1,0 +1,483 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Navbar from "../components/Navbar.astro";
+import Footer from "../components/Footer.astro";
+
+/**
+ * Article 28 GDPR Data Processing Addendum.
+ *
+ * 🚨 EVERY FACT ON THIS PAGE IS A LEGAL REPRESENTATION, NOT MARKETING COPY.
+ *
+ * The sub-processor annex below was derived from measurement on 2026-09-03, not
+ * from memory, using the procedure in `plans/growth/notes/LEGAL_PAGE_FACTS_2026-08-30.md`.
+ * Two of its rows are here specifically because this project has already shipped a
+ * false one: `/privacy` and `/trust` claimed for six weeks that no data leaves the
+ * EU while every password-reset mail went through a US provider (landing#343).
+ *
+ * Re-derivation, per row. ⚠️ Re-run IN FULL on 2026-09-04, immediately before this
+ * page left draft, because the founder's approval made it the one artifact here
+ * where being wrong is expensive. The sweep found a false sentence — see the
+ * beacon entry — which had survived the draft by being re-read rather than
+ * re-derived.
+ *
+ *   Pointer   — `curl -s https://rdap.db.ripe.net/ip/185.25.22.188`  -> GR-POINTER-CLOUD2, country GR
+ *   Aweb      — `curl -s https://rdap.db.ripe.net/ip/185.226.65.96`  -> GR-AWEB-185-226-65, country GR
+ *   Cloudflare— `Server: cloudflare` + `CF-RAY` on both hosts; CF Origin cert on both origins
+ *   Resend    — SMTP_HOST=smtp.resend.com in the running container's env.
+ *               ⚠️ Growth has no SSH to the app box, so this was re-derived from DNS:
+ *               `send.datanika.io` TXT = `v=spf1 include:amazonses.com ~all`, and
+ *               `resend._domainkey.datanika.io` present. That evidences the Amazon SES
+ *               onward leg, which is the part this row actually claims.
+ *   Google    — `datanika.io` MX -> route{1,2,3}.mx.cloudflare.net. So inbound mail is
+ *               ROUTED by Cloudflare and forwarded to a Google-operated mailbox. The MX is
+ *               Cloudflare's, not Google's; both rows are worded to match that.
+ *   Paddle    — datanika_cloud/billing/paddle.py: the account email is the only PII we send
+ *   Cloudflare Web Analytics
+ *             — `static.cloudflareinsights.com/beacon.min.js`, 30,294 bytes: document.cookie 0,
+ *               localStorage 0, sessionStorage 0, indexedDB 0, the string "cookie" any-case 0,
+ *               no canvas/WebGL/fingerprinting API. Positive control on the same bytes, so the
+ *               zeros are not an empty file or an error page: 56 "function", sendBeacon 3,
+ *               cfBeacon 3, navigator 16. It POSTs to cloudflareinsights.com/cdn-cgi/rum.
+ *               🚨 This row is what caught the false sentence. Annex III's footnote read
+ *               "Our website analytics are self-hosted" — true of Plausible, false of the
+ *               beacon, which this page loads like every other layout page. Same defect as
+ *               /privacy section 8 and /trust's Analytics row, in the document where it costs
+ *               the most.
+ *
+ * ⚠️ Three things deliberately NOT said here, each because the evidence does not exist:
+ *   1. No city for Pointer. "Athens" is our own note, not a measurement, and their
+ *      registered office is Thessaloniki. RDAP evidences the country and no more.
+ *   2. No AWS region for Resend's onward delivery. `include:amazonses.com` is
+ *      region-agnostic and cannot distinguish one; Resend's own sub-processor list is
+ *      entirely US.
+ *   3. No characterisation of Pointer's legal role (cloud#128): their Greek and English
+ *      pages assert opposite roles in the same sentence, their Greek text is operative
+ *      by their own choice of law, and they publish no DPA. We state the factual
+ *      relationship — we operate a VPS with them — and nothing more.
+ *
+ * ⚠️ No retention window is promised here that we do not operate. In particular this
+ * page makes NO claim about pipeline run-log retention: that is `/privacy`'s to state,
+ * it is mid-change under core#1000, and a DPA is the wrong place to freeze it.
+ */
+
+const LAST_UPDATED = "September 4, 2026";
+
+// One constant, three consumers: the deletion sentence in §9, the backup sentence
+// in Annex II, and the figure /privacy and /trust already publish. Writing a
+// retention number twice is how /terms came to describe a billing model we had
+// stopped selling four months earlier (#373, #410).
+const DELETION_DAYS = 30;
+const BACKUP_OFFSITE_DAYS = 30;
+const BACKUP_LOCAL_DAYS = 7;
+
+const subprocessors = [
+  {
+    name: "Pointer",
+    legal: "T. Papamichail – Vainas / G. Psaltakis O.E. · VAT EL998633174",
+    purpose:
+      "Virtual private server hosting the application, the production database and the background workers.",
+    location: "Greece (EU)",
+  },
+  {
+    name: "Aweb",
+    legal: "Greek sole proprietorship, RIPE netname GR-AWEB-185-226-65",
+    purpose:
+      "Encrypted off-site database and file-volume backups. Also hosts datanika.io and our self-hosted analytics.",
+    location: "Greece (EU)",
+  },
+  {
+    name: "Cloudflare, Inc.",
+    legal: "Delaware, United States",
+    purpose:
+      "CDN, DDoS protection, DNS and TLS termination for datanika.io and app.datanika.io; inbound routing of mail sent to our published contact addresses; cookie-free web analytics on datanika.io.",
+    location: "United States",
+  },
+  {
+    name: "Resend",
+    legal: "Plus Five Five, Inc., United States",
+    purpose:
+      "Transactional email delivery — password resets, email verification and team invitations. Resend delivers through Amazon Web Services (Amazon SES) as its own sub-processor.",
+    location: "United States",
+  },
+  {
+    name: "Paddle.com Market Ltd",
+    legal: "England and Wales, company 8172165",
+    purpose:
+      "Payment processing as Merchant of Record. Receives the account holder's email address and our internal organisation identifier. Card details are entered in Paddle's own checkout and never reach our servers.",
+    location: "United Kingdom",
+  },
+  {
+    name: "Google LLC",
+    legal: "United States",
+    purpose:
+      "Delivery of mail sent to our published contact addresses, including data subject requests sent to info@datanika.io and security@datanika.io. Also an identity provider, but only for users who choose Google sign-in.",
+    location: "United States",
+  },
+  {
+    name: "GitHub, Inc. (Microsoft)",
+    legal: "United States",
+    purpose:
+      "Source code hosting and CI/CD. Holds our code and deployment credentials, not customer pipeline data. Also an identity provider, but only for users who choose GitHub sign-in.",
+    location: "United States",
+  },
+  {
+    name: "Telegram",
+    legal: "Telegram FZ-LLC",
+    purpose:
+      "Delivery of infrastructure alerts to our on-call channel. Alert payloads carry service and container identifiers, not customer records.",
+    location: "Outside the EEA",
+  },
+];
+---
+
+<Layout
+  title="Data Processing Addendum — Datanika"
+  description="Article 28 GDPR Data Processing Addendum for Datanika, including the current sub-processor list and international transfer terms."
+>
+  <Navbar />
+  <main class="mx-auto max-w-4xl px-6 py-20">
+    <h1 class="mb-2 text-4xl font-bold gradient-text">Data Processing Addendum</h1>
+    <p class="mb-10 text-sm text-slate-500">Last updated: {LAST_UPDATED}</p>
+
+    <div
+      class="space-y-8 text-slate-300 leading-relaxed [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:text-white [&_h2]:mb-3 [&_h3]:text-base [&_h3]:font-semibold [&_h3]:text-white [&_h3]:mb-2 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:space-y-1 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:space-y-1"
+    >
+      <section>
+        <p class="rounded-lg border border-slate-700 bg-slate-900/60 p-4 text-sm">
+          This Addendum forms part of the <a href="/terms" class="text-violet-400 hover:underline">Terms of Service</a>
+          and applies whenever we process personal data on your behalf. It is offered as a standing
+          document: you do not need to negotiate or sign it for it to apply. If you require a
+          counter-signed copy, email
+          <a href="mailto:security@datanika.io" class="text-violet-400 hover:underline">security@datanika.io</a>.
+          Our general privacy practices are described separately on
+          <a href="/privacy" class="text-violet-400 hover:underline">Privacy</a> and
+          <a href="/trust" class="text-violet-400 hover:underline">Trust</a>.
+        </p>
+      </section>
+
+      <section>
+        <h2>1. Parties and roles</h2>
+        <p>
+          <strong>Processor.</strong> Datanika — Individual Entrepreneur Evgenii Timofeev,
+          identification number 302355868, Mikheil Tsinamdzgvrishvili st. 52, Tbilisi, Georgia
+          ("we", "us").
+        </p>
+        <p class="mt-2">
+          <strong>Controller.</strong> The customer entity that has an account with us ("you").
+        </p>
+        <p class="mt-2">
+          You determine the purposes and means of processing the personal data you load into,
+          transform with, or extract using the Service. We process that data only on your behalf.
+          For the limited data we collect about you as our own customer — your account details and
+          billing records — we act as controller, and that processing is described on
+          <a href="/privacy" class="text-violet-400 hover:underline">Privacy</a> rather than here.
+        </p>
+      </section>
+
+      <section>
+        <h2>2. Subject matter, duration, nature and purpose</h2>
+        <ul>
+          <li>
+            <strong>Subject matter.</strong> Provision of the Datanika data pipeline platform:
+            extraction of data from sources you connect, loading into destinations you configure,
+            transformation, scheduling and the operational records those runs produce.
+          </li>
+          <li>
+            <strong>Duration.</strong> For as long as your account exists, plus the deletion
+            windows in §9.
+          </li>
+          <li>
+            <strong>Nature and purpose.</strong> Storage, structured transfer, transformation and
+            execution logging, carried out to deliver the Service you have subscribed to.
+          </li>
+          <li>
+            <strong>Types of personal data.</strong> Whatever your sources contain. We do not
+            select it and we cannot enumerate it in advance — a customer pipeline may carry
+            contact records, transaction records, support tickets or anything else. Separately we
+            hold your users' names, email addresses, hashed passwords, IP addresses in audit
+            records, and organisation membership.
+          </li>
+          <li>
+            <strong>Categories of data subjects.</strong> Your personnel who use the Service, and
+            whichever individuals appear in the data you move through it.
+          </li>
+          <li>
+            <strong>Special categories.</strong> The Service is not designed for special category
+            data under Article 9 and we ask that you do not route it through the platform. If your
+            use requires it, contact us before doing so.
+          </li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>3. Processing on your instructions</h2>
+        <p>
+          We process personal data only on your documented instructions, which comprise this
+          Addendum, the Terms of Service, and the configuration you set in the product — your
+          connections, pipelines, schedules and destinations are instructions. We will tell you if
+          we believe an instruction infringes the GDPR or other applicable data protection law.
+        </p>
+        <p class="mt-2">
+          Where we are required by law to process for another purpose, we will inform you before
+          doing so unless that law forbids it.
+        </p>
+        <p class="mt-2">
+          <strong>We do not use your data to train machine learning models</strong>, do not sell it,
+          and do not use it for advertising.
+        </p>
+      </section>
+
+      <section>
+        <h2>4. Confidentiality</h2>
+        <p>
+          Everyone we authorise to process personal data is bound by confidentiality obligations.
+          Access to production systems is limited to those who need it to operate the Service.
+        </p>
+      </section>
+
+      <section>
+        <h2>5. Security</h2>
+        <p>
+          We implement the technical and organisational measures set out in Annex II, taking
+          account of the state of the art, the costs of implementation, and the risks presented by
+          the processing. We may update those measures, provided the level of protection is not
+          reduced.
+        </p>
+      </section>
+
+      <section>
+        <h2>6. Sub-processors</h2>
+        <p>
+          You give us general written authorisation to engage the sub-processors listed in
+          Annex III. We impose data protection obligations on each of them that are no less
+          protective than those in this Addendum, and we remain fully liable to you for their
+          performance.
+        </p>
+        <p class="mt-2">
+          <strong>Changes.</strong> We will give at least 30 days' notice before adding or replacing
+          a sub-processor. To receive those notices, email
+          <a href="mailto:info@datanika.io" class="text-violet-400 hover:underline">info@datanika.io</a>
+          with the subject "Subprocessor updates". If you reasonably object to a change on data
+          protection grounds, tell us within those 30 days and we will work with you to find an
+          alternative; if none is available, you may terminate the affected part of the Service.
+        </p>
+      </section>
+
+      <section>
+        <h2>7. Data subject rights</h2>
+        <p>
+          The product gives you direct access to the data you hold in it, so most requests can be
+          answered without our involvement. Where a data subject contacts us directly about your
+          data, we will not respond substantively; we will refer them to you and tell you.
+        </p>
+        <p class="mt-2">
+          Taking into account the nature of the processing, we will assist you by appropriate
+          technical and organisational measures in fulfilling your obligations under Chapter III of
+          the GDPR. Requests to
+          <a href="mailto:security@datanika.io" class="text-violet-400 hover:underline">security@datanika.io</a>.
+        </p>
+      </section>
+
+      <section>
+        <h2>8. Personal data breaches, DPIAs and prior consultation</h2>
+        <p>
+          We will notify you without undue delay after becoming aware of a personal data breach
+          affecting your data, and will provide the information you reasonably need to meet your own
+          notification obligations under Articles 33 and 34.
+        </p>
+        <p class="mt-2">
+          We will provide reasonable assistance with data protection impact assessments and prior
+          consultations under Articles 35 and 36, taking into account the nature of the processing
+          and the information available to us.
+        </p>
+      </section>
+
+      <section>
+        <h2>9. Deletion and return</h2>
+        <p>
+          You can export your data from the product at any time while your account is active.
+        </p>
+        <p class="mt-2">
+          On termination, and at your choice, we will delete or return your personal data. Deletion
+          from live systems completes within {DELETION_DAYS} days. Encrypted off-site backups age
+          out on their own schedule and are fully expired within a further {BACKUP_OFFSITE_DAYS}
+          days; local backups within {BACKUP_LOCAL_DAYS} days. We do not restore a deleted account
+          from backup to satisfy a later request.
+        </p>
+        <p class="mt-2">
+          We retain what applicable law requires us to retain — principally billing records — and
+          nothing beyond that.
+        </p>
+      </section>
+
+      <section>
+        <h2>10. Audits and information</h2>
+        <p>
+          We will make available the information necessary to demonstrate compliance with Article 28
+          and, on reasonable notice and no more than once a year, allow for and contribute to audits
+          conducted by you or an auditor you mandate. Audits are subject to confidentiality, must not
+          compromise other customers' data, and are at your cost.
+        </p>
+        <p class="mt-2">
+          <strong>We hold no third-party security certification.</strong> We are not SOC 2 audited
+          and not ISO 27001 certified, and we will not present either as pending. What we can show
+          is described on <a href="/trust" class="text-violet-400 hover:underline">Trust</a>.
+        </p>
+      </section>
+
+      <section>
+        <h2>11. International transfers</h2>
+        <p>
+          The infrastructure that runs the Service is in the European Union. Personal data
+          nonetheless reaches recipients outside the EEA, and the honest list is short and specific:
+        </p>
+        <ul class="mt-2">
+          <li>
+            <strong>Transactional email leaves the EU.</strong> Password resets, email verification
+            and invitations are delivered by Resend, a United States company, using United States
+            infrastructure. If your users can sign in, this path is in use.
+          </li>
+          <li>
+            <strong>Traffic passes through Cloudflare</strong>, a United States company, which
+            terminates TLS and therefore processes connection data including IP addresses. We are on
+            Cloudflare's free plan, which does not include EU-only data localisation.
+          </li>
+          <li>
+            <strong>Payment data is processed by Paddle</strong> in the United Kingdom, a country
+            covered by a European Commission adequacy decision.
+          </li>
+          <li>
+            <strong>Mail you send to our published addresses</strong> — including data subject
+            requests — is routed by Cloudflare and delivered into a mailbox operated by Google in
+            the United States.
+          </li>
+          <li>
+            <strong>We are established in Georgia</strong>, which is not covered by a European
+            Commission adequacy decision, while the systems we operate are in the EU.
+          </li>
+        </ul>
+        <p class="mt-2">
+          Where a transfer requires it, we rely on the European Commission's Standard Contractual
+          Clauses. By accepting this Addendum you and we enter into the Clauses appropriate to our
+          roles, and Annexes I to III below serve as their annexes. We will enter into a
+          counter-signed copy on request.
+        </p>
+        <p class="mt-2">
+          <strong>Destinations you choose are yours.</strong> If you configure a pipeline to load
+          into a warehouse in a third country, that transfer is made on your instruction and under
+          your controllership, and this Addendum does not cover it.
+        </p>
+      </section>
+
+      <section>
+        <h2>12. Precedence and changes</h2>
+        <p>
+          Where this Addendum conflicts with the Terms of Service on the processing of personal data,
+          this Addendum prevails. We will post material changes here with a new "Last updated" date
+          and, for changes that reduce your protections, give notice before they take effect.
+        </p>
+      </section>
+
+      <hr class="border-slate-800" />
+
+      <section>
+        <h2>Annex I — Description of the processing</h2>
+        <p>
+          The subject matter, duration, nature, purpose, data types and data subject categories are
+          set out in §2 above and form Annex I for the purposes of the Standard Contractual Clauses.
+          The competent supervisory authority is the one applicable to you as data exporter.
+        </p>
+      </section>
+
+      <section>
+        <h2>Annex II — Technical and organisational measures</h2>
+        <p>
+          Stated as what we operate today. Nothing here is aspirational, and where a measure is
+          absent it is absent from this list.
+        </p>
+        <ul class="mt-2">
+          <li><strong>In transit.</strong> TLS on every external connection. Internal services bind to loopback only.</li>
+          <li><strong>Credentials.</strong> Source and destination credentials you enter are encrypted at rest with Fernet. Account passwords are hashed with bcrypt and are never recoverable.</li>
+          <li><strong>Tenant isolation.</strong> Every tenant-scoped table carries an organisation identifier and every query is filtered by it. dbt projects are per-tenant directories.</li>
+          <li><strong>Backups.</strong> Nightly database and file-volume backups. The off-site copy is GPG-encrypted before it leaves the application host, and the backup host holds no decryption key. Retention: {BACKUP_LOCAL_DAYS} days locally, {BACKUP_OFFSITE_DAYS} days off-site.</li>
+          <li><strong>Access.</strong> SSH by key only. Deployment runs from version control, not by editing servers.</li>
+          <li><strong>Logging.</strong> Audit records for security-relevant actions. Web server access logs are retained for 14 days.</li>
+          <li><strong>Availability.</strong> Metrics and alerting on the production host, with alerts routed to an on-call channel.</li>
+          <li><strong>Rate limiting.</strong> Authentication and password reset endpoints are rate limited; the IP keys used for that expire within two hours.</li>
+          <li><strong>Deletion.</strong> Account deletion removes live data within {DELETION_DAYS} days, as described in §9.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Annex III — Sub-processors</h2>
+        <p>
+          Current as of {LAST_UPDATED}. Each row states where the recipient is established, which is
+          what determines whether a transfer leaves the EEA.
+        </p>
+        <div class="mt-4 overflow-x-auto">
+          <table class="w-full border-collapse text-sm">
+            <thead>
+              <tr class="border-b border-slate-700 text-left text-slate-400">
+                <th class="py-2 pr-4 font-medium">Sub-processor</th>
+                <th class="py-2 pr-4 font-medium">Purpose</th>
+                <th class="py-2 font-medium">Location</th>
+              </tr>
+            </thead>
+            <tbody>
+              {
+                subprocessors.map((s) => (
+                  <tr class="border-b border-slate-800 align-top">
+                    <td class="py-3 pr-4">
+                      <span class="font-medium text-white">{s.name}</span>
+                      <br />
+                      <span class="text-xs text-slate-500">{s.legal}</span>
+                    </td>
+                    <td class="py-3 pr-4">{s.purpose}</td>
+                    <td class="py-3 whitespace-nowrap">{s.location}</td>
+                  </tr>
+                ))
+              }
+            </tbody>
+          </table>
+        </div>
+        <p class="mt-4 text-sm text-slate-400">
+          We do not use a third-party error tracking, product analytics or session recording
+          service, and we send no customer data to any AI or model provider. Website analytics
+          are a self-hosted Plausible instance and Cloudflare Web Analytics, both cookie-free:
+          no cookies, no browser storage, no cross-site identifier, no advertising or behavioural
+          profile. Neither runs inside the Service — they are on the marketing site only, so
+          neither observes your pipeline data or your users.
+        </p>
+      </section>
+
+      <section>
+        <h2>Change log</h2>
+        <ul>
+          <li>
+            <strong>{LAST_UPDATED}</strong> — First publication. Sub-processor annex derived from
+            measurement rather than from our earlier notes; Google, GitHub and Telegram named for the
+            first time, and Resend's onward use of Amazon Web Services disclosed. Cloudflare's entry
+            records web analytics alongside its CDN, DNS and TLS functions — a function added to a
+            recipient we already used, not a new recipient. Every row was re-derived immediately
+            before publication rather than carried over from the draft.
+          </li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>Contact</h2>
+        <p>
+          <a href="mailto:security@datanika.io" class="text-violet-400 hover:underline">security@datanika.io</a>
+          for anything in this Addendum, including a counter-signed copy or a sub-processor
+          notification subscription.
+        </p>
+        <p class="mt-2 text-sm text-slate-500">
+          Datanika (Individual Entrepreneur Evgenii Timofeev)<br />
+          Mikheil Tsinamdzgvrishvili st. 52, Tbilisi, Georgia<br />
+          ID: 302355868
+        </p>
+      </section>
+    </div>
+  </main>
+  <Footer />
+</Layout>

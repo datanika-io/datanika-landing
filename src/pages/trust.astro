@@ -279,8 +279,15 @@ import Footer from "../components/Footer.astro";
               </tr>
               <tr>
                 <td class="py-3 pr-4 font-medium text-white">Analytics</td>
-                <td class="py-3 pr-4">Plausible CE</td>
-                <td class="py-3">Self-hosted on our own Greek server, cookie-free, GDPR-compliant. No third-party tracking.</td>
+                <td class="py-3 pr-4">Plausible CE + Cloudflare Web Analytics</td>
+                <td class="py-3">
+                  Both are cookie-free: no cookies, no browser storage, no cross-site identifier,
+                  no advertising or behavioural profile. Plausible CE is self-hosted on our own
+                  Greek server. Cloudflare Web Analytics runs on this marketing site only, for
+                  page-load timings. Cloudflare already terminates TLS for every request you make
+                  to us, so this is an additional function performed by a sub-processor we already
+                  use — not a new company receiving your data.
+                </td>
               </tr>
             </tbody>
           </table>
@@ -321,7 +328,10 @@ import Footer from "../components/Footer.astro";
               </tr>
               <tr class="border-b border-slate-800/50">
                 <td class="py-3 pr-4 font-medium text-white">Cloudflare, Inc.</td>
-                <td class="py-3 pr-4">CDN, DDoS protection, DNS, TLS termination</td>
+                <td class="py-3 pr-4">
+                  CDN, DDoS protection, DNS, TLS termination; cookie-free web analytics on
+                  datanika.io; inbound routing of mail sent to our published addresses
+                </td>
                 <td class="py-3">United States; served from the nearest point of presence</td>
               </tr>
               <tr class="border-b border-slate-800/50">
@@ -353,6 +363,17 @@ import Footer from "../components/Footer.astro";
         <div class="mt-6 rounded-lg border border-slate-800 bg-slate-900/50 p-5">
           <h3 class="text-sm font-medium text-white mb-2">Change log</h3>
           <ul class="text-sm text-slate-400 space-y-1">
+            <li>
+              <strong class="text-slate-300">2026-09-04</strong> — no company was added or removed.
+              <strong class="text-slate-300">Cloudflare</strong>'s entry gained a function: it also
+              provides the cookie-free web analytics on datanika.io described in the Analytics row
+              above. That measurement had been running <strong class="text-slate-300">since
+              2026-04-14</strong> without being named here — a gap of 143 days — which is why this
+              is recorded as a correction rather than left as a silent edit. The Analytics row was
+              also made more precise: it previously read "No third-party tracking", which was
+              true of cookies and cross-site identifiers and not of the fact that a second
+              measurement existed.
+            </li>
             <li>
               <strong class="text-slate-300">2026-08-30</strong> — this list was corrected. Our
               production host changed on 2026-07-17 and the change was not reflected here at the

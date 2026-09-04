@@ -87,7 +87,7 @@ import Footer from "../components/Footer.astro";
         <ul>
           <li><strong>Pointer (pointer.gr)</strong> — application, database and worker hosting. Greece, EU.</li>
           <li><strong>Aweb</strong> — off-site database backups, and hosting for this website. Greece, EU.</li>
-          <li><strong>Cloudflare, Inc.</strong> — CDN, DDoS protection, DNS and TLS termination. United States, served from global points of presence.</li>
+          <li><strong>Cloudflare, Inc.</strong> — CDN, DDoS protection, DNS and TLS termination; cookie-free web analytics on this website (section 8); inbound routing of mail sent to our published addresses. United States, served from global points of presence.</li>
           <li><strong>Resend</strong> (Plus Five Five, Inc.) — transactional email delivery: password resets and team invitations. United States.</li>
           <li><strong>Paddle.com Market Ltd</strong> — payment processing, as Merchant of Record. United Kingdom.</li>
           <li><strong>Google / GitHub</strong> — only if you use OAuth sign-in (authentication data)</li>
@@ -167,8 +167,17 @@ import Footer from "../components/Footer.astro";
         </p>
         <p class="mt-2">
           We do not use tracking cookies, analytics cookies, or third-party advertising
-          cookies. Traffic on this marketing site is measured with a self-hosted Plausible
-          instance, which is cookie-free and does not track individuals across sites.
+          cookies. Traffic on this marketing site is measured with two cookie-free
+          tools: a <strong>self-hosted Plausible</strong> instance, and
+          <strong>Cloudflare Web Analytics</strong>. Neither sets a cookie, writes to your
+          browser's storage, or gives you an identifier that follows you to other sites, and
+          neither builds an advertising or behavioural profile.
+        </p>
+        <p class="mt-2">
+          Cloudflare already terminates TLS and serves every request you make to this site
+          (section 9), so its analytics is an additional function performed by a sub-processor
+          we already use, not a new company receiving your data. It measures page-load timing
+          from the request you were already making.
         </p>
       </section>
 
@@ -191,7 +200,8 @@ import Footer from "../components/Footer.astro";
           <li>
             <strong>Cloudflare</strong> (United States, with points of presence worldwide)
             terminates TLS and serves our traffic from the location nearest to you, and
-            therefore processes your IP address and request metadata.
+            therefore processes your IP address and request metadata. The same request data
+            also feeds the cookie-free web analytics on this website described in section 8.
           </li>
           <li>
             <strong>Paddle</strong> (United Kingdom) processes payments as Merchant of Record

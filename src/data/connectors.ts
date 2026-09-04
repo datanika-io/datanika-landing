@@ -872,6 +872,22 @@ export const connectors: Connector[] = [
       { name: "bootstrap_servers", description: "Comma-separated list of Kafka brokers" },
       { name: "topics", description: "Comma-separated list of topics to consume" },
       { name: "group_id", description: "Consumer group ID" },
+      {
+        name: "security_protocol",
+        description: "PLAINTEXT, SSL, SASL_PLAINTEXT or SASL_SSL (default PLAINTEXT) (optional)",
+      },
+      {
+        name: "sasl_mechanism",
+        description: "PLAIN, SCRAM-SHA-256 or SCRAM-SHA-512 (default PLAIN) (optional)",
+      },
+      {
+        name: "sasl_plain_username",
+        description: "SASL username (required with a SASL_* protocol)",
+      },
+      {
+        name: "sasl_plain_password",
+        description: "SASL password (encrypted at rest) (required with a SASL_* protocol)",
+      },
     ],
     related: ["clickhouse", "bigquery", "postgresql", "s3"],
     seoTitle: "Kafka to Warehouse — Streaming Ingestion | Datanika",
