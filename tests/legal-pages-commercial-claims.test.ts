@@ -318,6 +318,105 @@ describe("/dpa: the Article 28 addendum", () => {
     }
   });
 
+  /**
+   * 🚨 The analytics disclosure, and the sentence it replaced.
+   *
+   * Annex III's footnote read *"Our website analytics are self-hosted."* That was
+   * true of Plausible and **false of the Cloudflare Web Analytics beacon**, which
+   * this page loads like every other layout page. It is the same defect as
+   * `/privacy` section 8 and `/trust`'s Analytics row, in the one document a
+   * customer relies on contractually — and it survived the draft because it was
+   * re-read rather than re-derived.
+   *
+   * Two assertions, because they protect different things:
+   *
+   *   1. The retired sentence must not come back — an affirmative-claim ban,
+   *      anchored so the corrected copy, which must still contain the words
+   *      "self-hosted" and "analytics", does not trip it.
+   *   2. The FUNCTION must be recorded against Cloudflare in the annex ROW.
+   *      Cloudflare was already a sub-processor, so adding web analytics adds no
+   *      name to any list; the function column is therefore the only place the
+   *      change is visible, and the only place it can be silently dropped.
+   *
+   * ⚠️ Scoped to the Cloudflare `<tr>`, not to the annex and not to the page.
+   * The equivalent guard on `/privacy` and `/trust` was measured GREEN twice at
+   * page level, satisfied by the same words in a Change log entry and in a
+   * transfers clause. Same finding as `annexRows()` above, one level in.
+   *
+   * ⚠️ The cross-page half of this invariant — *an allowlisted script origin must
+   * be disclosed* — lives in `tests/no-advertising-tag.test.ts`, which owns
+   * `/privacy` and `/trust`. It is split because the two pages arrived on
+   * different branches; `/dpa` should join `DISCLOSED_SCRIPT_ORIGINS` once both
+   * are on `dev`.
+   */
+  const annexRow = (name: string) => {
+    const table = dpa().mainHtml.match(/<table[\s\S]*?<\/table>/)![0];
+    const rows = [...table.matchAll(/<tr[\s>][\s\S]*?<\/tr>/g)]
+      .map((m) => m[0])
+      .filter((r) => r.includes(name));
+    expect(
+      rows.length,
+      `Annex III has ${rows.length} rows naming "${name}", not 1. Zero makes the ` +
+        `assertion below vacuous; two makes a green say nothing about which.`,
+    ).toBe(1);
+    return strip(rows[0]);
+  };
+
+  it("does not claim our analytics are self-hosted, which stopped being true", () => {
+    const banned = [
+      /\bour (?:website |web )?analytics (?:are|is) self-?hosted\b/i,
+      /\banalytics (?:are|is) (?:entirely |fully |all )?self-?hosted\b/i,
+      /\bwe (?:self-?host|only self-?host) (?:all )?(?:our )?analytics\b/i,
+    ];
+    for (const re of banned) {
+      expect(
+        re.test(dpa().text),
+        `/dpa claims all website analytics are self-hosted. Plausible is; ` +
+          `Cloudflare Web Analytics is not, and the beacon ships on this page. ` +
+          `Pattern: ${re}`,
+      ).toBe(false);
+    }
+  });
+
+  it("control: the self-hosted ban fires on the sentence that was live in the draft", () => {
+    // The exact string this page carried until 2026-09-04. A ban that cannot
+    // catch the text it was written for is decoration.
+    const banned = [
+      /\bour (?:website |web )?analytics (?:are|is) self-?hosted\b/i,
+      /\banalytics (?:are|is) (?:entirely |fully |all )?self-?hosted\b/i,
+      /\bwe (?:self-?host|only self-?host) (?:all )?(?:our )?analytics\b/i,
+    ];
+    const wasLive =
+      "We do not use a third-party error tracking, product analytics or session " +
+      "recording service, and we send no customer data to any AI or model provider. " +
+      "Our website analytics are self-hosted.";
+    expect(
+      banned.some((re) => re.test(wasLive)),
+      "the ban would not have caught the sentence it was written for",
+    ).toBe(true);
+    // And it must NOT fire on the correction, which still says "self-hosted".
+    expect(
+      banned.some((re) => re.test(dpa().text)),
+      "false positive on the corrected copy, which legitimately says 'self-hosted Plausible'",
+    ).toBe(false);
+  });
+
+  it("records web analytics as a Cloudflare function in the annex row", () => {
+    const row = annexRow("Cloudflare");
+    expect(
+      /cookie-free web analytics/i.test(row),
+      `Annex III's Cloudflare row no longer records web analytics as one of its ` +
+        `functions. Cloudflare was already a sub-processor, so this change never ` +
+        `added a name to the list — the function column is the only place it is ` +
+        `visible. Row read: ${row.slice(0, 300)}`,
+    ).toBe(true);
+    // And the vendor is named where we describe what measures visitors.
+    expect(
+      /Cloudflare Web Analytics/.test(dpa().text),
+      "/dpa loads the beacon and never names it.",
+    ).toBe(true);
+  });
+
   it("states plainly that personal data reaches the United States", () => {
     // The sentence that matters. /privacy and /trust were corrected on
     // 2026-08-30 precisely for the opposite claim; getting it wrong twice, in a

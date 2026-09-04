@@ -14,12 +14,35 @@ import Footer from "../components/Footer.astro";
  * false one: `/privacy` and `/trust` claimed for six weeks that no data leaves the
  * EU while every password-reset mail went through a US provider (landing#343).
  *
- * Re-derivation, per row:
+ * Re-derivation, per row. ⚠️ Re-run IN FULL on 2026-09-04, immediately before this
+ * page left draft, because the founder's approval made it the one artifact here
+ * where being wrong is expensive. The sweep found a false sentence — see the
+ * beacon entry — which had survived the draft by being re-read rather than
+ * re-derived.
+ *
  *   Pointer   — `curl -s https://rdap.db.ripe.net/ip/185.25.22.188`  -> GR-POINTER-CLOUD2, country GR
  *   Aweb      — `curl -s https://rdap.db.ripe.net/ip/185.226.65.96`  -> GR-AWEB-185-226-65, country GR
  *   Cloudflare— `Server: cloudflare` + `CF-RAY` on both hosts; CF Origin cert on both origins
- *   Resend    — SMTP_HOST=smtp.resend.com in the running container's env
+ *   Resend    — SMTP_HOST=smtp.resend.com in the running container's env.
+ *               ⚠️ Growth has no SSH to the app box, so this was re-derived from DNS:
+ *               `send.datanika.io` TXT = `v=spf1 include:amazonses.com ~all`, and
+ *               `resend._domainkey.datanika.io` present. That evidences the Amazon SES
+ *               onward leg, which is the part this row actually claims.
+ *   Google    — `datanika.io` MX -> route{1,2,3}.mx.cloudflare.net. So inbound mail is
+ *               ROUTED by Cloudflare and forwarded to a Google-operated mailbox. The MX is
+ *               Cloudflare's, not Google's; both rows are worded to match that.
  *   Paddle    — datanika_cloud/billing/paddle.py: the account email is the only PII we send
+ *   Cloudflare Web Analytics
+ *             — `static.cloudflareinsights.com/beacon.min.js`, 30,294 bytes: document.cookie 0,
+ *               localStorage 0, sessionStorage 0, indexedDB 0, the string "cookie" any-case 0,
+ *               no canvas/WebGL/fingerprinting API. Positive control on the same bytes, so the
+ *               zeros are not an empty file or an error page: 56 "function", sendBeacon 3,
+ *               cfBeacon 3, navigator 16. It POSTs to cloudflareinsights.com/cdn-cgi/rum.
+ *               🚨 This row is what caught the false sentence. Annex III's footnote read
+ *               "Our website analytics are self-hosted" — true of Plausible, false of the
+ *               beacon, which this page loads like every other layout page. Same defect as
+ *               /privacy section 8 and /trust's Analytics row, in the document where it costs
+ *               the most.
  *
  * ⚠️ Three things deliberately NOT said here, each because the evidence does not exist:
  *   1. No city for Pointer. "Athens" is our own note, not a measurement, and their
@@ -37,7 +60,7 @@ import Footer from "../components/Footer.astro";
  * it is mid-change under core#1000, and a DPA is the wrong place to freeze it.
  */
 
-const LAST_UPDATED = "September 3, 2026";
+const LAST_UPDATED = "September 4, 2026";
 
 // One constant, three consumers: the deletion sentence in §9, the backup sentence
 // in Annex II, and the figure /privacy and /trust already publish. Writing a
@@ -66,7 +89,7 @@ const subprocessors = [
     name: "Cloudflare, Inc.",
     legal: "Delaware, United States",
     purpose:
-      "CDN, DDoS protection, DNS and TLS termination for datanika.io and app.datanika.io, and inbound routing of mail sent to our published contact addresses.",
+      "CDN, DDoS protection, DNS and TLS termination for datanika.io and app.datanika.io; inbound routing of mail sent to our published contact addresses; cookie-free web analytics on datanika.io.",
     location: "United States",
   },
   {
@@ -418,9 +441,12 @@ const subprocessors = [
           </table>
         </div>
         <p class="mt-4 text-sm text-slate-400">
-          We do not use a third-party error tracking, product analytics or session recording service,
-          and we send no customer data to any AI or model provider. Our website analytics are
-          self-hosted.
+          We do not use a third-party error tracking, product analytics or session recording
+          service, and we send no customer data to any AI or model provider. Website analytics
+          are a self-hosted Plausible instance and Cloudflare Web Analytics, both cookie-free:
+          no cookies, no browser storage, no cross-site identifier, no advertising or behavioural
+          profile. Neither runs inside the Service — they are on the marketing site only, so
+          neither observes your pipeline data or your users.
         </p>
       </section>
 
@@ -430,7 +456,10 @@ const subprocessors = [
           <li>
             <strong>{LAST_UPDATED}</strong> — First publication. Sub-processor annex derived from
             measurement rather than from our earlier notes; Google, GitHub and Telegram named for the
-            first time, and Resend's onward use of Amazon Web Services disclosed.
+            first time, and Resend's onward use of Amazon Web Services disclosed. Cloudflare's entry
+            records web analytics alongside its CDN, DNS and TLS functions — a function added to a
+            recipient we already used, not a new recipient. Every row was re-derived immediately
+            before publication rather than carried over from the draft.
           </li>
         </ul>
       </section>
