@@ -438,3 +438,96 @@ organizations share `dev.to/<slug>`, so a user-lookup 404 says nothing about an 
 the handle. Check every namespace that can occupy the name, each against a control known to exist —
 and know what is still unresolved afterwards: a reserved word and a suspended account both 404 from
 outside, and both are enforced only at write time. **The residual doubt is part of the finding.**
+
+## Removing a claim's subject, not just its wording
+
+**When a published claim is false, ask whether the cheapest fix is deleting the thing that makes it
+false.** `/privacy` §8 said we set no third-party advertising cookies while `Layout.astro` loaded the
+Google Ads tag on 101 of 165 built pages. The reflex is to amend §8. The right move was to remove the
+tag: the Ads account is **suspended**, so the tag recorded nothing, and amending would have traded a
+real differentiator for a measurement we were not getting. **Removing the tag made the page true with
+no legal wording changed at all** (#481). This does not contradict *"which one moves is a decision,
+not a default"* — it is the third option that rule's two branches leave out: sometimes neither the
+page nor the product moves, and the *unused thing between them* goes.
+
+**Re-derive a status that decides something, even when a note already states it.** The suspension was
+on file from 2026-08-31. Read again through the API on 2026-09-04, `customer.status` returned
+`SUSPENDED` and lifetime spend was **byte-identical** to the earlier reading — which also proves
+nothing served in between. A remembered status is a claim; a re-read one is a measurement, and this
+one cost a single script run. It also found a **better instrument**: advertiser *verification* state
+is browser-only, but `customer.status` is API-readable and discriminates against `ENABLED`.
+
+**A promise routed to an escape hatch is still a promise.** The recorded rule says *"route it to a
+human" is not a safe default — check the human has an action*. `/docs/connectors/kafka` did the same
+thing one level lower: it admitted the form has no credential fields, then routed users to **Use raw
+JSON config** to supply `security_protocol` and the `sasl_*` keys. Those keys are absent from the
+runner's accepted-key set, so they are splatted into `pipeline.run()` and raise `TypeError` — the
+advice **crashes the run** rather than failing to help, and it was printed under the exact
+troubleshooting symptom that sends a user to it (#486). **Check the escape hatch has an action too.**
+
+**The same fiction can ship three times in three surfaces, and closing an issue about one of them can
+create the next.** `security_protocol` was removed from `connectors.ts` as fictional in landing#198
+KF-1; core's schema carried dead `sasl_username`/`sasl_password` (core#157 CORE-8); and **the setup
+guide written to close landing#198's own KF-3 put the fiction back as an escape hatch**, live for four
+and a half months. When you close a "this field does not exist" issue, grep for the field in whatever
+that issue also asked you to *write*.
+
+## Guards, continued
+
+**A check that asserts a feature exists will fail the correct removal of that feature.** The landing
+deploy asserted, on the built output, that `data-gtag-send-to` appeared on at least one page — a good
+guard, written for a real silent failure. Removing the ad tag would have made it **exit 1 on every
+deploy**, landing merged-but-unshipped. The other direction is worse: had it passed, it would have
+been a green check certifying a tag that no longer exists. **Before deleting a feature, grep CI for
+assertions about it — and delete the assertion in the same commit.**
+
+**A workflow step id lives in two places, and only one of them is the step.** Deleting the step left
+its id in the failure-alert chain, where a missing step resolves to an empty outcome — so the alert
+would have reported *"unknown"* for whatever really failed. Caught by an existing guard, not by
+review. **Anything that enumerates steps is part of the step's definition.**
+
+**Feed every pattern its own sample, in the test.** A marker written
+`googletagmanager\.com/(?:gtag|gtm)\.js` matches neither real form: the loader path is `/gtag/js`
+(**slash**) and the GTM container is `/gtm.js` (**dot**). It contributed a zero to a sweep of a build
+that had 101 hits, and a zero from a dead pattern is indistinguishable from safety. The
+"every marker matches its own sample" control caught it on the first run and is now the cheapest
+control we have — one line per pattern, and it fails loudly.
+
+**Prefer an allowlist of origins to a blocklist of vendors.** `tests/no-advertising-tag.test.ts`
+asserts the complete set of third-party script origins the site may load. A blocklist only catches
+vendors somebody enumerated, and the next tracker added will be one nobody listed. Proven by
+mutation: an unrelated pixel from a host no marker names trips the allowlist and nothing else.
+
+**A control must answer one question.** The false-positive control read the whole
+`/connectors/google-analytics` page, so it also went red whenever the site genuinely shipped a tag —
+making *"a marker is over-broad"* indistinguishable from *"there is a real tag here"*, the one
+distinction it existed to draw. Rescoped to the extracted catalogue references, it stays green under
+a real violation and fires only on an over-broad marker. Same shape as the `/dpa` Annex III finding:
+**scope the assertion to the artifact that is operative, not to the document containing it.**
+
+**Ban the affirmative form; pin the negation as a control — and pin that the negation still exists.**
+Corrected copy usually has to *name* the thing it is disowning: the Kafka guide must say
+`security_protocol` in order to say it does not work. So the ban is anchored to the JSON payload form
+(`"security_protocol":`), and two controls sit beside it — one asserting the page still names the key
+in prose, one asserting the honest statement is still published. Without the second, a page that
+simply **stops discussing** authentication passes, which is worse than the original defect: a
+Confluent user would get no warning at all.
+
+## Measuring your own tools
+
+🚨 **`grep -c $'\\r'` inside a `$( )` can degrade to an empty pattern, and an empty pattern matches
+every line.** A CRLF audit reported `lines=115 crlf=115` on four files. It was **vacuous** — one of
+those files was pure LF, which only a byte-level read showed. This is `grep -F ""` matching
+everything, the exact trap the landing deploy workflow guards against in its own comment, arriving
+through ANSI-C quoting instead. **Measure line endings with `git ls-files --eol` or a byte count,
+never with a grep whose pattern is a control character.**
+
+**Line endings in the working tree are not the line endings in the commit.** `git ls-files --eol`
+reports `i/lf w/crlf` on this repo: the index is LF and git normalises on `git add`, so a mixed-ending
+working file produces a clean, content-only diff. Check `git diff --stat` for a whole-file rewrite
+rather than trying to match the working copy's endings byte for byte.
+
+**An HTML comment in an `.astro` file ships; `{/* … */}` does not.** Already recorded for `/trust` and
+`why-cheaper`. Third instance: a note explaining *why* the ad tag is absent, written as `<!-- -->` in
+`Layout.astro`, would have gone into the `<head>` of every built page. Converted to an expression
+comment and **asserted absent from `dist/`** — the source diff looks identical either way.
