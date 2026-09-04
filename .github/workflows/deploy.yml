@@ -52,52 +52,20 @@ jobs:
         id: install
         run: npm ci
 
-      # ⚠️ This is now THE SHIPPING BUILD, not a fail-fast gate (landing#388).
-      # The variable moved here with it: Astro inlines `import.meta.env.PUBLIC_*`
-      # at build time, so it has to be set in the process that produces the bytes
-      # users actually receive. It used to be forwarded into the Aweb build.
+      # This is THE SHIPPING BUILD, not a fail-fast gate (landing#388): the bytes
+      # produced here are the bytes users receive.
+      #
+      # It takes no build-time variables at all any more.
+      # `PUBLIC_GOOGLE_ADS_CONVERSION_LABEL`, and the step that asserted it had
+      # reached `dist/`, were removed together with the Google Ads tag
+      # (landing#481). Removing the tag and leaving that assertion behind would
+      # have been the worse half of the change: it exits 1 when no built page
+      # carries `data-gtag-send-to`, so a CORRECT removal would have failed every
+      # deploy. A green assertion about a tag that is gone is the other failure -
+      # the same family as landing#391.
       - name: Build
         id: build
-        env:
-          PUBLIC_GOOGLE_ADS_CONVERSION_LABEL: ${{ secrets.PUBLIC_GOOGLE_ADS_CONVERSION_LABEL }}
         run: npm run build
-
-      # The assertion is on the BUILD OUTPUT, never on the variable being set —
-      # landing#388 is explicit about that, and the reason is that the failure is
-      # silent. `ConversionCTA.astro` renders `data-gtag-send-to={sendTo ||
-      # undefined}`, and Astro drops an attribute whose value is undefined, so an
-      # empty label yields a plain <a>: deploy green, site looks right, Google Ads
-      # conversion attribution simply dead. Verified in that direction rather than
-      # assumed — a local build with no secret produces ZERO pages carrying the
-      # attribute, while 19 source files use the component.
-      #
-      # Same family as landing#391: binding a check to what we BELIEVE rather than
-      # to what the artifact contains is how a green check certifies something
-      # untrue.
-      - name: Assert the conversion label reached the built artifact
-        id: assert_label
-        env:
-          PUBLIC_GOOGLE_ADS_CONVERSION_LABEL: ${{ secrets.PUBLIC_GOOGLE_ADS_CONVERSION_LABEL }}
-        run: |
-          # Guard FIRST. With an empty needle `grep -F ""` matches every line, so
-          # the value check below would pass vacuously on exactly the input it
-          # exists to reject — the canary lesson, in miniature.
-          if [ -z "${PUBLIC_GOOGLE_ADS_CONVERSION_LABEL}" ]; then
-            echo "::error::PUBLIC_GOOGLE_ADS_CONVERSION_LABEL is empty on the runner. Every CTA would render as a plain <a> and Ads attribution would break silently. This secret used to be consumed on Aweb; since landing#388 the shipping build happens here, so it must be available here."
-            exit 1
-          fi
-          attr=$(grep -rl 'data-gtag-send-to=' dist --include='*.html' | grep -c . || true)
-          val=$(grep -rlF "$PUBLIC_GOOGLE_ADS_CONVERSION_LABEL" dist --include='*.html' | grep -c . || true)
-          echo "pages carrying the tracking attribute: $attr"
-          echo "pages carrying the configured label value: $val"
-          if [ "$attr" -eq 0 ]; then
-            echo "::error::no built page carries data-gtag-send-to — ConversionCTA fell back to a plain <a>, so the label did not reach the build"
-            exit 1
-          fi
-          if [ "$val" -eq 0 ]; then
-            echo "::error::the tracking attribute is present but no page contains the configured label value — the build used a different value than the secret"
-            exit 1
-          fi
 
       - name: Run tests
         id: test
@@ -463,7 +431,6 @@ jobs:
         env:
           INSTALL_OUTCOME: ${{ steps.install.outcome }}
           BUILD_OUTCOME: ${{ steps.build.outcome }}
-          ASSERT_LABEL_OUTCOME: ${{ steps.assert_label.outcome }}
           TEST_OUTCOME: ${{ steps.test.outcome }}
           ENUMERATE_OUTCOME: ${{ steps.enumerate.outcome }}
           BEFORE_OUTCOME: ${{ steps.before.outcome }}
@@ -485,7 +452,6 @@ jobs:
           # was such a hole before landing#388 touched this file.
           if   [ "$INSTALL_OUTCOME"      = "failure" ]; then STEP="Install dependencies"
           elif [ "$BUILD_OUTCOME"        = "failure" ]; then STEP="Build"
-          elif [ "$ASSERT_LABEL_OUTCOME" = "failure" ]; then STEP="Assert the conversion label reached the built artifact"
           elif [ "$TEST_OUTCOME"         = "failure" ]; then STEP="Run tests"
           elif [ "$ENUMERATE_OUTCOME"    = "failure" ]; then STEP="Enumerate the URLs this build makes available"
           elif [ "$BEFORE_OUTCOME"       = "failure" ]; then STEP="Probe the live site BEFORE publishing"

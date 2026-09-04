@@ -1,11 +1,8 @@
 ---
-// Drop-in replacement for `<a>` that fires Google Ads conversion tracking +
-// optional Plausible custom event on click. Uses navigator.sendBeacon() for
-// Plausible — survives navigation unlike the XHR+setTimeout path in
-// script.tagged-events.js that was losing events on click-then-navigate
-// (see landing#212). gtag and Plausible fire from the same inline handler
-// for consistent ordering; onclick-attr-based gtag was removed so a single
-// script owns the CTA event lifecycle.
+// Drop-in replacement for `<a>` that fires a Plausible custom event on click,
+// using navigator.sendBeacon() - which survives navigation, unlike the
+// XHR+setTimeout path in script.tagged-events.js that was losing events on
+// click-then-navigate (see landing#212).
 //
 // Usage:
 //   <ConversionCTA href="..." class="btn-primary">Start Free</ConversionCTA>
@@ -13,13 +10,18 @@
 //     Start Free
 //   </ConversionCTA>
 //
-// Renders a plain <a> when PUBLIC_GOOGLE_ADS_CONVERSION_LABEL is unset
-// (local builds without the secret). The script still handles Plausible
-// events in that case as long as plausibleEvent is supplied.
+// Without `plausibleEvent` it renders a plain <a> and the handler below does not
+// match it: normal navigation, no interception, no 50 ms delay.
 //
-// Non-ConversionCTA anchors that want Plausible-only tracking (no gtag) can
-// just set `data-plausible-event="Event Name"` — the script matches any
-// `a[data-plausible-event]`, not only CTAs rendered by this component.
+// Any anchor can opt in without using this component - set
+// `data-plausible-event="Event Name"`. The selector is on the attribute, not on
+// the component, which is how /pricing's "Contact sales" link is tracked.
+//
+// IMPORTANT: there is deliberately NO Google Ads / gtag conversion here
+// (landing#481). The tag this used to fire contradicted /privacy section 8.
+// Re-adding it means changing /privacy and /trust in the same commit;
+// tests/no-advertising-tag.test.ts enforces that. Plausible is the only
+// measurement this component performs.
 
 interface Props {
   href: string;
@@ -28,8 +30,6 @@ interface Props {
   [key: string]: any;
 }
 
-const conversionLabel = import.meta.env.PUBLIC_GOOGLE_ADS_CONVERSION_LABEL;
-const sendTo = conversionLabel ? `AW-18081528527/${conversionLabel}` : null;
 const { href, class: className, plausibleEvent, ...rest } = Astro.props;
 ---
 
@@ -37,7 +37,6 @@ const { href, class: className, plausibleEvent, ...rest } = Astro.props;
   href={href}
   class={className}
   data-plausible-event={plausibleEvent || undefined}
-  data-gtag-send-to={sendTo || undefined}
   {...rest}
 >
   <slot />
@@ -50,13 +49,12 @@ const { href, class: className, plausibleEvent, ...rest } = Astro.props;
       const target = e.target as HTMLElement | null;
       if (!target) return;
       const link = target.closest?.(
-        "a[data-plausible-event], a[data-gtag-send-to]",
+        "a[data-plausible-event]",
       ) as HTMLAnchorElement | null;
       if (!link) return;
 
       const href = link.getAttribute("href");
       const eventName = link.getAttribute("data-plausible-event");
-      const sendTo = link.getAttribute("data-gtag-send-to");
 
       const sendPlausible = () => {
         if (!eventName || !navigator.sendBeacon) return;
@@ -74,19 +72,6 @@ const { href, class: className, plausibleEvent, ...rest } = Astro.props;
           /* sendBeacon rejected (CSP, quota, extension) — silent. */
         }
       };
-      const sendGtag = () => {
-        const gtag = (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag;
-        if (!sendTo || typeof gtag !== "function") return;
-        try {
-          gtag("event", "conversion", {
-            send_to: sendTo,
-            value: 1.0,
-            currency: "EUR",
-          });
-        } catch (_) {
-          /* gtag threw — silent. */
-        }
-      };
 
       const me = e as MouseEvent;
       const isModifierClick =
@@ -98,14 +83,12 @@ const { href, class: className, plausibleEvent, ...rest } = Astro.props;
       if (isModifierClick) {
         e.stopImmediatePropagation();
         sendPlausible();
-        sendGtag();
         return;
       }
 
       e.preventDefault();
       e.stopImmediatePropagation();
       sendPlausible();
-      sendGtag();
       if (href) setTimeout(() => {
         window.location.href = href;
       }, 50);
