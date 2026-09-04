@@ -154,3 +154,66 @@ describe("Conversion CTA usage — every signup CTA must use ConversionCTA", () 
     expect(text).toContain("<ConversionCTA");
   });
 });
+
+// ---------------------------------------------------------------------------
+// A signup CTA must land on a page a SIGNED-OUT visitor can use.
+//
+// Measured 2026-09-05 on production: `https://app.datanika.io` is the
+// authenticated dashboard. Reflex's `check_auth` runs on its `on_load`, finds
+// no session, and issues `rx.redirect("/login")` — so a visitor who clicked
+// "Get Started Free" was shown *"Sign in to your account"* and a password box
+// for an account they do not have. 23 of the site's 24 signup CTAs pointed
+// there; `compare/stitch.astro` was the only one already pointing at /signup.
+//
+// The rule this encodes is the class, not the instance: **the destination of a
+// signup CTA must be reachable without an account.** The bare root is merely
+// the way we got it wrong — `/`, `/connections`, `/pipelines` and every other
+// `check_auth` page would be the same defect. So the assertion is an allowlist
+// of signed-out-usable destinations, not a ban on one string.
+//
+// Deliberately source-level and deliberately NOT a substring ban on
+// "https://app.datanika.io": /terms, /docs/self-hosting and the three
+// `--url` config samples in /docs/mcp-server legitimately name the bare origin
+// in prose, and a ban wide enough to catch the CTAs would also catch those.
+const SIGNED_OUT_USABLE = [
+  "https://app.datanika.io/signup",
+  // A template deep-link is a different intent and lands on the app's own
+  // template picker, which is fine to reach cold; it is built from a variable
+  // (`tryTemplateHref`), so it never appears as a literal href here anyway.
+  "https://app.datanika.io/pipelines/templates",
+];
+
+// Any ConversionCTA whose href is a literal app URL. Covers both the one-line
+// form (`<ConversionCTA href="…"`) and the multi-line form Pricing.astro uses,
+// where the href sits on its own line inside the tag.
+const CTA_APP_HREF = /<ConversionCTA\b[^>]*?href=["'](https?:\/\/app\.datanika\.io[^"']*)["']/gs;
+
+describe("Signup CTA destination — must be usable without an account", () => {
+  const allFiles = walkAstroFiles(SRC);
+
+  it.each(allFiles)("%s sends every signup CTA to a signed-out page", (file) => {
+    const text = readFileSync(file, "utf-8");
+    const bad: string[] = [];
+    for (const m of text.matchAll(CTA_APP_HREF)) {
+      const href = m[1];
+      if (!SIGNED_OUT_USABLE.some((ok) => href === ok || href.startsWith(ok + "?"))) {
+        bad.push(href);
+      }
+    }
+    expect(
+      bad,
+      `ConversionCTA in ${file} points at a page that requires an account: ` +
+        `${bad.join(", ")}. A signed-out visitor is redirected to /login there. ` +
+        `Use https://app.datanika.io/signup.`,
+    ).toEqual([]);
+  });
+
+  it("the site actually has signup CTAs to check (guard against a vacuous pass)", () => {
+    // Without this the suite above passes just as happily on a site with no
+    // CTAs at all — the failure mode the whole file exists to prevent.
+    const total = allFiles
+      .map((f) => [...readFileSync(f, "utf-8").matchAll(CTA_APP_HREF)].length)
+      .reduce((a, b) => a + b, 0);
+    expect(total).toBeGreaterThanOrEqual(20);
+  });
+});
