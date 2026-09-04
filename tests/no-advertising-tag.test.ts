@@ -259,18 +259,40 @@ describe("no built page ships an advertising tag (landing#481)", () => {
     ).toEqual([]);
   });
 
-  it("our own /connectors/google-analytics page does not trip any marker (negative control)", () => {
-    // The false positive this file was designed around. `google-analytics` as a
-    // bare substring is on 8 built pages, all of them our own catalogue URLs. If
-    // a future marker is loosened to a hostname, this fails first.
-    const file = resolve(DIST, "connectors/google-analytics/index.html");
-    expect(existsSync(file), "the google-analytics connector page is missing from dist/").toBe(true);
-    const html = readFileSync(file, "utf-8");
-    expect(html, "control is vacuous if the page stopped naming the connector").toContain(
-      "google-analytics",
-    );
-    const hits = AD_MARKERS.filter((m) => m.re.test(html)).map((m) => m.name);
-    expect(hits, `a marker is matching our own connector copy: ${hits.join(", ")}`).toEqual([]);
+  it("no marker matches our own catalogue references (false-positive control)", () => {
+    // The false positive this file was designed around: `google-analytics` as a
+    // bare substring is on 8 built pages and every one of them is our own
+    // /connectors/google-analytics URL. A marker loosened to a hostname would
+    // fail on correct copy, and a guard that cries wolf gets deleted rather than
+    // narrowed.
+    //
+    // ⚠️ Scoped to the REFERENCES, not to the pages containing them. An earlier
+    // version read the whole built page, which meant it also went red whenever
+    // the site genuinely shipped a tag — proven by the mutation harness, where it
+    // failed alongside the real violations. That made "a marker is over-broad"
+    // indistinguishable from "there is a real tag here", which is the one
+    // distinction this control exists to draw.
+    const NAMES = ["google-analytics", "google-ads", "facebook-ads"];
+    const windows: string[] = [];
+    for (const html of read.values()) {
+      for (const name of NAMES) {
+        for (const m of html.matchAll(new RegExp(`.{0,60}${name}.{0,60}`, "g"))) {
+          windows.push(m[0]);
+        }
+      }
+    }
+    expect(
+      windows.length,
+      "no catalogue reference was extracted — the control would pass on anything",
+    ).toBeGreaterThan(10);
+    const hits = new Set<string>();
+    for (const w of windows) {
+      for (const marker of AD_MARKERS) if (marker.re.test(w)) hits.add(`${marker.name} <- ${w}`);
+    }
+    expect(
+      [...hits],
+      `a marker is matching our own connector copy:\n${[...hits].join("\n")}`,
+    ).toEqual([]);
   });
 });
 
