@@ -41,9 +41,9 @@ HubSpot is the most common marketing + CRM source our users sync into their ware
 2. Fill in:
    - **Connection Name** — a label for this connection, e.g. `hubspot-crm`.
    - **API Key (optional)** — the private app access token from Step 1. Stored encrypted.
-3. Click **Test Connection** (an HTTP-API source returns *"Test not applicable for this type"*), then **Create Connection**.
+3. Click **Test Connection** — it really calls the HubSpot API — then **Create Connection**.
 
-> **Credentials are validated on the first run.** HubSpot is an HTTP-API source, so the **Test Connection** button reports *"Test not applicable for this type"* — the token is validated for real when the first pipeline runs.
+> **Test Connection really checks this credential.** Clicking it sends one authenticated request to the HubSpot API (it reads a single contact). A revoked, mistyped or suspended credential comes back **red**, naming the status HubSpot returned — it is no longer styled as a pass. What it does not check is **scope**: a credential that passes here can still lack access to the specific objects and properties you name on the upload, and that surfaces on the first run.
 
 ![Adding HubSpot in Datanika](/docs/connectors/hubspot/02-add-connection.png)
 

@@ -54,7 +54,7 @@ Google Analytics is the highest-volume marketing source our users sync — landi
    - **Service Account JSON (optional)** — paste the entire contents of the JSON key file from Step 1. Stored encrypted at rest with Fernet.
 4. Click **Create Connection**.
 
-> **Test Connection for Google Analytics.** The **Test Connection** button is present, but because GA4 is an HTTP-API source it returns *"Test not applicable for this type"* — the credential is validated on the first pipeline run. If the service account lacks Viewer access, the run fails immediately with a clear permission error.
+> ⚠️ **Test Connection does not check this connection, and it will tell you so.** The credential is a service-account JSON that has to be exchanged for an OAuth token before anything can be called, and the **property grant is separate from the key being valid**. The button returns a neutral **not tested** verdict carrying that reason — deliberately neither green nor red, because reporting an unverified connection as working and reporting it as failed are the same lie told in opposite directions. **The first real verification is the first pipeline run** — and if the service account lacks Viewer access on the property, that run fails immediately with a clear permission error.
 
 ![Adding the Google Analytics connection in Datanika](/docs/connectors/google-analytics/02-add-connection.png)
 

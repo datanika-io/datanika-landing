@@ -58,7 +58,7 @@ Create a **dedicated service account** rather than reusing a personal account or
 
 ![Adding BigQuery as a destination in Datanika](/docs/connectors/bigquery/02-add-connection.png)
 
-> **Test connection works for BigQuery.** Unlike HTTP-API sources (Stripe, GitHub), BigQuery exposes a SQL interface that Datanika can validate immediately. If Test fails, jump to [Troubleshooting](#troubleshooting).
+> **Test Connection really validates BigQuery.** BigQuery exposes a SQL interface, so Datanika opens a connection with the service-account credentials you gave and runs a query against it — a bad key, or a project it cannot reach, comes back **red** immediately rather than on the first run. If Test fails, jump to [Troubleshooting](#troubleshooting).
 
 ## Step 3 — Use BigQuery as a destination
 

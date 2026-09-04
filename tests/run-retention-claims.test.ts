@@ -32,6 +32,7 @@
 import { describe, it, expect } from "vitest";
 import { readdirSync, readFileSync, statSync, existsSync } from "fs";
 import { resolve, extname, relative } from "path";
+import { inlineText, RENDERINGS, BLOCK_SEPARATED } from "./helpers/rendered-text";
 
 const ROOT = resolve(__dirname, "..");
 const DIST = resolve(ROOT, "dist");
@@ -42,6 +43,29 @@ const SWEEP_TOKENS = [/\bpurge_old_runs\b/, /\bMAINTENANCE_RUN_RETENTION_DAYS\b/
 /** The dated correction that must accompany them. */
 const REMOVAL_NOTE = /no longer exists/i;
 const REMOVAL_DATE = /removed from Datanika on 3 September 2026/i;
+
+/**
+ * A retention period stated as CURRENT policy. Hoisted to module scope for
+ * landing#505: it was declared twice inside two `it()` bodies, so the pattern the
+ * sweep used and the pattern the "guards a dead regex" control exercised were
+ * two separate objects that only happened to be identical. Editing one would
+ * have left the other asserting the old shape while still reporting green.
+ */
+const CURRENT_CLAIM =
+  /run (?:history|logs|records)[^.<]{0,40}(?:are|is) (?:purged|deleted|removed)[^.<]{0,30}\b\d+ days/i;
+
+/**
+ * Does this page present a retention period as current policy, read the way a
+ * reader reads it?
+ *
+ * Module-level so the sweep and its arming controls exercise the **same
+ * function**. A control that re-applies `CURRENT_CLAIM` beside the sweep proves
+ * the pattern works and says nothing about whether the sweep still calls
+ * `inlineText` — so dropping that call would leave the control green.
+ */
+function claimsCurrentRetention(html: string): boolean {
+  return CURRENT_CLAIM.test(html) || CURRENT_CLAIM.test(inlineText(html));
+}
 
 /** What the legal pages say, and must keep saying, or this guard is pointless. */
 const LEGAL_CLAIM = /do not currently run a time-based purge of run logs/i;
@@ -109,20 +133,51 @@ describe("run-retention claims agree across the whole build (#475)", () => {
     // The forward-looking half: the legal pages own this claim, so a page saying
     // run history *is* purged after N days contradicts them outright. Scoped to
     // the affirmative present tense so the corrected historical text passes.
-    const CURRENT_CLAIM = /run (?:history|logs|records)[^.<]{0,40}(?:are|is) (?:purged|deleted|removed)[^.<]{0,30}\b\d+ days/i;
+    //
+    // 🚨 Read through `inlineText`, not off the raw bytes — landing#505. The
+    // pattern's `[^.<]` bridges cannot cross a tag, so `Run history is
+    // **purged** after 90 days.` matched nothing. Measured by appending exactly
+    // that to a real post and rebuilding: this file stayed at `7 passed`, while
+    // the same claim in plain prose (`purged after 45 days`) failed it.
     const violations = [...read.entries()]
-      .filter(([, html]) => CURRENT_CLAIM.test(html))
+      .filter(([, html]) => claimsCurrentRetention(html))
       .map(([f]) => relative(ROOT, f));
     expect(violations, `present-tense retention claim found:\n${violations.join("\n")}`).toEqual([]);
   });
 
   it("the present-tense pattern matches a real example (guards a dead regex)", () => {
-    const CURRENT_CLAIM = /run (?:history|logs|records)[^.<]{0,40}(?:are|is) (?:purged|deleted|removed)[^.<]{0,30}\b\d+ days/i;
     expect(CURRENT_CLAIM.test("Run history is purged after 90 days.")).toBe(true);
     expect(CURRENT_CLAIM.test("run logs are deleted automatically after 30 days")).toBe(true);
     // And must NOT fire on the corrected, historical framing.
     expect(
       CURRENT_CLAIM.test("Run history is now kept for as long as the organization exists"),
     ).toBe(false);
+  });
+
+  it("claimsCurrentRetention() survives the RENDERER, not just the raw sample", () => {
+    // 🚨 This control exists because the raw-sample control above passed while
+    // the dist-side assertion could not fire. A guard's self-test has to
+    // exercise the shape the assertion actually meets: markdown goes through the
+    // renderer before it reaches a reader, and one `**bold**` anywhere inside
+    // the claim splits it. Measured on the real build (landing#505): appending
+    // `Run history is **purged** after 90 days.` to a real post left this file
+    // at `7 passed`, while `purged after 45 days` in plain prose failed it.
+    const missed = RENDERINGS.filter(
+      (r) => !claimsCurrentRetention(r.wrap("Run history is purged after 90 days.")),
+    ).map((r) => r.how);
+    expect(
+      missed,
+      "A present-tense retention claim rendered this way is invisible to the sweep above — " +
+        `the exact defect landing#505 measured.\nMissed: ${missed.join(", ")}`,
+    ).toEqual([]);
+  });
+
+  it("claimsCurrentRetention() does not fire across a block boundary (false-positive control)", () => {
+    const fired = BLOCK_SEPARATED.map((wrap) => wrap("Run history is purged after 90 days"))
+      .filter((h) => claimsCurrentRetention(h))
+      .map((h) => h.slice(0, 70));
+    expect(fired, `block-separated text must not read as one claim:\n${fired.join("\n")}`).toEqual(
+      [],
+    );
   });
 });

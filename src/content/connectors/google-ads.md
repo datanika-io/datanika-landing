@@ -69,7 +69,7 @@ Datanika authenticates as **you**, using a standard OAuth user credential — no
    - **Manager (MCC) customer ID** — *optional*. Fill this in only when the Google account you authorized is a manager account reading a child account. Leave it empty when the OAuth user has direct access to the customer ID above.
 4. Click **Create Connection**. The three secret fields are stored encrypted at rest with Fernet.
 
-> **Credentials are validated on the first run.** Google Ads is an HTTP-API source, so **Test Connection** reports *"Test not applicable for this type"*. Access, token level and OAuth scope are all checked when the first pipeline runs — that run is the real test.
+> ⚠️ **Test Connection does not check this connection, and it will tell you so.** Google Ads authentication needs a developer token **plus** an OAuth refresh exchange, so a probe here would duplicate the token-minting code that lives with the Google Ads source. The button returns a neutral **not tested** verdict carrying that reason — deliberately neither green nor red, because reporting an unverified connection as working and reporting it as failed are the same lie told in opposite directions. **The first real verification is the first pipeline run** — access, token level and OAuth scope are all checked there.
 
 ![Adding Google Ads in Datanika](/docs/connectors/google-ads/02-add-connection.png)
 

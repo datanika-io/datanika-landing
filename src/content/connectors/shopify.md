@@ -41,9 +41,9 @@ Shopify is the go-to e-commerce source for teams building revenue analytics, inv
    - **Connection Name** — a label for this connection, e.g. `shopify-store`.
    - **API Key (optional)** — the Admin API access token from Step 1. Stored encrypted.
    - **Store Name** — your Shopify store subdomain (e.g. `my-store` from `my-store.myshopify.com`). Just the subdomain, not the full URL.
-3. Click **Test Connection** (an HTTP-API source returns *"Test not applicable for this type"*), then **Create Connection**.
+3. Click **Test Connection** — it really calls the Shopify Admin API — then **Create Connection**.
 
-> **Credentials are validated on the first run, and `Test Connection` cannot tell you otherwise.** Shopify is an HTTP-API source, so the button reports *"Test not applicable for this type"* — **in the same green as a pass**, having sent no request to Shopify at all. A revoked token, a typo, and a store that does not exist all produce that identical green line; verified here against a deliberately invalid token on 2026-08-31. Read it as *"not tested"*, never as *"tested OK"* — the first run is the first real check.
+> **Test Connection really checks this credential.** Clicking it sends one authenticated request to the Shopify Admin API (it reads the shop record for the store you named). A revoked, mistyped or suspended token comes back **red**, naming the status Shopify returned — it is no longer styled as a pass. What it does not check is **scope**: a token that passes here can still lack the access scopes that the resources you name on the upload require, and that surfaces on the first run.
 
 ![Adding Shopify in Datanika](/docs/connectors/shopify/02-add-connection.png)
 

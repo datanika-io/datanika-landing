@@ -44,7 +44,7 @@ Every Freshdesk agent has a personal API key. Authentication is HTTP Basic: the 
    - **API Key** — paste the key from Step 1. (The field is labelled *API Key (optional)*, but Freshdesk needs it.) Stored encrypted at rest with Fernet.
 4. Click **Create Connection**.
 
-> **Test Connection doesn't apply here.** Freshdesk is an HTTP-API source; clicking **Test Connection** shows *"Test not applicable for this type."* The credential is validated on the first run instead.
+> **Test Connection really checks this credential.** Clicking it sends one authenticated request to the Freshdesk API (it reads your own agent record). A revoked, mistyped or suspended credential comes back **red**, naming the status Freshdesk returned — it is no longer styled as a pass. What it does not check is **scope**: a credential that passes here can still lack access to the specific tickets or contacts you name on the upload, and that surfaces on the first run.
 
 ![Adding Freshdesk in Datanika](/docs/connectors/freshdesk/02-add-connection.png)
 

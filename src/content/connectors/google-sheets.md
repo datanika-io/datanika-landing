@@ -58,9 +58,9 @@ Repeat for every spreadsheet you want to sync with this connection.
    - **Connection Name** — a label you'll recognize, e.g. `gsheets-marketing-budget` or `gsheets-ops-tracker`.
    - **Spreadsheet URL** — paste the **full** spreadsheet URL (e.g. `https://docs.google.com/spreadsheets/d/<ID>/edit`), not just the ID.
    - **Service Account JSON** — paste the full contents of the JSON key file from Step 1. Stored encrypted at rest with Fernet.
-4. Click **Test Connection** (an HTTP-API source returns *"Test not applicable for this type"*), then **Create Connection**.
+4. Click **Test Connection** — it returns a neutral **not tested** verdict here, for the reason below — then **Create Connection**.
 
-> **Credentials are validated on the first run.** Google Sheets is an HTTP-API source, so the **Test Connection** button reports *"Test not applicable for this type"* — the credential and sharing permission are validated when the first pipeline runs.
+> ⚠️ **Test Connection does not check this connection, and it will tell you so.** The credential is a service-account JSON, and verifying it means minting an OAuth token. The step that usually fails — **sharing the spreadsheet with the service-account email** — is checked per upload, not per connection. The button returns a neutral **not tested** verdict carrying that reason — deliberately neither green nor red, because reporting an unverified connection as working and reporting it as failed are the same lie told in opposite directions. **The first real verification is the first pipeline run** — where both the credential and the sharing permission are checked for real.
 
 ![Adding Google Sheets in Datanika](/docs/connectors/google-sheets/02-add-connection.png)
 

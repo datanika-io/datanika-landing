@@ -56,7 +56,7 @@ Some public APIs (government data, open datasets) require no authentication at a
    - **Base URL** — the root URL all endpoints share, e.g. `https://api.example.com/v1`. Include the protocol and version prefix if applicable.
    - **API Key (optional)** — a bearer / API-key token, sent on the `Authorization` header. Leave blank for unauthenticated APIs. Stored encrypted at rest with Fernet.
    - **Extra Headers (optional, JSON)** — any additional request headers as a JSON object, e.g. `{"X-Custom-Header": "value"}`. Use this for API-key-in-custom-header schemes or extra auth headers.
-4. Click **Test Connection** (an HTTP-API source returns *"Test not applicable for this type"*), then **Create Connection**.
+4. Click **Test Connection** — it returns a neutral **not tested** verdict here, for the reason below — then **Create Connection**.
 
 > **The structured form is intentionally minimal.** It ships **three** fields — **Base URL**, **API Key (optional)**, and **Extra Headers (optional, JSON)** — not a per-auth-type builder. Bearer / API-key auth goes in **API Key**; anything more exotic (basic auth, custom header names, query-param keys) goes in **Extra Headers** as JSON, or use the **Use raw JSON config** escape hatch. Credentials are validated on the first pipeline run.
 

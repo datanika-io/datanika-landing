@@ -45,7 +45,7 @@ A personal access token (PAT) authenticates as you and can read everything your 
 
 > **All accessible workspaces sync.** There's no workspace field — Datanika syncs every workspace the token can reach. To scope the sync, use a token from a user with access to only the workspaces you want.
 >
-> **Test Connection doesn't apply here.** Asana is an HTTP-API source; clicking **Test Connection** shows *"Test not applicable for this type."* The credential is validated on the first run instead.
+> **Test Connection really checks this credential.** Clicking it sends one authenticated request to the Asana API (it reads your own user record). A revoked, mistyped or suspended credential comes back **red**, naming the status Asana returned — it is no longer styled as a pass. What it does not check is **scope**: a credential that passes here can still lack access to the specific workspace or project you name on the upload, and that surfaces on the first run.
 
 ![Adding Asana in Datanika](/docs/connectors/asana/02-add-connection.png)
 
