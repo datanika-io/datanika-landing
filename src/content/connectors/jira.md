@@ -43,9 +43,9 @@ Atlassian API tokens authenticate as your user account with the same permissions
    - **Jira Domain** — just the subdomain, **not** the full URL. If your Jira is at `yourcompany.atlassian.net`, enter `yourcompany`.
    - **Email** — the email associated with the Atlassian account that owns the API token.
    - **API Key (optional)** — paste the API token from Step 1. Stored encrypted at rest with Fernet.
-4. Click **Test Connection** (an HTTP-API source returns *"Test not applicable for this type"*), then **Create Connection**.
+4. Click **Test Connection** — it really calls the Jira API — then **Create Connection**.
 
-> **Credentials are validated on the first run.** Jira is an HTTP-API source, so the **Test Connection** button reports *"Test not applicable for this type"* — the domain/email/token are validated for real when the first pipeline runs.
+> **Test Connection really checks this credential.** Clicking it sends one authenticated request to the Jira API (it reads your own user record via `/rest/api/3/myself`). A revoked, mistyped or suspended credential comes back **red**, naming the status Jira returned — it is no longer styled as a pass. What it does not check is **scope**: a credential that passes here can still lack access to the specific project or issues you name on the upload, and that surfaces on the first run.
 
 ![Adding the Jira connection in Datanika](/docs/connectors/jira/02-add-connection.png)
 

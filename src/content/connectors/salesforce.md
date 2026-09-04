@@ -61,7 +61,7 @@ Salesforce uses OAuth 2.0 for API access. The simplest path for server-to-server
    - **Instance URL** — your Salesforce instance URL, e.g. `https://yourcompany.my.salesforce.com`.
 4. Click **Create Connection**.
 
-> **Test Connection for Salesforce.** The **Test Connection** button is present, but because Salesforce is an HTTP-API source it returns *"Test not applicable for this type"* — the token is validated for real on the first pipeline run, not at save time. If it's expired or invalid, the run fails immediately with a clear Salesforce API error.
+> **Test Connection really checks this credential.** Clicking it sends one authenticated request to the Salesforce API (it reads your org limits from the instance URL you gave). A revoked, mistyped or suspended credential comes back **red**, naming the status Salesforce returned — it is no longer styled as a pass. What it does not check is **scope**: a credential that passes here can still lack access to the specific objects and fields you name on the upload, and that surfaces on the first run.
 
 ![Adding the Salesforce connection in Datanika](/docs/connectors/salesforce/02-add-connection.png)
 

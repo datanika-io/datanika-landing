@@ -46,9 +46,9 @@ Personal access tokens (PATs) replaced the legacy API key in 2024. They're scope
    - **Connection Name** — a label you'll recognize, e.g. `airtable-crm` or `airtable-content-calendar`.
    - **API Key (optional)** — paste the Airtable personal access token from Step 1 (`pat…`). Stored encrypted at rest with Fernet.
    - **Base ID** — the `app…` string from the Airtable URL of the base you want to sync.
-4. Click **Test Connection** (an HTTP-API source returns *"Test not applicable for this type"*), then **Create Connection**.
+4. Click **Test Connection** — it really calls the Airtable API — then **Create Connection**.
 
-> **Credentials are validated on the first run.** Airtable is an HTTP-API source, so the **Test Connection** button reports *"Test not applicable for this type"* — the PAT is validated for real when the first pipeline runs.
+> **Test Connection really checks this credential.** Clicking it sends one authenticated request to the Airtable API (it calls `whoami` on the metadata endpoint). A revoked, mistyped or suspended credential comes back **red**, naming the status Airtable returned — it is no longer styled as a pass. What it does not check is **scope**: a credential that passes here can still lack access to the specific base or table you name on the upload, and that surfaces on the first run.
 
 ![Adding the Airtable connection in Datanika](/docs/connectors/airtable/02-add-connection.png)
 

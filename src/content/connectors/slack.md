@@ -55,9 +55,9 @@ The bot automatically sees all public channels. For private channels, you must e
 3. Fill in:
    - **Connection Name** — e.g. `slack-workspace` or `slack-eng-team`.
    - **API Key (optional)** — paste the `xoxb-…` bot token from Step 1. Stored encrypted at rest with Fernet.
-4. Click **Test Connection** (an HTTP-API source returns *"Test not applicable for this type"*), then **Create Connection**.
+4. Click **Test Connection** — it really calls the Slack API — then **Create Connection**.
 
-> **Credentials are validated on the first run.** Slack is an HTTP-API source, so the **Test Connection** button reports *"Test not applicable for this type"* — the token is validated for real when the first pipeline runs.
+> **Test Connection really checks this credential.** Clicking it sends one authenticated request to the Slack API (it calls `auth.test`). A revoked, mistyped or suspended credential comes back **red**, naming the status Slack returned — it is no longer styled as a pass. What it does not check is **scope**: a credential that passes here can still lack access to the specific channels you name on the upload, and that surfaces on the first run.
 
 ![Adding the Slack connection in Datanika](/docs/connectors/slack/02-add-connection.png)
 

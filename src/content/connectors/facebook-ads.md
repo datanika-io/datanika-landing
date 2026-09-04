@@ -49,9 +49,9 @@ Facebook's Marketing API uses access tokens scoped to specific ad accounts and p
    - **Connection Name** — e.g. `facebook-ads-prod` or `meta-ads-acme`.
    - **Access Token** — paste the Marketing API system-user token from Step 1. Stored encrypted at rest with Fernet.
    - **Ad Account ID** — your ad account ID, e.g. `act_1234567890`.
-4. Click **Test Connection** (an HTTP-API source returns *"Test not applicable for this type"*), then **Create Connection**.
+4. Click **Test Connection** — it really calls the Facebook Graph API — then **Create Connection**.
 
-> **Credentials are validated on the first run.** Facebook Ads is an HTTP-API source, so the **Test Connection** button reports *"Test not applicable for this type"* — the token and ad-account access are validated when the first pipeline runs.
+> **Test Connection really checks this credential.** Clicking it sends one authenticated request to the Facebook Graph API (it reads the authenticated user). A revoked, mistyped or suspended credential comes back **red**, naming the status Facebook returned — it is no longer styled as a pass. What it does not check is **scope**: a credential that passes here can still lack access to the specific ad account you name on the upload, and that surfaces on the first run.
 
 ![Adding Facebook Ads in Datanika](/docs/connectors/facebook-ads/02-add-connection.png)
 
