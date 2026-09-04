@@ -88,5 +88,5 @@ Would love to hear how others handle payment provider risk — especially if you
 ## Related
 
 - [How I Split Open-Source Core From Paid Cloud](/blog/open-core-plugin) — the plugin architecture that made this migration survivable
-- [My SaaS Runs on €12 a Month](/blog/saas-12-euros) — the full infrastructure cost (Paddle is $0 while pre-revenue)
+- [My SaaS Ran on €12 a Month (April 2026)](/blog/saas-12-euros) — the full infrastructure cost (Paddle is $0 while pre-revenue)
 - [Pricing](/pricing) — current plans on Paddle

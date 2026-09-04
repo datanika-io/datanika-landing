@@ -122,7 +122,7 @@ If the answers are "yes long-tail, yes Python, no warehouse isn't the biggest" �
 
 You can do everything in this post without us. `dlt` is on PyPI, `dbt-core` is on PyPI, DuckDB is on PyPI, Metabase ships a Docker image. Nothing about "open-source ELT + an agent" requires buying anything from anyone.
 
-What Datanika is, honestly, is **the UI and orchestration layer that keeps the six-container Docker Compose from turning into Airflow**. We wrap `dlt` for extract, `dbt-core` for transform, APScheduler + Celery for scheduling, and add a multi-tenant Reflex UI so you can point-and-click the boring parts and let an agent drive the rest via our [Agent API](/ai-agents/). The core is open source under AGPL-3.0; the billing layer is a paid plugin. If self-hosting scares you, Pro is $79/mo. If it doesn't, the core runs on the same €12 VPS as everything else in this post.
+What Datanika is, honestly, is **the UI and orchestration layer that keeps the six-container Docker Compose from turning into Airflow**. We wrap `dlt` for extract, `dbt-core` for transform, APScheduler + Celery for scheduling, and add a multi-tenant Reflex UI so you can point-and-click the boring parts and let an agent drive the rest via our [Agent API](/ai-agents/). The core is open source under AGPL-3.0; the billing layer is a paid plugin. If self-hosting scares you, Pro is $79/mo. If it doesn't, the core runs on the same €12 VPS class as everything else in this post.
 
 We are not the cheapest thing on the table — `dlt` + `dbt-core` hand-rolled is. We are the cheapest thing with a UI and scheduling and notifications that an agent can talk to.
 
@@ -130,7 +130,7 @@ We are not the cheapest thing on the table — `dlt` + `dbt-core` hand-rolled is
 
 The modern data stack in 2024 was an unbundling story: one tool per layer, each one priced for the Fortune 500, all of them assuming you had a dedicated data team. The 2026 version is a rebundling story. `dlt` + `dbt-core` + one VPS + one agent collapses five vendor invoices into a Hetzner bill with a euro sign on it.
 
-None of this is theoretical. [This blog is published](/blog/saas-12-euros/) from a €12/mo stack. Our [Agent API](/ai-agents/) exists because we use agents to build pipelines on Datanika, not just because other people might. The stack in the table above is the stack we run.
+None of this is theoretical. We publish [our own infrastructure bill](/blog/saas-12-euros/), line by line, including what changed when we moved hosts. Our [Agent API](/ai-agents/) exists because we use agents to build pipelines on Datanika, not just because other people might.
 
 If the number on your current data-tools invoice has three commas in it and you haven't looked at this math in twelve months, look again. A lot changed while you weren't looking.
 

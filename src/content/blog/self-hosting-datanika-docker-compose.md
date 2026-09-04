@@ -143,6 +143,6 @@ If none of those matter to you, self-hosting isn't a downgrade — it's the same
 - **[Getting Started](/docs/getting-started/)** — your first source → destination → run.
 - **[Architecture](/docs/architecture/)** — how `dlt`, `dbt-core`, Celery, and Reflex fit together.
 - **[Browse all connectors](/connectors/)** — 30 sources and 9 destinations, all included, no plan gating.
-- **[The $12/mo stack](/blog/saas-12-euros/)** — the bill for running real software on one small VPS.
+- **[The €12/mo stack, as it stood in April 2026](/blog/saas-12-euros/)** — the bill for running real software on one small VPS.
 
 Clone it, run `docker compose up -d`, and you own your data pipeline stack end to end. Or if you'd rather we run it — [the managed free tier](https://app.datanika.io/) is one click and includes 10 GB/month.
