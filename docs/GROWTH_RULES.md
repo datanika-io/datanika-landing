@@ -567,3 +567,90 @@ the ejection the merge-queue runbook warns about. It had **merged**. **Settle it
 `git log origin/dev` and the file contents, never against the timeline or the PR JSON** — and note
 that acting on the wrong reading would mean re-pushing the branch, which a queued branch rejects
 anyway.
+
+## Guards, continued — the disclosure batch (2026-09-04)
+
+**Astro publishes template comments, so a guard reading the whole document can be satisfied by
+the tag it exists to demand a disclosure for.** `Layout.astro` wraps the Cloudflare beacon in
+`<!-- Cloudflare Web Analytics … -->`. A needle looking for that phrase to prove the legal pages
+disclose the beacon therefore matched **on all 101 layout pages**, including the pre-change ones —
+measured against the live `/privacy` and `/trust` before publishing, which is the only reason it
+was caught. The file even says so about itself, one block below the beacon. **Scope every claim
+assertion to `<main>`**, and note the general form: *the thing you are demanding a disclosure of is
+often present in the page as a token, and a token is not a disclosure.*
+
+**`<main>` is still too wide for a claim that lives in a list.** After the above fix, dropping
+*"cookie-free web analytics"* from the Cloudflare sub-processor row on `/trust`, and again on
+`/privacy`, left the guard **green both times** — satisfied by the same words in a Change log entry
+and a transfers clause, both written in the same commit. `SPEC_SUBPROCESSOR_REGISTER` G1 records the
+identical finding from the DPA annex (*"Resend"* appears five more times in prose). **Name the
+element that carries the claim** — a `<tr>`, an `<li>`, a numbered `<section>` — select it by
+content, and **assert the match count is exactly 1**: zero means the anchor rotted and the assertion
+was vacuous, two means a green tells you nothing about which. Taking `[0]` hides both.
+
+**The defences stack, and each is only visible once the previous is fixed.** Page → region →
+`(recipient, function)`. Product hit the third level the same day: a recipient with two entries
+supplies its own name to a name-matched assertion, so region-scoping does not save you when the
+duplicate is *inside* the region and legitimate. Do not stop at the first one that goes red.
+
+**An anchor that rots turns a guard vacuous rather than red, because `slice(at, -1)` takes the rest
+of the file.** `skips already-closed issues in the candidate list` anchored on `"\n    if not
+lines"`; a change made that condition multi-line, `indexOf` returned `-1`, and the assertion passed
+by matching a *different* loop further down. Green, measuring nothing. **Assert every `indexOf`
+anchor was found**, and add a negative control proving the slice is the region you meant and not a
+superset containing it. Same family as `grep -c` printing `0` for a failed command.
+
+**A guard that pins the old code goes red on the correct change — that is it working, not
+breaking.** Two assertions pinned `if not refs and not tracking:` verbatim and failed when the
+condition correctly gained a third clause. Identical in shape to the deploy step that asserted the
+Google Ads tag was **present**, where a correct removal would have failed every deploy. **Update
+deliberately; never widen to make the red go away.** And when one condition is spelled out in five
+places, put it in a constant — the drift is what made two of the five silently vacuous rather than
+loudly red.
+
+## Claims and evidence, continued
+
+**Re-reading is not re-deriving, and only one of them finds a false sentence.** The DPA annex was
+carefully derived on 2026-09-03 and read over several times. Re-deriving every row before
+publication — one day later — found `Annex III`'s footnote asserting *"Our website analytics are
+self-hosted"*: true of Plausible, false of the Cloudflare beacon, which that page loads like every
+other. **Before publishing a legal page, re-run each derivation rather than re-reading the
+conclusion.** The cost was about twenty minutes and the artifact was the one where being wrong is
+most expensive.
+
+**A derivation nobody in your lane can run is not a derivation.** The annex's Resend row cited
+`SMTP_HOST` in the running container, and Growth has no SSH to the app box. Replaced with
+`send.datanika.io` TXT → `v=spf1 include:amazonses.com ~all` plus a present `resend._domainkey`,
+which evidences the Amazon SES onward leg — the part the row actually claims. **Write the derivation
+the next reader can execute, not the one you happened to use.**
+
+**When a measurement is available, publish the number rather than the adjective.** A Change log
+entry saying a measurement *"had been running without being named here"* is true and vague in the
+direction that flatters us. It was **143 days** (`ab71c35`, 2026-04-14, the only commit that has
+ever introduced that origin). *"We did not name it"* and *"we did not name it for five months"*
+support different judgements, and only one of them is evidence.
+
+**Prove a negative with a positive control on the same bytes.** *"The beacon sets no cookies"* rests
+on `document.cookie` → 0, `localStorage` → 0, the string `cookie` in any case → 0 in a 30,294-byte
+file. Those zeros are equally consistent with having fetched an error page. The control is
+`function` → 56, `sendBeacon` → 3, `cfBeacon` → 3 in the same bytes.
+
+## Measuring your own tools, continued
+
+**Commit before you mutate, or the restore destroys your work.** The mutation loop
+`mutate → build → test → git restore --staged --worktree -- <path>` is correct **only if the file is
+committed**; run against uncommitted edits it restores to `HEAD` and silently discards them. It cost
+five re-applied edits on `dpa.astro`. The `sha256` check in the harness is what reported `DAMAGED`
+rather than a cheerful `RESTORED` — **make the harness assert the restore, not just perform it.**
+
+**`gh pr update-branch` being refused is confirmation the PR is queued, not a failure.** A PR reading
+`mergeStateStatus: BEHIND` with auto-merge armed **had already entered the queue**; the nudge came
+back *"Branches that are queued for merging cannot be updated."* `BEHIND` is not a reason to
+intervene on a queued repo — the queue rebases before testing. Read the queue with the GraphQL
+`mergeQueue(branch:"dev")` query before touching anything.
+
+**Structural facts about the build that will mislead the next person:** only **5 of the 101** pages
+carrying `Layout.astro` have a `<main>` element (68 of all 165 do — the docs pages have one and no
+beacon), and the beacon is on **101 of 165**, not all of them. A `<main>`-scoped guard therefore
+covers far fewer pages than the page count suggests, and an anti-vacuity control has to be picked
+from a very short list.
