@@ -31,12 +31,49 @@ import { describe, it, expect } from "vitest";
 import { readdirSync, readFileSync, statSync, existsSync } from "fs";
 import { resolve, extname, relative } from "path";
 import { availableConnectors } from "../src/data/connectors";
+import { inlineText, RENDERINGS, BLOCK_SEPARATED } from "./helpers/rendered-text";
 
 const ROOT = resolve(__dirname, "..");
 const DIST = resolve(ROOT, "dist");
 
 /** Same shape as the source suite's COUNT_RE, applied to rendered HTML. */
 const RENDERED_RE = /(?<![\w.$+,])(\d{1,4}) connectors?\b/gi;
+
+/**
+ * 🚨 The scan runs over `inlineText(html)`, not over the raw bytes — landing#505.
+ *
+ * `RENDERED_RE` needs a literal space between the digits and the word, so
+ * `<strong>47</strong> connectors` matched **nothing**. Measured by mutating a
+ * real post and rebuilding: `We now ship **47** connectors in total.` left this
+ * file at `4 passed`, while the identical claim in plain prose
+ * (`We now ship 48 connectors in total.`) failed it. One pair of asterisks.
+ *
+ * 🔑 And there was no defence in depth. This file exists *because*
+ * `connector-count-prose.test.ts` cannot see rendered output — but it uses the
+ * same regex, and `**47** connectors` breaks digit-space adjacency in markdown
+ * source too. The same mutation walked past both guards.
+ *
+ * The raw pass is kept as well: it costs nothing, and a phrase that is contiguous
+ * in the raw bytes is contiguous after `inlineText` too, so the two agree except
+ * where the markup is the whole point.
+ */
+
+/**
+ * Every catalogue-count claim on a page, read both ways.
+ *
+ * Module-level on purpose: the sweep below and the arming controls at the bottom
+ * must exercise **this function**, not two regexes that happen to be identical.
+ * A control written beside the assertion rather than through it proves the
+ * pattern works and says nothing about whether the assertion still calls it —
+ * which is how a fix gets reverted under a green control.
+ */
+export function countClaimsOn(html: string): string[] {
+  const out = new Set<string>();
+  for (const hay of [html, inlineText(html)]) {
+    for (const m of hay.matchAll(RENDERED_RE)) out.add(m[0]);
+  }
+  return [...out];
+}
 
 /**
  * Below this, "<N> connectors" is a subset count or a stray hit, not a claim
@@ -116,13 +153,12 @@ describe("no BUILT page publishes a connector count other than the marketed one 
 
     for (const full of pages) {
       const rel = relative(DIST, full).split("\\").join("/");
-      const html = readFileSync(full, "utf-8");
-      for (const m of html.matchAll(RENDERED_RE)) {
-        const n = Number(m[1]);
+      for (const claim of countClaimsOn(readFileSync(full, "utf-8"))) {
+        const n = Number(claim.match(/\d+/)![0]);
         if (n === expected) continue;
         if (n < MIN_CATALOGUE_CLAIM) continue;
-        if (DIST_ALLOWED.some((a) => a.file === rel && a.text === m[0])) continue;
-        violations.push(`dist/${rel} renders "${m[0]}" but the marketed count is ${expected}`);
+        if (DIST_ALLOWED.some((a) => a.file === rel && a.text === claim)) continue;
+        violations.push(`dist/${rel} renders "${claim}" but the marketed count is ${expected}`);
       }
     }
 
@@ -142,5 +178,44 @@ describe("no BUILT page publishes a connector count other than the marketed one 
       return !readFileSync(f, "utf-8").includes(a.text);
     });
     expect(stale, `Stale DIST_ALLOWED: ${JSON.stringify(stale)}`).toEqual([]);
+  });
+
+  // -------------------------------------------------------------------------
+  // landing#505 — the assertion above is only worth its runtime if it survives
+  // the RENDERER. These two arm it in-suite, against shapes copied out of a real
+  // build, so the discrimination is re-proved on every run rather than asserted
+  // from a session that measured it once.
+  // -------------------------------------------------------------------------
+
+  it("countClaimsOn() sees a wrong count in every rendering it could arrive in", () => {
+    // Runs through `countClaimsOn`, which is what the sweep above calls. A
+    // control that re-applied RENDERED_RE beside the sweep would keep passing
+    // if someone dropped the inlineText pass from the sweep itself.
+    //
+    // The exact payload that walked past this file AND past
+    // connector-count-prose.test.ts before landing#505: `**47** connectors`.
+    const missed = RENDERINGS.filter(
+      (r) => !countClaimsOn(r.wrap("We now ship 47 connectors in total.")).includes("47 connectors"),
+    ).map((r) => r.how);
+    expect(
+      missed,
+      "A wrong connector count rendered this way is invisible to the sweep above. Measured, " +
+        "not hypothetical: `**47** connectors` passed this file and the source suite both, " +
+        `because each requires the digits and the word to be adjacent.\nMissed: ${missed.join(", ")}`,
+    ).toEqual([]);
+  });
+
+  it("countClaimsOn() does NOT invent a count across a block boundary (false-positive control)", () => {
+    // The other half, and the reason `inlineText` strips inline tags only. A
+    // blanket tag strip turns `<td>47</td><td>connectors</td>` into a violation
+    // that does not exist, and a guard that invents failures gets loosened until
+    // it stops working.
+    const fired = BLOCK_SEPARATED.map((wrap) => wrap("47 connectors sold"))
+      .filter((h) => countClaimsOn(h).length > 0)
+      .map((h) => h.slice(0, 70));
+    expect(
+      fired,
+      `These are two separate cells, not a claim. inlineText must not glue them:\n${fired.join("\n")}`,
+    ).toEqual([]);
   });
 });
