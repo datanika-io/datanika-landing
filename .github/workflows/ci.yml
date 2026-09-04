@@ -80,3 +80,14 @@ jobs:
       # being defended against.
       - name: URL correspondence tests
         run: bash scripts/test-url-correspondence.sh
+
+      # landing#504. The pre-push hook decides whether a push gets the gate at
+      # all, so a defect in it is invisible to every other check here — the
+      # post-promotion resync was refused by a build of an unrelated working
+      # tree and `dev` silently stayed behind `main`. Third instance of one
+      # defect (core#556, cloud#131). Bash driven by git, so vitest cannot reach
+      # it. The harness stubs npm and asserts the stub is intercepting before
+      # trusting any "skipped" result, and case 7 mutates the real hook to prove
+      # the harness can still see the bug.
+      - name: Pre-push refspec-guard tests
+        run: bash scripts/test-pre-push-guard.sh

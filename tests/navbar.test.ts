@@ -49,3 +49,34 @@ describe("navbar links", () => {
     expect(html).toContain('href="/blog"');
   });
 });
+
+describe("navbar app entry points — two doors, not one", () => {
+  // Before 2026-09-05 the nav's only app link was the "Get Started" button
+  // pointing at https://app.datanika.io, which for a signed-out visitor
+  // resolves to /login. That single link had to serve both audiences and
+  // served the wrong page to the one it was written for: a prospect got a
+  // sign-in wall, and a returning user had no sign-in link anywhere on the
+  // marketing site.
+  let html: string;
+  beforeAll(() => {
+    html = readHtml("index.html");
+  });
+
+  it("offers a Sign in link pointing at /login", () => {
+    expect(html).toContain('href="https://app.datanika.io/login"');
+    expect(html).toMatch(/Sign in/);
+  });
+
+  it("points Get Started at /signup, not the authenticated app root", () => {
+    expect(html).toContain('href="https://app.datanika.io/signup"');
+  });
+
+  it("renders both doors on desktop and on mobile", () => {
+    // The mobile menu is a separate block in Navbar.astro; a fix applied to
+    // only one of them is the shape of defect this catches.
+    const logins = html.split('href="https://app.datanika.io/login"').length - 1;
+    const signups = html.split('href="https://app.datanika.io/signup"').length - 1;
+    expect(logins).toBeGreaterThanOrEqual(2);
+    expect(signups).toBeGreaterThanOrEqual(2);
+  });
+});

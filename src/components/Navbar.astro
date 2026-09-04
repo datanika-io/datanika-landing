@@ -32,9 +32,24 @@ const links = [
       ))}
     </div>
 
-    <ConversionCTA href="https://app.datanika.io" class="btn-primary hidden text-sm md:inline-block">
-      Get Started
-    </ConversionCTA>
+    <!--
+      Two doors, deliberately. Before this the only app link in the nav was the
+      "Get Started" button pointing at the app ROOT, which for a signed-out
+      visitor resolves to /login — so a prospect was shown a sign-in wall and a
+      returning user had no sign-in link at all. Both audiences now get the page
+      they asked for, and neither destination has to be guessed by the app.
+    -->
+    <div class="hidden items-center gap-4 md:flex">
+      <a
+        href="https://app.datanika.io/login"
+        class="text-sm text-slate-400 transition-colors hover:text-white"
+      >
+        Sign in
+      </a>
+      <ConversionCTA href="https://app.datanika.io/signup" class="btn-primary text-sm">
+        Get Started
+      </ConversionCTA>
+    </div>
 
     <!-- Mobile menu button -->
     <button
@@ -58,7 +73,13 @@ const links = [
         {link.label}
       </a>
     ))}
-    <ConversionCTA href="https://app.datanika.io" class="btn-primary mt-2 block text-center text-sm">
+    <a
+      href="https://app.datanika.io/login"
+      class="block py-2 text-sm text-slate-400 transition-colors hover:text-white"
+    >
+      Sign in
+    </a>
+    <ConversionCTA href="https://app.datanika.io/signup" class="btn-primary mt-2 block text-center text-sm">
       Get Started
     </ConversionCTA>
   </div>
