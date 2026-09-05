@@ -67,17 +67,36 @@ function exitAfterAlreadyTracked(): { line: number; code: string; text: string }
   return found;
 }
 
+/**
+ * How many jobs in this workflow can file an issue. Derived, not hardcoded:
+ * the invariant is "every issue-filing job carries both halves of the rule",
+ * and a third job (`coverage`, landing#508) proved that a literal `2` turns
+ * adding a job into a test edit rather than a check. Deriving keeps the
+ * assertion meaningful at any job count while still failing when a job is
+ * missing one half.
+ */
+const FILING_JOBS = (SOURCE.match(/gh issue create/g) ?? []).length;
+
 describe("connector-count-parity.yml — duplicate suppression is not a failure", () => {
-  it("finds both duplicate-suppression branches (positive control)", () => {
-    // Two jobs, two branches. If a rename makes this find zero, every assertion
-    // below passes vacuously — which is the failure mode the workflow itself
-    // just demonstrated in the other direction.
+  it("every issue-filing job has a duplicate-suppression branch (positive control)", () => {
+    // If a rename makes this find zero, every assertion below passes vacuously —
+    // which is the failure mode the workflow itself demonstrated in the other
+    // direction. The `>= 2` floor is what stops the derivation from collapsing.
+    expect(
+      FILING_JOBS,
+      `Found ${FILING_JOBS} \`gh issue create\` calls in ${WORKFLOW}. This file ` +
+        `exists because that workflow files issues; if it no longer does, delete ` +
+        `this suite deliberately rather than letting it pass over nothing.`,
+    ).toBeGreaterThanOrEqual(2);
+
     const hits = LINES.filter((l) => ALREADY_TRACKED.test(l));
     expect(
       hits.length,
-      `Expected 2 "not filing again" branches in ${WORKFLOW}, found ${hits.length}. ` +
-        `If the wording changed, update this matcher — do not delete the check.`,
-    ).toBe(2);
+      `Expected ${FILING_JOBS} "not filing again" branches in ${WORKFLOW} (one per ` +
+        `issue-filing job), found ${hits.length}. A job that files issues without ` +
+        `one is red for the lifetime of its issue. If the wording changed, update ` +
+        `this matcher — do not delete the check.`,
+    ).toBe(FILING_JOBS);
   });
 
   it("neither branch exits non-zero", () => {
@@ -98,8 +117,9 @@ describe("connector-count-parity.yml — duplicate suppression is not a failure"
     const createBlocks = SOURCE.match(/gh issue create[\s\S]{0,600}?exit 1/g) ?? [];
     expect(
       createBlocks.length,
-      "Expected both jobs to keep `exit 1` after `gh issue create` — that red " +
-        "means something changed today and is the signal worth having.",
-    ).toBe(2);
+      `Expected every issue-filing job (${FILING_JOBS}) to keep \`exit 1\` after ` +
+        "`gh issue create` — that red means something changed today and is the " +
+        "signal worth having.",
+    ).toBe(FILING_JOBS);
   });
 });

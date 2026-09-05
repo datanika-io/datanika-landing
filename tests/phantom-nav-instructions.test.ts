@@ -253,7 +253,11 @@ describe("the connector guides and their template name surfaces that exist", () 
     // An under-populated run must FAIL, not pass quietly. If the directory moves
     // or the glob stops matching, every it.each below silently becomes zero cases
     // and the suite still goes green — the failure mode this project keeps hitting.
-    expect(guides.length, `expected 36 connector guides in ${GUIDE_DIR}`).toBe(36);
+    // 37 since landing#508 added `openapi` — the connector that was pickable in
+    // the product while the site documented it nowhere. Bump this deliberately
+    // when a guide is added; it is a tripwire against the glob silently
+    // matching nothing, not a target.
+    expect(guides.length, `expected 37 connector guides in ${GUIDE_DIR}`).toBe(37);
   });
 
   const CASES = guides.flatMap((g) =>

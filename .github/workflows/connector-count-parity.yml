@@ -222,3 +222,91 @@ jobs:
             --title "Connector config field drift: connectors.ts does not match the shipped form" \
             --body-file /tmp/fields-issue.md
           exit 1
+
+  # The count and the field list were both drifts *within* the set of connectors
+  # the site already knows about. This job asks the question neither can:
+  # **is there a connector the site has never heard of at all?**
+  #
+  # `openapi` shipped as a full connector — its own form, a 591-line spec parser,
+  # Swagger 2.0 conversion, auth extraction, a `SAAS_PROBE_EXEMPT` entry — with no
+  # `connectors.ts` entry and no setup guide. Landing said 35, core said 35, and
+  # the two agreed, because core's number subtracts `UNMARKETED_TYPES` (which
+  # names `openapi`, justified as "has no connector page, setup guide, or docs
+  # entry") and landing's is taken over `connectors.ts` (which omits it). Three
+  # green guards, and none of them *could* have reported it: a denominator taken
+  # from the page set cannot show a missing page (landing#508).
+  #
+  # So this job's denominator is core's `PICKER_TYPES` — the literal dropdown a
+  # user chooses from — and it is compared against the union of what the site
+  # publishes. Separate job for the same reason as `config-fields`: a coverage
+  # gap and a count drift are different fixes with different owners, and one
+  # failing must not hide the other.
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Fetch core's connection-type picker
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # `master`, deliberately — the SHA prod runs, same reasoning as the
+          # config-fields job above.
+          gh api "repos/datanika-io/datanika-core/contents/datanika/ui/pages/connections.py?ref=master" \
+            --jq '.content' | base64 -d > /tmp/connections.py
+          test -s /tmp/connections.py
+
+      - name: Name any pickable connector the site does not document
+        id: check
+        run: |
+          set +e
+          python scripts/check-connector-coverage.py \
+            --picker /tmp/connections.py \
+            --connectors src/data/connectors.ts \
+            --guides src/content/connectors > /tmp/coverage.txt 2>&1
+          echo "rc=$?" >> "$GITHUB_OUTPUT"
+          cat /tmp/coverage.txt
+
+      - name: File an issue on a coverage gap
+        if: steps.check.outputs.rc != '0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          existing=$(gh issue list --state open --search "in:title Connector coverage gap" \
+            --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            # exit 0 — "nothing changed today" must not be red forever. See
+            # tests/parity-workflow-exit-codes.test.ts, which asserts this branch
+            # across every job in this file.
+            echo "Already tracked in #$existing; not filing again."
+            exit 0
+          fi
+
+          {
+            echo 'A connection type is selectable in the product and the site documents it nowhere — no `src/content/connectors/<slug>.md` and no `src/data/connectors.ts` entry.'
+            echo
+            echo '```'
+            cat /tmp/coverage.txt
+            echo '```'
+            echo
+            echo '**Do not resolve this by adding the type to an exclusion list.** Every exclusion marker for `openapi` justified itself by an absence the others created, which is how a shipping connector stayed invisible to three green guards (landing#508).'
+            echo
+            echo 'Write the setup guide first — it is a pure addition and moves no count. Adding the `connectors.ts` entry moves the marketed count, so it must land together with the matching core change (drop the type from `UNMARKETED_TYPES`, bump the README), or the count job here files drift the next morning.'
+            echo
+            echo 'Reproduce locally:'
+            echo
+            echo '```bash'
+            echo "gh api \"repos/datanika-io/datanika-core/contents/datanika/ui/pages/connections.py?ref=master\" \\"
+            echo "  --jq '.content' | base64 -d > /tmp/connections.py"
+            echo 'python scripts/check-connector-coverage.py \'
+            echo '  --picker /tmp/connections.py --connectors src/data/connectors.ts \'
+            echo '  --guides src/content/connectors'
+            echo '```'
+            echo
+            echo 'Filed automatically by `.github/workflows/connector-count-parity.yml`.'
+          } > /tmp/coverage-issue.md
+
+          gh issue create \
+            --title "Connector coverage gap: a pickable connector is documented nowhere" \
+            --body-file /tmp/coverage-issue.md
+          exit 1
