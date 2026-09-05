@@ -13,17 +13,45 @@ import { resolve, extname, relative } from "path";
  *    `check_seat_quota` raises `QuotaExceededError` at
  *    `len(memberships) >= seats_included` and never bills.
  * 2. 🚨 **"Additional seats $25/mo each — contact us to add them"** — my own
- *    replacement, and **also untrue**. `seats_included` is a **plan** column,
- *    shared by every org on that slug, and `Subscription` has no allowance column
- *    at all — the billing page's `sub.seats_included` is a view-model field
- *    filled from the plan, which is exactly what makes it look like one. So there
- *    is **no operator action** behind a contact request either: we cannot give one
- *    customer a bespoke seat count without a custom plan row. (cloud#150)
+ *    replacement, and **also untrue when it was written**. `seats_included` was a
+ *    **plan** column shared by every org on that slug, `Subscription` had no
+ *    allowance column at all, and the billing page's `sub.seats_included` was a
+ *    view-model field filled from the plan — which is exactly what made it look
+ *    like one. So there was **no operator action** behind a contact request
+ *    either: we could not give one customer a bespoke seat count without a custom
+ *    plan row.
  *
  * The second is the more instructive failure. It is the shape you reach for when
  * a claim is unfulfillable — *route it to a human* — and it fails **less
  * visibly** than the first: nobody discovers it until a real buyer asks and the
  * founder has nothing to do. A promise routed to a human is still a promise.
+ *
+ * ## ⚠️ Reason 2 has since HALF expired — the conclusion has not (landing#514)
+ *
+ * cloud#150 shipped the column that paragraph said did not exist. Verified on
+ * `datanika-cloud` `origin/dev`:
+ *
+ *   - `subscriptions.seats_purchased` — `Mapped[int | None]`, `models.py:231`,
+ *     documented as an **absolute** allowance rather than a delta.
+ *   - `BillingService._resolve_seat_allowance(session, org_id, plan)` prefers it
+ *     over `plan.seats_included`, and `check_seat_quota` calls it.
+ *
+ * So an operator **can** now grant one customer a bespoke seat count without a
+ * custom plan row. The "no operator action" half of reason 2 is dead.
+ *
+ * 🔑 **The decision does not move, and the reason it now rests on is this:** we
+ * publish no per-seat price because publishing one turns a seat into a
+ * **self-serve commercial term**, and there is no checkout behind it —
+ * `check_seat_quota` still *raises* rather than bills, and Paddle is never
+ * called. The grant is a deliberate, conversation-shaped act by an operator. A
+ * published price promises a transaction; what exists is a favour.
+ *
+ * This correction is filed rather than silently patched because the file itself
+ * warns that *"a rule whose reason has silently expired is the kind that gets
+ * deleted by the next person to ask why it exists"* — and it had started
+ * carrying one. A reader who checked reason 2, found `seats_purchased`, and
+ * concluded the whole guard was stale would have taken the still-valid reason
+ * below with it.
  *
  * ## Why seats are not simply "not billed yet"
  *
@@ -177,11 +205,13 @@ describe("no per-seat price is published — there is no purchase behind one (la
   it("publishes no per-seat price anywhere on our own pages", () => {
     expect(
       HITS,
-      `A per-seat price is published, and nothing can fulfil it. \`check_seat_quota\` ` +
-        `raises rather than bills, and \`seats_included\` is a PLAN column shared by ` +
-        `every org on the slug — so "contact us" is not a fix either, there is no ` +
-        `operator action behind it (cloud#150). Seats are deliberately not a metered ` +
-        `dimension (landing#396). Remove the price:\n` +
+      `A per-seat price is published, and no transaction can fulfil it. ` +
+        `\`check_seat_quota\` raises rather than bills and never calls Paddle. An ` +
+        `operator CAN grant a bespoke seat count per org since cloud#150 ` +
+        `(\`subscriptions.seats_purchased\`, read by \`_resolve_seat_allowance\`) — ` +
+        `but that is a deliberate act, not a checkout, and a published price ` +
+        `promises the checkout. Seats are deliberately not a metered dimension ` +
+        `(landing#396). Remove the price:\n` +
         HITS.map((h) => `  ${h.page}: "${h.price}" in "...${h.window}..."`).join("\n"),
     ).toEqual([]);
   });
