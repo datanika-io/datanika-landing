@@ -49,10 +49,24 @@ SLUG_ALIASES = {
     "rest-api": "rest_api",
 }
 
-# In the schema but deliberately not marketed on the site. `openapi` powers
-# user-supplied OpenAPI specs and has no connector page by design, which is why
-# the live picker offers 37 types against the README's 36.
-UNMARKETED = {"openapi"}
+# In the schema but deliberately not marketed on the site.
+#
+# 🔴 EMPTY since landing#519 (2026-09-07). It held `"openapi"`, justified as
+# *"has no connector page by design, which is why the live picker offers 37
+# types against the README's 36"* — and every clause of that was false or
+# self-inflicted by the time it was read: openapi now has a connector page and
+# a setup guide, "by design" described an omission nobody had decided, and the
+# README said 35, not 36.
+#
+# 🚨 That is the shape to watch, not the entry. Every exclusion marker for
+# openapi justified itself by an absence one of the OTHERS created — core's
+# cited the missing guide, this one cited the missing page, and the missing
+# page cited neither. Three guards, all green, all pointing at each other,
+# while a shipping connector stayed invisible to every count we publish
+# (landing#508). **Do not add an entry here whose reason is that some other
+# artifact is missing.** A skip earns its place by naming something that will
+# never exist, not something nobody has got round to.
+UNMARKETED: set[str] = set()
 
 
 def parse_schema(path: str) -> dict[str, list[str]]:
