@@ -40,7 +40,10 @@ export const tiers: PricingTier[] = [
       "1 team member",
       "5 connections",
       "2 schedules",
-      "500 model runs / month",
+      // ⚠️ The parenthetical is the whole disambiguation: `hard_cap_runs` is
+      // `t` on free and `f` on all four paid rows, and these bullets rendered
+      // identically. Derivation + guard: tests/free-tier-enforced-limits.test.ts.
+      "500 model runs / month (hard cap)",
       "All integrations",
       "Social login (Google, GitHub)",
       "Community support",
@@ -62,7 +65,7 @@ export const tiers: PricingTier[] = [
       "5 team members",
       "25 connections",
       "Unlimited schedules",
-      "15,000 model runs / month",
+      "15,000 model runs / month (fair use)",
       "All integrations",
       "Social login (Google, GitHub)",
       "Priority support",
@@ -86,7 +89,7 @@ export const tiers: PricingTier[] = [
       "10 team members included",
       "50 connections",
       "Unlimited schedules",
-      "50,000 model runs / month",
+      "50,000 model runs / month (fair use)",
       "SSO (SAML/OIDC)",
       // No compliance bullet here. The SOC 2 Type I claim was withdrawn on
       // 2026-08-30 (founder decision) and this component renders on BOTH the

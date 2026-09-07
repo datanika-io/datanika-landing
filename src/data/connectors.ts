@@ -750,6 +750,46 @@ export const connectors: Connector[] = [
     seoDescription: "Connect any REST API to your data warehouse with configurable endpoints, auth, and pagination. The universal connector for custom data sources. Start free.",
     seoH1: "REST API Connector",
   },
+  {
+    slug: "openapi",
+    name: "OpenAPI",
+    category: "SaaS & API",
+    direction: "source",
+    description:
+      "Paste an OpenAPI or Swagger spec and Datanika builds the connector from it — endpoints, authentication, pagination and column types all read out of the document.",
+    useCases: [
+      "Connect to a vendor API we have no dedicated connector for",
+      "Skip hand-writing endpoint config for an API that already describes itself",
+      "Pull from an internal service that publishes a spec",
+      "Pick a handful of endpoints out of a spec with hundreds",
+    ],
+    // ⚠️ Read off `connection_schemas.py["openapi"]` and held to an EXACT set
+    // match with it — `check-config-field-parity.py` reports ghosts AND
+    // omissions, and this entry is the first thing it has ever checked for
+    // this type (landing#519 emptied UNMARKETED).
+    //
+    // Two, not five: the parity parser models a config field as a **typed
+    // scalar** (`_str`/`_int`/`_bool`), so the schema's three raw-dict entries
+    // — `auth`, `headers`, `resources` — are outside it, as they are for every
+    // other connector. That is also the honest reader-facing answer: these two
+    // are what you fill in. `resources` is derived by the spec parser rather
+    // than typed, and the other two are optional objects.
+    //
+    // 🔴 landing#519's body prescribed `openapi_spec`, `base_url`, `api_key`
+    // and stated there is no headers field. Measured on core `master` and
+    // `dev` (byte-identical): `openapi_spec` appears **0 times anywhere** in
+    // that file, `api_key` is not an openapi field, and `headers` does exist.
+    // Following the issue would have turned this check red at the moment it
+    // started running.
+    configFields: [
+      { name: "spec_inline", description: "The OpenAPI 3.x or Swagger 2.0 document, JSON or YAML" },
+      { name: "base_url", description: "API base URL — taken from the spec's servers, override if needed" },
+    ],
+    related: ["rest-api", "postgresql", "bigquery", "snowflake"],
+    seoTitle: "OpenAPI Spec to Warehouse Connector | Datanika",
+    seoDescription: "Paste an OpenAPI or Swagger spec and Datanika discovers the endpoints, auth and pagination for you. Connect any documented API to your warehouse. Start free.",
+    seoH1: "OpenAPI Connector",
+  },
 
   // --- Files & Streaming ---
   {

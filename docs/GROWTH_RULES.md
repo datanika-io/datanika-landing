@@ -313,14 +313,28 @@ comparing with core, so a withdrawal no longer reports as drift and then gets "f
 ranking page.
 
 **A sentinel is not a promise.** `/pricing/`, the homepage and `/features/volume-pricing/` all say
-*"Unlimited schedules"* on Pro and Enterprise. `plans.max_schedules` is **9999** on all four paid
-rows and `check_schedule_quota` hard-blocks there — no overage path, no flag. Nobody will reach it,
+*"Unlimited schedules"* on Pro and Enterprise. `plans.max_schedules` was **9999** on all four paid
+rows and `check_schedule_quota` hard-blocked there — no overage path, no flag. Nobody would reach it,
 which is exactly why it survived: an absolute word is only ever falsified by a customer hitting the
 ceiling, and ours has none. **Before publishing "unlimited", "all", "any" or "never", read the
 enforcing row.** The general mechanism, from core#928, is worth more than the instance: *no migration
 creates the paid plan rows*, so an out-of-band creator sets whatever columns existed when it was
 written and **every column a later migration adds falls to its `server_default` on paid rows**. A
 number in a migration is not a number in a table, and the exposure grows with every new column.
+
+🟢 **CLOSED, and the past tense above is the point (re-measured on prod 2026-09-07).**
+core#928 + cloud#151 shipped: `max_schedules` is **NULL** on all four paid rows, and
+`check_schedule_quota` opens `if plan is None or plan.max_schedules is None: return`. **The claim we
+published is now true.** Free is untouched at 2.
+
+🚨 **The rule this earns is about the stale note, not the sentinel.** Under option (c) the page is
+deliberately left asserting something false while the row moves to meet it — so for a window, our own
+rules file, a guard header and `SPEC_PRICING_V2` all told a reader that live copy was a lie. Three
+documents, all correct when written, all wrong within five days. **A reader who trusts a
+"this claim is false" note and does not re-measure will correct a TRUE claim into a false one, and no
+check will object** — the guards' scope never covered schedules either way. *Re-read the enforcing
+row before acting on a note that says a claim is false, exactly as you would before publishing it.*
+A dated measurement is evidence about the date on it and nothing else.
 
 **When the page and the product disagree, which one moves is a decision, not a default.** The
 founder's 2026-08-31 pricing decision (option (c)) makes the published page the acceptance criteria,
