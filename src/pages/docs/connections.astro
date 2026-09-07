@@ -138,7 +138,7 @@ Config:
     <li>Enter a descriptive name (e.g., "Production Postgres")</li>
     <li>Select the connection type from the dropdown (e.g., <code>postgres</code>, <code>bigquery</code>, <code>parquet</code>)</li>
     <li>Fill in the required fields — host, port, database, credentials, etc. Fields change based on the selected type</li>
-    <li>Click <strong>Test Connection</strong> to verify credentials are correct</li>
+    <li>Click <strong>Test Connection</strong>. For SQL warehouses, the four file sources and the 14 SaaS sources that have a credential probe, this really checks — a revoked or mistyped credential comes back <strong>red</strong>. Six types (REST API, OpenAPI, Google Sheets, Google Analytics, Google Ads, Kafka) return a neutral <em>not tested</em> verdict carrying the reason: deliberately neither green nor red, because the first real check is the first run. What it never checks is <strong>scope</strong> — a credential that passes here can still lack access to a specific resource</li>
     <li>Click <strong>Create Connection</strong> to save</li>
   </ol>
   <p>You can also toggle <strong>Use raw JSON config</strong> to paste connection credentials as a JSON object directly.</p>

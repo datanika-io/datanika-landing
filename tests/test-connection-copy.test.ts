@@ -71,13 +71,24 @@ const PROBE = [
   "airtable", "asana", "facebook-ads", "freshdesk", "github", "hubspot", "jira",
   "notion", "pipedrive", "salesforce", "shopify", "slack", "stripe", "zendesk",
 ];
-/** `SAAS_PROBE_EXEMPT` minus `openapi`, which ships as a ConnectionType and has no page. */
-const EXEMPT_WITH_PAGE = ["rest-api", "google-ads", "google-analytics", "google-sheets", "kafka"];
+/**
+ * Every `SAAS_PROBE_EXEMPT` slug that has a published guide.
+ *
+ * 🚨 **This said "minus `openapi`, which has no page" and went stale the moment
+ * `c6f3ed5` published one (landing#508).** The page shipped, made an exempt-type
+ * claim, and was covered by nothing — because G7's membership check only catches
+ * *named-but-absent*, never *present-but-unnamed*, so the one direction that
+ * matters here was invisible. The list now names all six, and the assertion
+ * below closes the direction that let it drift.
+ */
+const EXEMPT_WITH_PAGE = [
+  "rest-api", "openapi", "google-ads", "google-analytics", "google-sheets", "kafka",
+];
 const FILE_TYPES = ["s3", "csv", "json", "parquet"];
 
 /** Spec §3: `_NON_DB_TYPES` = 25 = 4 file + 14 probed + 6 exempt + 1 mongodb. */
 const NON_DB_TOTAL = 25;
-const EXEMPT_TOTAL = 6; // includes `openapi`, which has no guide
+const EXEMPT_TOTAL = 6;
 
 const guideText = (slug: string) =>
   readFileSync(resolve(GUIDES, `${slug}.md`), "utf-8");
@@ -114,6 +125,28 @@ describe("connector guides describe Test Connection as it behaves (#502, spec §
       (s) => !allGuides.includes(s),
     );
     expect(missing, `named in a group but has no guide: ${missing.join(", ")}`).toEqual([]);
+
+    // 🚨 The OTHER direction, which is the one that actually drifted. The check
+    // above catches *named-but-absent*. `openapi` was *present-but-unnamed*: its
+    // guide shipped in c6f3ed5 (landing#508), made an exempt-type claim, and was
+    // covered by nothing — while this file's comment still said it had no page.
+    // Nothing failed, because no assertion looked this way.
+    //
+    // Keep the exempt roster whole by construction: every exempt slug is either
+    // published (and therefore asserted below) or explicitly listed as unpublished.
+    // A new exemption cannot be quietly half-covered.
+    const EXEMPT_WITHOUT_PAGE: string[] = [];
+    expect(
+      EXEMPT_WITH_PAGE.length + EXEMPT_WITHOUT_PAGE.length,
+      `the exempt roster must account for all ${EXEMPT_TOTAL} SAAS_PROBE_EXEMPT types. ` +
+        "If core added one, put it in EXEMPT_WITH_PAGE (and write the page's copy) " +
+        "or in EXEMPT_WITHOUT_PAGE with a reason — never leave it in neither.",
+    ).toBe(EXEMPT_TOTAL);
+    const unlistedExempt = EXEMPT_WITHOUT_PAGE.filter((s) => allGuides.includes(s));
+    expect(
+      unlistedExempt,
+      `listed as unpublished but a guide now exists — move to EXEMPT_WITH_PAGE: ${unlistedExempt.join(", ")}`,
+    ).toEqual([]);
   });
 
   it("G1 — no guide tells a reader to EXPECT the retired verdict", () => {
@@ -232,5 +265,114 @@ describe("connector guides describe Test Connection as it behaves (#502, spec §
         "retires still carries it. A retirement note that stops quoting the retired phrase " +
         "leaves a future reader unable to tell which phrase was retired.",
     ).toBe(2);
+  });
+});
+
+/**
+ * The three surfaces #502's sweep did not reach, all of them outside
+ * `src/content/connectors/` and therefore outside every assertion above.
+ *
+ * 🔑 **The template is the one that matters**, and it is the reason the other 22
+ * pages said the same wrong thing: `_template.md` *instructed* the retired
+ * verdict in an affirmative sentence, so every guide written from it inherited
+ * the defect. Fixing 22 outputs and leaving the generator is fixing the symptom
+ * — the next connector would have arrived pre-broken, and a guard scoped to the
+ * guides would have called it clean.
+ */
+describe("the surfaces outside the guide corpus (#502 residues)", () => {
+  const TEMPLATE = resolve(ROOT, "src/pages/docs/connectors/_template.md");
+  const CONNECTIONS = resolve(ROOT, "src/pages/docs/connections.astro");
+
+  /**
+   * 🚨 **This guard failed on its own fix, and the failure is the rule.** The
+   * corrected template explains *why* the retired verdict is wrong, so it quotes
+   * it — and a ban on "`Test Connection` near the retired string" is satisfied by
+   * the sentence that retires it. WORKFLOW_RULES §4, exactly: *"any guard written
+   * as 'the artifact must not contain X' is defeated by the corrected artifact
+   * explaining why X is wrong."*
+   *
+   * So the ban applies to the **directive** an author copies, not to the HTML
+   * comment block telling them not to. Same remedy as the workflow guards that
+   * strip `#` comments before asserting on a command — and, as there, the
+   * stripper needs a control, or a stripper that eats everything makes this pass
+   * for the wrong reason.
+   */
+  const stripHtmlComments = (s: string) => s.replace(/<!--[\s\S]*?-->/g, " ");
+
+  it("the comment stripper does not swallow the template", () => {
+    const text = readFileSync(TEMPLATE, "utf-8");
+    const stripped = stripHtmlComments(text);
+    expect(
+      stripped.length / text.length,
+      "stripHtmlComments() removed most of _template.md — an assertion over an emptied " +
+        "document passes for the wrong reason.",
+    ).toBeGreaterThan(0.5);
+    // And it must still remove a comment, or it is a no-op wearing a stripper's name.
+    expect(stripHtmlComments("a <!-- gone --> b")).toBe("a   b");
+  });
+
+  it("the guide template does not instruct the retired verdict", () => {
+    expect(existsSync(TEMPLATE), `${TEMPLATE} is gone — this guard now covers nothing`).toBe(true);
+    const text = stripHtmlComments(readFileSync(TEMPLATE, "utf-8"));
+    // The instruction shape, matching G1: an author-facing directive that puts
+    // `Test Connection` and the retired string in the same breath.
+    const INSTRUCTION = new RegExp(
+      `(?:Test Connection[\\s\\S]{0,200}${RETIRED}|${RETIRED}[\\s\\S]{0,200}Test Connection)`,
+      "i",
+    );
+    expect(
+      INSTRUCTION.test(text),
+      "src/pages/docs/connectors/_template.md tells the next author to write the retired " +
+        "verdict. Every guide written from it inherits landing#502.",
+    ).toBe(false);
+
+    // Positive half: the template must still SAY something about the button, or
+    // a future author simply omits it. Absence is not correctness here.
+    expect(
+      /Test Connection/i.test(text),
+      "the template no longer mentions Test Connection at all — an author writing from it " +
+        "will omit the behaviour rather than describe it.",
+    ).toBe(true);
+  });
+
+  it("the shared Connections doc does not claim a blanket credential check", () => {
+    const text = readFileSync(CONNECTIONS, "utf-8");
+    // Six SAAS_PROBE_EXEMPT types return a neutral verdict, so an unqualified
+    // "Test Connection verifies your credentials" is false for a quarter of the
+    // catalogue. Require the qualification, not the absence of a phrase.
+    expect(
+      /not tested/i.test(text),
+      "src/pages/docs/connections.astro describes Test Connection for ALL types, so it must " +
+        `name the neutral verdict the ${EXEMPT_TOTAL} exempt types return.`,
+    ).toBe(true);
+  });
+
+  /**
+   * `public/` is copied verbatim into `dist/`, so these provenance notes are
+   * served at `/docs/connectors/<slug>/README.md`. Several assert the retired
+   * verdict in the **present tense** ("does return", "returns ... for HTTP-API
+   * sources"), which is how a dated observation becomes a live false claim.
+   *
+   * They are date-framed rather than rewritten — the same call made on
+   * `saas-12-euros` — so the assertion is that a file carrying the retired
+   * string also carries the banner qualifying it. Banning the string outright
+   * would destroy the record these files exist to hold.
+   */
+  it("every served provenance README quoting the retired verdict is date-framed", () => {
+    const dir = resolve(ROOT, "public/docs/connectors");
+    const slugs = readdirSync(dir).filter((s) =>
+      existsSync(resolve(dir, s, "README.md")),
+    );
+    expect(slugs.length, "no provenance READMEs found — this guard walks nothing").toBeGreaterThan(10);
+
+    const unframed = slugs.filter((s) => {
+      const text = readFileSync(resolve(dir, s, "README.md"), "utf-8");
+      return text.includes(RETIRED) && !/Superseded observation/i.test(text);
+    });
+    expect(
+      unframed,
+      "these are served at /docs/connectors/<slug>/README.md and state the retired verdict " +
+        `with nothing dating it: ${unframed.join(", ")}`,
+    ).toEqual([]);
   });
 });
