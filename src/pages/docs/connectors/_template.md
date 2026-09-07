@@ -80,7 +80,35 @@ Walk the reader through creating the credentials/API key/service account in the 
    - **<Field 2>** — `<what to paste>`
 4. Click **Test Connection**, then **Create Connection**.
 
-> `<If the source is an HTTP API, say so here: Test Connection reports "Test not applicable for this type" and the credential is validated for real on the first run.>`
+<!--
+  🚨 TEST CONNECTION — say what the button ACTUALLY does for THIS source type.
+  This line used to instruct the opposite, and every guide written from it
+  inherited the defect landing#502 measured across 22 pages: it told authors to
+  write `Test Connection reports "Test not applicable for this type"`. That
+  verdict was retired in core#821; no code path emits it, and on 18 of those
+  pages the sentence said a working feature did not work.
+
+  There are three answers and they are not interchangeable. Derive which one
+  applies from `datanika/services/connection_service.py` on core `master` —
+  never from a neighbouring guide, which is how the old string spread:
+
+    A. `SAAS_PROBES` (14 types) — the button makes ONE authenticated request
+       and a bad credential comes back RED. Name the endpoint it calls, then
+       state the limit: it does not check SCOPE, which surfaces on first run.
+    B. `_FILE_TYPES` (s3, csv, json, parquet) — it really lists the location
+       and reports what matched. For a CONTAINER path add the caveat that the
+       check looks from the web app while the load reads from the worker; for
+       an `s3://` URL say the pass transfers, because the URL means the same
+       thing to both.
+    C. `SAAS_PROBE_EXEMPT` (6 types) — a neutral NOT TESTED verdict carrying
+       the product's own reason. Quote that reason. It is deliberately neither
+       green nor red, because reporting an unverified connection as working
+       and as failed are the same lie told in opposite directions.
+
+  Guarded by tests/test-connection-copy.test.ts. Delete this comment block and
+  write the real sentence; do not ship the placeholder.
+-->
+> `<Test Connection for this source: pick group A, B or C from the comment above and describe what the button really does — including what it does NOT check.>`
 
 ![Adding the <Source> connection in Datanika](/docs/connectors/<source-slug>/02-add-connection.png)
 
