@@ -274,8 +274,25 @@ const EVERGREEN_UNINVENTORIED = [
  * the whole argument for deriving scope from the artifact rather than editing a
  * list by hand and believing it.
  */
+/*
+ * 🚨 **A SCHEDULED POST ENLARGES THIS SURFACE WITH NO COMMIT AT ALL (2026-09-07,
+ * Growth, landing#396).** `/blog/customer-360-hubspot-stripe` was committed on
+ * **2026-08-31** with `date: 2026-09-07`, so Astro's scheduled-publish filter
+ * kept it out of `dist/` for a week. It built for the first time today, brought
+ * *"the [Free plan](/pricing/) includes 10 GB/month"* into scope, and this
+ * assertion went red — **on a working tree whose diff does not touch it, and on
+ * a day nobody committed anything to it.**
+ *
+ * 🔑 The consequence is the part to carry: landing's CI runs `npm test` on every
+ * PR, so the *next PR anyone opened* would have failed on a test unrelated to
+ * their change, with the natural reading *"my branch broke it."* It is the
+ * mirror of the stale-`dist/` trap — there a stale artifact hides a real
+ * failure; here the calendar creates one. **When this guard reds on a route you
+ * did not touch, check the post's `date:` before checking your diff.**
+ */
 const DATED_POSTS = [
   "/blog/billing-provider-migration",
+  "/blog/customer-360-hubspot-stripe",
   "/blog/claude-built-a-data-pipeline",
   "/blog/datanika-mcp-server-launch",
   "/blog/datanika-vs-modern-data-stack",
