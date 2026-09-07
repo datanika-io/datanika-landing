@@ -9,7 +9,7 @@
  * crosses `publishedAt`, the post appears in the next build.
  */
 import { describe, it, expect } from "vitest";
-import { readFileSync, existsSync } from "fs";
+import { readFileSync, existsSync, readdirSync } from "fs";
 import { resolve } from "path";
 
 const BLOG_DIR = resolve(__dirname, "../src/content/blog");
@@ -66,6 +66,26 @@ const scheduledPosts = [
   // `publishedAt` and building — a green build proves nothing about a scheduled
   // post, because a future date is excluded from the output entirely.
   { file: "customer-360-hubspot-stripe.md", date: "2026-09-07", publishedAt: "2026-09-07", category: "tutorial", titleContains: "Customer 360 from HubSpot and Stripe" },
+  // 🚨 These FIVE were written and merged UNGUARDED — none appeared in this
+  // array until 2026-09-07, while all five were already sitting in the tree with
+  // future dates, the nearest of them two days out. That gap is invisible by
+  // construction: a scheduled post is *supposed* to be absent from `dist/`, so a
+  // typo'd `publishedAt` (2027 for 2026, or a date that never arrives) produces
+  // a post that silently never publishes, a green build, and no signal anywhere.
+  // The guard is the only thing that reads these values before the date does.
+  //
+  // ⚠️ I first believed there were three. The two extra were found by the
+  // DERIVED check at the bottom of this file, not by reading — my own sweep had
+  // grepped `date:` and summarised the counts, which showed 09-09 and 09-11 as
+  // numbers without ever naming the files behind them. That is the difference
+  // between a census and an inventory, and it is why membership is derived.
+  { file: "github-actions-pipefail-exit-code.md", date: "2026-09-09", publishedAt: "2026-09-09", category: "engineering", titleContains: "Eight Nights While Twelve Tests Failed" },
+  { file: "alerts-that-could-never-fire.md", date: "2026-09-11", publishedAt: "2026-09-11", category: "engineering", titleContains: "Four Alerts That Could Never Fire" },
+  { file: "a-red-that-proves-nothing.md", date: "2026-09-13", publishedAt: "2026-09-13", category: "engineering", titleContains: "Went Red for Doing Its Job" },
+  { file: "watchdog-workflow-with-no-file.md", date: "2026-09-15", publishedAt: "2026-09-15", category: "engineering", titleContains: "Four Identical Red Runs" },
+  { file: "guard-matched-the-comment.md", date: "2026-09-17", publishedAt: "2026-09-17", category: "engineering", titleContains: "Still Talked About the Fix" },
+  // 2026-09-19 is the next free slot under the ≤1-post-per-2-days rule.
+  { file: "does-not-close-closed-it.md", date: "2026-09-19", publishedAt: "2026-09-19", category: "engineering", titleContains: "Does Not Close" },
 ];
 
 const publishedScheduledPosts = [
@@ -179,4 +199,54 @@ describe("future-dated posts are absent from every published surface", () => {
       });
     });
   }
+});
+
+/**
+ * 🚨 Membership is DERIVED, because a hand-maintained list of scheduled posts
+ * silently stopped matching the tree.
+ *
+ * Measured 2026-09-07: three future-dated posts — `a-red-that-proves-nothing`
+ * (09-13), `watchdog-workflow-with-no-file` (09-15) and `guard-matched-the-comment`
+ * (09-17) — were merged and sitting in the tree while appearing in NO test in
+ * this repository. Everything above walks `scheduledPosts`, so a post absent
+ * from that array is not "partially covered": it is unseen.
+ *
+ * 🔑 **The gap is invisible by construction, which is why it needs a derived
+ * check rather than care.** A scheduled post is *supposed* to be absent from
+ * `dist/` — no page, no sitemap entry, no RSS row. So a `publishedAt` typo
+ * (2027 for 2026, or a date that simply never arrives) produces a post that
+ * silently never publishes, a green build, and no signal anywhere. There is no
+ * observable difference between "correctly waiting" and "will wait forever".
+ * This assertion is the only thing that reads those dates before the calendar
+ * does.
+ */
+describe("every future-dated post is covered by this file", () => {
+  const ALL = readdirSync(BLOG_DIR).filter((f) => f.endsWith(".md"));
+
+  it("the corpus is non-trivial (guards a dead walk)", () => {
+    expect(ALL.length).toBeGreaterThan(30);
+  });
+
+  it("no future-dated post is missing from scheduledPosts", () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const covered = new Set(scheduledPosts.map((p) => p.file));
+    const uncovered = ALL.filter((f) => {
+      const fm = readFrontmatter(f);
+      return fm.publishedAt && fm.publishedAt > today && !covered.has(f);
+    });
+    expect(
+      uncovered,
+      "These posts publish on a future date and are pinned by nothing. A typo in " +
+        "`publishedAt` would mean they never publish, with a green build and no " +
+        "signal. Add each to `scheduledPosts` above:\n" +
+        uncovered.map((f) => `  + ${f}`).join("\n"),
+    ).toEqual([]);
+  });
+
+  it("every scheduledPosts entry names a file that exists", () => {
+    // The other direction: an entry for a renamed or deleted post asserts
+    // nothing while reading as coverage.
+    const missing = scheduledPosts.map((p) => p.file).filter((f) => !ALL.includes(f));
+    expect(missing, `listed in scheduledPosts but not on disk: ${missing.join(", ")}`).toEqual([]);
+  });
 });
