@@ -37,12 +37,22 @@ import { resolve, extname, relative } from "path";
  * dimensions (bytes, model runs, overage), which is what the pivot is about, and
  * leaves non-metered dimensions to be settled by reading the enforcing row.
  *
- * ⚠️ **So a green here is NOT a claim that "Unlimited schedules" is true.** It is
- * measurably false — `plans.max_schedules` is 9999 on all four paid rows and
- * `check_schedule_quota` hard-blocks there (prod, 2026-09-02T09:31Z). The page is
- * deliberately unchanged under the founder's option-(c) pricing decision (the page
- * is the acceptance criteria; the row moves), and that is tracked on core#928 —
- * *not* silently permitted by this test's scope.
+ * 🟢 **"Unlimited schedules" WAS measurably false and is now TRUE (re-measured on
+ * prod 2026-09-07, landing#396).** This paragraph said `plans.max_schedules` is
+ * **9999** on all four paid rows and that `check_schedule_quota` hard-blocks
+ * there — true at 2026-09-02T09:31Z, and **not true today**. core#928 and
+ * cloud#151 shipped: the column is **NULL** on `pro-monthly`, `pro-annual`,
+ * `enterprise-monthly` and `enterprise-annual`, and the guard's first line is
+ * now `if plan is None or plan.max_schedules is None: return`. Free is
+ * unaffected and still capped at 2.
+ *
+ * 🔑 **Recorded rather than deleted, because the direction is the instructive
+ * half.** The founder's option (c) was *"make the published page true; do not
+ * rewrite the page"* — so the page was deliberately left saying something false
+ * while the row moved underneath it. That is the one situation where a stale
+ * warning is actively dangerous: a later reader who trusts it "corrects" a
+ * **true** claim into a false one, and every check stays green because the
+ * scope of this file never covered schedules. Re-read the row, not this note.
  *
  * ## Scope: `src/data` is scanned, and it was the hole
  *
