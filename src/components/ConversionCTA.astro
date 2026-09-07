@@ -13,6 +13,25 @@
 // Without `plausibleEvent` it renders a plain <a> and the handler below does not
 // match it: normal navigation, no interception, no 50 ms delay.
 //
+// 🚨 THE CONSEQUENCE OF THAT, which is what actually cost us (landing#515):
+// an untagged CTA is INVISIBLE. It is not "tracked with a default name" and it
+// is not "counted as a pageview click" — it emits nothing, forever, and the
+// Goals report looks exactly the same as if nobody had clicked it. 23 of the 24
+// call sites were untagged, so the whole measured record of signup intent on
+// this site was ONE button on /pricing — 6 visitors over 6 months, quoted more
+// than once as the site's click-through when it is one page's click-through.
+// The behaviour above was documented; this consequence was not, and the
+// consequence is the half that was missed.
+//
+// 🚨 AND TAGGING IS NOT ENOUGH ON ITS OWN. Plausible only surfaces a custom
+// event in the Goals report if that goal is CONFIGURED in site settings, which
+// needs Plausible admin. Shipping a new `plausibleEvent` name without creating
+// the goal first gives a fully instrumented-looking site, a green deploy, and a
+// report that never mentions it. Verified 2026-09-07 against the Stats API
+// (never the settings page): the site has exactly TWO goals — "Pricing: Start
+// free" and "Pricing: Contact sales". Create the goal, confirm it returns a row
+// from /api/v1/stats/breakdown?property=event:goal, and only then tag.
+//
 // Any anchor can opt in without using this component - set
 // `data-plausible-event="Event Name"`. The selector is on the attribute, not on
 // the component, which is how /pricing's "Contact sales" link is tracked.
