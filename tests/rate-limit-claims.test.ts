@@ -58,8 +58,37 @@ import { resolve } from "path";
  *   #   SELECT slug, rate_limit_rpm, max_parallel_runs FROM plans ORDER BY id;
  */
 
-/** Snapshot of `plans.rate_limit_rpm`, read off production in core#699, 2026-08-30. */
+/**
+ * What we publish as the per-minute API limit.
+ *
+ * 🆕 **No longer only a snapshot (landing#531, 2026-09-07).** This was described as
+ * *"read off production in core#699, 2026-08-30"* and closed drift between our own
+ * pages only — a core reseed that missed the column would have returned Free to the
+ * column default of 60 while every page kept saying 30, green.
+ *
+ * `.github/workflows/rate-limit-parity.yml` now binds this map to core's
+ * `PUBLISHED_RATE_LIMIT_RPM` (migration `g7h8i9j0k1l2`) on a daily cron. Change a
+ * number here and that job files an issue unless core moved too.
+ *
+ * ⚠️ **The binding is to core's DECLARED INTENT, not to the database.** Neither this
+ * file nor that job can see the `plans` table. See the workflow's own header.
+ */
 const RPM = { Free: 30, Pro: 120, Enterprise: 300 } as const;
+
+/**
+ * What we publish as the concurrent-run ceiling — `/docs/scheduling-guide` sells
+ * *"On the Free plan the ceiling is 2 concurrent runs; paid plans are higher."*
+ *
+ * Bound to core's `PUBLISHED_MAX_PARALLEL_RUNS` (migration `f6a7b8c9d0e1`) by the same
+ * job. Added here rather than beside the prose so the parity checker has one landing-side
+ * source to read, mirroring `PRODUCT` in `byte-pricing-surface-inventory.test.ts`.
+ *
+ * ⚠️ **`tests/scheduling-guide.test.ts` hard-codes `2` and `5` against the rendered page**
+ * and does not read this constant. That is a second copy, recorded rather than silently
+ * tolerated: it pins the *page* to a number, this pins the *number* to core, and the two
+ * meet only if both are maintained. Collapsing them is worth doing and is not this change.
+ */
+const PARALLEL = { Free: 2, Pro: 5, Enterprise: 20 } as const;
 
 /** `settings.api_rate_limit_rpm` — what a self-hosted instance gets. */
 const SELF_HOSTED_RPM = 60;
@@ -332,5 +361,45 @@ describe("the CI/CD post's rate-limit section points somewhere that answers it",
     // would push people onto the loop that does cost per iteration.
     const text = src(POST);
     expect(text).toMatch(/polls \*\*server-side\*\*|server-side/);
+  });
+});
+
+/**
+ * `PARALLEL` exists so the cross-repo parity job has one landing-side source to read
+ * (landing#531). A constant nothing asserts is a value nobody checks, so it is bound to
+ * the page here as well as to core there.
+ */
+describe("the concurrency ceiling we publish matches the constant the parity job reads", () => {
+  const GUIDE = "src/pages/docs/scheduling-guide.astro";
+
+  it("the guide states the Free ceiling as PARALLEL.Free", () => {
+    const text = src(GUIDE);
+    // Bound to the constant, never to a literal: a guard that hard-codes the number it
+    // is checking cannot notice the number changing.
+    expect(
+      text,
+      `${GUIDE} must state the Free concurrency ceiling as ${PARALLEL.Free}, which is what ` +
+        "core's PUBLISHED_MAX_PARALLEL_RUNS declares and what the parity job compares against.",
+    // ⚠️ Written from the file's bytes, not from memory of the markup. The first
+    // version put `</strong>` between the number and the words; the page has
+    // `<strong>2 concurrent runs</strong>`, so the number and the words are adjacent
+    // and the tag is outside both. Anchoring on prose you have retyped matches nothing.
+    ).toMatch(new RegExp(`${PARALLEL.Free}(&nbsp;|\\s)+concurrent runs`));
+  });
+
+  it("the guide does not publish a paid-tier concurrency figure it cannot keep", () => {
+    // Deliberately a *presence* assertion about the hedge rather than a ban on numbers:
+    // the page says "paid plans are higher" instead of naming 5 and 20, so nothing there
+    // can drift. If someone later names them, this fails and they must bind them to
+    // PARALLEL.Pro / PARALLEL.Enterprise rather than typing them.
+    const text = src(GUIDE);
+    const namesPaidFigure =
+      new RegExp(`${PARALLEL.Pro}\\s*(&nbsp;|\\s)?concurrent`).test(text) ||
+      new RegExp(`${PARALLEL.Enterprise}\\s*(&nbsp;|\\s)?concurrent`).test(text);
+    expect(
+      namesPaidFigure,
+      "the guide now names a paid-tier concurrency number. That is fine, but bind it to " +
+        "PARALLEL.Pro / PARALLEL.Enterprise so the parity job covers it.",
+    ).toBe(false);
   });
 });
