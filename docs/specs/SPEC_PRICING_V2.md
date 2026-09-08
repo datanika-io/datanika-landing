@@ -40,7 +40,7 @@
 >
 >    [landing#410]: https://github.com/datanika-io/datanika-landing/issues/410
 >
-> **What is genuinely open in here is §2.5 and §12 question 0: D-RL1 / D-RL2 / D-RL3, the API rate
+> **What is genuinely open in here is §2.5 and §12 question 0: D-RL1 / D-RL2 / D-RL3 / D-RL4, the API rate
 > limit.** Those await a founder decision. Everything else in §12 is resolved and marked so.
 >
 > [landing#325]: https://github.com/datanika-io/datanika-landing/issues/325
@@ -208,28 +208,92 @@ Free 5 / Pro 15 / Enterprise 30 anyway for four months. [landing#366] removes th
 waiting on a schema change; [core#703] carries the alternative (make it real). If the answer is
 "make it real", this table gains a second column and the pages come back.
 
+**D-RL4 — is the limit per KEY or per ORG?** *Added 2026-09-07 (Growth), from [core#706].* This is the
+one question §2.5 stated as a fact and never turned into a decision, and it is the reason core#706
+says the dimension is *"specced nowhere"* even though this section exists.
+
+The facts, re-measured on production 2026-09-07:
+
+- The limiter buckets on the **API key** (`credential_bucket(raw_key)`), and `/api/reference` now says
+  so plainly: *"The limit is per key, not per organization — two keys get two independent budgets."*
+- **`plans.max_api_keys` is NULL on all five rows**, which cloud reads as *uncapped*.
+
+**Multiply those together and the published number is not a ceiling.** An Enterprise org publishing
+300 rpm can create an unbounded number of keys and draw 300 rpm on each. The page is honest about the
+mechanism, so nobody is misled *downward* — they are misled **upward**, which is the direction that
+surfaces only after a customer has built on it and we then cap it.
+
+⚠️ **This is a commercial decision and Growth is not proposing one**, for the same reason as D-RL1:
+there is no usage data, and any figure invented here would be the artifact this section exists to
+flag. What is needed is one of:
+
+1. **Per-org limit** — the published number becomes a real ceiling; needs a bucket change in core.
+2. **Per-key, with `max_api_keys` set per tier** — the ceiling becomes `n × rate_limit_rpm`, which is
+   then the number worth publishing rather than the per-key one. `max_api_keys` already exists and is
+   already NULL, so this is a seed value plus a copy change. [core#706] is where the multiplier lands.
+3. **Per-key, uncapped, stated deliberately** — legitimate, and cheapest, but then it is a *rate* and
+   not an *allowance*, and the tier table should stop presenting it beside quantities that are caps.
+
+🔑 Whichever is chosen, the failure mode to avoid is the current one: **a number that reads as a
+ceiling in a tier table and behaves as a per-key rate in the product.** Free's 500 runs and 10 GiB are
+genuine caps; 30 rpm sits in the same visual column and is not one.
+
 #### Whatever is decided, three things follow
 
 1. **It lands in §2.1's table**, so the next person to read this spec finds the dimension where the
    other quotas are.
 2. **The seed carries it.** A number that lives only in a 2026-04 migration does not survive a
    reseed — that is exactly how the `load-test` override was lost.
+
+   🔴 **STILL UNMET for `rate_limit_rpm`, measured 2026-09-07 — and the reason recorded for
+   deferring it is falsified by the live page.** The cloud seed writes the other entitlement
+   columns (including `max_parallel_runs`, now 2 / 5 / 20) but deliberately leaves
+   `rate_limit_rpm` unset, on the stated ground that *the burst claim behind it was deleted, so
+   there is no published counterpart.*
+
+   **Two different columns are being conflated.** What was deleted is the per-**second** burst,
+   which is not a column on `Plan` at all. The per-**minute** `rate_limit_rpm` has a published
+   counterpart and it is live right now — `/api/reference#rate-limits` renders
+   **Free 30 / Pro 120 / Enterprise 300 requests per minute**, fetched with a cache-buster today,
+   and no per-second figure anywhere (confirmed: 0).
+
+   **So the consequence is concrete rather than theoretical.** `plans.rate_limit_rpm` has
+   `column_default = 60`. A rebuilt database — the scenario the whole seed script exists for —
+   serves **60 on every tier**, against a published Pro **120** and Enterprise **300**. Free would
+   move 30 → 60 and be *more* generous; **the two paid tiers would get half and a fifth of what we
+   publish**, silently, with nothing failing.
+
+   This is D-RL1's durability requirement, unmet, with the number now knowable (Infra's
+   rebuild-parity drill reads what production serves). It does not need D-RL1 answered first: the
+   published figures are the acceptance criteria under the founder's standing *"where production
+   and the page disagree, the page wins"* ruling.
 3. **`tests/rate-limit-claims.test.ts`** (landing) holds the five published surfaces to one set of
    numbers. It cannot see the database, and says so in its own header; changing the number means
    changing the snapshot there in the same batch.
 
-**Second instance, same shape, not yet published:** `plans.max_parallel_runs` is not on the `Plan`
-ORM model, is read by nothing, and appears in no spec and on no page — every org currently gets
-`DEFAULT_MAX_PARALLEL = 5`. It is not a false public claim *yet*, which is the only reason it is a
-footnote here rather than a decision. Detail in [core#703].
+**Second instance, same shape — 🟢 RESOLVED 2026-09-07, and both halves of the paragraph below were
+stale.** It read: *"`plans.max_parallel_runs` is not on the `Plan` ORM model, is read by nothing, and
+appears in no spec and on no page — every org currently gets `DEFAULT_MAX_PARALLEL = 5`."* Re-measured
+on the serving container:
 
-⚠️ **Production holds Free 2 and 5 for every paid tier** (`pro-monthly`, `enterprise-monthly`,
-`pro-annual`, `enterprise-annual`), measured on the box 2026-08-31. So **"Enterprise gets more
-parallelism" is a distinction that does not exist in the data.** Do not quote the migration's
-`enterprise-monthly = 20` as a tier value: that `UPDATE` runs before the paid rows exist, matches
-zero rows on a database built from scratch (production, rebuilt 2026-07-17), and the rows are then
-created by `seed_v2_plans.py` through the ORM — which cannot see the column, so they take the
-`server_default` of 5. **A number in a migration is not a number in a table.** Full retrace in
+- **It is on the model** — `datanika_cloud/billing/models.py:163`, `max_parallel_runs: Mapped[int]`.
+- **It is read** — core emits `concurrency.get_limit` (`services/concurrency_service.py`) and the
+  **worker** carries `datanika_cloud.billing.quota.set_max_parallel_runs`. Emitter *and* subscriber
+  both measured, because a handler with no emitter is the same defect one level up.
+- **It is published** — `/docs/scheduling-guide` states *"On the Free plan the ceiling is 2 concurrent
+  runs; paid plans are higher."*
+
+⚠️ **The next paragraph was the dangerous one and is now inverted.** It said production held **Free 2
+and 5 for every paid tier**, and concluded: *"**'Enterprise gets more parallelism' is a distinction
+that does not exist in the data.**"* True on 2026-08-31. **False now** — production holds
+**2 / 5 / 20**, and migration `f6a7b8c9d0e1_correct_paid_plan_concurrency` is what closed it. A reader
+trusting the old sentence would delete a true distinction from the copy, with nothing objecting.
+
+🔑 **The rule it was written to teach survives and is worth more than the instance: a number in a
+migration is not a number in a table.** The original retrace is exactly right about *why* the values
+diverged — `seed_v2_plans.py` creates the rows through the ORM, an `UPDATE` in an earlier migration
+matches zero rows on a database built from scratch, and the survivors take the `server_default`. Keep
+the rule; **re-point it at a live example**, because this one is spent. Full retrace in
 `plans/growth/notes/RATE_LIMIT_PRICING_DIMENSION_2026-08-30.md` §5.
 
 🔗 **This is direct evidence for D-RL1's durability requirement above.** The same seed script sets
@@ -568,7 +632,7 @@ This goes into a branch in `worktrees/datanika-landing-growth/`. The branch live
 
 All cross-spec questions were answered by the 2026-04-15 decisions doc — see `plans/PRICING_PIVOT_DECISIONS.md` Q1–Q6 plus the (a)/(b)/(c) triage. Two of the three Growth-only questions are now resolved; one remains open, and **three more were added on 2026-08-31** when a tier dimension turned out to exist in production and in no spec:
 
-0. **D-RL1 / D-RL2 / D-RL3 — the API rate limit** (§2.5, added 2026-08-31). Is Free 30 rpm the number
+0. **D-RL1 / D-RL2 / D-RL3 / D-RL4 — the API rate limit** (§2.5, added 2026-08-31; D-RL4 added 2026-09-07 from core#706 — is the limit per KEY or per ORG, given `max_api_keys` is NULL on every row?). Is Free 30 rpm the number
    we want to be held to; does it go on `/pricing/`; is the per-second burst a tier dimension at all.
    ⚠️ **`cloud#114` starts enforcing this on the next core promotion**, so D-RL1 is live rather than
    theoretical — though customer impact is zero today (0 paying users). §2.5 carries the evidence and
