@@ -196,14 +196,21 @@ import Footer from "../components/Footer.astro";
           <li>
             <strong class="text-white">Data residency:</strong> your account data and your
             pipeline data are stored in Greece (EU) and backed up to a second Greek provider.
-            Three sub-processors operate outside the EU and receive only what their function
+            Several sub-processors operate outside the EU and receive only what their function
             needs — <strong class="text-slate-300">Resend</strong> (US) receives the recipient
             address on transactional email, <strong class="text-slate-300">Cloudflare</strong>
             (US, global points of presence) terminates TLS and so sees IP addresses and request
-            metadata, and <strong class="text-slate-300">Paddle</strong> (UK) holds billing
-            details. Those transfers rely on the Standard Contractual Clauses in each
-            provider's DPA, on their EU–U.S. Data Privacy Framework certifications, and on the
-            UK adequacy decision. Data also leaves the EU when you configure it to — pointing a
+            metadata, <strong class="text-slate-300">Paddle</strong> (UK) holds billing
+            details, and <strong class="text-slate-300">Google</strong> (US) receives mail you
+            send to our published contact addresses.
+            The Resend, Cloudflare and Paddle transfers rely on the Standard Contractual Clauses
+            in each provider's DPA, on their EU–U.S. Data Privacy Framework certifications, and
+            on the UK adequacy decision; the contact mailbox is an ordinary Google mailbox and is
+            not covered by an agreement of that kind.
+            <strong class="text-slate-300">GitHub</strong> (US) and
+            <strong class="text-slate-300">Telegram</strong> (outside the EEA) are also
+            established outside the EU but receive no customer records — our source code and
+            our infrastructure alerts respectively. Data also leaves the EU when you configure it to — pointing a
             pipeline at a US-region BigQuery destination, for example. Full breakdown in
             <a href="/privacy" class="text-violet-400 hover:underline">the privacy policy</a>,
             section 9.
@@ -348,10 +355,27 @@ import Footer from "../components/Footer.astro";
                 <td class="py-3 pr-4">Payment processing (Merchant of Record)</td>
                 <td class="py-3">United Kingdom</td>
               </tr>
-              <tr>
+              <tr class="border-b border-slate-800/50">
                 <td class="py-3 pr-4 font-medium text-white">GitHub (Microsoft)</td>
                 <td class="py-3 pr-4">Source code hosting and CI/CD. Holds our code, not customer data.</td>
                 <td class="py-3">United States</td>
+              </tr>
+              <tr class="border-b border-slate-800/50">
+                <td class="py-3 pr-4 font-medium text-white">Google LLC</td>
+                <td class="py-3 pr-4">
+                  Contact mailbox delivery — mail sent to our published addresses, including
+                  info@datanika.io and security@datanika.io, is routed by Cloudflare and
+                  delivered into a Google-operated mailbox
+                </td>
+                <td class="py-3">United States</td>
+              </tr>
+              <tr>
+                <td class="py-3 pr-4 font-medium text-white">Telegram (Telegram FZ-LLC)</td>
+                <td class="py-3 pr-4">
+                  Infrastructure alerting to our on-call channel. Payloads carry service and
+                  container identifiers, not customer records.
+                </td>
+                <td class="py-3">Outside the EEA</td>
               </tr>
             </tbody>
           </table>
@@ -367,6 +391,22 @@ import Footer from "../components/Footer.astro";
         <div class="mt-6 rounded-lg border border-slate-800 bg-slate-900/50 p-5">
           <h3 class="text-sm font-medium text-white mb-2">Change log</h3>
           <ul class="text-sm text-slate-400 space-y-1">
+            <li>
+              <strong class="text-slate-300">2026-09-10</strong> — two recipients were added to
+              this table, and no practice changed. <strong class="text-slate-300">Google LLC</strong>
+              (contact mailbox delivery) and <strong class="text-slate-300">Telegram</strong>
+              (infrastructure alerting) were already published in Annex III of our
+              <a href="/dpa" class="text-violet-400 hover:underline">Data Processing Addendum</a>
+              and were missing from this table and from
+              <a href="/privacy" class="text-violet-400 hover:underline">Privacy</a>, so two of our
+              own documents disagreed about who receives data. The Google entry is not a return of
+              the row removed on 2026-08-30 below — that row named a function Google never
+              performed; this one names a different function it does perform, which is why the
+              register now holds one entry per recipient <em>and function</em>. Both pages also
+              said <em>"three sub-processors operate outside the EU"</em>. That count was correct
+              when written and is no longer, so it has been replaced by the list itself rather
+              than by a larger number.
+            </li>
             <li>
               <strong class="text-slate-300">2026-09-09</strong> — no company was added or removed,
               and no practice changed. Both this page and <a href="/privacy" class="text-violet-400 hover:underline">Privacy</a>
