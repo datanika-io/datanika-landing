@@ -238,6 +238,40 @@ flag. What is needed is one of:
 ceiling in a tier table and behaves as a per-key rate in the product.** Free's 500 runs and 10 GiB are
 genuine caps; 30 rpm sits in the same visual column and is not one.
 
+#### 📌 The contract we publish TODAY — normative, and separate from the decisions above
+
+*Added 2026-09-09 (Growth), closing [core#706]'s **"specced nowhere"**.*
+
+D-RL1–D-RL4 are open decisions and will stay open until the founder answers them. **That is not the
+same as having no contract**, and conflating the two is what left this dimension with nothing for
+either the page or the code to be wrong against. What follows is not a proposal: it is the shape the
+product enforces and the site publishes, written down so a future divergence has something to fail
+against. **Change the code or the copy and this paragraph is what you have broken.**
+
+1. **The published figure is a per-minute rate, counted per API key, in a fixed 60-second window.**
+   Not per organization, not sliding. (`RateLimitService`, `credential_bucket(raw_key)`.)
+2. **The tiers are Free 30 / Pro 120 / Enterprise 300**, carried by
+   `PUBLISHED_RATE_LIMIT_RPM` in core migration `g7h8i9j0k1l2` and bound to this site by
+   `.github/workflows/rate-limit-parity.yml`.
+3. **The per-second ceiling is not a tier dimension** and no figure for it is published — deliberately.
+   It is `API_RATE_LIMIT_BURST`, one operational setting applied identically to every plan.
+4. 🆕 **Key count is uncapped, and the site now says so.** `plans.max_api_keys` is NULL on all five
+   rows. So the published figure is **a per-key rate, not an organization-wide ceiling**, and
+   `/api/reference` states it in those words rather than leaving a reader to infer a cap that does
+   not exist.
+
+⚠️ **Item 4 is phrased *"we do not currently cap"*, deliberately — never *"unlimited keys"*.** Those
+are different commitments, and this spec has already paid for the difference once: §4.3 bans
+*"unlimited"* on a metered dimension precisely because a promise is harder to withdraw than a
+description. If D-RL4 lands on option 2 (a per-tier `max_api_keys`), the sentence is replaced by a
+number and nothing has to be retracted.
+
+🔑 **Why the copy moved before the decision did.** The exposure this closes is not that the number is
+wrong — it is measured true. It is that a reader could **only be misled upward**: told the limit is
+per key, told nothing about how many keys exist, and left to assume a ceiling that is not there. That
+direction surfaces in someone else's integration rather than in our support inbox, and it does not
+need a pricing decision to fix — only an honest sentence.
+
 #### Whatever is decided, three things follow
 
 1. **It lands in §2.1's table**, so the next person to read this spec finds the dimension where the
