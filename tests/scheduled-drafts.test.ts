@@ -87,6 +87,7 @@ const scheduledPosts = [
   // 2026-09-19 is the next free slot under the ≤1-post-per-2-days rule.
   { file: "does-not-close-closed-it.md", date: "2026-09-19", publishedAt: "2026-09-19", category: "engineering", titleContains: "Does Not Close" },
   { file: "tar-deploy-never-deletes.md", date: "2026-09-21", publishedAt: "2026-09-21", category: "engineering", titleContains: "Still Running in Production" },
+  { file: "loud-bug-silent-fix.md", date: "2026-09-23", publishedAt: "2026-09-23", category: "engineering", titleContains: "Is Loud, 0" },
 ];
 
 const publishedScheduledPosts = [
