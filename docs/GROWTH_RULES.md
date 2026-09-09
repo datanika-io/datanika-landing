@@ -754,3 +754,38 @@ alone. Assert the agreement rather than remembering it.
 a UI walkthrough. Re-deriving a page against `origin/dev` is a different and weaker claim, and
 stamping today's date on it converts landing#439 and landing#385 from open questions into false answers. Leave
 the field and say what you actually checked.
+
+## Claims and evidence, continued — a standing answer, so it is not re-derived quarterly
+
+**A `scope: runtime` label on a dependency alert is about placement in `package.json`, not about
+whether the code reaches a browser.** Read literally it says "this ships"; it means "this is in
+`dependencies` rather than `devDependencies`". On a static build those are different facts, and the
+gap between them is 46 alerts.
+
+**The standing answer for `datanika-landing`, and how to re-derive it rather than trust it.** Every
+open Dependabot alert here is build tooling. Do not restate that from memory — the check is a
+partition and it is two commands:
+
+```bash
+gh api "repos/datanika-io/datanika-landing/dependabot/alerts?state=open&per_page=100" --paginate   -q '.[].dependency.package.name' | sort -u
+python -c "import json;d=json.load(open('package.json'));print(sorted(d.get('dependencies',{})))"
+```
+
+Every alerted package must be one of the entries in `dependencies` or a transitive of one. That
+holds today at **46 alerts / 17 packages** (2026-09-09, up from 44 on 09-03 with **no new
+category**), because `dependencies` carries only `astro`, `@astrojs/*`, `tailwindcss`,
+`astro-og-canvas` and `canvaskit-wasm` — a toolchain that runs on a CI runner and exits, with no
+client framework, no adapter and `output: static`.
+
+🔑 **The authority is `tests/dependency-reachability.test.ts`, not this paragraph, and the
+difference matters.** That guard asserts against `dist/`, and its first property is *no JavaScript
+file ships at all* — so **the day someone adds a hydrated island it goes red, which is precisely the
+day this answer stops being true.** A note would still read "none reachable" that morning. Prose
+about a measurement expires silently; a guard over the artifact expires loudly. When they disagree,
+the guard is right.
+
+⚠️ **Two things this does NOT license.** It is not a statement that the packages are unused — they
+*are* used, on the runner, so dismissing an alert as `not_used` would record a stronger claim than
+the measurement supports; the measured property is *not reachable in shipped output*. And it is not
+a security sign-off: whether that risk is acceptable, and whether to dismiss the alerts, is a
+posture decision and not Growth's to take. Draft it, name the exact call, and leave it.

@@ -1,0 +1,129 @@
+name: Scheduled post liveness
+
+# landing#527's second half. That issue pinned the *frontmatter* of every future-dated post,
+# which stops a typo'd `publishedAt`. It cannot close the gap underneath it — and said so:
+# **it does not know whether a build ever happened.**
+#
+# ## The gap
+#
+# A scheduled post is *supposed* to 404 before its date. So on the morning of its publish
+# date, these two are indistinguishable to every check we have:
+#
+#   * the daily rebuild has not run yet  -> correct; it publishes in a few hours
+#   * the daily rebuild is broken        -> the post never publishes, and nothing says so
+#
+# Measured 2026-09-09: the 09-09 post read **404 at 06:04Z** and **200 after the rebuild ran
+# at 12:20Z**. Both readings were correct. The discriminator is the clock against the cron
+# window, not the 404 — and nobody watches the clock at 06:04Z except by accident.
+#
+# ## Why the time is the design
+#
+# `daily-rebuild.yml` fires between **11:15Z and 13:30Z** (eight consecutive runs sampled;
+# landing#387 records why it drifts). This runs at **15:07Z**, comfortably after the latest
+# observed fire, so a 404 on a due post is unambiguous rather than early.
+#
+# 🚨 **Do not compute that margin from the rebuild's cron expression.** It declares
+# `17 7 * * *` — 07:17Z — and has not fired within four hours of that on any sampled run.
+# A reader sizing the gap from the expression would put this job at ~09:00Z and it would
+# then report every due post as MISSING, every day, for a site that is working. **The
+# schedule GitHub honours and the schedule you wrote are different facts**; only the run
+# list carries the first.
+#
+# ⚠️ **Do not "tidy" this earlier to sit near the rebuild.** The whole value is the margin.
+# If the rebuild's window ever moves later, move this later too — and re-derive the window
+# from the runs rather than from this comment:
+#   gh api "repos/datanika-io/datanika-landing/actions/workflows/daily-rebuild.yml/runs" \
+#     --jq '.workflow_runs[] | select(.event=="schedule") | .created_at'
+#
+# The minute is deliberately not :00 or :30 — GitHub delays runs at the top of the hour,
+# which is how landing#305's cron produced zero runs — and is offset from :17
+# (connector-count), :43 (pricing-catalogue) and :29 (rate-limit) so the four do not contend.
+#
+# ## What it checks, in both directions
+#
+# The predicate is taken from `src/utils/blog-visibility.ts`, not reinvented — a second model
+# of the rule would agree with the first exactly where the first is wrong.
+#
+#   * every **visible** post must return 200 — catches a rebuild that did not run, a deploy
+#     that failed, and a post silently dropped by a filter change
+#   * every **hidden** post must return 404 — catches an early publish, which is *equally*
+#     invisible today: a post that appears a week early looks exactly like one that meant to
+#
+# ✅ **A scheduled workflow runs the DEFAULT BRANCH's copy of itself**, which is usually a
+# trap (WORKFLOW_RULES §7) and is correct here: `main`'s content is precisely what should be
+# live, so comparing `main` against the live site is the comparison we want.
+#
+# ## 🚨 What a red does NOT tell you
+#
+# A 404 means *not reachable*. It does not say why. The filed issue names the three
+# candidates and the order to check them, because "the cron is broken" is one of three and
+# reading the title as a diagnosis is how the wrong thing gets fixed.
+
+on:
+  schedule:
+    - cron: "7 15 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  liveness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Compare every post's due state against the live site
+        id: check
+        run: |
+          set +e
+          python scripts/check-scheduled-posts-live.py > /tmp/liveness.txt 2>&1
+          echo "rc=$?" >> "$GITHUB_OUTPUT"
+          cat /tmp/liveness.txt
+
+      - name: File an issue when a post is in the wrong state
+        if: steps.check.outputs.rc == '1'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          existing=$(gh issue list --state open --search "in:title Scheduled post liveness" \
+            --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            echo "Already tracked in #$existing; not filing again."
+            exit 1
+          fi
+
+          {
+            echo 'A blog post is in the wrong publication state on `datanika.io`.'
+            echo
+            echo '```'
+            cat /tmp/liveness.txt
+            echo '```'
+            echo
+            echo '⚠️ **A `MISSING` line means the page is not reachable. It does not say why.** Three candidates, in the order worth checking:'
+            echo
+            echo '1. **The daily rebuild did not run.** `gh run list --workflow=daily-rebuild.yml` — it normally fires 11:15–13:30Z. This job runs at 15:07Z precisely so that a 404 here is not simply "early".'
+            echo '2. **The rebuild ran and the deploy failed.** `gh run list --workflow=deploy.yml`, then `readlink -f /var/www/datanika.io` on the box for the release actually serving.'
+            echo '3. **The post is not on `main`.** A post merged to `dev` and never promoted is absent from the built site and is *not* a cron failure.'
+            echo
+            echo 'An `EARLY` line is the opposite defect: a post whose `publishedAt` is in the future is reachable. Check `src/utils/blog-visibility.ts` and the four `getCollection` call sites that filter on it.'
+            echo
+            echo '⚠️ This job compares `main`’s frontmatter against the live site. It says nothing about whether the page **content** is current — a post live for a month also returns 200. It guards publication, not freshness.'
+            echo
+            echo 'Filed automatically by `.github/workflows/scheduled-post-liveness.yml`.'
+          } > /tmp/liveness-issue.md
+
+          gh issue create \
+            --title "Scheduled post liveness: a post is in the wrong publication state" \
+            --body-file /tmp/liveness-issue.md
+          exit 1
+
+      - name: Fail loudly when the comparison could not be made
+        if: steps.check.outputs.rc == '2'
+        run: |
+          # exit 2 is "could not compare" — a truncated walk, no visible posts, or a
+          # network-level failure. Deliberately NOT the same as agreement, and deliberately
+          # NOT an issue: it is a broken instrument, not a finding about the site.
+          echo "::error::check-scheduled-posts-live.py could not compare (exit 2). See the log above."
+          exit 1
