@@ -789,4 +789,3 @@ the guard is right.
 the measurement supports; the measured property is *not reachable in shipped output*. And it is not
 a security sign-off: whether that risk is acceptable, and whether to dismiss the alerts, is a
 posture decision and not Growth's to take. Draft it, name the exact call, and leave it.
-the field and say what you actually checked.
