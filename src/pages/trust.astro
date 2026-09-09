@@ -214,8 +214,12 @@ import Footer from "../components/Footer.astro";
             organization exists — we do not currently run a time-based purge of run logs.
             Organizations and connections use a soft-delete model: records are marked deleted
             and removed from all application code paths, but the underlying Fernet-encrypted
-            data remains in the database until a hard delete is run. There is no self-service
-            delete button in the product yet. Hard deletion of an organization and all
+            data remains in the database until a hard delete is run.
+            <strong class="text-white">Personal data is not soft-deleted.</strong> Deleting your
+            account from Settings is self-service and erases it outright, synchronously — the rule
+            the code follows is that a row identifying a <em>person</em> is hard-deleted while a row
+            identifying a <em>record</em> is soft-deleted. Deleting an <em>organization</em> is not
+            self-service: hard deletion of an organization and all
             associated data is done by us on request — email
             <a href="mailto:security@datanika.io" class="text-violet-400 hover:underline">security@datanika.io</a>,
             and personal data is removed within 30 days, including from the off-site backups,
@@ -363,6 +367,17 @@ import Footer from "../components/Footer.astro";
         <div class="mt-6 rounded-lg border border-slate-800 bg-slate-900/50 p-5">
           <h3 class="text-sm font-medium text-white mb-2">Change log</h3>
           <ul class="text-sm text-slate-400 space-y-1">
+            <li>
+              <strong class="text-slate-300">2026-09-09</strong> — no company was added or removed,
+              and no practice changed. Both this page and <a href="/privacy" class="text-violet-400 hover:underline">Privacy</a>
+              said <em>"there is no self-service delete button in the product yet"</em>. There is one:
+              account deletion has shipped, it erases personal data outright rather than
+              soft-deleting it, and both pages now say so. The claim understated what the product
+              does — it routed people to email us for something they could do themselves — and it is
+              corrected here rather than quietly. Organization deletion and email changes genuinely
+              are still done by us on request, and both pages now name those two specifically
+              instead of implying that everything is manual.
+            </li>
             <li>
               <strong class="text-slate-300">2026-09-04</strong> — no company was added or removed.
               <strong class="text-slate-300">Cloudflare</strong>'s entry gained a function: it also
