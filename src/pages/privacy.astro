@@ -90,6 +90,14 @@ import Footer from "../components/Footer.astro";
           <li><strong>Cloudflare, Inc.</strong> — CDN, DDoS protection, DNS and TLS termination; cookie-free web analytics on this website (section 8); inbound routing of mail sent to our published addresses. United States, served from global points of presence.</li>
           <li><strong>Resend</strong> (Plus Five Five, Inc.) — transactional email delivery: password resets and team invitations. United States.</li>
           <li><strong>Paddle.com Market Ltd</strong> — payment processing, as Merchant of Record. United Kingdom.</li>
+          <li><strong>Google LLC</strong> — delivery of mail sent to our published contact
+            addresses, including info@datanika.io and security@datanika.io, into a
+            Google-operated mailbox. United States.</li>
+          <li><strong>GitHub, Inc. (Microsoft)</strong> — source code hosting and CI/CD. Holds our
+            code and deployment credentials, not your pipeline data. United States.</li>
+          <li><strong>Telegram</strong> (Telegram FZ-LLC) — delivery of infrastructure alerts to our
+            on-call channel. Alert payloads carry service and container identifiers, not customer
+            records. Outside the EEA.</li>
           <li><strong>Google / GitHub</strong> — only if you use OAuth sign-in (authentication data)</li>
           <li><strong>Law enforcement</strong> — only when required by law or valid legal process</li>
         </ul>
@@ -197,7 +205,7 @@ import Footer from "../components/Footer.astro";
           the European Union. Your account data and your pipeline data are stored there.
         </p>
         <p class="mt-3">
-          Three of our sub-processors operate outside the EU, and the personal data each one
+          Several of our sub-processors operate outside the EU. The personal data each one
           receives is limited to what its function requires:
         </p>
         <ul class="mt-2">
@@ -216,14 +224,33 @@ import Footer from "../components/Footer.astro";
             <strong>Paddle</strong> (United Kingdom) processes payments as Merchant of Record
             and holds the billing details you give it.
           </li>
+          <li>
+            <strong>Google LLC</strong> (United States) receives mail sent to our published
+            contact addresses. Inbound mail is routed by Cloudflare and delivered into a
+            Google-operated mailbox, so when you write to info@datanika.io or
+            security@datanika.io — including to exercise the rights in section 11 — your
+            message and the address you send it from are transferred to the United States.
+          </li>
         </ul>
         <p class="mt-3">
-          Transfers to the United Kingdom rely on the European Commission's adequacy decision
-          for the UK. Transfers to the United States rely on the EU Standard Contractual
+          Transfers to <strong>Paddle</strong> in the United Kingdom rely on the European
+          Commission's adequacy decision for the UK. Transfers to <strong>Resend</strong> and
+          <strong>Cloudflare</strong> in the United States rely on the EU Standard Contractual
           Clauses incorporated into each provider's data processing agreement, and on those
-          providers' certification under the EU–U.S. Data Privacy Framework. We are happy to
-          point you at those agreements — email
+          providers' certification under the EU–U.S. Data Privacy Framework. The contact
+          mailbox described above is an ordinary Google mailbox rather than a service we hold
+          such an agreement with; if that matters to you, write to us by post instead, or ask us
+          before sending anything sensitive. We are happy to point you at the agreements we do
+          hold — email
           <a href="mailto:info@datanika.io" class="text-violet-400 hover:underline">info@datanika.io</a>.
+        </p>
+        <p class="mt-3">
+          Further recipients are established outside the EU and are named here for
+          completeness, although they do not receive your personal data in the ordinary course of
+          the Service: <strong>GitHub, Inc. (Microsoft)</strong> (United States) hosts our source
+          code and deployment credentials, and <strong>Telegram</strong> (outside the EEA)
+          delivers our infrastructure alerts, whose payloads carry service and container
+          identifiers rather than customer records.
         </p>
       </section>
 
