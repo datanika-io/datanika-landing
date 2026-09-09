@@ -123,6 +123,27 @@ const SHARED_FACTS: Array<{ label: string; needle: RegExp; derive: string }> = [
     derive: "RDAP for the prod IP reports country GR",
   },
   {
+    // 🚨 Both pages said *"There is no self-service delete button in the product yet"*
+    // while account deletion had shipped. This is the rarer direction — the page claimed
+    // LESS than the product does — so there was no disclosure exposure and nothing here
+    // objected. What it cost is worse than a typo and easy to miss: it routed anyone who
+    // wanted their account gone into an email and a manual production write, for two
+    // clicks of shipped product.
+    //
+    // ⚠️ Asserted as PRESENCE of the true statement, never as absence of the old one. A
+    // ban on "no self-service delete" is satisfied by a sentence explaining that there
+    // now IS one — which is exactly the corrected copy (WORKFLOW_RULES §4).
+    label: "account deletion is disclosed as self-service",
+    // ⚠️ NOT /self-service/i. Arming caught that: both pages also say what is *not*
+    // self-service (organization deletion, email change), so the bare token is satisfied
+    // by the denials and the assertion passed with the affirmative claim deleted. §4
+    // again, and in my own guard this time. Pin the affirmative sentence.
+    needle: /Deleting your account[^.]{0,40}is self-service/i,
+    derive:
+      "docker exec datanika-app grep -n 'delete_account_section' " +
+      "/app/datanika/ui/pages/settings.py   # rendered at settings.py:372",
+  },
+  {
     label: "off-site backup host Aweb is disclosed as a sub-processor",
     needle: /Aweb/,
     derive: "grep -n 'REMOTE=' plans/infra/scripts/backup-offsite.sh  # -> root@185.226.65.96",
@@ -153,6 +174,12 @@ const RETIRED: Array<{ term: string; why: string }> = [
   { term: "Google Workspace", why: "listed as the email processor; Resend has always sent the mail" },
   { term: "Dedicated server", why: "the prod box is a KVM VPS (systemd-detect-virt -> kvm)" },
   { term: "Ubuntu 24.04", why: "the app box is 22.04; only the Aweb box is 24.04" },
+  {
+    term: "no self-service delete button",
+    why:
+      "account deletion shipped and is rendered from settings.py; `erase_user` hard-deletes "
+      + "the person and soft-deletes the record. The page understated the product.",
+  },
 ];
 
 const ALLOWED: Allowed[] = [
@@ -164,6 +191,16 @@ const ALLOWED: Allowed[] = [
       "The Change log records that hosting moved away from Hetzner on 2026-07-17. " +
       "Recording a retired sub-processor is the entire point of a change log, and a " +
       "customer who read the old table needs to be able to see what replaced it.",
+  },
+  {
+    page: "trust",
+    term: "no self-service delete button",
+    count: 1,
+    reason:
+      "The Change log records the correction itself, and a change log that cannot quote " +
+      "the sentence it retracts tells a reader nothing about what changed. This is the " +
+      "shape WORKFLOW_RULES §4 warns about from the other side: the ban fired on the " +
+      "correction, which is the guard working rather than a false positive.",
   },
   {
     page: "trust",
