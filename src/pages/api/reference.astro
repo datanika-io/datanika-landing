@@ -482,7 +482,7 @@ Content-Type: application/json
       <tr><td>Enterprise</td><td>300</td></tr>
     </tbody>
   </table>
-  <p>The limit is per key, not per organization — two keys get two independent budgets.</p>
+  <p>The limit is per key, not per organization — two keys get two independent budgets. <strong>We do not currently cap how many keys an organization may create</strong>, so the figure above is a per-key rate rather than an organization-wide ceiling. Size a worker pool against one key's budget, not against the number of keys you could mint.</p>
   <p>A second limit runs alongside it: a <strong>per-second ceiling</strong>, applied to the same key in a fixed one-second window. It is the same on every plan, so it is not a tier dimension — which also means it does not grow when your per-minute allowance does. In practice it is the limit most callers meet first, so it is worth designing around before the per-minute one.</p>
   <p>Self-hosted (core edition) defaults to 60 requests/minute, configurable via <code>API_RATE_LIMIT_RPM</code> and <code>API_RATE_LIMIT_BURST</code> environment variables.</p>
 

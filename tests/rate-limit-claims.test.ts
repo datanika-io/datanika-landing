@@ -58,8 +58,37 @@ import { resolve } from "path";
  *   #   SELECT slug, rate_limit_rpm, max_parallel_runs FROM plans ORDER BY id;
  */
 
-/** Snapshot of `plans.rate_limit_rpm`, read off production in core#699, 2026-08-30. */
+/**
+ * What we publish as the per-minute API limit.
+ *
+ * 🆕 **No longer only a snapshot (landing#531, 2026-09-07).** This was described as
+ * *"read off production in core#699, 2026-08-30"* and closed drift between our own
+ * pages only — a core reseed that missed the column would have returned Free to the
+ * column default of 60 while every page kept saying 30, green.
+ *
+ * `.github/workflows/rate-limit-parity.yml` now binds this map to core's
+ * `PUBLISHED_RATE_LIMIT_RPM` (migration `g7h8i9j0k1l2`) on a daily cron. Change a
+ * number here and that job files an issue unless core moved too.
+ *
+ * ⚠️ **The binding is to core's DECLARED INTENT, not to the database.** Neither this
+ * file nor that job can see the `plans` table. See the workflow's own header.
+ */
 const RPM = { Free: 30, Pro: 120, Enterprise: 300 } as const;
+
+/**
+ * What we publish as the concurrent-run ceiling — `/docs/scheduling-guide` sells
+ * *"On the Free plan the ceiling is 2 concurrent runs; paid plans are higher."*
+ *
+ * Bound to core's `PUBLISHED_MAX_PARALLEL_RUNS` (migration `f6a7b8c9d0e1`) by the same
+ * job. Added here rather than beside the prose so the parity checker has one landing-side
+ * source to read, mirroring `PRODUCT` in `byte-pricing-surface-inventory.test.ts`.
+ *
+ * ⚠️ **`tests/scheduling-guide.test.ts` hard-codes `2` and `5` against the rendered page**
+ * and does not read this constant. That is a second copy, recorded rather than silently
+ * tolerated: it pins the *page* to a number, this pins the *number* to core, and the two
+ * meet only if both are maintained. Collapsing them is worth doing and is not this change.
+ */
+const PARALLEL = { Free: 2, Pro: 5, Enterprise: 20 } as const;
 
 /** `settings.api_rate_limit_rpm` — what a self-hosted instance gets. */
 const SELF_HOSTED_RPM = 60;
@@ -332,5 +361,87 @@ describe("the CI/CD post's rate-limit section points somewhere that answers it",
     // would push people onto the loop that does cost per iteration.
     const text = src(POST);
     expect(text).toMatch(/polls \*\*server-side\*\*|server-side/);
+  });
+});
+
+/**
+ * `PARALLEL` exists so the cross-repo parity job has one landing-side source to read
+ * (landing#531). A constant nothing asserts is a value nobody checks, so it is bound to
+ * the page here as well as to core there.
+ */
+/**
+ * core#706: the limit is enforced **per API key** while the tier table reads like an
+ * organization allowance, and `plans.max_api_keys` is NULL on every row — so the
+ * published figure is a per-key *rate*, not a ceiling.
+ *
+ * 🔑 **The exposure is one-directional and that is why it needed copy rather than a
+ * decision.** A reader can only be misled *upward*: told the limit is per key, told
+ * nothing about how many keys exist, and left to assume a cap that is not there. Nobody
+ * gets less than we publish; someone builds on more than we meant, and it surfaces in
+ * their integration rather than in our inbox.
+ *
+ * Asserted as **presence of the qualification**, never as absence of a word — a ban is
+ * satisfied by the sentence that denies it (WORKFLOW_RULES §4).
+ */
+describe("the per-key limit is published as a rate, not as a ceiling (core#706)", () => {
+  const REF_PAGE = "src/pages/api/reference.astro";
+
+  it("the reference states that key count is not currently capped", () => {
+    const text = src(REF_PAGE);
+    expect(
+      text,
+      `${REF_PAGE} says the limit is per key. It must also say we do not currently cap how ` +
+        "many keys an org may create — otherwise a reader infers an organization ceiling " +
+        "that does not exist. SPEC_PRICING_V2 §2.5, 'The contract we publish today', item 4.",
+    ).toMatch(/do not currently cap how many keys/i);
+  });
+
+  it("it frames the figure as a per-key rate rather than an org-wide ceiling", () => {
+    // The qualification is only useful if the reader is told what it means for the
+    // number above it. Pinning the consequence, not just the disclosure.
+    expect(src(REF_PAGE)).toMatch(/per-key rate rather than an organization-wide ceiling/i);
+  });
+
+  it("does not promise unlimited keys", () => {
+    // ⚠️ The one place an absence assertion is right, and it is narrow: "unlimited" is a
+    // commitment we would have to retract if D-RL4 lands on a per-tier max_api_keys,
+    // whereas "do not currently cap" is a description that would simply be replaced.
+    // SPEC_PRICING_V2 §4.3 bans the word on metered dimensions for exactly this reason.
+    expect(src(REF_PAGE)).not.toMatch(/unlimited (api )?keys/i);
+  });
+});
+
+describe("the concurrency ceiling we publish matches the constant the parity job reads", () => {
+  const GUIDE = "src/pages/docs/scheduling-guide.astro";
+
+  it("the guide states the Free ceiling as PARALLEL.Free", () => {
+    const text = src(GUIDE);
+    // Bound to the constant, never to a literal: a guard that hard-codes the number it
+    // is checking cannot notice the number changing.
+    expect(
+      text,
+      `${GUIDE} must state the Free concurrency ceiling as ${PARALLEL.Free}, which is what ` +
+        "core's PUBLISHED_MAX_PARALLEL_RUNS declares and what the parity job compares against.",
+    // ⚠️ Written from the file's bytes, not from memory of the markup. The first
+    // version put `</strong>` between the number and the words; the page has
+    // `<strong>2 concurrent runs</strong>`, so the number and the words are adjacent
+    // and the tag is outside both. Anchoring on prose you have retyped matches nothing.
+    ).toMatch(new RegExp(`${PARALLEL.Free}(&nbsp;|\\s)+concurrent runs`));
+  });
+
+  it("the guide does not publish a paid-tier concurrency figure it cannot keep", () => {
+    // Deliberately a *presence* assertion about the hedge rather than a ban on numbers:
+    // the page says "paid plans are higher" instead of naming 5 and 20, so nothing there
+    // can drift. If someone later names them, this fails and they must bind them to
+    // PARALLEL.Pro / PARALLEL.Enterprise rather than typing them.
+    const text = src(GUIDE);
+    const namesPaidFigure =
+      new RegExp(`${PARALLEL.Pro}\\s*(&nbsp;|\\s)?concurrent`).test(text) ||
+      new RegExp(`${PARALLEL.Enterprise}\\s*(&nbsp;|\\s)?concurrent`).test(text);
+    expect(
+      namesPaidFigure,
+      "the guide now names a paid-tier concurrency number. That is fine, but bind it to " +
+        "PARALLEL.Pro / PARALLEL.Enterprise so the parity job covers it.",
+    ).toBe(false);
   });
 });

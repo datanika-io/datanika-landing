@@ -1,0 +1,142 @@
+name: Rate limit parity
+
+# landing#531. Sibling of `pricing-catalogue-parity.yml`, which binds our published
+# volume and run figures to core's seeded catalogue. This one covers the two columns
+# that job does not touch and nothing else binds: `rate_limit_rpm` and
+# `max_parallel_runs`.
+#
+# ## Why this was worth adding on a day when everything agrees
+#
+# It is. Production currently holds 30 / 120 / 300 and 2 / 5 / 20, matching every page —
+# core#780 and core#928 corrected the paid rows. A parity check is cheap to add while
+# the two sides agree and nearly impossible to motivate afterwards, because by then the
+# first thing anyone asks is which side to change.
+#
+# The class it catches is live: no migration has ever *created* the paid plan rows, so a
+# from-scratch build takes column defaults, and `rate_limit_rpm` defaults to 60. That is
+# half the published Pro limit and a fifth of Enterprise, arriving silently on any rebuild.
+#
+# ## 🚨 What this job compares — and the blind spot it must keep stating
+#
+# It reads the migrations' **declared constants**, never the effect of their SQL:
+#
+#     f6a7b8c9d0e1   PUBLISHED_MAX_PARALLEL_RUNS
+#     g7h8i9j0k1l2   PUBLISHED_RATE_LIMIT_RPM
+#
+# Those are the contract the cloud seed writes into a fresh database. Binding to the
+# `UPDATE` statements instead would bind us to SQL that matches **zero rows** on a
+# from-scratch build — which is exactly how `max_parallel_runs` came to be published as
+# 20 while production held 5. The distinction is the design; see the checker's docstring.
+#
+# ⚠️ **Green here means landing agrees with core's declared intent. It does NOT mean
+# production serves those numbers.** Neither side of this comparison is the database, and
+# CI has no box. A row created out of band, a reseed that runs before the correction, or a
+# manual UPDATE all leave this green. Infra's rebuild-parity drill (core#1060) is the
+# complement that *can* see production; the two answer different questions and neither
+# substitutes for the other.
+#
+# **Do not delete that paragraph for tidiness.** A guard that states its own blind spot is
+# worth more than one that does not, and this repository has repeatedly paid for checks
+# whose scope was assumed to be wider than it was.
+#
+# ## Shape, copied deliberately from the sibling job
+#
+# A **cron that files an issue**, not a required check: the change that breaks us lands in
+# another repo, where a PR-time check here could never see it, and a required check
+# depending on a network call to someone else's repo blocks merges on things unrelated to
+# the PR.
+#
+# Its own workflow and its own issue title, so it cannot collide with the sibling's dedup
+# search (core#818: give each auto-filer its own dedup channel).
+#
+# The minute is arbitrary and must not be tidied to :00 or :30 — GitHub delays scheduled
+# runs at the top of the hour, which is how landing#305's cron produced zero runs. Offset
+# from :17 (connector-count) and :43 (pricing-catalogue) so the three do not contend.
+#
+# Verifying it fires needs `event == schedule` specifically; a manual dispatch sits in the
+# same list and looks identical at a glance:
+#   gh api "repos/datanika-io/datanika-landing/actions/workflows/rate-limit-parity.yml/runs" \
+#     --jq '.workflow_runs[] | select(.event=="schedule") | .created_at'
+
+on:
+  schedule:
+    - cron: "29 7 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  parity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Fetch core's declared rate-limit and concurrency intent
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # `master`, deliberately — that is the SHA production runs, and a plan row is a
+          # commitment the moment it is enforced, not when it is merged.
+          base="repos/datanika-io/datanika-core/contents/datanika/migrations/versions"
+          gh api "$base/g7h8i9j0k1l2_correct_paid_plan_rate_limits.py?ref=master" \
+            --jq '.content' | base64 -d > /tmp/rpm_migration.py
+          gh api "$base/f6a7b8c9d0e1_correct_paid_plan_concurrency.py?ref=master" \
+            --jq '.content' | base64 -d > /tmp/parallel_migration.py
+
+          # Non-empty is not enough: `gh api` on a missing path prints an error object
+          # that base64-decodes to something, so assert the shape too. A renamed migration
+          # must fail here rather than downstream as "constant not found".
+          test -s /tmp/rpm_migration.py
+          test -s /tmp/parallel_migration.py
+          grep -q "PUBLISHED_RATE_LIMIT_RPM" /tmp/rpm_migration.py
+          grep -q "PUBLISHED_MAX_PARALLEL_RUNS" /tmp/parallel_migration.py
+
+      - name: Compare against what we publish
+        id: check
+        run: |
+          set +e
+          python scripts/check-rate-limit-parity.py \
+            --rpm-migration /tmp/rpm_migration.py \
+            --parallel-migration /tmp/parallel_migration.py \
+            --guard tests/rate-limit-claims.test.ts > /tmp/parity.txt 2>&1
+          echo "rc=$?" >> "$GITHUB_OUTPUT"
+          cat /tmp/parity.txt
+
+      - name: File an issue on drift
+        if: steps.check.outputs.rc != '0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          existing=$(gh issue list --state open --search "in:title Rate limit parity" \
+            --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            echo "Already tracked in #$existing; not filing again."
+            exit 1
+          fi
+
+          {
+            echo 'The API rate limits and concurrency ceilings `datanika.io` publishes no longer match what `datanika-core` declares as their intended values.'
+            echo
+            echo '```'
+            cat /tmp/parity.txt
+            echo '```'
+            echo
+            echo '**Core is almost always the side that moved.** Read the two constants at core `master` first, then reconcile landing:'
+            echo
+            echo '1. `PUBLISHED_RATE_LIMIT_RPM` in `datanika/migrations/versions/g7h8i9j0k1l2_correct_paid_plan_rate_limits.py`'
+            echo '2. `PUBLISHED_MAX_PARALLEL_RUNS` in `datanika/migrations/versions/f6a7b8c9d0e1_correct_paid_plan_concurrency.py`'
+            echo '3. Update `RPM` / `PARALLEL` in `tests/rate-limit-claims.test.ts` to the intended values, then run `npx vitest run tests/rate-limit-claims.test.ts` — the five published surfaces are asserted against those constants, so the pages needing a rewrite will name themselves.'
+            echo
+            echo '⚠️ **This job compares two artifacts we control.** Neither is the database. Green means landing agrees with core’s *declared intent*; it says nothing about what production serves. A row created out of band or a reseed that runs before the correction leaves this green. Infra’s rebuild-parity drill (core#1060) is the check that reads the box.'
+            echo
+            echo '⚠️ **`exit 2` means the comparison could not be made** — a renamed constant, a truncated parse, or a tier count other than three. That is deliberately not the same as agreement, and must not be resolved by loosening the parser.'
+            echo
+            echo 'Filed automatically by `.github/workflows/rate-limit-parity.yml`.'
+          } > /tmp/parity-issue.md
+
+          gh issue create \
+            --title "Rate limit parity: datanika.io publishes limits core does not intend" \
+            --body-file /tmp/parity-issue.md
+          exit 1
