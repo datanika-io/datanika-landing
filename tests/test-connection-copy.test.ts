@@ -335,6 +335,59 @@ describe("the surfaces outside the guide corpus (#502 residues)", () => {
     ).toBe(true);
   });
 
+  /**
+   * 🚨 **The positive half above is satisfied by a line that has nothing to do
+   * with the guidance, and that was MEASURED, not suspected.**
+   *
+   * Deleting the entire `TEST CONNECTION` comment block from `_template.md` — the
+   * block that tells the next author to derive the answer from core rather than
+   * copy a neighbour — leaves the whole suite green at 2249/2249. `/Test
+   * Connection/` still matches, because step 4 of the template says *"Click **Test
+   * Connection**, then **Create Connection**"*, and that line survives the
+   * deletion untouched.
+   *
+   * So the guard catches the regression that HAPPENED (the template instructing
+   * the retired verdict) and misses the regression that is now easiest to make:
+   * the instruction quietly going away. An author then writes the sentence from
+   * a neighbouring guide, which the deleted block exists to forbid — and which
+   * is how the retired string reached 22 pages in the first place.
+   *
+   * ⚠️ **Asserted on the RAW file, deliberately.** The guidance lives inside an
+   * HTML comment, so it is exactly what `stripHtmlComments()` removes. The ban
+   * above reads the stripped text and this reads the raw text, and that
+   * opposition is the point: the directive an author copies must not contain the
+   * retired verdict, and the comment telling them what to write must exist.
+   */
+  it("the guide template still tells the next author HOW to derive the verdict", () => {
+    const raw = readFileSync(TEMPLATE, "utf-8");
+
+    const block = raw.match(/<!--[\s\S]*?TEST CONNECTION[\s\S]*?-->/);
+    expect(
+      block,
+      "_template.md has lost its TEST CONNECTION guidance block. Nothing now tells the " +
+        "next author which of the three behaviours applies, so they will copy a neighbouring " +
+        "guide — the exact path that spread the retired verdict across 22 pages (landing#502).",
+    ).not.toBeNull();
+
+    const guidance = block![0];
+
+    // Each needle is a distinct instruction, not a synonym of the others: where to
+    // derive it, the three answers it can be, and the path that must not be taken.
+    const REQUIRED: Array<[RegExp, string]> = [
+      [/connection_service\.py/, "names the file the answer is derived FROM"],
+      [/SAAS_PROBES/, "names the probing group"],
+      [/_FILE_TYPES/, "names the file-listing group"],
+      [/SAAS_PROBE_EXEMPT/, "names the exempt group"],
+      [/neighbouring guide|neighboring guide/i, "forbids copying a neighbouring guide"],
+    ];
+    const missing = REQUIRED.filter(([re]) => !re.test(guidance)).map(([, why]) => why);
+    expect(
+      missing,
+      "_template.md's guidance block no longer " + missing.join("; and no longer ") +
+        ". Each of these is a separate instruction and the block is useless without all of them.",
+    ).toEqual([]);
+  });
+
   it("the shared Connections doc does not claim a blanket credential check", () => {
     const text = readFileSync(CONNECTIONS, "utf-8");
     // Six SAAS_PROBE_EXEMPT types return a neutral verdict, so an unqualified

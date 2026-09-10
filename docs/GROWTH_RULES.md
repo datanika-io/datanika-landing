@@ -823,6 +823,8 @@ field clears at the exact moment things are going right. Cost a diagnostic round
 that never happened. The honest signals are `mergeStateStatus` and the GraphQL
 `AddedToMergeQueueEvent`; the REST timeline carries neither reason nor equivalent.
 
+**And `mergeStateStatus: BEHIND` enqueues and merges — do not chase it.** `CLAUDE.md` records that a PR one commit behind `dev` reads **`CLEAN`**; measured on landing PR #553 it read **`BEHIND`** after a sibling merged ahead of it, and it enqueued, rebased and merged untouched all the same. Both readings end in the queue doing the rebase, so `gh pr update-branch` is wasted work in either case. 🔑 **The state name is not the contract; what the queue does with it is.** A rule keyed on the string would have sent someone chasing a branch that was already on its way in.
+
 **Four shell defaults that turn a broken command into a clean `0`.** Each one has reversed a
 conclusion here at least once, and a `grep -c` prints `0` for all of them:
 
