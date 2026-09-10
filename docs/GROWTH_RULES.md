@@ -768,14 +768,26 @@ partition and it is two commands:
 
 ```bash
 gh api "repos/datanika-io/datanika-landing/dependabot/alerts?state=open&per_page=100" --paginate   -q '.[].dependency.package.name' | sort -u
-python -c "import json;d=json.load(open('package.json'));print(sorted(d.get('dependencies',{})))"
+python -c "import json;d=json.load(open('package.json'));print(sorted(d.get('dependencies',{})),sorted(d.get('devDependencies',{})))"
 ```
 
-Every alerted package must be one of the entries in `dependencies` or a transitive of one. That
-holds today at **46 alerts / 17 packages** (2026-09-09, up from 44 on 09-03 with **no new
-category**), because `dependencies` carries only `astro`, `@astrojs/*`, `tailwindcss`,
-`astro-og-canvas` and `canvaskit-wasm` — a toolchain that runs on a CI runner and exits, with no
-client framework, no adapter and `output: static`.
+Every alerted package must trace to `dependencies` **or to `devDependencies`** — and the second set
+is *further* from shipped output, not closer. `dependencies` carries only `astro`, `@astrojs/*`,
+`tailwindcss`, `astro-og-canvas` and `canvaskit-wasm`: a toolchain that runs on a CI runner and
+exits, with no client framework, no adapter, and `output: static`.
+
+🔴 **Corrected 2026-09-10, and the correction is the point of writing the check down.** This
+paragraph used to say *"one of the entries in `dependencies` or a transitive of one"*, full stop.
+Re-derived today that is **false**: `vitest` is a direct `devDependencies` entry and is alerted, and
+`@vitest/mocker` is its transitive. The conclusion did not change — a test runner is about as
+unshipped as a package gets — but **the stated test would now fail**, and a reader running it would
+either raise a false alarm or quietly widen the claim to make it pass. A partition written slightly
+too narrow does not stay a harmless simplification; it becomes a check that punishes the honest run.
+
+Counts, so the drift is visible rather than inferred: **53 alerts / 19 packages** (2026-09-10) —
+44 on 09-03, 46 on 09-09. The 09-09 note recorded **"no new category"**; that is no longer true, and
+the two new ones are `vitest` and `@vitest/mocker`. ⚠️ **A count here is perishable and a partition
+is not.** Cite the partition; re-derive the count.
 
 🔑 **The authority is `tests/dependency-reachability.test.ts`, not this paragraph, and the
 difference matters.** That guard asserts against `dist/`, and its first property is *no JavaScript
