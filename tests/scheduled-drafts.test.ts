@@ -93,6 +93,7 @@ const scheduledPosts = [
   { file: "rules-with-no-disposal-step.md", date: "2026-09-29", publishedAt: "2026-09-29", category: "engineering", titleContains: "556 Files" },
   { file: "check-with-one-answer.md", date: "2026-10-01", publishedAt: "2026-10-01", category: "engineering", titleContains: "Nothing To Do" },
   { file: "cron-declared-vs-honoured.md", date: "2026-10-03", publishedAt: "2026-10-03", category: "engineering", titleContains: "07:29" },
+  { file: "correct-measurement-wrong-criterion.md", date: "2026-10-05", publishedAt: "2026-10-05", category: "engineering", titleContains: "Nineteen Published Files" },
 ];
 
 const publishedScheduledPosts = [
