@@ -90,6 +90,7 @@ const scheduledPosts = [
   { file: "loud-bug-silent-fix.md", date: "2026-09-23", publishedAt: "2026-09-23", category: "engineering", titleContains: "Is Loud, 0" },
   { file: "stale-beliefs-across-a-boundary.md", date: "2026-09-25", publishedAt: "2026-09-25", category: "engineering", titleContains: "Two Stale Beliefs" },
   { file: "broken-probe-better-story.md", date: "2026-09-27", publishedAt: "2026-09-27", category: "engineering", titleContains: "Broken Probe" },
+  { file: "rules-with-no-disposal-step.md", date: "2026-09-29", publishedAt: "2026-09-29", category: "engineering", titleContains: "556 Files" },
 ];
 
 const publishedScheduledPosts = [
