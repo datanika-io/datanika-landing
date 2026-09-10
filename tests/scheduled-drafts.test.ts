@@ -89,6 +89,7 @@ const scheduledPosts = [
   { file: "tar-deploy-never-deletes.md", date: "2026-09-21", publishedAt: "2026-09-21", category: "engineering", titleContains: "Still Running in Production" },
   { file: "loud-bug-silent-fix.md", date: "2026-09-23", publishedAt: "2026-09-23", category: "engineering", titleContains: "Is Loud, 0" },
   { file: "stale-beliefs-across-a-boundary.md", date: "2026-09-25", publishedAt: "2026-09-25", category: "engineering", titleContains: "Two Stale Beliefs" },
+  { file: "broken-probe-better-story.md", date: "2026-09-27", publishedAt: "2026-09-27", category: "engineering", titleContains: "Broken Probe" },
 ];
 
 const publishedScheduledPosts = [
