@@ -789,3 +789,73 @@ the guard is right.
 the measurement supports; the measured property is *not reachable in shipped output*. And it is not
 a security sign-off: whether that risk is acceptable, and whether to dismiss the alerts, is a
 posture decision and not Growth's to take. Draft it, name the exact call, and leave it.
+
+## Measuring your own tools, continued — controls aimed at the wrong axis
+
+🔑 **A control on the wrong axis reads exactly like a control.** This is the through-line of every
+item below, and it is worth more than any of them. Checking that `git cat-file -e` can correctly
+report a *missing* file proves the command works; it cannot prove the **ref you handed it is
+current**. The control passed, the reading was wrong, and a merged blog post read as never shipped.
+**Before trusting a control, name the thing your check would have to be wrong about, and aim the
+control at that** — not at the part you already believe.
+
+**`git fetch origin <a> <b>` does not refresh the remote-tracking refs.** With two branch names it
+updated `FETCH_HEAD` and left `origin/dev` **17 commits stale**, so `git cat-file -e origin/dev:<f>`
+reported an already-merged file as absent. `git ls-remote --heads origin <branch>` is the only
+answer that comes from the server every time; a bare `git fetch origin` also works. **Never read a
+merge state off a tracking ref you have not just proven fresh.**
+
+**`autoMergeRequest` goes null when the merge queue ACCEPTS a pull request.** The queue consumes the
+auto-merge request on entry, so `auto=false` on a queued PR means *taken up*, not *cancelled* — the
+field clears at the exact moment things are going right. Cost a diagnostic round chasing a disarm
+that never happened. The honest signals are `mergeStateStatus` and the GraphQL
+`AddedToMergeQueueEvent`; the REST timeline carries neither reason nor equivalent.
+
+**Four shell defaults that turn a broken command into a clean `0`.** Each one has reversed a
+conclusion here at least once, and a `grep -c` prints `0` for all of them:
+
+| default | effect | fix |
+|---|---|---|
+| `LC_ALL` unset | a grep whose pattern **or target** is non-ASCII matches nothing | `LC_ALL=C.UTF-8` |
+| MSYS path conversion | `git <ref>:<path>` mangles when the path starts with `.` or `/` | `MSYS_NO_PATHCONV=1` |
+| cp1251 console | the script dies on the line that *reports* the finding | `PYTHONIOENCODING=utf-8` |
+| Windows Python vs bash | `/tmp/x` is not a path Python resolves | explicit `D:/...` |
+
+**`$?` after a pipe is the last stage's status.** `cmd | tail` reports `tail`'s exit code, so two
+armings this week read `exit=0` from a failing command. Capture the verdict before the pipe, or use
+`PIPESTATUS`.
+
+## Guards, continued — satisfied by the prose about the thing
+
+🚨 **A guard scoped to a region can be satisfied by the CHANGE LOG announcing the row it checks.**
+Third instance of the family, and a new shape. `subprocessor-register-parity.test.ts` asserted that
+`/trust` names `Telegram :: Infrastructure alerting`, scoped to `<section id="subprocessors">`. That
+section **contains the change log**, and the change-log entry announcing the addition says
+*"(infrastructure alerting)"* — so deleting the Telegram row from the table left the whole suite
+green. Now scoped to the table, with an "exactly one table" control, the way the `/dpa` annex guard
+already was for the same reason.
+
+🔑 **Scope a needle to the artefact a reader relies on. Prose *about* that artefact reads exactly
+like the artefact.** The two earlier instances were a needle matched by the sentence denying the
+claim, and one matched by the comment above the code it was checking. This one is the most
+deceptive, because the offending prose is *correct, deliberate and freshly written by the same
+change* — a change log is supposed to describe what was added.
+
+⚠️ **Only the mutation found it.** The file's own "the matcher is not inert" control passed
+throughout, because a synthetic absent phrase genuinely did not match. **An anti-vacuity control
+proves the matcher can say no; it cannot prove the matcher is pointed at the right text.** Delete
+the row and rebuild, every time.
+
+## Guards, continued — direction
+
+🔑 **Binding A to B does not bind B to the source.** `legal-pages-commercial-claims.test.ts`
+asserts `/dpa` ⊇ `/trust` — "a superset, never a subset" — so it fires when the legal annex
+under-lists what the trust page admits, and is **silent when the trust page under-lists the
+register**. The drift that actually happened went the second way: `/privacy` and `/trust` named
+neither Google's contact mailbox nor Telegram for six days while `/dpa`, which is *derived*,
+published both. Two of our own live legal documents disagreed and nothing was red.
+
+⚠️ **A hardcoded list described as "derived" is the tell.** That guard's array —
+`["Pointer","Aweb","Cloudflare","Resend","Paddle","GitHub"]` — carried the comment *"derived from
+/trust's own published table."* It was derived once, by a person, on the day it was written.
+**When a guard names a set in literal syntax, it can only ever check the day it was authored.**
