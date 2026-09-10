@@ -33,6 +33,35 @@ const connectors = defineCollection({
     source: z.string(),
     source_name: z.string(),
     category: z.enum(["database", "saas", "file", "api"]),
+    /**
+     * 🚨 `verified_date` records WHEN SOMEONE FIRST LOOKED. It does NOT mean
+     * the guide is accurate today, and nothing keeps the two in step.
+     *
+     * Measured 2026-09-10: **34 of 37** guides have a `verified_date` older than
+     * the last commit that touched the guide. That is not decay through neglect
+     * — it is the opposite. Every correct fix we ship to these files (the #502
+     * Test-Connection sweep, the Kafka auth correction, the phantom-nav pass)
+     * edits the body and leaves this field alone, so **the more diligently the
+     * corpus is maintained, the staler this field becomes.**
+     *
+     * The field is not rendered on the guide pages — no reader sees a date — so
+     * this is not a published claim. It is worse in one specific way: it is
+     * internal metadata that LOOKS like a control. A contributor or agent reading
+     * `verified_by: product-ui` / `verified_date: 2026-07-19` reasonably infers a
+     * live verification process. There was one, once, on that date.
+     *
+     * ⚠️ Do not "fix" this by bumping the date on content edits. That would make
+     * the field assert a verification that did not happen — trading a stale record
+     * for a false one, which is the worse of the two. Bump it only when someone
+     * has actually walked the guide against the product, and put what they checked
+     * in `public/docs/connectors/<slug>/README.md`, which is the provenance record
+     * and is date-framed for exactly this reason.
+     *
+     * `verified_by: "draft-pending-verification"` means no one has walked it yet.
+     * That is an honest state and it is QA's sign-off queue, not a defect — but a
+     * guide in that state can still be `draft: false` and serving publicly, which
+     * is true of `openapi` today.
+     */
     verified_by: z.string().default("draft-pending-verification"),
     verified_date: z.string().nullable().default(null),
     related_use_cases: z.array(z.string()).default([]),
