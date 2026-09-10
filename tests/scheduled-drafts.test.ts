@@ -95,6 +95,7 @@ const scheduledPosts = [
   { file: "cron-declared-vs-honoured.md", date: "2026-10-03", publishedAt: "2026-10-03", category: "engineering", titleContains: "07:29" },
   { file: "correct-measurement-wrong-criterion.md", date: "2026-10-05", publishedAt: "2026-10-05", category: "engineering", titleContains: "Nineteen Published Files" },
   { file: "field-that-looks-like-a-control.md", date: "2026-10-07", publishedAt: "2026-10-07", category: "engineering", titleContains: "More Wrong One Field Became" },
+  { file: "no-dbt-adapter-for-mysql.md", date: "2026-10-09", publishedAt: "2026-10-09", category: "tutorial", titleContains: "dbt Adapter for MySQL" },
 ];
 
 const publishedScheduledPosts = [
