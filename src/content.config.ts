@@ -57,6 +57,20 @@ const connectors = defineCollection({
      * in `public/docs/connectors/<slug>/README.md`, which is the provenance record
      * and is date-framed for exactly this reason.
      *
+     * 🆕 **The contract this field is held to is `docs/specs/SPEC_CONNECTOR_GUIDE_VERIFICATION.md`**
+     * (Product, 2026-09-10). In one line: **verified = a named person completed a real connection
+     * and a run using this guide, and recorded it** in
+     * `public/docs/connectors/<slug>/README.md`. Everything CI already checks — field parity,
+     * phantom nav, screenshot presence, availability — is explicitly **NOT** part of it, because a
+     * human check that duplicates a machine check makes this field look like it covers ground it
+     * does not.
+     *
+     * ⚠️ **Set it only in the same change that adds the evidence**, and prefer `null` over a date
+     * you cannot point at. Measured 2026-09-10: **36 of 37** guides carry a date and **8** carry the
+     * first-run artifact that proves a run completed — so the reported number is **8/37**, not
+     * 36/37. A permanent `null` on a source nobody can walk without a paid account is the honest
+     * value, not a gap.
+     *
      * `verified_by: "draft-pending-verification"` means no one has walked it yet.
      * That is an honest state and it is QA's sign-off queue, not a defect — but a
      * guide in that state can still be `draft: false` and serving publicly, which
