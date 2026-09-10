@@ -533,7 +533,26 @@ describe("the published terms are the terms the plan catalogue holds", () => {
     }
   });
 
-  it("says what a GB is, where the rate is defined and where it is computed", () => {
+  /**
+   * 🚨 **Explicit timeout, and the cause is machine contention — NOT a slow assertion.**
+   *
+   * This walks all 170 built pages. Alone it takes ~5.3s of test time against
+   * vitest's 5000ms **per-test** default, so it already sits on the line; under
+   * the full 75-file parallel run on a loaded machine it tips over and reports
+   * `Test timed out in 5000ms`. That red is indistinguishable from a real
+   * finding, and it cost a diagnostic round on 2026-09-10 — two whole-site walks
+   * failed together while the suite ran 10x slower than usual, and both passed
+   * immediately in isolation.
+   *
+   * ⚠️ **Do not cite this as precedent for raising a timeout on a guard that got
+   * slow.** `GROWTH_RULES.md` records the opposite case: a false-positive control
+   * that hit 5116ms because it built a regex per page, fixed by making it 465ms
+   * rather than by extending its budget. The distinction is the whole point —
+   * that guard was accidentally quadratic; this one is legitimately
+   * O(pages x links), and 170 pages is the real work. **Raise the budget for real
+   * work; fix the algorithm for accidental work.**
+   */
+  it("says what a GB is, where the rate is defined and where it is computed", { timeout: 30_000 }, () => {
     /**
      * The biller divides by 2^30, so our "GB" is 7.4% larger than the decimal GB
      * a warehouse console reports. `/pricing`'s FAQ says so. `/why-cheaper` is
