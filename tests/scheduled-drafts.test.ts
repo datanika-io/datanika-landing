@@ -91,6 +91,7 @@ const scheduledPosts = [
   { file: "stale-beliefs-across-a-boundary.md", date: "2026-09-25", publishedAt: "2026-09-25", category: "engineering", titleContains: "Two Stale Beliefs" },
   { file: "broken-probe-better-story.md", date: "2026-09-27", publishedAt: "2026-09-27", category: "engineering", titleContains: "Broken Probe" },
   { file: "rules-with-no-disposal-step.md", date: "2026-09-29", publishedAt: "2026-09-29", category: "engineering", titleContains: "556 Files" },
+  { file: "check-with-one-answer.md", date: "2026-10-01", publishedAt: "2026-10-01", category: "engineering", titleContains: "Nothing To Do" },
 ];
 
 const publishedScheduledPosts = [
