@@ -1,8 +1,8 @@
 ---
 title: "There Is No Maintained dbt Adapter for MySQL. Here Is What That Means for Your Pipeline"
 description: "If your operational data lives in MySQL and you want to model it with dbt, the answer is not a plugin — it is an architecture. MySQL is an extraction source; the transformation happens in the warehouse you land it in."
-date: 2026-10-09
-publishedAt: 2026-10-09
+date: 2026-10-13
+publishedAt: 2026-10-13
 author: "Datanika Team"
 category: "tutorial"
 tags: ["mysql", "dbt", "elt", "data-engineering", "warehouse"]

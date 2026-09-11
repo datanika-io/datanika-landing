@@ -1,8 +1,8 @@
 ---
 title: "Two Services, Two Stale Beliefs, Pointing in Opposite Directions"
 description: "Our billing gate correctly refuses to charge for a cancelled run. All three of its callers pass the word success as a literal. Each side had written down an assumption about the other, both assumptions were reasonable, and neither was enforced — so the gate defends a case it can never be handed."
-date: 2026-09-25
-publishedAt: 2026-09-25
+date: 2026-09-29
+publishedAt: 2026-09-29
 author: "Datanika Team"
 category: "engineering"
 tags: ["architecture", "billing", "testing", "distributed-systems", "engineering"]

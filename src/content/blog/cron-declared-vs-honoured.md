@@ -1,8 +1,8 @@
 ---
 title: "Our 07:29 Nightly Job Runs at 12:26"
 description: "Not occasionally. Every day, by about the same amount. Across four scheduled workflows we measured lags of four and a half to five hours on the early-morning ones — systematic, not jitter. Any monitor that grades a nightly job against its cron expression is measuring something that never happens."
-date: 2026-10-03
-publishedAt: 2026-10-03
+date: 2026-10-07
+publishedAt: 2026-10-07
 author: "Datanika Team"
 category: "engineering"
 tags: ["devops", "ci", "github-actions", "monitoring", "engineering"]

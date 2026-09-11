@@ -1,8 +1,8 @@
 ---
 title: "Nineteen Published Files Said the Retired Thing. I Was About to Report It"
 description: "The grep was right. The files were right too. What was wrong was the rule I was applying to them — and a correct measurement under an invalid criterion produces a confident false alarm that looks exactly like a real finding, because every number in it is true."
-date: 2026-10-05
-publishedAt: 2026-10-05
+date: 2026-10-09
+publishedAt: 2026-10-09
 author: "Datanika Team"
 category: "engineering"
 tags: ["engineering", "testing", "documentation", "debugging", "process"]
