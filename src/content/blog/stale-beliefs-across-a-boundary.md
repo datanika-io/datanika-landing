@@ -1,6 +1,6 @@
 ---
 title: "Two Services, Two Stale Beliefs, Pointing in Opposite Directions"
-description: "Our billing gate correctly refuses to charge for a cancelled run. All three of its callers pass the word success as a literal. Each side had written down an assumption about the other, both assumptions were reasonable, and neither was enforced — so the gate defends a case it can never be handed."
+description: "Our billing gate correctly refused to charge for a cancelled run. All three of its callers passed the word success as a literal. Each side had written down an assumption about the other, both were reasonable, and neither was enforced — so the gate defended a case it could never be handed."
 date: 2026-09-29
 publishedAt: 2026-09-29
 author: "Datanika Team"
@@ -8,7 +8,9 @@ category: "engineering"
 tags: ["architecture", "billing", "testing", "distributed-systems", "engineering"]
 ---
 
-Our billing code decides whether a pipeline run is chargeable. It is one line:
+*The code below is how our billing gate looked until 9 September 2026. It has since been repaired, and the last section says exactly how — but the shape of the defect is the reason to read this, and it is a shape that is probably live in something you own.*
+
+Our billing code decided whether a pipeline run was chargeable. It was one line:
 
 ```python
 return status == "success"
@@ -16,9 +18,9 @@ return status == "success"
 
 That line is right. It is deliberately `== "success"` rather than `!= "failed"`, and the docstring above it says why: a cancelled run is not billable either, and a status this code has never seen should not be charged for by default. Somebody thought carefully about it.
 
-All three of its callers pass `status="success"` as a string literal.
+All three of its callers passed `status="success"` as a string literal.
 
-And `status` is a keyword argument that **defaults to `"success"`**. The docstring explains why, and the reason is a good one: so that a caller which omits the kwarg is unaffected. It also means that forgetting to pass a status bills the run.
+And `status` was a keyword argument that **defaulted to `"success"`**. The docstring explains why, and the reason is a good one: so that a caller which omits the kwarg is unaffected. It also means that forgetting to pass a status bills the run.
 
 **Nobody wrote a bug.** Both sides wrote something defensible, and wrote down why. The defect lives in the gap between two correct documents.
 
@@ -59,14 +61,17 @@ The billing tests pass a status in and assert the gate's answer. They are correc
 
 We have hit this shape before from the other end: [a test whose runtime closed the race it existed to observe](/blog/loud-bug-silent-fix/), and [a check satisfied by the comment above the thing it was checking](/blog/guard-matched-the-comment/). This is the same family. The assertion is real; the thing it is attached to is not the thing you meant.
 
-## What we are changing, and what we would tell you to do
+## What we changed, and what we would tell you to do
 
 Nobody was billed. Our `charges` table is empty and always has been — this was found while the product has no paying customers, which is the only reason this post is a mechanism and not an apology.
 
-We have not shipped the repair yet, and the obvious one is not the one we want. "Make the callers pass the real status" is a small change that leaves the next caller free to make the same reasonable choice, and leaves the assumption exactly where it was. What we are changing instead is where the assumption lives:
+The repair shipped on 9 September 2026, and the shape of it is the point. The obvious change — *make the callers pass the real status* — is not what we did, because it leaves the next caller free to make the same reasonable choice and leaves the assumption exactly where it was. **The callers now pass no status at all.** `announce_completion` reads it from the run row, so the value the gate receives is derived from the record rather than asserted by a branch that believes it knows.
 
-- **Give the assumption a test on the side that depends on it.** The billing package cannot import the caller, but it can assert the *set* of statuses it is prepared to handle, and fail when it meets one it has never seen — rather than defaulting it into the safe-looking branch.
-- **Make the unexpected value loud rather than convenient.** A default of `"success"` is the dangerous polarity: it makes an omission bill. Defaulting to *not billable* turns the same mistake into a support question instead of a charge.
+Then we moved the assumption to where it could be violated:
+
+- **Give the assumption a test on the side that depends on it.** The billing package cannot import the caller, but it can assert the *set* of statuses it is prepared to handle, and fail when it meets one it has never seen — rather than defaulting it into the safe-looking branch. The one-line gate is now a **total map** from status to billable, with every status the system can produce listed explicitly. Its own comment says why the unreachable ones are written down rather than omitted: *so the map stays total and the guard is checking a real decision rather than an absence.*
+- **Make the unexpected value loud rather than convenient.** A default of `"success"` is the dangerous polarity: it makes an omission bill. The lookup now defaults to **not billable**, so the same mistake becomes a support question instead of a charge.
+- **Expect the real values to force a decision you had been avoiding.** Once true statuses actually reached the gate, `cancelled` stopped being hypothetical and had to be ruled on for real — and it went the other way from the original code's guess. A cancelled run **is** billed, because partial data survives a cancellation and the user keeps what was processed. The old line was not merely unreachable; it encoded an answer nobody had been required to defend.
 - 🔑 **When you write down an assumption you cannot enforce, write it where it would be violated, not where it is relied on.** That docstring is excellent and it was in the wrong repository. The person who would have broken it was never going to read it.
 
 That last one is the transferable part, and it is not really about billing. Any comment of the form *"this works because of a property of some other system"* is a note addressed to somebody who will never open the file it is in. It needs to be a test, an assertion at the boundary, or a comment in **their** file — otherwise it is a record of the accident rather than a defence against it.
