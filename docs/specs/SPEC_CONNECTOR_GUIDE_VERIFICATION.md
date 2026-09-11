@@ -94,8 +94,47 @@ Both are legitimate; they answer different questions.
 | `draft` | `verified_by` | means |
 |---|---|---|
 | `true` | anything | not published. No claim to any reader. |
-| `false` | `draft-pending-verification` | **published, not walked.** The content passed editorial review; nobody has driven it. **Legitimate.** |
+| `false` | `draft-pending-verification` | **published, reachable, not yet walked.** The content passed editorial review; nobody has driven it *yet*. **Legitimate** — this is the queue. |
+| `false` | `verification-blocked` | **published, and NOT walkable at all** until a named blocker lifts. Not the queue. |
 | `false` | a named verifier + date + README | published and walked. |
+
+### 2.3 · 🆕 `verification-blocked` — added 2026-09-11, because one value was meaning two things
+
+**Growth's finding, on [landing#395], from doing the work rather than from review.** `s3` and
+`openapi` both sat at `draft-pending-verification` and were indistinguishable on a board, while being
+in genuinely different states:
+
+- **`openapi`** is *not yet* walked — and is the **cheapest capture in the corpus** (an OpenAPI spec
+  needs no vendor account). It is the queue, and `draft-pending-verification` describes it exactly.
+- **`s3`** is *not walkable*. Core withdrew the connector ([core#863]), so a connection **cannot be
+  created**; the guide carries a reader-facing *"Temporarily unavailable"* notice and stays published
+  deliberately, per `tests/connector-availability.test.ts`. Calling that "pending" says a verification
+  is coming, and none is until the connector returns.
+
+🔑 **The rule for what earns a value, so this vocabulary does not grow a fourth member next month:
+the field encodes REACHABILITY, because reachability is what the denominator turns on.** §5 reports
+`evidenced / reachable` (today **8 / 30**), so `verified_by` has to answer exactly the question the
+metric asks and nothing else.
+
+⚠️ **A blocker's *kind* is a reason, and reasons live in the README** — §2's contract already says the
+field is a pointer and `public/docs/connectors/<slug>/README.md` is the record. A paid-warehouse
+blocker and a withdrawn-connector blocker are both `verification-blocked`; putting that distinction in
+the field starts a taxonomy that needs a new member the first time someone is blocked a new way.
+
+🚨 **`verification-blocked` is only valid with a README that names the blocker AND what would lift
+it.** Without that it becomes a dumping ground, indistinguishable from neglect — which is precisely
+how `verified_date` stopped meaning anything. **Expensive to set, cheap to leave pending**: the same
+asymmetry §6 protects for the date.
+
+**And it carries its own un-defer trigger, which must have a reader** (the [core#735] lesson): `s3`
+moves `verification-blocked` → `draft-pending-verification` **when [core#863] closes**, and the
+denominator goes 30 → 31 in the same change. That trigger has a reader because someone must close
+#863. A blocker whose lifting nothing would notice should be said to be indefinite, in those words.
+
+⚠️ **§6's witness table extends with it.** That table asserts *positively* that a
+`draft: false` + `draft-pending-verification` guide is **not** flagged, so a later tidy-up cannot
+quietly make it an error. **`verification-blocked` needs the same positive assertion**, or the first
+cleanup pass "fixes" the new value back into the old one.
 
 **Publishing asserts the content is right; it does not assert anyone drove it.** The bar for
 `draft: false` is editorial review plus the CI guards in §2.1 — which is a real bar, and it is why a
@@ -145,6 +184,8 @@ plus a README verification section, never from the date field.
 
 It is a smaller and much less flattering number than 36/37, and that is the point: it is the first
 number in this corpus that has ever meant what its name says.
+
+⚠️ **The denominator excludes `verification-blocked` guides, not merely "hard" ones.** A guide is out of `reachable` when its README names a blocker — never because capturing it looked expensive.
 
 ⚠️ **It has a known ceiling.** Some sources cannot be walked without a paid vendor account, so 37/37
 is not a target and chasing it would push someone toward faking evidence. **A guide that cannot be
