@@ -1,8 +1,8 @@
 ---
 title: "The Better We Maintained These Docs, the More Wrong One Field Became"
 description: "Thirty-four of thirty-seven guides carry a verified_date older than their own last change. That is not neglect — every careful fix we shipped made it worse, and the obvious repair would have turned a stale record into a false one."
-date: 2026-10-07
-publishedAt: 2026-10-07
+date: 2026-10-11
+publishedAt: 2026-10-11
 author: "Datanika Team"
 category: "engineering"
 tags: ["documentation", "engineering", "process", "testing", "maintenance"]

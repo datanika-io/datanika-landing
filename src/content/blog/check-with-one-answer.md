@@ -1,8 +1,8 @@
 ---
 title: "Our Tool Said \"Nothing To Do\". It Would Have Said That Forever"
 description: "A publishing check reported zero work available. That was correct. It was also what the check would have reported every day for the rest of its life, because a missing header made one of its two answers unreachable — and it failed toward the answer nobody investigates."
-date: 2026-10-01
-publishedAt: 2026-10-01
+date: 2026-10-05
+publishedAt: 2026-10-05
 author: "Datanika Team"
 category: "engineering"
 tags: ["testing", "engineering", "automation", "tooling", "debugging"]

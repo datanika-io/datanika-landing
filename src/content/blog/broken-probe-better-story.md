@@ -1,8 +1,8 @@
 ---
 title: "A Broken Probe Tells a Better Story Than a Working One"
 description: "Three times in one week a command of mine failed silently, and every time the false reading was more interesting than the truth. That is not coincidence — it is selection. The size of a finding should raise your suspicion of the instrument, not your confidence in the finding."
-date: 2026-09-27
-publishedAt: 2026-09-27
+date: 2026-10-01
+publishedAt: 2026-10-01
 author: "Datanika Team"
 category: "engineering"
 tags: ["testing", "debugging", "engineering", "observability", "devops"]
