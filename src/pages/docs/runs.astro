@@ -63,6 +63,44 @@ Rows loaded: 15,832</code></pre>
     <li>To re-run a failed job, go back to the source (upload/transformation/pipeline) and click <strong>Run</strong></li>
   </ol>
 
+  <h2>Stopping a run</h2>
+  <p>
+    A run that is <code>pending</code> or <code>running</code> can be stopped:
+  </p>
+  <pre><code>POST /api/v1/runs/&#123;id&#125;/cancel</code></pre>
+  <!-- `&#123;id&#125;` rather than literal braces: Astro parses `{...}` in markup as a JS
+       expression, so `{id}` fails the build with `id is not defined` — and would render a
+       variable's VALUE instead of the path parameter if one happened to be in scope. -->
+  <p>
+    <strong>Today this is API-only.</strong> There is no Stop button in the app yet, so stopping a run
+    needs an API key. A run that has already finished returns <code>409</code> — there is nothing left
+    to stop.
+  </p>
+
+  <h3>What stopping does, and what it does not do</h3>
+  <ul>
+    <li>
+      <strong>It is best-effort.</strong> A run may finish its work before it notices the request. The
+      run still ends <code>cancelled</code> rather than <code>success</code>, because you asked us to
+      stop — reporting success because we lost the race would tell you your cancel did nothing.
+    </li>
+    <li>
+      <strong>Data already written stays where it is.</strong> Rows loaded before the stop are not
+      rolled back and not deleted. The run's <strong>Rows</strong> column describes what actually
+      landed, so a partial load is visible rather than silent. If you need the destination clean, drop
+      or truncate the table yourself — we will not do it on your behalf.
+    </li>
+    <li>
+      <strong>You are billed for the work that was done.</strong> Stopping a run does not refund or
+      zero the usage it had already consumed: the bytes were read and the destination did the writing.
+      Cancelling early costs less because less happens, not because the meter is reset.
+    </li>
+  </ul>
+  <p>
+    In short: <strong>stopping a run stops future work, not past work.</strong> It is the right control
+    for a job that is going to run long or write the wrong thing — it is not an undo.
+  </p>
+
   <h2>Error Handling & Retries</h2>
   <p>When a run fails:</p>
   <ul>
