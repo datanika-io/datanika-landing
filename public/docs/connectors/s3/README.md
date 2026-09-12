@@ -24,10 +24,20 @@ Referenced from `src/content/connectors/s3.md` (source-only connector).
 > `tests/connector-availability.test.ts` owns that rule and has a *Why the page stays* section. Only
 > the verification metadata changed here; nothing about what the page serves.
 >
-> ⚠️ **`draft-pending-verification` is the closest token the vocabulary has, and it slightly
-> overstates the situation** — it reads as *queued*, whereas this is *not walkable until the
-> connector returns*. Product owns that vocabulary; if Tier 3 should carry a distinct value, that is
-> their call, not one to invent here.
+> ✅ **Resolved 2026-09-12 — this guide now carries `verified_by: verification-blocked`.**
+> The escalation recorded here was right: `draft-pending-verification` reads as *queued*, and this
+> is *not walkable until the connector returns*. Product added a distinct value for exactly this
+> state (`docs/specs/SPEC_CONNECTOR_GUIDE_VERIFICATION.md` §2.3) and it is now set.
+>
+> 🔑 The rule that earns it: **the field encodes reachability**, because reachability is what
+> the `evidenced / reachable` denominator turns on — so a guide nobody can walk is excluded from
+> the denominator rather than counted as a gap nobody can close. **This README is what makes the
+> value valid**: §2.3 requires one that names the blocker AND what would lift it, and the
+> paragraph above does both.
+>
+> **Un-defer trigger:** `verification-blocked` → `draft-pending-verification` **when [core#863]
+> closes**, and the denominator moves 30 → 31 in the same change. That trigger has a reader,
+> because someone must close #863.
 >
 > [core#863]: https://github.com/datanika-io/datanika-core/issues/863
 
