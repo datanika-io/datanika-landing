@@ -34,7 +34,7 @@
  * guards is an explanation with a deletion date.
  */
 import { describe, it, expect } from "vitest";
-import { readFileSync, readdirSync } from "fs";
+import { existsSync, readFileSync, readdirSync } from "fs";
 import { resolve } from "path";
 
 const ROOT = resolve(__dirname, "..");
@@ -85,6 +85,63 @@ describe("verified_date carries its own semantics at the declaration", () => {
       "no guide declares verified_date any more — if the field was removed, delete " +
         "this guard and the note rather than leaving both describing nothing.",
     ).toBeGreaterThan(30);
+  });
+
+  /**
+   * §6 of SPEC_CONNECTOR_GUIDE_VERIFICATION: `verification-blocked` needs a POSITIVE
+   * assertion, or the first cleanup pass "fixes" the new value back into the old one.
+   * This is that assertion.
+   *
+   * Deliberately not "s3 is blocked" — it is "whatever is blocked, is blocked legibly",
+   * so the guard keeps working after s3 is restored and outlives the case that prompted it.
+   */
+  it("a verification-blocked guide is a valid state, and names its blocker in a README", () => {
+    const guides = readdirSync(GUIDES).filter((f) => f.endsWith(".md"));
+    const blocked = guides.filter((f) =>
+      /verified_by:\s*"verification-blocked"/.test(readFileSync(resolve(GUIDES, f), "utf-8")),
+    );
+
+    // Not an assertion that any exist: the set is empty the day every blocker lifts, and
+    // that is success rather than a broken guard. The vocabulary assertion below is what
+    // keeps this file from going vacuous in the meantime.
+    for (const f of blocked) {
+      const slug = f.replace(/\.md$/, "");
+      const readme = resolve(ROOT, "public/docs/connectors", slug, "README.md");
+      expect(
+        existsSync(readme),
+        `${f} is verification-blocked but has no README at ${readme}. The value is only ` +
+          "valid with a README that names the blocker AND what would lift it (spec §2.3).",
+      ).toBe(true);
+      expect(
+        /core#\d+|issues\/\d+/.test(readFileSync(readme, "utf-8")),
+        `${slug}/README.md cites no issue, so it names no blocker whose lifting anyone ` +
+          "would notice. verification-blocked without a lift condition is neglect with a label.",
+      ).toBe(true);
+    }
+  });
+
+  it("the schema declaration explains verification-blocked, not only the queue state", () => {
+    expect(
+      /verification-blocked/.test(schema()),
+      "src/content.config.ts no longer explains `verification-blocked`. A vocabulary member " +
+        "nothing explains at its declaration is one the next reader collapses back into " +
+        "`draft-pending-verification`, which is the distinction spec §2.3 exists to draw.",
+    ).toBe(true);
+  });
+
+  it("every guide's verified_by is a member of the vocabulary", () => {
+    const KNOWN = ["draft-pending-verification", "verification-blocked", "product-ui"];
+    const guides = readdirSync(GUIDES).filter((f) => f.endsWith(".md"));
+    const stray: string[] = [];
+    for (const f of guides) {
+      const m = /verified_by:\s*"([^"]+)"/.exec(readFileSync(resolve(GUIDES, f), "utf-8"));
+      if (m && !KNOWN.includes(m[1])) stray.push(`${f} -> ${m[1]}`);
+    }
+    expect(
+      stray,
+      "verified_by carries a value outside the vocabulary. A typo here reads as a fourth " +
+        "state and silently leaves the guide out of every count that filters on the known ones.",
+    ).toEqual([]);
   });
 
   it("the needle matcher is not inert", () => {

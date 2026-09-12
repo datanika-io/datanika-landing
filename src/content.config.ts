@@ -75,6 +75,22 @@ const connectors = defineCollection({
      * That is an honest state and it is QA's sign-off queue, not a defect — but a
      * guide in that state can still be `draft: false` and serving publicly, which
      * is true of `openapi` today.
+     *
+     * `verified_by: "verification-blocked"` means the guide is published and **not walkable
+     * at all** until a named blocker lifts — it is NOT the queue. `s3` is the case: core
+     * withdrew the connector (core#863), so a connection cannot be created and no walk is
+     * possible. Calling that "pending" says a verification is coming, and none is until the
+     * connector returns.
+     *
+     * 🔑 The rule for what earns a value: **the field encodes REACHABILITY**, because
+     * reachability is what the denominator turns on — the spec reports `evidenced /
+     * reachable`, so a guide nobody can walk is excluded from that denominator rather than
+     * counted as a gap nobody can close. A blocker's *kind* is a reason, and reasons live in
+     * `public/docs/connectors/<slug>/README.md`.
+     *
+     * 🚨 `verification-blocked` is only valid with a README that names the blocker AND
+     * what would lift it. Without that it is a dumping ground, indistinguishable from
+     * neglect — which is precisely how `verified_date` stopped meaning anything.
      */
     verified_by: z.string().default("draft-pending-verification"),
     verified_date: z.string().nullable().default(null),
