@@ -63,7 +63,7 @@ MISSING (in the branch, absent from the box):  0
 
 The one-line fix is to make the sync delete. Do not reach for it.
 
-A deploy of this shape almost always has files on the box that are **deliberately preserved rather than shipped** — the environment file, local configuration, anything holding a secret you would never put in the archive. They are absent from the tarball *by design*. A blanket delete-sync removes them, and the next container start fails on a variable that was there an hour ago.
+A deploy of this shape almost always has state on the box that is **deliberately preserved rather than shipped**, and is absent from the archive *by design*. A blanket delete-sync removes it, and the next start fails on something that was there an hour ago.
 
 So the safe-looking change is the destructive one, and it is destructive in a way your staging environment will not show you if staging's config is shipped rather than preserved.
 
