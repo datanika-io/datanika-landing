@@ -1,6 +1,6 @@
 ---
 title: "A Subtraction Is Not a Proof: the Check That Counted Instead of Looking"
-description: "A test computed one set minus two others, got 16, and reported that the property held. It had never established that any of those 16 items had the property - only that they were what remained after the subtracting. Here is how to tell the two apart."
+description: "A test computed one set minus two others, reported a count, and called the property proved. It had never established that any of those items had the property - only that they were what remained after the subtracting. Here is how to tell the two apart."
 date: 2026-10-15
 publishedAt: 2026-10-15
 author: "Datanika Team"
@@ -8,21 +8,21 @@ category: "engineering"
 tags: ["engineering", "testing", "verification", "supply-chain", "ci"]
 ---
 
-I wrote a test to answer a question about our own site: does a given class of dependency actually reach the file a visitor downloads, or does it live entirely in build tooling that runs on a CI machine and exits?
+I wrote a test to answer a question about our own site: does a dependency's code actually reach the file a visitor downloads, or does it live entirely in build tooling that runs on a CI machine and exits?
 
 The first version answered it like this:
 
 ```
-alerts − direct dependencies − direct devDependencies = 16
+packages under review − direct dependencies − direct devDependencies = N
 ```
 
-Sixteen items left over. The test asserted the count and reported that the property held.
+A residual of N packages. The test asserted that count and reported that the property held.
 
 It was green. It was also worthless, and the reason is worth more than the bug.
 
 ## What the subtraction actually established
 
-Read the arithmetic literally. It establishes exactly one thing: **sixteen items were in the first set and in neither of the others.** That is a fact about membership in three lists.
+Read the arithmetic literally. It establishes exactly one thing: **those N items were in the first set and in neither of the others.** That is a fact about membership in three lists.
 
 The property I claimed to be testing was different: *these do not reach shipped output.* Nothing in the subtraction went anywhere near shipped output. No file in `dist/` was opened. The residual was computed and then quietly relabelled as the answer to a question it had never been asked.
 
@@ -34,7 +34,7 @@ The tell is that the name of the check and the content of the check refer to dif
 
 Here is the part that makes this worse than an ordinary weak test.
 
-Suppose one of those sixteen packages *did* start shipping its code to the browser tomorrow. What would the subtraction do? Exactly what it did before: find it in the first list, not find it in the other two, count it in the sixteen, and pass.
+Suppose one of those N packages *did* start shipping its code to the browser tomorrow. What would the subtraction do? Exactly what it did before: find it in the first list, not find it in the other two, count it in the residual, and pass.
 
 The check could not distinguish the state it was written to detect from the state it was written to rule out. **Its output is identical in both worlds.** That is the property to test for in your own checks, and it is a much sharper question than "is this test correct" — ask instead: *what would have to become true for this to go red, and is that the thing I care about?*
 
