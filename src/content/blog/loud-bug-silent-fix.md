@@ -1,8 +1,8 @@
 ---
 title: "5× Is Loud, 0× Is Silent: When the Obvious Fix Is Worse Than the Bug"
 description: "Running a scheduler in every web process dispatched each job N times. The obvious fix — run exactly one — made it dispatch nothing, because the library wakes only its own instance and otherwise sleeps for 49.7 days. And the in-process test that said the bug did not exist was anti-evidence."
-date: 2026-09-23
-publishedAt: 2026-09-23
+date: 2026-09-27
+publishedAt: 2026-09-27
 author: "Datanika Team"
 category: "engineering"
 tags: ["python", "scheduling", "concurrency", "testing", "engineering"]

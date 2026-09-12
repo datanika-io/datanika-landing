@@ -1,8 +1,8 @@
 ---
 title: "A Commit Saying \"Does Not Close #N\" Closed #N"
 description: "GitHub's closing-keyword parser has no notion of negation, so the clearer you are about not closing an issue, the more likely you are to close it. We swept 400 commits and found three — and two of them were not disclaimers at all."
-date: 2026-09-19
-publishedAt: 2026-09-19
+date: 2026-09-21
+publishedAt: 2026-09-21
 author: "Datanika Team"
 category: "engineering"
 tags: ["github", "ci", "process", "engineering"]

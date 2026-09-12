@@ -1,8 +1,8 @@
 ---
 title: "A File You Deleted in Git Is Still Running in Production"
 description: "tar x overwrites what the archive contains and removes nothing it omits. So a file retired in your default branch keeps running on the box forever — with a green commit, a green pipeline, and a green deploy. The obvious fix takes production down."
-date: 2026-09-21
-publishedAt: 2026-09-21
+date: 2026-09-25
+publishedAt: 2026-09-25
 author: "Datanika Team"
 category: "engineering"
 tags: ["deployment", "ci", "devops", "infrastructure", "engineering"]
