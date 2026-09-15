@@ -310,7 +310,7 @@ describe("MongoDB auth_source is documented as it actually ships", () => {
     }
   });
 
-  it.each(FILES)("%s names the raw-JSON escape hatch and cites core#638", (_label, rel) => {
+  it.each(FILES)("%s names a way auth_source can actually be set, and cites core#638", (_label, rel) => {
     // The positive half. Removing the phantom-field instructions without saying
     // how auth_source IS set leaves a reader with a broken deployment and no
     // route — and an absence-only check cannot tell that apart from a fix.
@@ -319,8 +319,35 @@ describe("MongoDB auth_source is documented as it actually ships", () => {
     expect(
       /raw JSON/i.test(src),
       `${rel} no longer tells the reader how auth_source can be set at all. ` +
-        `It is reachable through the Use raw JSON checkbox; say so.`,
+        `Two routes exist now: the Authentication database field on the form, and the ` +
+        `Use raw JSON checkbox. Name at least the raw-JSON one here.`,
     ).toBe(true);
+  });
+
+  /**
+   * 🆕 2026-09-15 (landing#395, the mssql/mongodb walks). **The form has the input now**, so
+   * the half of this suite that assumed it never would is no longer the whole story.
+   *
+   * Measured on core `master` `8ffd416`: the mongodb form renders a seventh control,
+   * `cfg-auth-source`, labelled **Authentication database**, placeholder `admin`. It is read,
+   * not decorative — one session, one field changed, against a user defined inside the target
+   * database: empty -> red `Authentication failed` (code 18), set -> green
+   * `Connected successfully`.
+   *
+   * Asserted on the GUIDE only, deliberately. The blog post is a dated historical record and
+   * carries an update note rather than a rewrite, and the data file describes the field in its
+   * own words.
+   */
+  it("the setup guide names the Authentication database field", () => {
+    const src = read("../src/content/connectors/mongodb.md");
+    expect(
+      /\*\*Authentication database\*\*/.test(src),
+      "the mongodb guide no longer names the Authentication database field. That is the " +
+        "form control which sets auth_source on core master 8ffd416; without naming it the " +
+        "page sends readers to the raw-JSON escape hatch for something the form now does.",
+    ).toBe(true);
+    // The matcher must be able to say no, or this passes on any page at all.
+    expect(/\*\*Authentication database\*\*/.test("a page that never names the field")).toBe(false);
   });
 
   it.each(FILES)("%s does not still say Test Connection ignores Auth Source", (_label, rel) => {

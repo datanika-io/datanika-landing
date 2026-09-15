@@ -4,8 +4,8 @@ description: "Step-by-step guide to sync MongoDB into your warehouse with Datani
 source: "mongodb"
 source_name: "MongoDB"
 category: "database"
-verified_by: "product-ui"
-verified_date: "2026-07-18"
+verified_by: "growth-ui"
+verified_date: "2026-09-15"
 related_use_cases:
   - "mongodb-to-snowflake"
 related_comparisons:
@@ -63,9 +63,9 @@ MongoDB is the most common NoSQL source our users sync into a relational warehou
 ## Step 2 — Add the connection in Datanika
 
 1. In Datanika, open **`/connections`** and pick `mongodb` from the type dropdown at the top of the inline New Connection form.
-2. Fill in: **Connection Name**, **Host**, **Port** (default `27017`), **User**, **Password**, **Database**. Those five are the whole form for `mongodb`.
-3. Authentication uses `admin` as the auth database. That is not a field you fill in — it is the built-in default, applied whenever the config does not say otherwise. It is the database your *user* is defined in, which is a different thing from the database you are *reading*, and if you followed Step 1 or used `MONGO_INITDB_ROOT_USERNAME`, your user is in `admin`. Background: [MongoDB `Authentication failed`](/blog/mongodb-authentication-failed-authsource/).
-   > ⚠️ **If your user was created inside the target database rather than in `admin`, the structured form cannot express that** ([core#638](https://github.com/datanika-io/datanika-core/issues/638)). The setting exists — it is `auth_source` — but the `mongodb` form has no input for it, so the only way to set it is the **Use raw JSON** checkbox below the fields, adding `"auth_source": "<your-database>"` to the config by hand. And a connection saved that way loses the key the next time it is saved from the structured form, silently reverting authentication to `admin`. If that is your setup, keep the connection in raw-JSON mode.
+2. Fill in: **Connection Name**, **Host**, **Port** (default `27017`), **User**, **Password**, **Database**, and — only if you need it — **Authentication database**. Those six plus the name are the whole form for `mongodb`.
+3. **Authentication database** is the database your *user* is defined in, which is a different thing from the database you are *reading*. Leave it empty and Datanika uses `admin` — which is where Step 1 creates the user, where `MONGO_INITDB_ROOT_USERNAME` creates it, and where managed providers create it. Background: [MongoDB `Authentication failed`](/blog/mongodb-authentication-failed-authsource/).
+   > ⚠️ **If your user was created inside the target database rather than in `admin`, type that database's name into Authentication database.** Measured on the shipped form: with the field empty, such a user is refused with `Authentication failed` (code 18); with the field set to the database the user lives in, the same credentials connect. The setting is `auth_source` in the connection's JSON, and the **Use raw JSON** checkbox still sets it by hand — it is no longer the only way to reach it ([core#638](https://github.com/datanika-io/datanika-core/issues/638), which also tracks whether a config saved as raw JSON keeps the key through a structured-form save).
 4. Click **Test Connection**. It builds the URI exactly the way a run does, including `auth_source`, so its verdict now matches what a run will do ([core#625](https://github.com/datanika-io/datanika-core/issues/625), fixed).
 5. Click **Create Connection**.
 
@@ -91,6 +91,8 @@ Extract-load is configured at **`/uploads`**, not on the connection. There is no
 2. Watch **`/runs`**. The run shows a status badge, start and finish timestamps and a **Rows** count; the **Logs** icon on the row opens the detail.
 3. When it finishes, open **Models** (`/models`) and browse the landed tables. The upload lands them in a schema **named after the upload** — `mongodailysync` creates schema `mongodailysync` in the destination. dlt also creates its own `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables in that schema, but **Models does not list them** — seeing only your own tables there is correct, not a partial load. There is no target-schema field to choose.
 4. Spot-check the row count against the source. **Verify in the destination rather than trusting the status badge** — a green run means the load finished, not that it moved what you expected.
+
+![The Data preview of the users collection loaded from MongoDB, with its nested fields flattened into columns](/docs/connectors/mongodb/04-first-run.png)
 
 ## Step 5 — Schedule it
 
@@ -125,13 +127,15 @@ mongosh "mongodb://<user>:<pass>@<host>:27017/<database>?authSource=admin"
 
 **If that `db` is `admin`**, the default already matches and the fault is elsewhere — re-check the password, then the roles granted on the target database.
 
-**If it is anything else**, you have hit [core#638](https://github.com/datanika-io/datanika-core/issues/638): the `mongodb` form has no input for `auth_source`, so tick **Use raw JSON** on the connection form and set the key by hand:
+**If it is anything else**, type that database's name into **Authentication database** on the connection form and test again — measured on the shipped form, the same credentials that are refused with the field empty connect with it set.
+
+The field is `auth_source` in the connection's JSON, so the **Use raw JSON** checkbox sets it too:
 
 ```json
 {"host": "mongo.internal", "port": 27017, "user": "<user>", "password": "<pass>", "database": "<database>", "auth_source": "<your-database>"}
 ```
 
-Keep it in raw-JSON mode afterwards. Saving that connection from the structured form drops the key without warning and authentication reverts to `admin`.
+[core#638](https://github.com/datanika-io/datanika-core/issues/638) stays open for the other half of this — whether a connection saved as raw JSON keeps the key through a later structured-form save. Setting the field on the form avoids the question entirely.
 
 Full explanation of the underlying MongoDB behaviour: [MongoDB `Authentication failed`: You're Authenticating Against the Wrong Database](/blog/mongodb-authentication-failed-authsource/).
 
