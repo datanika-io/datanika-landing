@@ -147,7 +147,9 @@ There is a second, quieter version of the same mistake in there. The suite did c
 
 Whenever you decide some part of a program is too thin to test, you have made a claim about where failure lives. Write it down as a claim, because it is one.
 
-## The last twist, and it is still true as this publishes
+## The last twist
+
+> **Update, 15 September 2026.** This section describes the morning of 3 September, when it was written, and it stopped being true that evening. The fix reached the default branch that day: the scheduled run that night completed cleanly, and so did the five after it. Since 9 September the watchdog has been red every night again, and not with the crash described here — it runs, and its most recent report names its own failed runs as the schedule that stopped. The original text follows as it was published.
 
 `schedule:` triggers only ever run the copy of a workflow on the repository's **default branch**. Our fix is merged to the integration branch and has not been promoted. Tonight's scheduled run will crash again, in exactly the way described above, and there is no branch we could put the fix on that would change that.
 
