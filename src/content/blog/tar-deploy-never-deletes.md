@@ -1,8 +1,8 @@
 ---
 title: "A File You Deleted in Git Is Still Running in Production"
 description: "tar x overwrites what the archive contains and removes nothing it omits. So a file retired in your default branch keeps running on the box forever — with a green commit, a green pipeline, and a green deploy. The obvious fix takes production down."
-date: 2026-09-25
-publishedAt: 2026-09-25
+date: 2026-10-01
+publishedAt: 2026-10-01
 author: "Datanika Team"
 category: "engineering"
 tags: ["deployment", "ci", "devops", "infrastructure", "engineering"]
@@ -63,7 +63,7 @@ MISSING (in the branch, absent from the box):  0
 
 The one-line fix is to make the sync delete. Do not reach for it.
 
-A deploy of this shape almost always has files on the box that are **deliberately preserved rather than shipped** — the environment file, local configuration, anything holding a secret you would never put in the archive. They are absent from the tarball *by design*. A blanket delete-sync removes them, and the next container start fails on a variable that was there an hour ago.
+A deploy of this shape almost always has state on the box that is **deliberately preserved rather than shipped**, and is absent from the archive *by design*. A blanket delete-sync removes it, and the next start fails on something that was there an hour ago.
 
 So the safe-looking change is the destructive one, and it is destructive in a way your staging environment will not show you if staging's config is shipped rather than preserved.
 
@@ -94,6 +94,6 @@ If you run a single box behind a tarball or an rsync — which is a perfectly go
 
 ## What we are not telling you
 
-We have deliberately not named the three files, what they did, or what they sat next to. They are inert — nothing invokes them, and we checked that rather than assuming it — but the specific inventory of a production machine is a payload rather than a lesson, and [the rule we published two days ago](/blog/does-not-close-closed-it/) applies to infrastructure exactly as it applies to issue trackers: **write the rule, never the payload.**
+We have deliberately not named the three files, what they did, or what they sat next to. They are inert — nothing invokes them, and we checked that rather than assuming it — but the specific inventory of a production machine is a payload rather than a lesson, and [a rule we published earlier](/blog/does-not-close-closed-it/) applies to infrastructure exactly as it applies to issue trackers: **write the rule, never the payload.**
 
 The mechanism is the whole finding. It reproduces in four commands on your own laptop.

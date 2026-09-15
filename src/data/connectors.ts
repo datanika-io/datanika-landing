@@ -86,7 +86,7 @@ export const connectors: Connector[] = [
       { name: "password", description: "Password (encrypted at rest)" },
     ],
     limitations: [
-      "Extract only — MySQL cannot receive data. It is not a load destination: an upload that targets MySQL fails with an unhandled AttributeError, because dlt has no MySQL destination and never has. This was advertised for as long as the entry existed; it is absent, not degraded, and there is no configuration that works around it. Tracked as core#865.",
+      "Extract only — MySQL cannot receive data. Datanika does not offer a MySQL connection as a load destination, and creating an upload that names one — through the API, for example — is refused with a message saying Datanika can read from that connection but cannot load into it. The load library underneath, dlt, can write to MySQL through its generic SQLAlchemy destination; Datanika does not use that path, so no configuration makes it work. Tracked as core#865.",
       "Not available as a dbt transformation target. Pipelines and transformations run dbt, and no maintained dbt adapter for MySQL exists — the only one ever published was last released in April 2024 and pins dbt-core 1.7, which held back security updates across the rest of the stack. Extract from MySQL into a warehouse and transform there: PostgreSQL, SQL Server, ClickHouse, DuckDB, BigQuery, Snowflake and Redshift are all dbt targets. Tracked as core#825.",
     ],
     related: ["postgresql", "bigquery", "snowflake", "mssql"],
@@ -134,7 +134,7 @@ export const connectors: Connector[] = [
       { name: "path", description: "Path to the SQLite database file" },
     ],
     limitations: [
-      "Extract only — SQLite cannot receive data. It is not a load destination: an upload that targets a SQLite file fails with an unhandled AttributeError, because dlt has no SQLite destination. Advertised for as long as the entry existed; absent, not degraded. Tracked as core#865.",
+      "Extract only — SQLite cannot receive data. Datanika does not offer a SQLite connection as a load destination, and creating an upload that names one is refused with a message saying Datanika can read from that connection but cannot load into it. dlt can write SQLite files through its generic SQLAlchemy destination; Datanika does not use that path. Tracked as core#865.",
       "Not available as a dbt transformation target either. No SQLite dbt adapter ships in Datanika, so a pipeline or transformation cannot run against a SQLite file. Extract into a warehouse and transform there. Tracked as core#862.",
     ],
     related: ["postgresql", "duckdb", "mysql"],
@@ -966,29 +966,38 @@ export const connectors: Connector[] = [
  * ⚠️ **`direction` states what WORKS, not what the catalogue intends.**
  *
  * MySQL and SQLite were `"both"` until 2026-09-01 and are now `"source"`.
- * `dlt.destinations` has **no `mysql` and no `sqlite` attribute**, so
- * `DltRunner.build_destination` — an unconditional
- * `getattr(dlt.destinations, connection_type)` — raises:
+ * `dlt.destinations` has **no `mysql` and no `sqlite` attribute**, and
+ * `DltRunner.build_destination` used to do an unconditional
+ * `getattr(dlt.destinations, connection_type)`, so an upload targeting
+ * either raised inside the worker:
  *
  *     AttributeError: module 'dlt.destinations' has no attribute 'mysql'.
  *                     Did you mean: 'mssql'?
  *
- * Measured against dlt 1.21.0 across **all eleven** advertised destinations,
- * with a control name that must not resolve: **9 resolve, `mysql` and `sqlite`
- * do not.** Not a regression — it has been true for as long as the entries
- * existed. Engineering reproduced it on the built image; Product reproduced it
- * on the core worktree venv. Tracked as core#865.
+ * Measured against dlt 1.21.0 across **all eleven** then-advertised
+ * destinations, with a control name that must not resolve: **9 resolve,
+ * `mysql` and `sqlite` do not.** Engineering reproduced it on the built image;
+ * Product reproduced it on the core worktree venv. Tracked as core#865.
  *
- * 🚨 **`"mysql" in SUPPORTED_DESTINATION_TYPES` is TRUE and is not evidence.**
- * That set is a *claim*; the layer beneath does not provide the capability.
- * This is the second lookup table this month to assert something the layer
- * below it cannot do (core#845, Redshift's SQLAlchemy dialect, same shape).
- * The cheap discriminating check is `hasattr(dlt.destinations, "<type>")`.
+ * **Re-measured 2026-09-15 on core `master` (`ada0987`): that failure is gone,
+ * and the copy was corrected to match (landing#577).** core#865 removed both
+ * types from `DESTINATION_TYPES` and `SUPPORTED_DESTINATION_TYPES`, and
+ * `UploadService.create_upload` refuses a non-destination connection with a
+ * named message; `POST /api/v1/uploads` goes through it. Do not write
+ * "unhandled AttributeError" into copy again: `tests/dbt-targets.test.ts`
+ * retires it.
  *
- * So do not "restore" these to `"both"` from the core constant — check the
- * destination factory resolves. If core#865 lands, this is a two-word edit and
- * every derived surface follows: the badge, the per-page destination lists, the
- * counts in prose, and `/docs/architecture`'s destination list.
+ * **"dlt has no MySQL destination" was never the right sentence.** dlt has no
+ * destination *named* `mysql`; its generic `sqlalchemy` destination lists MySQL
+ * and SQLite as fully supported. What is true is that Datanika resolves
+ * destinations by name and does not use that one.
+ *
+ * So do not "restore" these to `"both"` from membership in any core set - a
+ * set is a claim, not a capability (core#845 was the same shape) - check what
+ * core actually builds. If Datanika ever wires dlt's `sqlalchemy` destination
+ * for these types, this is a two-word edit and every derived surface follows:
+ * the badge, the per-page destination lists, the counts in prose, and
+ * `/docs/architecture`'s destination list.
  */
 /**
  * The catalogue as a **marketing claim**: everything a reader can actually go
@@ -1046,15 +1055,15 @@ export const bidirectionalConnectors = availableConnectors.filter((c) => c.direc
  *
  * 🚨 **This paragraph used to end "MySQL remains a fully supported source and
  * load destination". That was RETRACTED by core#865 and it contradicted line 74
- * of this same file, which already says MySQL cannot receive data at all.** dlt
- * has no `mysql` destination factory and never has, so the load half was never
- * true; only the source half survived measurement. Two answers in one file is
+ * of this same file, which already says MySQL cannot receive data at all.** Datanika
+ * never built a MySQL destination (dlt has no factory *named* `mysql`, and core
+ * resolves by name), so the load half was never true; only the source half survived measurement. Two answers in one file is
  * the state this comment existed to prevent, and a comment is an instruction to
  * whoever edits the list next — it does not get a pass for not rendering.
  *
  * `mysql` is therefore omitted below for **two** independent reasons, and
  * removing either one would not put it back: no dbt adapter (core#825) and no
- * dlt destination (core#865). Re-measure before editing this list — do not
+ * destination Datanika builds (core#865). Re-measure before editing this list — do not
  * assume it is still current.
  */
 const DBT_TARGET_SLUGS = [

@@ -51,16 +51,37 @@ A spec over these limits is not a bug to report — it is a spec describing more
 ## Step 2 — Add the connection in Datanika
 
 1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page — there is no separate "New Connection" button to click.
-2. From the **type dropdown** at the top of the form, pick `openapi`.
-3. Fill in the **three** fields. That is the whole form — there is no Extra Headers box here, unlike the REST API connector:
+2. Fill in **Connection Name**. It is the **first** field, above the type picker, and it is **required** — the form refuses to save without it (*“Connection name is required”*).
+3. From the **type picker** — the **second** control, directly below Connection Name — pick `openapi`.
+4. Fill in the three `openapi` fields. There is no Extra Headers box here, unlike the REST API connector:
    - **OpenAPI Spec** *(required)* — paste the entire document, JSON or YAML. The hint under the field says *"Endpoints are auto-discovered from the spec when you save."* That is literal: the parse happens on save, not on a separate button.
-   - **Base URL** — the API root. **Leave it blank to use the `servers` entry from the spec**, which is the common case. Fill it in to override — useful when the spec names a production host and you want the sandbox, or when the spec omits `servers` entirely.
+   - **Base URL** — the API root. ⚠️ **The field is labelled `Base URL *`. Ignore the asterisk for this connector** —
+     the label is shared with connectors where the field really is mandatory, and it is wrong here. **Leave it blank to use the `servers` entry from the spec**, which is the common case. Fill it in to override — useful when the spec names a production host and you want the sandbox, or when the spec omits `servers` entirely.
    - **API Key (optional)** — your token. Stored encrypted at rest with Fernet. How it is *used* depends on what the spec declares; see below.
-4. Click **Create Connection**.
+5. Click **Create Connection**.
 
-**Test Connection returns a neutral *not tested* verdict here, and that is deliberate.** The product's own reason:
+Two more things are on that screen. A notice that the **S3 connector is temporarily unavailable** —
+unrelated to OpenAPI, ignore it. And a **Use raw JSON config** checkbox below the fields: **leave it
+unticked.** Ticking it replaces the three typed fields with a single raw-config box, which you do not
+need here.
 
-> *"Not tested: authentication and the resource catalog come from the imported spec, and calling an arbitrary catalog entry may have side effects. The first run reports."*
+⚠️ **That checkbox is not the one in Step 3.** The upload form in Step 3 has a control with the
+*same label* and a different job — there it selects which endpoints to sync (`resource_names`). Same
+words, two forms, two meanings.
+
+🚨 **Creating the connection through the API instead of the form? `base_url` is genuinely required there.**
+The API schema for `openapi` requires `base_url` and `resources`, so a programmatic create that omits the base
+URL is rejected even though the form accepts it blank. The form is the more forgiving of the two surfaces: it
+backfills the base URL from the spec's `servers` entry after parsing.
+
+**Test Connection returns a neutral *not tested* verdict here, and that is deliberate.** The sentence you will see:
+
+> *"Not tested. Calling an endpoint from your spec could have side effects, so we do not choose one for you. Your credentials are checked on the first run."*
+
+<!-- landing#572 item 1. Quote datanika/i18n/en.json "connections.test_not_tested_openapi" -- the string the UI
+     RENDERS. Do NOT quote ConnectionVerdict.message from SAAS_PROBE_EXEMPT in connection_service.py: that is the
+     developer/API/log string and it is deliberately a different sentence (see connection_state.py:45-50). This
+     guide quoted the developer string for months; a reader looking for it in the product does not find it. -->
 
 There is no endpoint we know is safe to call — a spec's first `GET` might be `/users/{id}/export` on a metered plan. Your first run is the verification step.
 
@@ -81,7 +102,7 @@ Three consequences worth stating plainly:
 
 - 🚨 **If the spec declares no `securitySchemes` at all, your API key is silently dropped.** The connection saves cleanly and the first run gets a `401`. Nothing warns you at save time. If you know the API needs auth and the spec does not describe it, use the [REST API connector](/docs/connectors/rest-api) instead — its **Extra Headers** field lets you set the header yourself.
 - **Only the first declared scheme is used.** A spec offering both bearer and API-key auth gets whichever appears first; there is no picker.
-- **OAuth2 is not supported.** You will see the warning *"OAuth2 scheme '&lt;name&gt;' is not supported — supply a static token."* If the API only does OAuth2 authorization-code flows, mint a long-lived token out of band and check whether the API also accepts it as a bearer token.
+- **OAuth2 is not supported.** The parse records the warning *"OAuth2 scheme '&lt;name&gt;' is not supported **in P1** — supply a static token."* (the words *in P1* are part of the shipped string — search for them if you are grepping logs). If the API only does OAuth2 authorization-code flows, mint a long-lived token out of band and check whether the API also accepts it as a bearer token.
 
 ### What is inferred, and what that means
 
@@ -99,7 +120,7 @@ From each readable `GET` endpoint, Datanika derives:
 Extract-load is configured at **`/uploads`**, not on the connection.
 
 1. Open **`/uploads`**. The **New Upload** form is rendered inline on the page.
-2. Fill in **Upload name** (letters and digits only — anything else is stripped as you type, so `vendor-api-daily` becomes `vendorapidaily`) and an optional **Description**.
+2. Fill in **Upload name** (letters, digits **and spaces** — everything else is stripped as you type, so `vendor-api-daily` becomes `vendorapidaily`, while `vendor api daily` keeps its spaces). ⚠️ Spaces surviving matters: Step 5 asks you to type the target name **exactly as saved**, so note whether yours has them. and an optional **Description**.
 3. Pick the **Source connection** (the OpenAPI connection from Step 2) and the **Destination connection**. Each picker opens a dialog listing entries as `16 — myconnection (postgres)`, i.e. id, name, type.
 4. **Leave "Use raw JSON config" unticked to sync every endpoint the spec exposed.** This is the main difference from the REST API connector, which cannot run at all without a hand-written `resources` list — here the catalog already came from the spec.
 5. Click **Create Upload**.
@@ -164,6 +185,11 @@ The save-time failures come back with one of four codes, so you can match the me
 ### `No base URL found in the spec — set the Base URL field`
 **Cause.** The spec has no `servers` entry and you left Base URL blank.
 **Fix.** Fill in Base URL on the connection form.
+
+⚠️ **There is a near-identical second message, and it is not this one.** The error above is raised only when
+you save through the **form**. The parser itself appends a *warning* with almost the same words —
+*"No 'servers' URL in the spec — set the base URL manually."* — which is what you get on the API path.
+Same cause, same fix; matching either one literally will miss the other.
 
 ### `OpenAPI source has no resource catalog — re-parse the spec`
 **Cause.** The connection exists but carries no stored catalog — typically a connection created through the API without a parse step.

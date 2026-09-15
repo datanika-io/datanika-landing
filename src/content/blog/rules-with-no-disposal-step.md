@@ -1,8 +1,8 @@
 ---
 title: "Three Correct Rules Filled a Directory With 556 Files"
 description: "Each rule was right on its own. Together they were a file generator, and the directory they filled sits outside every git repository — so no status command ever showed it. Sixteen files in five months, then five hundred and forty in forty days."
-date: 2026-10-03
-publishedAt: 2026-10-03
+date: 2026-10-05
+publishedAt: 2026-10-05
 author: "Datanika Team"
 category: "engineering"
 tags: ["engineering", "devops", "automation", "tooling", "process"]

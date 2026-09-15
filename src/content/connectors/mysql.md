@@ -18,9 +18,9 @@ MySQL is one of the most common operational databases our users sync into their 
 
 > **MySQL is an extract source. It cannot receive data.** Pick MySQL as the **Source connection** on an upload and land the rows in a warehouse — PostgreSQL, BigQuery, Snowflake, Redshift, ClickHouse, DuckDB or SQL Server. That is the whole supported shape, and the rest of this guide walks it.
 
-> **What MySQL is not, so you do not discover it on a failed run:**
+> **What MySQL is not, so you do not discover it by trial and error:**
 >
-> - **Not a load destination.** Datanika cannot write *into* MySQL. An upload that targets MySQL fails with an unhandled error, because the load layer ([dlt](https://dlthub.com)) has no MySQL destination — and never has, despite MySQL having been listed as one. It is absent, not degraded: there is no setting that makes it work. Tracked as [core#865](https://github.com/datanika-io/datanika-core/issues/865).
+> - **Not a load destination.** Datanika cannot write *into* MySQL. The upload form does not offer MySQL connections as a destination, and creating an upload that names one — through the API, for example — is refused with a message saying so. The load layer ([dlt](https://dlthub.com)) can reach MySQL through its generic SQLAlchemy destination, but Datanika does not use that path, so there is no setting that makes it work. Tracked as [core#865](https://github.com/datanika-io/datanika-core/issues/865).
 > - **Not a transformation target.** `/pipelines` and `/transformations` run [dbt](https://www.getdbt.com), and no maintained dbt adapter for MySQL exists — the only one ever published was last released in April 2024 and pins dbt-core 1.7. Transform in the warehouse you loaded into; see [the destinations dbt can build in](/docs/transformations).
 >
 > Extraction is unaffected by either, and is what this guide is about.

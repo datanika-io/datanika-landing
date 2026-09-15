@@ -1,6 +1,7 @@
 # Spec — What a *verified* connector guide is
 
 > **Author**: Product, 2026-09-10 · **Status**: contract
+> **Amended**: 2026-09-11 (§2.3, `verification-blocked`) · 2026-09-15 (§2.4, where a walk may happen)
 > **Answers**: the question left unowned when Growth measured `verified_date` staleness at 34/37 and
 > correctly declined to "fix" it by bumping dates.
 
@@ -141,6 +142,74 @@ cleanup pass "fixes" the new value back into the old one.
 published-but-unverified guide is not a lie. The field is not rendered to readers, so no reader is
 ever shown a verification claim either way.
 
+### 2.4 · 🆕 Where the walk happens — decided 2026-09-15
+
+**The question** (raised on [landing#395], 2026-09-11): does a walk against a **local stack** count,
+or only a real `app.datanika.io` session — which is what every existing README records?
+
+> **Decision: a local stack counts, on the same footing as production — when it runs the revision
+> production serves, configured for the deployment the guide step addresses, and the README records
+> both.** Production walks stay valid and the recorded ones stand as they are. **`verified_by` does
+> not change**: where a walk happened moves no guide in or out of the denominator, so under §2.3's
+> rule it is a *reason*, and reasons live in the README.
+
+#### Why
+
+1. **The contract never named production.** §2 says *"against a running Datanika"*. What the field
+   asserts is the residue no CI check reaches — a real connection, a real run, rows in the
+   destination — and those are properties of the **code and configuration that ran**, not of the
+   hostname that served them.
+2. **A production-only rule makes Tier 1 unwalkable by construction.** Tier 1's premise, set on
+   2026-09-10, is that `datanika-examples` puts MySQL, MSSQL and MongoDB a `docker compose up` away.
+   Those containers are reachable from a stack on the same machine and **not from the production
+   host**. A production-only convention would contradict the tiering it exists to serve.
+3. **The production precedent never exercised what only production can.** The first-run captures on
+   record read a demo database inside production's own Postgres container, files sent through the
+   upload widget, or public vendor APIs. None exercised the egress-IP allowlisting a customer's
+   database may sit behind. *"Captured from a real `app.datanika.io` session"* records where a walk
+   happened — not a property the verification depended on.
+4. **A production capture is a production mutation**: connections, uploads and runs in a shared org
+   with a finite connection quota, and a vendor credential typed into production. A local stack
+   produces the same evidence with none of that.
+
+#### What a local stack can get wrong, and the condition that closes each
+
+| difference | how it would manufacture a verification | condition |
+|---|---|---|
+| **revision** | a stack built from unpromoted code walks a flow no user has. The 2026-08-31 capture had to establish that the Data preview was on `master` and not only on `dev` before relying on it | build **core and cloud from `origin/master`** — or show, when the verification is recorded, that the walked SHA is an ancestor of it (`git merge-base --is-ancestor <sha> origin/master`, after a fresh fetch). Record the SHAs |
+| **configuration** | a setting that changes connector behaviour can default permissively in code: a stock stack saves a local-file-path connection that production refuses at save (core's `SPEC_LOCAL_FILE_CONNECTIONS` D4) | configure the stack **for the deployment the step addresses** — for a Datanika Cloud step, the settings core's `deploy/server/export-prod-settings.sh` grades, at the values it requires; for a step the guide itself scopes to self-hosting (the `sqlite` guide, DuckDB as a destination, the directory-watcher branches of `json` and `parquet`), stock self-hosted defaults. Record which |
+| **network** | a local stack reaches a source from the walker's machine, not from Datanika Cloud's egress | a prerequisite only Cloud's network can exercise — allowlisting Datanika's egress IPs — is recorded as **not exercised**. It does not withhold the verification: no walk on record exercised it either |
+| **edition** | quotas and billing differ between editions | build the **cloud** edition (the default of core's `scripts/build-from-worktree.sh`) and record it. No guide step depends on a plan limit today; the record keeps that checkable if one ever does |
+
+#### What the README records
+
+In addition to what §2 already requires — who walked it, when, the connection and the run, and the
+rows that landed, checked **in the destination**:
+
+| field | production walk | local-stack walk |
+|---|---|---|
+| **Environment** | `app.datanika.io` | `local stack` |
+| **Core revision** | the `master` SHA serving at the time | the SHA built, and the ancestor check's result |
+| **Cloud revision** | as above | the SHA built, or `core edition` |
+| **Configuration** | `production` | `production-graded` or `self-hosted defaults`, plus any deviation |
+| **Guide revision** | the landing commit whose text was followed | the same |
+| **Not exercised** | any step the walk could not reach | the same, including egress-IP allowlisting |
+
+Records written before this section are **not** re-opened for the fields they lack (§4: the rule is
+forward-facing).
+
+⚠️ **A local-stack screenshot is publishable.** Its caption and alt text must not name
+`app.datanika.io`, and core's `docs/PRODUCT_RULES.md` §4 credential gate applies unchanged — a local
+browser autofills a credential field exactly as it does against production.
+
+#### What this makes moot, and what it does not
+
+- **No tier needs production access to be captured.** Tier 1 cannot use it (point 2); Tier 2 needs a
+  vendor credential, not a host; Tier 3 is decided. So no capture plan is blocked on a permission to
+  read production, and none is blocked on the prod-verify org's connection quota.
+- **It does not decide whether production may be read for any other purpose.** That question keeps
+  its owner; it simply stops sitting on the path of guide work.
+
 ---
 
 ## 3. The `openapi` sign-off, resolved
@@ -204,6 +273,7 @@ Each claim above, and what asserts it:
 | a dated guide has evidence behind it | the corpus, in CI | for every guide with non-null `verified_date`, its README exists and contains a verification section. ⚠️ **Anti-vacuity: assert the corpus is non-empty and that at least one guide is found in each state**, or the check passes on an empty glob |
 | the evidenced count is what gets reported | the reporting script | the number is derived from artifacts, and **a guide with a date and no artifact does not raise it** |
 | publication does not require verification | the schema | a `draft: false` + `draft-pending-verification` guide is **not** flagged — asserted positively so a later "tidy-up" cannot quietly make it an error |
+| a walk says where it ran, and on what (§2.4) | the README of a guide whose `verified_date` is set after 2026-09-15 | it names **Environment**, **Core revision** and **Configuration**. ⚠️ **Not mechanised here**: CI in this repository cannot resolve a core SHA, so the ancestor check is made by whoever reviews the change that sets the date — for a guide leaving `draft-pending-verification`, that is QA's sign-off |
 
 🚨 **The guard that must NOT be written** is the one Growth already declined: anything that forces
 `verified_date` to track the file's last edit. It makes the cheapest path to green a date bump, which

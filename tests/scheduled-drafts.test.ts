@@ -86,16 +86,24 @@ const scheduledPosts = [
   { file: "guard-matched-the-comment.md", date: "2026-09-17", publishedAt: "2026-09-17", category: "engineering", titleContains: "Still Talked About the Fix" },
   // 2026-09-19 is the next free slot under the ≤1-post-per-2-days rule.
   { file: "does-not-close-closed-it.md", date: "2026-09-21", publishedAt: "2026-09-21", category: "engineering", titleContains: "Does Not Close" },
-  { file: "tar-deploy-never-deletes.md", date: "2026-09-25", publishedAt: "2026-09-25", category: "engineering", titleContains: "Still Running in Production" },
-  { file: "loud-bug-silent-fix.md", date: "2026-09-27", publishedAt: "2026-09-27", category: "engineering", titleContains: "Is Loud, 0" },
+  // Growth rebalance 2026-09-15 (landing#564): the queue still broke the blog-mix
+  // floor from 2026-09-27. `no-dbt-adapter-for-mysql` (tutorial) moves 10-13 -> 09-27.
+  // `stale-beliefs-across-a-boundary` keeps 09-29, and it links to
+  // `loud-bug-silent-fix` — so loud moves EARLIER (09-27 -> 09-25) rather than past
+  // the post that links to it. `tar-deploy-never-deletes` takes 10-01 and the six
+  // posts after it shift +2. Cadence unchanged: one post every two days.
+  // Link order between scheduled posts is enforced by tests/blog-link-order.test.ts,
+  // because a future-dated post is absent from dist/ and no build-time check sees it.
+  { file: "tar-deploy-never-deletes.md", date: "2026-10-01", publishedAt: "2026-10-01", category: "engineering", titleContains: "Still Running in Production" },
+  { file: "loud-bug-silent-fix.md", date: "2026-09-25", publishedAt: "2026-09-25", category: "engineering", titleContains: "Is Loud, 0" },
   { file: "stale-beliefs-across-a-boundary.md", date: "2026-09-29", publishedAt: "2026-09-29", category: "engineering", titleContains: "Two Stale Beliefs" },
-  { file: "broken-probe-better-story.md", date: "2026-10-01", publishedAt: "2026-10-01", category: "engineering", titleContains: "Broken Probe" },
-  { file: "rules-with-no-disposal-step.md", date: "2026-10-03", publishedAt: "2026-10-03", category: "engineering", titleContains: "556 Files" },
-  { file: "check-with-one-answer.md", date: "2026-10-05", publishedAt: "2026-10-05", category: "engineering", titleContains: "Nothing To Do" },
-  { file: "cron-declared-vs-honoured.md", date: "2026-10-07", publishedAt: "2026-10-07", category: "engineering", titleContains: "07:29" },
-  { file: "correct-measurement-wrong-criterion.md", date: "2026-10-09", publishedAt: "2026-10-09", category: "engineering", titleContains: "Nineteen Published Files" },
-  { file: "field-that-looks-like-a-control.md", date: "2026-10-11", publishedAt: "2026-10-11", category: "engineering", titleContains: "More Wrong One Field Became" },
-  { file: "no-dbt-adapter-for-mysql.md", date: "2026-10-13", publishedAt: "2026-10-13", category: "tutorial", titleContains: "dbt Adapter for MySQL" },
+  { file: "broken-probe-better-story.md", date: "2026-10-03", publishedAt: "2026-10-03", category: "engineering", titleContains: "Broken Probe" },
+  { file: "rules-with-no-disposal-step.md", date: "2026-10-05", publishedAt: "2026-10-05", category: "engineering", titleContains: "556 Files" },
+  { file: "check-with-one-answer.md", date: "2026-10-07", publishedAt: "2026-10-07", category: "engineering", titleContains: "Nothing To Do" },
+  { file: "cron-declared-vs-honoured.md", date: "2026-10-11", publishedAt: "2026-10-11", category: "engineering", titleContains: "07:29" },
+  { file: "correct-measurement-wrong-criterion.md", date: "2026-10-13", publishedAt: "2026-10-13", category: "engineering", titleContains: "Nineteen Published Files" },
+  { file: "field-that-looks-like-a-control.md", date: "2026-10-15", publishedAt: "2026-10-15", category: "engineering", titleContains: "More Wrong One Field Became" },
+  { file: "no-dbt-adapter-for-mysql.md", date: "2026-09-27", publishedAt: "2026-09-27", category: "tutorial", titleContains: "dbt Adapter for MySQL" },
 
   // Growth rebalance 2026-09-11 (landing#564): the queue was 14/15 `engineering`,
   // which breaches the stated blog-mix floor (3 non-engineering in the last 10
@@ -107,7 +115,12 @@ const scheduledPosts = [
   // filtered them out of static paths — none has ever been a crawlable URL.
   { file: "google-sheets-share-step.md", date: "2026-09-19", publishedAt: "2026-09-19", category: "tutorial", titleContains: "Share Step" },
   { file: "airtable-linked-records.md", date: "2026-09-23", publishedAt: "2026-09-23", category: "tutorial", titleContains: "Record IDs" },
-  { file: "subtraction-is-not-a-proof.md", date: "2026-10-15", publishedAt: "2026-10-15", category: "engineering", titleContains: "Subtraction Is Not a Proof" },
+  { file: "subtraction-is-not-a-proof.md", date: "2026-10-17", publishedAt: "2026-10-17", category: "engineering", titleContains: "Subtraction Is Not a Proof" },
+  // Growth 2026-09-15 (landing#564): the first residual non-engineering post takes
+  // 10-09, the last slot that still holds the blog-mix floor. The four engineering
+  // posts after it each move +2. Two more non-engineering posts are still needed,
+  // at or before the slots now dated 10-13 and 10-17.
+  { file: "nested-json-child-tables.md", date: "2026-10-09", publishedAt: "2026-10-09", category: "tutorial", titleContains: "109 Rows for 17 Products" },
 ];
 
 const publishedScheduledPosts = [

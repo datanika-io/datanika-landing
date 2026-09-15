@@ -18,6 +18,8 @@ nor publishes it, and the `src/`-scanning suites (`compliance-claims`, `pricing-
 | [`SPEC_DOCS_IA_REDESIGN.md`](SPEC_DOCS_IA_REDESIGN.md) | The `/docs` information architecture — the six sidebar groups, their reading order, and when a new top-level entry is justified | `tests/docs-sidebar.test.ts` |
 | [`SPEC_PUBLIC_TEMPLATE_LANDING.md`](SPEC_PUBLIC_TEMPLATE_LANDING.md) | The public `/templates/[slug]` pages, their HowTo JSON-LD, and the drift check against core's Python source of truth | `tests/templates-consistency.test.ts` |
 | [`SPEC_SUBPROCESSOR_REGISTER.md`](SPEC_SUBPROCESSOR_REGISTER.md) | The sub-processor register that `/privacy`, `/trust` and `/dpa` all render from, and the mechanism a 30-day sub-processor notice needs to be keepable | not yet built — the guards are specified in §11 |
+| [`SPEC_CONNECTOR_GUIDE_VERIFICATION.md`](SPEC_CONNECTOR_GUIDE_VERIFICATION.md) | What `verified_by` / `verified_date` on a connector guide assert, the `evidenced / reachable` metric, and where a walk may happen (§2.4) | `tests/verified-date-semantics.test.ts` (§2.3, §6); §2.4's revision check is made in review, not in CI |
+| [`SPEC_TEST_CONNECTION_GUIDE_COPY.md`](SPEC_TEST_CONNECTION_GUIDE_COPY.md) | What a connector guide may say about Test Connection | `tests/test-connection-copy.test.ts` |
 
 The two Product specs arrived 2026-08-31 with [core#734](https://github.com/datanika-io/datanika-core/issues/734).
 Product's remaining specs govern the application rather than the site and live in
