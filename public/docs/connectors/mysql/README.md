@@ -29,7 +29,7 @@ below is.
 | **Configuration** | `production-graded`. `datanika_allow_local_file_paths` is `False` in the app, worker and scheduler, read from each container's own interpreter; it is the one setting core's `deploy/server/export-prod-settings.sh` grades. The same read with that value flipped printed `True`, so the read is not a constant. Deviation: the two billing settings that script records without grading were at their code defaults. No guide step depends on them. |
 | **Guide revision** | landing `f92f9e4`, the last commit to change `mysql.md` before this record (blob `a640846b`). The same blob was on `dev` when the walk began (`a441cba`) and when this record was written. |
 | **Source database** | MySQL 8.4.8 from `datanika-examples` `f031bd4` (the Online Store dataset), seeded with `--multiplier 1`, reachable from the stack at host `mysql`. Server time zone UTC. |
-| **Not exercised** | allowlisting Datanika's egress IPs · the troubleshooting entry *Connection test times out*: a host that never answers could not be reproduced faithfully on this machine, whose container network accepts the TCP connection before failing upstream · Load Mode `single_table`, Write Disposition `replace` and `merge`, Source schema, Table names · the Schema Contract dropdowns · a second run · the Target type dropdown's other options · a scheduled firing (the schedule was paused first) · Step 5.4, failure alerts |
+| **Not exercised** | allowlisting Datanika's egress IPs · the troubleshooting entry *Connection test times out*: a host that never answers could not be reproduced faithfully on this machine, whose container network accepts the TCP connection before failing upstream · Load Mode `single_table`, Write Disposition `replace` and `merge`, Source schema, Table names · the Schema Contract dropdowns · the Target type dropdown's other options · a scheduled firing (the schedule was paused first) · Step 5.4, failure alerts |
 
 ### 2026-09-15 — walked end to end
 
@@ -66,7 +66,7 @@ identical in UTC (a one-hour shift, as a control, does not compare equal). Types
 `numeric` for the DECIMAL columns, `character varying` for the ENUM `status`, and `timestamp with time zone` for
 the DATETIME columns.
 
-One run only. No count here comes from a second run.
+One run only. No count here comes from a second run. After this record was complete, the upload was run a second time for a separate measurement of `append` on an unchanged source; nothing in this README uses that run.
 
 #### What the guide got right, observed on screen
 
