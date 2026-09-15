@@ -130,7 +130,9 @@ describe("verified_date carries its own semantics at the declaration", () => {
   });
 
   it("every guide's verified_by is a member of the vocabulary", () => {
-    const KNOWN = ["draft-pending-verification", "verification-blocked", "product-ui"];
+    // The two states of spec §2.2/§2.3, then the named verifiers (§2: `verified_by` names who
+    // did the walk). `qa-ui` joined on 2026-09-15 with the openapi sign-off (landing#572).
+    const KNOWN = ["draft-pending-verification", "verification-blocked", "product-ui", "qa-ui"];
     const guides = readdirSync(GUIDES).filter((f) => f.endsWith(".md"));
     const stray: string[] = [];
     for (const f of guides) {
