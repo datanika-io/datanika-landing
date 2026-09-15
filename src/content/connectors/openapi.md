@@ -4,8 +4,8 @@ description: "Paste an OpenAPI or Swagger spec into Datanika and it discovers th
 source: "openapi"
 source_name: "OpenAPI"
 category: "api"
-verified_by: "draft-pending-verification"
-verified_date: null
+verified_by: "qa-ui"
+verified_date: "2026-09-15"
 related_use_cases: []
 related_comparisons:
   - "airbyte"
@@ -85,6 +85,8 @@ backfills the base URL from the spec's `servers` entry after parsing.
 
 There is no endpoint we know is safe to call — a spec's first `GET` might be `/users/{id}/export` on a metered plan. Your first run is the verification step.
 
+![Adding the OpenAPI connection in Datanika, with a spec pasted and the Base URL filled](/docs/connectors/openapi/02-add-connection.png)
+
 ### What the parse does with your credential
 
 This is the part that most often surprises people, so it is worth reading before the first run fails.
@@ -148,6 +150,8 @@ The names are the resource names derived from the spec's paths. If none of the n
 3. When it finishes, open **Models** (`/models`) and browse the landed tables. The upload lands them in a schema **named after the upload** — `vendorapidaily` creates schema `vendorapidaily`. dlt also creates its own `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables there, but Models does not list them, so seeing only your own tables is correct.
 4. **Open a table and click `Load first 100 rows`.** The Data preview runs a live `SELECT` against your destination, so the rows on screen are the rows in your warehouse. **Verify there, not on the status badge** — a green run means the load finished, not that it moved what you expected.
 5. Because the endpoint list came from a document rather than from you, **check the table list itself, not just the row counts.** A spec that describes endpoints the vendor has retired produces empty tables; a spec whose envelope key differs from the six Datanika looks for produces a table with one row of metadata instead of many rows of data. Both are visible in thirty seconds here and invisible on the run badge.
+
+![The Data preview on the landed activities table, showing 30 rows read live from the destination](/docs/connectors/openapi/04-first-run.png)
 
 ## Step 5 — Schedule it
 
