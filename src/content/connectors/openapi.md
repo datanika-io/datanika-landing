@@ -38,6 +38,16 @@ Save it to a file, or copy it to the clipboard — you are going to paste the wh
 
 > ⚠️ **In the Datanika UI this is paste-only. There is no "fetch from URL" field**, and giving one a URL is not a supported step. (A URL-fetch path does exist, but only through the REST API — it is not wired into the connection form.) If your spec is large enough that pasting is awkward, that is a sign to check it against the size limit below.
 
+> ⚠️ **Check how an OpenAPI 3.x spec declares its JSON responses before you paste it.** Datanika reads an endpoint's response schema only when it is declared under exactly `application/json`. A media type with a parameter after it — `application/json; v=1.0`, which ASP.NET's Swashbuckle emits when API versioning is on, or `application/json; charset=utf-8` — is not read, so those endpoints are not imported. If every endpoint is declared that way, the connection **still saves, with no warning**, and the first run fails with `OpenAPI source has no resource catalog — re-parse the spec`. If only some are, those endpoints are simply missing from your tables.
+>
+> **Until that is fixed, edit your copy of the spec first:** replace each `application/json; v=1.0` (or whatever follows `application/json;`) with plain `application/json`, then paste the edited document. Nothing else in the spec needs to change.
+
+<!-- core#1345. Walked 2026-09-15 on the vendor's own FakeRESTApi spec: 0 endpoints as published, 5 after the
+     replacement above (public/docs/connectors/openapi/README.md, "Defect 1"). Remove this block, and rewrite the
+     "no resource catalog" and "Some endpoints are missing" troubleshooting entries, when the parser reads JSON
+     media types with parameters. That fix also refuses a zero-endpoint spec at save, which changes what a
+     reader sees. -->
+
 **Two limits, both enforced at save time:**
 
 | limit | value | what happens |
@@ -54,11 +64,14 @@ A spec over these limits is not a bug to report — it is a spec describing more
 2. Fill in **Connection Name**. It is the **first** field, above the type picker, and it is **required** — the form refuses to save without it (*“Connection name is required”*).
 3. From the **type picker** — the **second** control, directly below Connection Name — pick `openapi`.
 4. Fill in the three `openapi` fields. There is no Extra Headers box here, unlike the REST API connector:
-   - **OpenAPI Spec** *(required)* — paste the entire document, JSON or YAML. The hint under the field says *"Endpoints are auto-discovered from the spec when you save."* That is literal: the parse happens on save, not on a separate button.
-   - **Base URL** — the API root. ⚠️ **The field is labelled `Base URL *`. Ignore the asterisk for this connector** —
-     the label is shared with connectors where the field really is mandatory, and it is wrong here. **Leave it blank to use the `servers` entry from the spec**, which is the common case. Fill it in to override — useful when the spec names a production host and you want the sandbox, or when the spec omits `servers` entirely.
+   - **OpenAPI Spec** *(required)* — paste the entire document, JSON or YAML. The hint above the field says *"Endpoints are auto-discovered from the spec when you save."* That is literal: the parse happens on save, not on a separate button.
+   - **Base URL** — the API root, and **optional for this connector**. **Leave it blank to use the `servers` entry from the spec**, which is the common case. Fill it in when the spec omits `servers`, when its `servers` entry is a path such as `/api/v1` rather than a full `https://` address, or to override it — for example when the spec names a production host and you want the sandbox. ⚠️ **Some versions of the form label this field `Base URL *`. Ignore the asterisk for this connector** — it came from a label shared with connectors where the field really is mandatory.
    - **API Key (optional)** — your token. Stored encrypted at rest with Fernet. How it is *used* depends on what the spec declares; see below.
 5. Click **Create Connection**.
+
+<!-- core#1311's first slice (core PR #1346) removes the asterisk from openapi's Base URL label, while self-hosted
+     release tags keep the old label, so the Base URL sentence above covers both on purpose. The Step 2 screenshot
+     shows the old label: recapture 02-add-connection.png from core master once #1346 is there. -->
 
 Two more things are on that screen. A notice that the **S3 connector is temporarily unavailable** —
 unrelated to OpenAPI, ignore it. And a **Use raw JSON config** checkbox below the fields: **leave it
@@ -110,10 +123,11 @@ Three consequences worth stating plainly:
 
 From each readable `GET` endpoint, Datanika derives:
 
-- **The collection to load** — it looks through common envelope keys (`data`, `results`, `items`, `records`, `value`, `rows`) up to three levels deep to find the array of records.
-- **A paginator** — link-header, `next`-URL, cursor, or page-number, chosen from the endpoint's declared parameters.
+- **The collection to load** — the array of records in the response schema the spec declares. Datanika tries the common envelope keys first (`data`, `results`, `items`, `records`, `value`, `rows`), then any other array property, and looks inside nested objects up to three levels deep. A `GET` whose declared response contains no array is skipped, and so is a templated path such as `/users/{id}`.
+- **A paginator** — from the declared response first (a next-page URL in the body, or a `Link` header), otherwise from the endpoint's query parameters: a cursor parameter that the response also returns, an offset/limit pair (`offset`/`limit`, `skip`/`top`, `skip`/`take` or `start`/`count`), or a page number. If the spec declares none of these, Datanika sets no paginator and dlt's own runtime detection decides.
 - **An incremental cursor**, where the endpoint has a suitable filter parameter (`updated_since`, `since`, `start_date`, …) paired with a timestamp field (`updated_at`, `modified_at`, `last_modified`, …).
 - **Columns and a primary key**, from the response schema.
+- **Names.** Each table is named after the last segment of its path, lowercased, with any run of other characters replaced by `_` — `/api/v1/CoverPhotos` becomes the table `coverphotos`. Column names are normalised to snake_case as they load, so a field the spec calls `dueDate` lands as `due_date`.
 
 > ⚠️ **These are inferences from a document, not observations of the API.** A spec that is out of date, or that describes a response envelope loosely, produces a connector that is confidently wrong rather than obviously broken. **Treat the first run's output as the thing you verify against** — not the fact that the connection saved.
 
@@ -125,7 +139,7 @@ Extract-load is configured at **`/uploads`**, not on the connection.
 2. Fill in **Upload name** (letters, digits **and spaces** — everything else is stripped as you type, so `vendor-api-daily` becomes `vendorapidaily`, while `vendor api daily` keeps its spaces). ⚠️ Spaces surviving matters: Step 5 asks you to type the target name **exactly as saved**, so note whether yours has them. and an optional **Description**.
 3. Pick the **Source connection** (the OpenAPI connection from Step 2) and the **Destination connection**. Each picker opens a dialog listing entries as `16 — myconnection (postgres)`, i.e. id, name, type.
 4. **Leave "Use raw JSON config" unticked to sync every endpoint the spec exposed.** This is the main difference from the REST API connector, which cannot run at all without a hand-written `resources` list — here the catalog already came from the spec.
-5. Click **Create Upload**.
+5. Click **Create Upload**. It appears in the table below with status `draft`.
 
 **To sync only some endpoints**, tick **Use raw JSON config** and name them:
 
@@ -135,7 +149,7 @@ Extract-load is configured at **`/uploads`**, not on the connection.
 }
 ```
 
-The names are the resource names derived from the spec's paths. If none of the names you list exists in the catalog, the run fails with `None of the requested resource_names exist in this connection` rather than silently loading nothing.
+The names are the resource names derived from the spec's paths — the same names the tables get (see *What is inferred*), so `/api/v1/CoverPhotos` is `coverphotos`. If none of the names you list exists in the catalog, the run fails with `None of the requested resource_names exist in this connection` rather than silently loading nothing.
 
 > ⚠️ **There is no endpoint picker in the UI.** `resource_names` is accepted only through the raw JSON box, and it is not listed in the API's own `dlt_config` schema either — so the way to learn the available names today is to run once with everything and read the table list. A selector is a known gap, not a hidden feature you are failing to find.
 
@@ -149,7 +163,7 @@ The names are the resource names derived from the spec's paths. If none of the n
 2. Watch **`/runs`**. The run shows a status badge, start and finish timestamps and a **Rows** count; the **Logs** icon on the row opens the detail.
 3. When it finishes, open **Models** (`/models`) and browse the landed tables. The upload lands them in a schema **named after the upload** — `vendorapidaily` creates schema `vendorapidaily`. dlt also creates its own `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables there, but Models does not list them, so seeing only your own tables is correct.
 4. **Open a table and click `Load first 100 rows`.** The Data preview runs a live `SELECT` against your destination, so the rows on screen are the rows in your warehouse. **Verify there, not on the status badge** — a green run means the load finished, not that it moved what you expected.
-5. Because the endpoint list came from a document rather than from you, **check the table list itself, not just the row counts.** A spec that describes endpoints the vendor has retired produces empty tables; a spec whose envelope key differs from the six Datanika looks for produces a table with one row of metadata instead of many rows of data. Both are visible in thirty seconds here and invisible on the run badge.
+5. Because the endpoint list came from a document rather than from you, **check the table list itself, not just the row counts.** A spec that describes endpoints the vendor has retired produces empty tables. An endpoint whose responses use a media type Datanika does not read (see Step 1) produces no table at all. A spec whose declared response does not match what the API really returns can produce a table with one row of metadata instead of many rows of data. All three are visible in thirty seconds here and invisible on the run badge.
 
 ![The Data preview on the landed activities table, showing 30 rows read live from the destination](/docs/connectors/openapi/04-first-run.png)
 
@@ -164,29 +178,43 @@ The names are the resource names derived from the spec's paths. If none of the n
 3. Click **Create Schedule**. The row lands as **Active**, with **Pause** available per row.
 4. Wire up failure alerts in **Settings → Notifications**.
 
+> 🚨 **Every run loads every record again, so a schedule multiplies your tables.** An upload created on this form appends: each run adds a full copy of every table instead of updating the rows already there. Running an unchanged upload a second time **doubled every table**, and both runs were green. A schedule runs the same upload, so each firing adds another copy — an hourly schedule adds 24 a day.
+>
+> Until that is fixed, schedule this upload only if something downstream keeps a single copy. Each run's rows carry that run's `_dlt_load_id`, so a transformation can keep just the rows from the most recent load. Otherwise, run the upload by hand when you need fresh data, and clear its tables first.
+
+<!-- core#1336. Measured on this connector by QA's 2026-09-15 walk: activities 30 -> 60 on a second run, 30 distinct
+     ids, two _dlt_load_id values of 30 rows each (README "Defect 2", and QA's comment on core#1336). A scheduled
+     firing calls the same run_upload_task -> run_upload as a manual run; scheduled=True only adds a dependency
+     check. Remove this block and the "Every table doubles" troubleshooting entry when a re-run leaves each record
+     once. -->
+
 > **If the vendor revises their spec, Datanika will not notice.** The catalog is parsed once, at save time, and stored on the connection. New endpoints, renamed fields and changed pagination arrive only when you re-paste the spec and save again. Put that on the same calendar as any other vendor API review.
 
 ## Troubleshooting
 
-The save-time failures come back with one of four codes, so you can match the message exactly.
+Through the API, a save-time failure comes back with one of four codes. **On the form you see the message instead, after `Invalid config:`** — each entry below gives both, so you can match either one exactly.
 
 ### `invalid_spec`
+**On the form.** `Invalid config: Could not parse spec as JSON or YAML: …`, `Invalid config: Spec did not parse to an object`, or `Invalid config: Spec 'paths' is not an object`.
 **Cause.** The document did not parse as JSON or YAML, or it parsed to something that is not an object, or its `paths` is not an object.
 **Fix.** Validate the document in any OpenAPI linter first. The most common cause is pasting an HTML page — a Swagger UI *page* rather than the JSON it renders.
 
 ### `spec_too_large`
+**On the form.** `Invalid config: Spec exceeds the size limit`.
 **Cause.** The document exceeds 5 MB.
 **Fix.** Most oversized specs are large because of examples and descriptions rather than endpoints. Strip those, or use the REST API connector for the handful of endpoints you want.
 
 ### `unsupported_version`
+**On the form.** `Invalid config: Missing or unsupported 'openapi' version (need 3.x)` — or, for a Swagger document other than 2.0, `Invalid config: Swagger <version> is not supported — convert to OpenAPI 3.x (2.0 is supported)`.
 **Cause.** The document is neither OpenAPI 3.x nor Swagger 2.0.
 **Fix.** Check the top-level `openapi:` or `swagger:` key. OpenAPI 1.x and non-OpenAPI formats (RAML, API Blueprint) are not accepted.
 
 ### `too_complex`
+**On the form.** `Invalid config: Spec has more than 1200 paths` or `Invalid config: Spec exposes more than 300 readable endpoints`.
 **Cause.** More than 300 readable endpoints, or more than 1,200 paths.
 **Fix.** Use a scoped spec if the vendor publishes one per product area, or use the REST API connector.
 
-### `No base URL found in the spec — set the Base URL field`
+### `Invalid config: No base URL found in the spec — set the Base URL field`
 **Cause.** The spec has no `servers` entry and you left Base URL blank.
 **Fix.** Fill in Base URL on the connection form.
 
@@ -196,16 +224,33 @@ you save through the **form**. The parser itself appends a *warning* with almost
 Same cause, same fix; matching either one literally will miss the other.
 
 ### `OpenAPI source has no resource catalog — re-parse the spec`
-**Cause.** The connection exists but carries no stored catalog — typically a connection created through the API without a parse step.
+The first run fails with this message when the connection holds no endpoints to load. In **`/runs`** it is the tooltip on the run's error icon. There are two causes, and the fix differs.
+
+**Cause 1 — the spec's responses use a JSON media type Datanika does not read.** The parse ran and found nothing readable: every response is declared under something other than exactly `application/json`, typically `application/json; v=1.0` (see Step 1). The connection saved without a warning.
+**Fix.** Editing and saving again does **not** help here — it re-parses the same document to zero endpoints, and the next run fails the same way. Change the media type in your copy of the spec as Step 1 describes, then **Edit** the connection, paste the edited spec over the old one, and click **Save Changes**.
+
+**Cause 2 — the connection carries no stored catalog**, for example one created through the API without a parse step.
 **Fix.** Open the connection, **Edit**, and save again. The spec is reloaded into the form, so saving re-runs the parse.
 
 ### `401` or `403` on the first run, with a spec that saved cleanly
 **Cause.** Most often the spec declares no `securitySchemes`, so your API key was never attached — see the auth table above. Also possible: the spec declares OAuth2, or the first declared scheme is not the one this API actually wants.
 **Fix.** Check the spec for a `securitySchemes` block. If it has none, or only OAuth2, use the [REST API connector](/docs/connectors/rest-api) and set the header yourself in **Extra Headers**.
 
+### Some endpoints are missing from the table list
+**Cause.** The parse skipped them, and the form does not show you what it skipped. Three reasons, all visible in the spec:
+- the endpoint's responses are declared under a media type other than exactly `application/json` (see Step 1);
+- the path is templated, such as `/users/{id}` — detail endpoints are skipped;
+- the declared response contains no array, so there is no collection to load.
+
+**Fix.** For the first, change the media type as Step 1 describes, then **Edit** the connection, paste the edited spec and **Save Changes**. For the other two, use the [REST API connector](/docs/connectors/rest-api) for those endpoints.
+
 ### A table landed with one row that looks like metadata
-**Cause.** The response envelope does not use one of the keys Datanika searches (`data`, `results`, `items`, `records`, `value`, `rows`), so the whole response object was treated as a single record.
+**Cause.** The records are not where the spec says they are. Datanika takes the path to the record array from the response schema the spec declares — under any property name, not only the common envelope keys — so when the API's real response is shaped differently from that schema, the path misses the records.
 **Fix.** Use the REST API connector for that endpoint, where you can point at the collection explicitly.
+
+### Every table doubles when the upload runs again
+**Cause.** An upload created on this form appends: each run adds a full copy of every table instead of updating the rows already there, and the inferred primary key does not prevent it. It is not a setting you missed — the form shows no write-disposition control for this source.
+**Fix.** See the warning in Step 5. To clean a table that already holds copies, keep the rows from its most recent `_dlt_load_id`, or drop the table and run the upload once.
 
 ### Only the first page loaded
 **Cause.** The endpoint's pagination is not described in the spec in a way the paginator inference recognises.
