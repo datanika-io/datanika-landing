@@ -67,7 +67,7 @@ Six connector types get a gray result instead of a request. Each message gives t
 
 Gray is not a polite way of saying red. The connection may be perfectly good. Reporting a connection nobody checked as working, and reporting it as broken, are the same mistake made in opposite directions, so the button does neither.
 
-If you are connecting Google Sheets, the step its message warns about is walked through in [the Google Sheets share step](/blog/google-sheets-share-step/).
+If you are connecting Google Sheets, the step its message warns about is walked through in [the Google Sheets share step](/blog/google-sheets-share-step/). The [OpenAPI guide](/docs/connectors/openapi) quotes the sentence its form shows, and the [Kafka guide](/docs/connectors/kafka) explains why Kafka problems surface on the run instead.
 
 ## Two details that keep the answer honest
 
