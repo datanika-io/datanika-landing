@@ -101,8 +101,8 @@ const scheduledPosts = [
   { file: "rules-with-no-disposal-step.md", date: "2026-10-05", publishedAt: "2026-10-05", category: "engineering", titleContains: "556 Files" },
   { file: "check-with-one-answer.md", date: "2026-10-07", publishedAt: "2026-10-07", category: "engineering", titleContains: "Nothing To Do" },
   { file: "cron-declared-vs-honoured.md", date: "2026-10-11", publishedAt: "2026-10-11", category: "engineering", titleContains: "07:29" },
-  { file: "correct-measurement-wrong-criterion.md", date: "2026-10-13", publishedAt: "2026-10-13", category: "engineering", titleContains: "Nineteen Published Files" },
-  { file: "field-that-looks-like-a-control.md", date: "2026-10-15", publishedAt: "2026-10-15", category: "engineering", titleContains: "More Wrong One Field Became" },
+  { file: "correct-measurement-wrong-criterion.md", date: "2026-10-15", publishedAt: "2026-10-15", category: "engineering", titleContains: "Nineteen Published Files" },
+  { file: "field-that-looks-like-a-control.md", date: "2026-10-19", publishedAt: "2026-10-19", category: "engineering", titleContains: "More Wrong One Field Became" },
   { file: "no-dbt-adapter-for-mysql.md", date: "2026-09-27", publishedAt: "2026-09-27", category: "tutorial", titleContains: "dbt Adapter for MySQL" },
 
   // Growth rebalance 2026-09-11 (landing#564): the queue was 14/15 `engineering`,
@@ -115,12 +115,17 @@ const scheduledPosts = [
   // filtered them out of static paths — none has ever been a crawlable URL.
   { file: "google-sheets-share-step.md", date: "2026-09-19", publishedAt: "2026-09-19", category: "tutorial", titleContains: "Share Step" },
   { file: "airtable-linked-records.md", date: "2026-09-23", publishedAt: "2026-09-23", category: "tutorial", titleContains: "Record IDs" },
-  { file: "subtraction-is-not-a-proof.md", date: "2026-10-17", publishedAt: "2026-10-17", category: "engineering", titleContains: "Subtraction Is Not a Proof" },
+  { file: "subtraction-is-not-a-proof.md", date: "2026-10-21", publishedAt: "2026-10-21", category: "engineering", titleContains: "Subtraction Is Not a Proof" },
   // Growth 2026-09-15 (landing#564): the first residual non-engineering post takes
   // 10-09, the last slot that still holds the blog-mix floor. The four engineering
-  // posts after it each move +2. Two more non-engineering posts are still needed,
-  // at or before the slots now dated 10-13 and 10-17.
+  // posts after it each move +2. Two more non-engineering posts were still needed,
+  // at or before the slots then dated 10-13 and 10-17.
   { file: "nested-json-child-tables.md", date: "2026-10-09", publishedAt: "2026-10-09", category: "tutorial", titleContains: "109 Rows for 17 Products" },
+  // Growth 2026-09-15 (landing#564), later the same day: those two posts take 10-13 and 10-17.
+  // The engineering posts they displace move to 10-15, 10-19 and 10-21, and blog_mix.py then
+  // reports no breach through the end of the queue.
+  { file: "test-connection-three-answers.md", date: "2026-10-13", publishedAt: "2026-10-13", category: "product", titleContains: "Three Answers" },
+  { file: "mysql-to-postgres-four-checks.md", date: "2026-10-17", publishedAt: "2026-10-17", category: "tutorial", titleContains: "Four Checks" },
 ];
 
 const publishedScheduledPosts = [
