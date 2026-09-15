@@ -2,6 +2,7 @@
 title: "Triggering Data Pipelines from CI/CD via the REST API"
 description: "Run a Datanika pipeline from GitHub Actions with one POST. Covers wait mode, idempotent retries, timeouts — and why the status code, not a JSON field, tells you whether the pipeline worked."
 date: 2026-09-05
+updatedDate: 2026-09-15
 publishedAt: 2026-09-05
 author: "Datanika Team"
 category: "tutorial"
@@ -204,6 +205,8 @@ jobs:
 Four branches, because there are four genuinely different situations: it worked, it's still going, your pipeline broke, or our API did. `--fail-with-body` collapses the middle two into one non-zero exit, which is fine when you only need pass/fail — but the messages above are what you'll want at 2am, and the 408 branch is the one people most often want to handle differently.
 
 ## Cancelling a run
+
+> **Update, 15 September 2026.** One clause in this section is no longer true. A run cancelled while it is running now keeps the status `cancelled` when its task finishes; it is no longer overwritten back to `success`. Everything else here still holds: cancelling does not stop the worker, the extract and the load run to the end, and the run is billed for everything it processed. The original text follows as it was published.
 
 If your workflow is cancelled, the pipeline it started is not. A `202` handed the work to a background worker, and CI walking away doesn't reach it.
 
