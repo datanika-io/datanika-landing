@@ -4,8 +4,8 @@ description: "Step-by-step guide to sync MySQL with Datanika — create a read-o
 source: "mysql"
 source_name: "MySQL"
 category: "database"
-verified_by: "product-ui"
-verified_date: "2026-07-18"
+verified_by: "growth-ui"
+verified_date: "2026-09-15"
 related_use_cases:
   - "mysql-to-bigquery"
 related_comparisons:
@@ -41,7 +41,7 @@ MySQL is one of the most common operational databases our users sync into their 
    GRANT SELECT ON <database>.* TO 'datanika_readonly'@'%';
    FLUSH PRIVILEGES;
    ```
-3. For future tables: `GRANT SELECT` applies only to existing tables. To cover tables created later, re-run the grant periodically or use a stored procedure.
+3. Tables created later are covered too. A grant on `<database>.*` is a database-level privilege, so it applies to tables added to that database after you run it, and there is nothing to re-run.
 4. Copy the host, port, username, password, and database name.
 
 > **Least privilege.** Only grant `SELECT`. Datanika never needs write access to the source.
@@ -51,7 +51,7 @@ MySQL is one of the most common operational databases our users sync into their 
 1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page — there's no separate "New Connection" button to click.
 2. From the **type dropdown** at the top of the form, pick `mysql`.
 3. Fill in the form:
-   - **Connection Name** — a label you'll recognize later, e.g. `mysql-prod-readonly`.
+   - **Connection Name** — a label you'll recognize later, e.g. `mysqlprodreadonly`. Anything other than letters, digits and spaces is stripped as you type.
    - **Host** — the hostname or IP of your MySQL server.
    - **Port** — usually `3306`.
    - **Database** — the database you granted access to in Step 1.
@@ -88,6 +88,8 @@ Extract-load is configured at **`/uploads`**, not on the connection. There is no
 2. Watch **`/runs`**. The run shows a status badge, start and finish timestamps and a **Rows** count; the **Logs** icon on the row opens the detail.
 3. When it finishes, open **Models** (`/models`) and browse the landed tables. The upload lands them in a schema **named after the upload** — `ordersdailysync` creates schema `ordersdailysync` in the destination. dlt also creates its own `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables in that schema, but **Models does not list them** — seeing only your own tables there is correct, not a partial load. There is no target-schema field to choose.
 4. Spot-check the row count against the source. **Verify in the destination rather than trusting the status badge** — a green run means the load finished, not that it moved what you expected.
+
+![The Data preview of a table loaded from MySQL, after its first run in Datanika](/docs/connectors/mysql/04-first-run.png)
 
 ## Step 5 — Schedule it
 

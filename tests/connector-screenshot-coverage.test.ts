@@ -106,13 +106,16 @@ describe("connector guide screenshots (landing#395)", () => {
   it("the number of guides proving data landed does not go backwards", () => {
     const covered = guides.filter((g) => hasFirstRunFile(slugOf(g))).map(slugOf);
 
-    // 🔒 RATCHET. 9 as of 2026-09-15: csv, duckdb, json, openapi, parquet, postgresql,
-    // rest-api, shopify, stripe (8 on 2026-09-07; openapi's walk added one, landing#572).
+    // 🔒 RATCHET. 10 as of 2026-09-15: csv, duckdb, json, mysql, openapi, parquet, postgresql,
+    // rest-api, shopify, stripe (8 on 2026-09-07; the openapi walk added one, landing#572, and
+    // the mysql walk another, landing#395).
     // **Raise this as captures land; never lower it.** It is one number
     // rather than a hand-written list of covered connectors, because that list is derivable
     // from disk and a hand-maintained copy of a derivable fact is what landing#508 was about.
     // It is a floor, not a target — landing#395 is the work of raising it.
-    const FIRST_RUN_FLOOR = 8;
+    // It read 8 after the openapi walk while 9 captures existed, which let one capture go
+    // silently; raised to the count on disk, and it moves with each capture from here.
+    const FIRST_RUN_FLOOR = 10;
 
     expect(
       covered.length,
