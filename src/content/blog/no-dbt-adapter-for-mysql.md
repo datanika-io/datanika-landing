@@ -50,16 +50,16 @@ The pattern is identical whichever you pick, and we walked through it end to end
 
 Symmetry demands this bit.
 
-**MySQL is not a destination in Datanika either.** You can extract from it; you cannot load into it. The underlying extraction library has never had a MySQL destination, so an upload configured to target MySQL does not degrade gracefully — it fails with an unhandled error rather than a clean message saying the combination is unsupported.
+**MySQL is not a destination in Datanika either.** You can extract from it; you cannot load into it. The upload form does not offer MySQL as a destination, and creating an upload that names one anyway — through the API, for example — is refused with a message that says exactly that.
 
-That is our defect, not the user's, and it is tracked. We mention it here for the same reason it is on the connector page: if you were planning MySQL → MySQL replication, you should find that out from a blog post rather than from a stack trace.
+It is worth being precise about why, because the easy version of that sentence is wrong. The load library underneath us, dlt, *can* write to MySQL, through its generic SQLAlchemy destination. Datanika does not use that path, so the limit is ours rather than dlt's. We mention it for the same reason it is on the connector page: if you were planning MySQL → MySQL replication, you should find that out from a blog post rather than from a refused form.
 
 ## The short version
 
 - There is no maintained dbt adapter for MySQL, and the unmaintained one pins your transformation environment to 2023.
 - That is not the blocker it first appears, because **transforming inside your operational database was already the wrong architecture.**
 - Extract from MySQL, land in a warehouse, run dbt there. The [MySQL setup guide](/docs/connectors/mysql) covers the extraction half.
-- If you specifically need MySQL as a *target*, we do not support that and neither does the layer underneath us.
+- If you specifically need MySQL as a *target*, Datanika does not support it. dlt's SQLAlchemy destination can, if you are willing to run dlt yourself.
 
 ---
 
