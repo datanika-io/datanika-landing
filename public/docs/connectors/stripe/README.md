@@ -11,6 +11,8 @@ Referenced from `src/content/connectors/stripe.md` (source-only SaaS connector).
 
 ⚠️ **`Rows: 10` in this shot is a defect, not a small account.** The source held **15** customers. See below.
 
+> **2026-09-15 — the defect this walk exposed has since been fixed.** Core `04d6b4d` gave every SaaS connector an explicit paginator, and it reached `master` in the promotion at 2026-08-31T21:51Z — the evening of this walk. No release tag up to `v0.1.3` carries it. The record below describes the run exactly as it happened and is deliberately left as written: it is evidence of what the loader did that day, not a statement of what it does now. The guide's reader-facing text was corrected in [landing#578](https://github.com/datanika-io/datanika-landing/issues/578).
+
 ## Verification
 
 `verified_by: product-ui` / `verified_date: 2026-08-31`.

@@ -77,9 +77,9 @@ Extract-load is configured at **`/uploads`**, not on the connection. There is no
 
 ![The Data preview on the landed customers table, showing ten Stripe customers read live from the destination warehouse](/docs/connectors/stripe/04-first-run.png)
 
-> 🚨 **Known defect — a resource with more than 10 records currently loads only the first 10, and the run still goes green.** Stripe's list endpoints return 10 items by default and set `"has_more": true`; Datanika's Stripe loader does not follow that cursor, so the rest is never fetched and nothing warns you. Measured on 2026-08-31: an account with **15 customers landed 10**, the run reported `success`, and the missing five were the *oldest*. The screenshot above shows that run — `Rows: 10`, not 15.
+> **Why the screenshot says `Rows: 10`.** It was captured on 2026-08-31, before a fix to how Datanika pages through Stripe. Stripe's list endpoints return 10 records per page and set `"has_more": true` when there are more; that day's loader stopped after the first page, so an account with 15 customers landed 10 on a green run. The loader now follows Stripe's cursor to the end of each list ([core#823](https://github.com/datanika-io/datanika-core/issues/823)).
 >
-> This affects every Stripe resource large enough to paginate, and is tracked as [core#823](https://github.com/datanika-io/datanika-core/issues/823). **Until it ships, treat step 4 above as mandatory rather than advisory: compare the destination count against Stripe for each resource.** Supplying a `paginator` through **Use raw JSON config** does *not* work around it — the key is accepted and then ignored, so the run turns green having changed nothing.
+> ⚠️ **Self-hosting a tagged release? `v0.1.3` and every earlier release still stop at the first page**, and the run still goes green — see *Exactly 10 rows landed, on a self-hosted release* under Troubleshooting. Datanika Cloud, builds from `master`, and releases after `v0.1.3` follow the cursor. Either way, step 4's check stands: a green run says the load finished, not that it moved everything.
 
 ## Step 5 — Schedule it
 
@@ -110,20 +110,16 @@ Schedules live on their own page and reference the upload **by name**.
 
 ### Run succeeds but only a handful of rows landed
 
-**Check the count first.** If exactly **10** rows landed for a resource that has more, this is not your configuration — see the next entry.
+**Check the count first.** If exactly **10** rows landed for a resource that has more, and you run a self-hosted release, see the next entry.
 
-**Cause.** You set a `start_date` in Step 3 that cuts out most of your history. Stripe respects `start_date` strictly — events before the cutoff are not fetched.
-**Fix.** Clear `start_date` and re-run to backfill the full history, or set an earlier date. Subsequent incremental runs only fetch new/changed rows regardless of `start_date`.
+**Cause.** The key reads a different Stripe mode from the one you are looking at. A `rk_test_…` key reads **test-mode** data only — often a small fraction of what the live dashboard shows — and a `rk_live_…` key never sees test objects.
+**Fix.** Compare the key's prefix with the dashboard's **Test mode** toggle, and paste a key from the mode whose data you want.
 
-### Exactly 10 rows landed, and the run was green — [core#823]
+### Exactly 10 rows landed, on a self-hosted release — [core#823]
 
-**Cause.** A product defect, not a setting. Stripe's list endpoints return 10 items by default and signal `"has_more": true`; the Stripe loader does not follow that cursor, so only the first page is fetched. Confirmed on 2026-08-31 against an account with 15 customers: 10 landed, run `success`, no warning. It applies per resource, so a run can be complete for `products` and truncated for `customers` at the same time.
+**Cause.** Releases up to and including `v0.1.3` fetch only the first page of each Stripe list. Stripe returns 10 records per page and signals `"has_more": true`; those releases do not follow the cursor, so the run goes green with the first 10. It applies per resource, so one run can be complete for `products` and truncated for `customers`. Datanika Cloud, builds from `master`, and releases after `v0.1.3` follow the cursor and are not affected.
 
-**Fix.** None on your side yet — tracked as [core#823](https://github.com/datanika-io/datanika-core/issues/823). ⚠️ Adding a `paginator` via **Use raw JSON config** looks like a workaround and is not one: the key is accepted, the run succeeds, and the loader never reads it. Until the fix ships, either keep the affected resource under 10 records or pull it through the [REST API connector](/docs/connectors/rest-api), where the paginator *is* honoured.
-
-### Incremental runs seem to miss recently-updated invoices
-**Cause.** Stripe webhook events can arrive minutes after the underlying object update. If a run queries Stripe during that lag window, the updated row may be missed until the next run.
-**Fix.** Nothing to fix — just accept that there's a short eventual-consistency window. If strict real-time accuracy matters, use Stripe webhooks directly for your most time-sensitive fields and keep Datanika on hourly/daily for the bulk warehouse load.
+**Fix.** Move to a build that includes the fix ([core#823](https://github.com/datanika-io/datanika-core/issues/823)). On those releases a `paginator` supplied through **Use raw JSON config** is accepted and ignored, so it is not a workaround; until you upgrade, keep the affected resource under 10 records or load it through the [REST API connector](/docs/connectors/rest-api), where a paginator is honoured.
 
 ### Rate limited by Stripe (`Too many requests`)
 **Cause.** Stripe enforces a default rate limit of ~100 read requests/second in live mode (lower in test mode). Large backfills against busy accounts can briefly hit it.
