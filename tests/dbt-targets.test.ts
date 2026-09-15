@@ -137,8 +137,8 @@ describe("every restricted connector says so on its own page", () => {
     const lims = (connectors.find((x) => x.slug === slug)!.limitations ?? []).join(" ");
     expect(lims).toMatch(/cannot receive data/i);
     expect(lims, `${slug} must cite core#865`).toContain("core#865");
-    // Engineering's explicit ask: do not soften this. The failure is an
-    // unhandled AttributeError, not a degraded path.
+    // Engineering's explicit ask: do not soften this. It is absent, not
+    // degraded — core refuses the upload when it is created (core#865).
     for (const re of [/limited support/i, /partial support/i, /experimental/i]) {
       expect(re.test(lims), `${slug} softens an absent capability with ${re}`).toBe(false);
     }
@@ -282,6 +282,31 @@ describe("retired claims do not creep back", () => {
       "../src/pages/docs/connections.astro",
       /<code>mysql<\/code><\/td><td>MySQL 5\.7\+<\/td>/i,
     ],
+    [
+      "the catalogue said an upload targeting MySQL or SQLite fails with an unhandled AttributeError (retired by core#865)",
+      "../src/data/connectors.ts",
+      /fails with an unhandled AttributeError/i,
+    ],
+    [
+      "the catalogue said dlt has no MySQL destination and never has (dlt's sqlalchemy destination writes MySQL)",
+      "../src/data/connectors.ts",
+      /dlt has no MySQL destination and never has/i,
+    ],
+    [
+      "the MySQL guide said an upload targeting MySQL fails with an unhandled error (retired by core#865)",
+      "../src/content/connectors/mysql.md",
+      /upload that targets MySQL fails with an unhandled error/i,
+    ],
+    [
+      "the SQLite guide said an upload targeting SQLite fails with an unhandled error (retired by core#865)",
+      "../src/content/connectors/sqlite.md",
+      /upload that targets SQLite fails with an unhandled error/i,
+    ],
+    [
+      "the MySQL post said the layer underneath cannot write MySQL at all",
+      "../src/content/blog/no-dbt-adapter-for-mysql.md",
+      /never had a MySQL destination|neither does the layer underneath us/i,
+    ],
   ];
 
   /**
@@ -331,6 +356,11 @@ describe("retired claims do not creep back", () => {
       [RETIRED[7][2], "- **dbt tips:** Databricks-specific materializations (Delta, liquid clustering)"],
       [RETIRED[8][2], "- **dbt tips:** Synapse-specific materializations in the [Transformations guide]"],
       [RETIRED[9][2], "<tr><td><code>mysql</code></td><td>MySQL 5.7+</td></tr>"],
+      [RETIRED[10][2], "It is not a load destination: an upload that targets MySQL fails with an unhandled AttributeError, because dlt has no MySQL destination and never has."],
+      [RETIRED[11][2], "fails with an unhandled AttributeError, because dlt has no MySQL destination and never has. This was advertised for as long as the entry existed"],
+      [RETIRED[12][2], "Datanika cannot write *into* MySQL. An upload that targets MySQL fails with an unhandled error, because the load layer ([dlt](https://dlthub.com)) has no MySQL destination"],
+      [RETIRED[13][2], "Datanika cannot write *into* a SQLite file. An upload that targets SQLite fails with an unhandled error — the load layer (dlt) has no SQLite destination"],
+      [RETIRED[14][2], "The underlying extraction library has never had a MySQL destination, so an upload configured to target MySQL does not degrade gracefully"],
     ];
     expect(samples.length).toBe(RETIRED.length);
     for (const [re, sample] of samples) {
