@@ -2,7 +2,7 @@
 title: "Datanika is AI-Agent Native: Build Data Pipelines with Autonomous Agents"
 description: "Datanika ships a 5-tier agent API, /llms.txt discovery, and a strategy guide that lets Claude, GPT, or any LLM build complete data pipelines without human intervention. No competitor offers this."
 date: 2026-04-12
-updatedDate: 2026-04-12
+updatedDate: 2026-09-15
 author: "Datanika Team"
 category: "announcement"
 tags: ["announcement", "ai-agents", "api", "developer-experience"]
@@ -47,6 +47,8 @@ POST /api/v1/transformations/{id}/preview   → sample output rows
 ```
 
 ### Tier 4 — Execute with Control
+
+> **Update, 15 September 2026.** "Cancel stuck runs" below says more than the endpoint does. `POST /api/v1/runs/{id}/cancel` marks a run `cancelled`, but it does not stop the work: the run continues to the end and is billed for everything it processed. If a run looks stuck, read `GET /api/v1/runs/{id}` and `GET /api/v1/runs/{id}/logs` instead of cancelling it and triggering it again, because a second trigger starts the same job beside the first, and an upload that appends would load its rows twice. The original text follows as it was published.
 
 Trigger runs and wait for completion in a single request (`?wait=true`). Cancel stuck runs. Retry safely with `Idempotency-Key` headers — same key within 24 hours returns the cached response instead of creating duplicates.
 
