@@ -3,6 +3,7 @@ title: "MongoDB `Authentication failed`: You're Authenticating Against the Wrong
 description: "Correct password, correct user, and MongoDB still rejects you. The database in your connection URI doubles as the auth database — here is what that means and how to fix it."
 date: 2026-08-30
 publishedAt: 2026-08-30
+updatedDate: 2026-09-15
 author: "Datanika Team"
 category: "engineering"
 tags: ["mongodb", "connectors", "troubleshooting", "dlt", "open-source"]
@@ -111,6 +112,8 @@ Both code paths agree on it now. The URI is assembled by one function that Test 
 
 Full walkthrough in the [MongoDB setup guide](/docs/connectors/mongodb/), and the connector's capabilities and limits are on the [MongoDB connector page](/connectors/mongodb/).
 
+> **Update, 15 September 2026.** Caveat 1 below is no longer true: the connection form now renders an **Authentication database** field, so a user defined outside `admin` can be configured without the raw-JSON escape hatch. Measured on the shipped form — the same credentials are refused with the field empty and connect with it set. [core#638](https://github.com/datanika-io/datanika-core/issues/638) stays open only for whether a config saved as raw JSON keeps the key through a later structured-form save. Caveat 2, about TLS and Atlas, is unchanged and still live. The original text follows as it was published.
+>
 > **Two caveats we owe you, because both are live right now.**
 >
 > **1. If your user is *not* in `admin`, the connection form cannot say so.** The setting exists in the config — it is `auth_source` — but the `mongodb` form renders only Host, Port, User, Password and Database, so there is no input for it. You can still set it, by ticking **Use raw JSON** on the connection form and adding the key by hand; but a connection saved that way loses it the next time it is saved from the structured form, and authentication silently reverts to `admin`. Tracked as [core#638](https://github.com/datanika-io/datanika-core/issues/638). If your user lives inside the database you are reading, keep the connection in raw-JSON mode until that lands. *A setting with no surface is not a setting — it is a guess that happens to be right most of the time, and we shipped exactly that.*
