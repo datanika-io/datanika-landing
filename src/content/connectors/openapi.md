@@ -38,15 +38,11 @@ Save it to a file, or copy it to the clipboard — you are going to paste the wh
 
 > ⚠️ **In the Datanika UI this is paste-only. There is no "fetch from URL" field**, and giving one a URL is not a supported step. (A URL-fetch path does exist, but only through the REST API — it is not wired into the connection form.) If your spec is large enough that pasting is awkward, that is a sign to check it against the size limit below.
 
-> ⚠️ **Check how an OpenAPI 3.x spec declares its JSON responses before you paste it.** Datanika reads an endpoint's response schema only when it is declared under exactly `application/json`. A media type with a parameter after it — `application/json; v=1.0`, which ASP.NET's Swashbuckle emits when API versioning is on, or `application/json; charset=utf-8` — is not read, so those endpoints are not imported. If every endpoint is declared that way, the connection **still saves, with no warning**, and the first run fails with `OpenAPI source has no resource catalog — re-parse the spec`. If only some are, those endpoints are simply missing from your tables.
->
-> **Until that is fixed, edit your copy of the spec first:** replace each `application/json; v=1.0` (or whatever follows `application/json;`) with plain `application/json`, then paste the edited document. Nothing else in the spec needs to change.
+> **A spec with no endpoint Datanika can load is refused at save**, with the parser's reasons: `Invalid config: This spec has no endpoint the connector can load: …`, listing up to three. A JSON response counts however it is declared: plain `application/json`, with a parameter such as `application/json; v=1.0` (what ASP.NET's Swashbuckle emits when API versioning is on), or a `+json` type.
 
-<!-- core#1345. Walked 2026-09-15 on the vendor's own FakeRESTApi spec: 0 endpoints as published, 5 after the
-     replacement above (public/docs/connectors/openapi/README.md, "Defect 1"). Remove this block, and rewrite the
-     "no resource catalog" and "Some endpoints are missing" troubleshooting entries, when the parser reads JSON
-     media types with parameters. That fix also refuses a zero-endpoint spec at save, which changes what a
-     reader sees. -->
+<!-- core#1345, fixed in production. This replaced a warning, walked 2026-09-15, that told readers to strip
+     media-type parameters by hand before pasting. Read in code on core master ba7289b: the parser's
+     _is_json_media_type, and the save-time refusal in connection_state.py. Not walked since the fix. -->
 
 **Two limits, both enforced at save time:**
 
@@ -225,26 +221,25 @@ you save through the **form**. The parser itself appends a *warning* with almost
 *"No 'servers' URL in the spec — set the base URL manually."* — which is what you get on the API path.
 Same cause, same fix; matching either one literally will miss the other.
 
+### `Invalid config: This spec has no endpoint the connector can load: …`
+**Cause.** No `GET` operation in the spec survived the parse. The message lists the parser's reasons, up to three: typically templated paths such as `/users/{id}`, or responses that contain no array.
+**Fix.** Those endpoints have no collection this connector can load as a table. Use the [REST API connector](/docs/connectors/rest-api) and point at the collection yourself.
+
 ### `OpenAPI source has no resource catalog — re-parse the spec`
-The first run fails with this message when the connection holds no endpoints to load. In **`/runs`** it is the tooltip on the run's error icon. There are two causes, and the fix differs.
-
-**Cause 1 — the spec's responses use a JSON media type Datanika does not read.** The parse ran and found nothing readable: every response is declared under something other than exactly `application/json`, typically `application/json; v=1.0` (see Step 1). The connection saved without a warning.
-**Fix.** Editing and saving again does **not** help here — it re-parses the same document to zero endpoints, and the next run fails the same way. Change the media type in your copy of the spec as Step 1 describes, then **Edit** the connection, paste the edited spec over the old one, and click **Save Changes**.
-
-**Cause 2 — the connection carries no stored catalog**, for example one created through the API without a parse step.
-**Fix.** Open the connection, **Edit**, and save again. The spec is reloaded into the form, so saving re-runs the parse.
+**Cause.** The first run fails with this message when the connection holds no endpoints to load: for example one created through the API without a parse step, or one saved before the form began refusing a spec with no loadable endpoint. In **`/runs`** it is the tooltip on the run's error icon.
+**Fix.** Open the connection, **Edit**, and save again. The spec is reloaded into the form, so saving re-runs the parse: the form either stores the endpoints or tells you why there are none.
 
 ### `401` or `403` on the first run, with a spec that saved cleanly
 **Cause.** Most often the spec declares no `securitySchemes`, so your API key was never attached — see the auth table above. Also possible: the spec declares OAuth2, or the first declared scheme is not the one this API actually wants.
 **Fix.** Check the spec for a `securitySchemes` block. If it has none, or only OAuth2, use the [REST API connector](/docs/connectors/rest-api) and set the header yourself in **Extra Headers**.
 
 ### Some endpoints are missing from the table list
-**Cause.** The parse skipped them, and the form does not show you what it skipped. Three reasons, all visible in the spec:
-- the endpoint's responses are declared under a media type other than exactly `application/json` (see Step 1);
+**Cause.** The parse skipped them, and when some endpoints do load the form does not show you what it skipped. Three reasons, all visible in the spec:
+- the endpoint declares no JSON response at all (plain `application/json`, `application/json` with a parameter, and `+json` types all count);
 - the path is templated, such as `/users/{id}` — detail endpoints are skipped;
 - the declared response contains no array, so there is no collection to load.
 
-**Fix.** For the first, change the media type as Step 1 describes, then **Edit** the connection, paste the edited spec and **Save Changes**. For the other two, use the [REST API connector](/docs/connectors/rest-api) for those endpoints.
+**Fix.** Use the [REST API connector](/docs/connectors/rest-api) for those endpoints.
 
 ### A table landed with one row that looks like metadata
 **Cause.** The records are not where the spec says they are. Datanika takes the path to the record array from the response schema the spec declares — under any property name, not only the common envelope keys — so when the API's real response is shaped differently from that schema, the path misses the records.
