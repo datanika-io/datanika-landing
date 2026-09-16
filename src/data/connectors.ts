@@ -68,8 +68,10 @@ export const connectors: Connector[] = [
     name: "MySQL",
     category: "Database",
     // Source-only. Corrected 2026-09-01 — see the `direction` note above
-    // `sourceConnectors`. It was "both" and dlt has never had a mysql
-    // destination (core#865).
+    // `sourceConnectors`. It was "both", and Datanika builds no MySQL
+    // destination: dlt has no destination *named* `mysql`, and its generic
+    // SQLAlchemy destination, which can write MySQL, is not one Datanika uses
+    // (core#865; wording re-dated 2026-09-16, landing#577).
     direction: "source",
     description: "Connect to MySQL 5.7+ or MariaDB as a source. Extract full databases or individual tables with incremental loading support.",
     useCases: [
