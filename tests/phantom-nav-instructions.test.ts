@@ -274,20 +274,65 @@ describe("the connector guides and their template name surfaces that exist", () 
   // The positive half. Deleting a wrong instruction without naming the real
   // surface leaves the reader with no route, and an absence-only check cannot
   // tell that apart from a fix.
-  it.each(guides)("%s points at Models by name and by route", (guide) => {
+  //
+  // 🔴 WIDENED 2026-09-16, from "every guide names Models" to the invariant that rule was
+  // standing in for: **every guide tells the reader where to confirm the data landed.**
+  // The old form named the INSTANCE and therefore went red on a correct change.
+  // landing#604 measured that `/models` lists NOTHING for a ClickHouse destination — a run
+  // that finished `success` with 7,182 rows across four tables produced zero `catalog_entries`
+  // rows — so requiring the ClickHouse guide to send readers to Models was requiring it to
+  // print a false instruction. A guide may satisfy this either way; one that does NEITHER
+  // still fails, which is the property worth keeping.
+  const NAMES_MODELS = (b: string) => /\*\*Models\*\*/.test(b) && b.includes("`/models`");
+  const SAYS_MODELS_IS_BLIND = (b: string) =>
+    /\/models\S*\s+does not list/i.test(b) && b.includes("```sql");
+
+  it.each(guides)("%s tells the reader where to confirm the data landed", (guide) => {
     const body = readGuide(guide);
-    expect(body, `${guide} does not name **Models**`).toMatch(/\*\*Models\*\*/);
-    expect(body, `${guide} does not give the /models route`).toContain("`/models`");
+    expect(
+      NAMES_MODELS(body) || SAYS_MODELS_IS_BLIND(body),
+      `${guide} neither points at Models (both the name and the \`/models\` route) nor states ` +
+        `that Models does not list this destination AND gives a query instead. One of the two ` +
+        `is required: deleting a wrong instruction without naming the real surface leaves the ` +
+        `reader with no way to check their data arrived.`,
+    ).toBe(true);
   });
 
-  it.each(guides)("%s, if it mentions the _dlt_ tables, says they are hidden", (guide) => {
+  it.each(guides)("%s, if it mentions the _dlt_ tables, says what will show them", (guide) => {
     const body = readGuide(guide);
     if (!body.includes("_dlt_loads")) return; // 4 file guides never raise the topic.
     expect(
-      /Models does not list them/i.test(body),
-      `${guide} names the _dlt_* tables without saying Models hides them, so a ` +
-        `reader who does not see them reads a correct result as a partial load.`,
+      /Models does not list them/i.test(body) || SAYS_MODELS_IS_BLIND(body),
+      `${guide} names the _dlt_* tables without telling the reader whether to expect to see ` +
+        `them, so a correct result reads as a partial load.`,
     ).toBe(true);
+  });
+
+  // Controls. Widening a guard and gutting one look identical from the outside, so both arms
+  // must be shown able to fail, and the widened rule must still refuse a guide that does
+  // neither. Without these, "I made the test pass" is the only thing the change demonstrates.
+  describe("the where-to-verify rule discriminates", () => {
+    const MODELS_SHAPE = "open **Models** (`/models`) and browse the landed tables";
+    const BLIND_SHAPE = "`/models` does not list what a ClickHouse load landed\n\n```sql\nSELECT 1;\n```";
+
+    it("accepts a guide that points at Models", () => {
+      expect(NAMES_MODELS(MODELS_SHAPE)).toBe(true);
+      expect(SAYS_MODELS_IS_BLIND(MODELS_SHAPE)).toBe(false);
+    });
+
+    it("accepts a guide that says Models is blind and supplies a query", () => {
+      expect(SAYS_MODELS_IS_BLIND(BLIND_SHAPE)).toBe(true);
+      expect(NAMES_MODELS(BLIND_SHAPE)).toBe(false);
+    });
+
+    it("REFUSES a guide that does neither", () => {
+      const gutted = "When it finishes, check your warehouse.";
+      expect(NAMES_MODELS(gutted) || SAYS_MODELS_IS_BLIND(gutted)).toBe(false);
+    });
+
+    it("REFUSES a blindness claim with no query to replace the route", () => {
+      expect(SAYS_MODELS_IS_BLIND("`/models` does not list what a ClickHouse load landed.")).toBe(false);
+    });
   });
 
   describe("_template.md — the generator, unguarded until landing#401", () => {
