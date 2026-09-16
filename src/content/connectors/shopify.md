@@ -30,8 +30,19 @@ Shopify is the go-to e-commerce source for teams building revenue analytics, inv
 2. Click **Create an app**, name it `Datanika Sync`.
 3. Under **API credentials → Admin API access scopes**, grant read access to:
    - `read_orders`, `read_products`, `read_customers`
+   - **`read_all_orders`** as well, if you need orders older than 60 days — see the callout below.
    - Add more scopes for additional resources you want to sync.
 4. Click **Install app** and copy the **Admin API access token**. This is shown only once.
+
+> 🚨 **`read_orders` alone reaches only the last 60 days of orders.** That window is set by the
+> scopes granted to *your* Shopify app, not by anything Datanika sends — no field in Datanika lifts
+> it, and Shopify returns the truncated set without an error. To sync full order history, also
+> request **`read_all_orders`**. It is still a read-only scope; it widens the time window, not the
+> permission. Shopify gates it: a custom app can tick it in the scope list, while a public or
+> distributed app has to request it and say why.
+>
+> **Grant it before the first run.** A backfill you expected to reach further back otherwise lands
+> quietly truncated, with a green run, a plausible row count and nothing to search for.
 
 > **Least privilege.** Only grant `read_*` scopes. Datanika never writes to Shopify.
 ## Step 2 — Add the connection in Datanika
@@ -60,6 +71,12 @@ Extract-load is configured at **`/uploads`**, not on the connection. There is no
 > **There is no write disposition, load mode, source schema or table-name field for a SaaS source, and that is deliberate.** Those controls are rendered only when the source is a SQL database. The endpoint checkboxes are the equivalent control here.
 
 > **The endpoint list is a fixed default, not a live fetch.** It comes from Datanika's built-in map for Shopify rather than from your account, so it does not reflect custom objects. Anything outside the list needs the [REST API connector](/docs/connectors/rest-api).
+
+> **Orders load in every status.** Datanika asks Shopify for `status=any`, so open, closed and
+> cancelled orders all land. Shopify's own default is open-only, which is what a build predating this
+> received — so if your `orders` table holds only open orders while the store has closed ones, that
+> is the tell that you are on an older build. Datanika also pins the Admin API version it requests,
+> rather than letting Shopify pick a retired one for you.
 
 > **Batch size** (default 10000) and the optional **Schema Contract** dropdowns — **Tables** / **Columns** / **Data Type** — are on every upload regardless of source. The contract decides whether a changed incoming shape evolves the destination or fails the run.
 
@@ -97,6 +114,10 @@ Schedules live on their own page and reference the upload **by name**.
 
 ### Rate limited by Shopify
 **Fix.** dlt retries with backoff automatically. For very large stores, reduce schedule frequency.
+
+### Orders older than 60 days are missing, and the run was green
+**Cause.** The app was installed with `read_orders` but without `read_all_orders`. Shopify caps an app that lacks that scope at the last 60 days of orders and returns the shorter set as a normal, successful response — so the run succeeds, the row count looks reasonable, and the history is simply not there.
+**Fix.** Add `read_all_orders` to the app's **Admin API access scopes**, reinstall the app, paste the new access token into the Datanika connection, and re-run. `products` and `customers` are unaffected by this scope, so only the `orders` table changes.
 
 ## Related
 
