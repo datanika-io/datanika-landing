@@ -59,7 +59,7 @@ Create a **dedicated loader user** rather than reusing the `default` admin accou
 3. Fill in the form:
    - **Connection Name** — e.g. `clickhouse-prod` or `clickhouse-analytics`.
    - **Host** — the hostname, e.g. `abc123.clickhouse.cloud` or `clickhouse.internal`.
-   - **Port** — `8443` (ClickHouse Cloud / TLS) or `8123` (self-hosted plain HTTP).
+   - **Port** — the **HTTP** port: `8443` (ClickHouse Cloud / TLS) or `8123` (self-hosted plain HTTP). This is the only port field on the form, and it is the HTTP one — Datanika derives ClickHouse's native TCP port from the TLS checkbox below rather than asking for it.
    - **User** — `datanika_loader` (or `default` for ClickHouse Cloud).
    - **Password** — the password from Step 1. Stored encrypted at rest with Fernet.
    - **Database** — the target database, e.g. `raw_data`.
@@ -69,6 +69,23 @@ Create a **dedicated loader user** rather than reusing the `default` admin accou
 5. Click **Create Connection**.
 
 > **ClickHouse Cloud / TLS.** For TLS endpoints (ClickHouse Cloud, or the secure `8443` port), tick **Use HTTPS (TLS)** in the form above. Self-hosted ClickHouse on the plain HTTP port `8123` works with the checkbox left unchecked.
+
+> 🚨 **A ClickHouse *destination* dials two ports, and only one of them is on the form.** The load's
+> file step goes over **HTTP**, on the port you typed. Its `sync` step goes over ClickHouse's
+> **native TCP** protocol, on a port Datanika derives from **Use HTTPS (TLS)** — `9000` unticked,
+> `9440` ticked. Open both between Datanika and the server, or a load creates its tables and then
+> fails partway. A server whose native port has been remapped away from `9000`/`9440` cannot be
+> described on this form today.
+>
+> ⚠️ **If you once typed the native port (`9000` or `9440`) into Port to get loads working, change it
+> back to the HTTP port.** Earlier builds passed the stored port straight through as the native one,
+> so that was the only way past the `sync` step. Datanika now reads this field as the HTTP port and
+> derives the native one, so a connection still holding `9000`/`9440` here points the HTTP client at
+> the native interface and **stops loading**. Editing the port on the connection is the entire fix —
+> nothing needs recreating.
+>
+> **As a *source*, ClickHouse speaks HTTP only**, so the port you type is the only one that matters
+> in that direction. This callout is about the destination side.
 
 ![Adding ClickHouse as a destination in Datanika](/docs/connectors/clickhouse/02-add-connection.png)
 
@@ -113,8 +130,13 @@ Schedules live on their own page and reference the upload **by name**.
 ## Troubleshooting
 
 ### `Test connection failed: Connection refused`
-**Cause.** Wrong port. ClickHouse has two interfaces: native TCP (9000/9440) and HTTP (8123/8443). Datanika uses the HTTP interface.
+**Cause.** Wrong port. ClickHouse has two interfaces: native TCP (9000/9440) and HTTP (8123/8443). **Test Connection and dbt both speak HTTP**, so this button is exercising the HTTP port.
 **Fix.** Change the port to `8443` (ClickHouse Cloud / TLS) or `8123` (self-hosted plain HTTP). The native TCP port will refuse HTTP connections.
+⚠️ **A green Test Connection does not prove a load will work.** It exercises the HTTP half only; a load also dials the native port (see the callout in Step 2).
+
+### The load fails at `step=sync`, but Test Connection is green
+**Cause.** The `sync` step speaks ClickHouse's native TCP protocol, which Test Connection never touches. Either the native port — `9000`, or `9440` with TLS — is blocked between Datanika and the server, or this connection still stores a native port in **Port**, which Datanika reads as the HTTP port.
+**Fix.** Open the native port, and set **Port** to the HTTP port (`8123`/`8443`) with **Use HTTPS (TLS)** matching it. If your server's native port has been remapped to something other than `9000`/`9440`, that cannot be expressed on the form today — move the server to a default native port, or keep using it as a source only.
 
 ### `Test connection failed: Connection timed out`
 **Cause.** Datanika can't reach the ClickHouse host — firewall, security group, or IP allowlist issue.
