@@ -59,7 +59,7 @@ Create a **dedicated loader user** rather than reusing the `default` admin accou
 3. Fill in the form:
    - **Connection Name** — e.g. `clickhouse-prod` or `clickhouse-analytics`.
    - **Host** — the hostname, e.g. `abc123.clickhouse.cloud` or `clickhouse.internal`.
-   - **Port** — `8443` (ClickHouse Cloud / TLS) or `8123` (self-hosted plain HTTP).
+   - **Port** — the **HTTP** port, and only the HTTP port: `8443` (ClickHouse Cloud / TLS) or `8123` (self-hosted plain HTTP). Datanika derives ClickHouse's native TCP port from this field and the TLS checkbox (`9000`, or `9440` with TLS), so a native port entered here stops the load; an instance whose native port has been remapped away from those two defaults is not supported today.
    - **User** — `datanika_loader` (or `default` for ClickHouse Cloud).
    - **Password** — the password from Step 1. Stored encrypted at rest with Fernet.
    - **Database** — the target database, e.g. `raw_data`.
