@@ -4,8 +4,8 @@ description: "Step-by-step guide to use Microsoft SQL Server as a source or dest
 source: "mssql"
 source_name: "SQL Server"
 category: "database"
-verified_by: "product-ui"
-verified_date: "2026-07-18"
+verified_by: "growth-ui"
+verified_date: "2026-09-15"
 related_use_cases: []
 related_comparisons:
   - "airbyte"
@@ -99,6 +99,8 @@ Extract-load is configured at **`/uploads`**, not on the connection. There is no
 3. When it finishes, open **Models** (`/models`) and browse the landed tables. The upload lands them in a schema **named after the upload** — `salesdailysync` creates schema `salesdailysync` in the destination. dlt also creates its own `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables in that schema, but **Models does not list them** — seeing only your own tables there is correct, not a partial load. There is no target-schema field to choose.
 4. Spot-check the row count against the source (`SELECT COUNT(*) FROM <schema>.<table>`). **Verify in the destination rather than trusting the status badge** — a green run means the load finished, not that it moved what you expected.
 
+![The Data preview of a table loaded from SQL Server, after its first run in Datanika](/docs/connectors/mssql/04-first-run.png)
+
 ### Step 5 — Schedule it
 
 Schedules live on their own page and reference the upload **by name**.
@@ -117,6 +119,8 @@ Schedules live on their own page and reference the upload **by name**.
 ## Part B — SQL Server as a Destination
 
 Load data from any source (SaaS APIs, other databases, files) into SQL Server tables.
+
+> 🚫 **This direction does not work yet — measured 2026-09-15, and Part A above is unaffected.** An upload whose *destination* is a SQL Server connection fails at the load step with `ImportError: libodbc.so.2: cannot open shared object file`, in under a second, and **nothing is written** — the destination database is left with no tables at all. Extracting *from* SQL Server (Part A) uses a different driver and is verified end to end. The upload form does still offer SQL Server connections as destinations, so this can be configured and only fails when the run starts. Tracked as [core#1379](https://github.com/datanika-io/datanika-core/issues/1379); this note comes out when it closes. The rest of Part B describes the intended shape and is kept for when it does.
 
 > **Same connection, different direction.** The connection you created in Part A works as a destination too. You just select it as the **Destination connection** on an upload. If you're only using SQL Server as a destination, create the connection with a **write-capable** login instead.
 
@@ -148,16 +152,22 @@ GRANT CREATE SCHEMA TO datanika_writer;
 
 ## Troubleshooting
 
-### `Login failed for user`
-**Cause.** Wrong password, the login is disabled, or SQL Server authentication mode is set to "Windows only."
-**Fix.** Verify the password. Ensure SQL Server is configured for **SQL Server and Windows Authentication mode** (mixed mode) in Server Properties → Security.
+> **Read the beginning of the message, not the whole of it.** Datanika connects with `pymssql`, so the red callout carries DB-Lib's wording rather than the sentences SSMS and the .NET client produce — and Datanika truncates it after 300 characters, so the end of a long driver message never reaches the screen. Measured against SQL Server 2022:
+>
+> | what was wrong | how the message starts |
+> |---|---|
+> | the password | `(18456, b'DB-Lib error message 20018 … General SQL Server error … Adaptive Server connection failed (mssql)')` |
+> | the database name | `(18456, b"Login failed for user '<user>'. …")` |
+> | the host or port | `(20009 … Unable to connect: Adaptive Server is unavailable or does not exist (mssql) Net-Lib error during Connection refused (111))` |
+>
+> So `Login failed for user` appears when the **database** is wrong as well as when the credentials are, and the phrases `Cannot open database … requested by the login` and `A network-related or instance-specific error` — which SQL Server's own tools do produce — never appear here.
 
-### `Cannot open database '<name>' requested by the login`
-**Cause.** The database name is wrong, or the user doesn't have a mapping in that database.
-**Fix.** Double-check the database name. Run `USE <database>; CREATE USER <user> FOR LOGIN <user>;` if the user mapping is missing.
+### `Login failed for user`, or any `18456`
+**Cause.** A wrong password, a disabled login, SQL Server authentication mode set to "Windows only" — **or a database the login cannot open**, which reports the same `18456` rather than a message about the database.
+**Fix.** Check the password, then check the database name; the same error covers both. Ensure SQL Server is configured for **SQL Server and Windows Authentication mode** (mixed mode) in Server Properties → Security, and run `USE <database>; CREATE USER <user> FOR LOGIN <user>;` if the login has no user mapping in that database.
 
-### `A network-related or instance-specific error`
-**Cause.** SQL Server is unreachable — wrong host/port, firewall blocking, or the SQL Server Browser service isn't running (for named instances).
+### `Unable to connect: Adaptive Server is unavailable or does not exist`
+**Cause.** SQL Server is unreachable — wrong host or port, a firewall in the way, or the SQL Server Browser service not running (for named instances). A trailing `Net-Lib error during Connection refused` means the host answered and nothing was listening on that port.
 **Fix.** Test connectivity with `telnet <host> 1433` or `Test-NetConnection -ComputerName <host> -Port 1433`. For Azure SQL, ensure the client IP is in the server's firewall rules.
 
 ### Connection test times out
