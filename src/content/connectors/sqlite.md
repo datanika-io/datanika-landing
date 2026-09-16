@@ -4,8 +4,8 @@ description: "Sync a SQLite database file into your warehouse with Datanika — 
 source: "sqlite"
 source_name: "SQLite"
 category: "database"
-verified_by: "product-ui"
-verified_date: "2026-07-18"
+verified_by: "growth-ui"
+verified_date: "2026-09-16"
 related_use_cases: []
 related_comparisons:
   - "airbyte"
@@ -28,7 +28,12 @@ SQLite is the embedded database you already have. Mobile apps, desktop apps, bro
 
 SQLite is a file, not a server. The only thing that varies by environment is how Datanika gets to that file.
 
-🚨 **The one thing to get right: the file must be visible to *both* containers.** Datanika runs the web app (`app`) and the worker (`celery`) as separate containers with separate filesystems. **The load runs in the worker**; **Test Connection, the Data preview and the SQL Editor run in the web app.** Put the file where only the web app can see it and Test Connection goes green while every run fails — the check you would naturally trust is the one that cannot tell you.
+🚨 **The one thing to get right: the file must be visible to *both* containers.** Datanika runs the web app (`app`) and the worker (`celery`) as separate containers with separate filesystems. **The load runs in the worker**; **Test Connection, the Data preview and the SQL Editor run in the web app.** Put the file where only the web app can see it and Test Connection still goes green. What the run does next depends on what the worker has at that path:
+
+- **No such directory** — the run fails with `unable to open database file`.
+- **The directory, but not the file** — a one-letter typo in the worker's volume name is enough — the run **succeeds with 0 rows** and leaves an empty file at that path. Every later run succeeds with 0 rows too, and a check that the file *exists* in the worker now passes. Tracked as [core#1401](https://github.com/datanika-io/datanika-core/issues/1401).
+
+Neither the button nor the status badge can tell you which one you have, so compare the file from both containers (step 3 below).
 
 **Self-hosted Datanika — file already on the host**
 
@@ -49,11 +54,12 @@ SQLite is a file, not a server. The only thing that varies by environment is how
    ```bash
    docker cp ./app.sqlite datanika-app:/var/datanika/sources/app.sqlite
    ```
-3. **Verify it from the worker, not from the web app** — the web app is where you just put it, so checking there tells you nothing:
+3. **Verify it from the worker, not only from the web app** — the web app is where you just put it, so checking there alone tells you nothing. Compare checksums, not just existence:
    ```bash
-   docker exec datanika-celery ls -l /var/datanika/sources/app.sqlite
+   docker exec datanika-app    sha256sum /var/datanika/sources/app.sqlite
+   docker exec datanika-celery sha256sum /var/datanika/sources/app.sqlite
    ```
-   `No such file or directory` means the volume is not shared and nothing below will work as described. Fix it here rather than debugging an empty load later.
+   The two lines must match. `No such file or directory` from the worker means the volume is not shared. A different checksum means the worker is reading a different file — possibly an empty one that an earlier run created, which `ls` would happily list (as a 0-byte file). Fix it here rather than debugging an empty load later.
 4. Take the full path — you'll paste it into Datanika in Step 2.
 
 **Self-hosted Datanika — file produced by another container on the same host**
@@ -77,13 +83,16 @@ Then use `/mnt/myapp/app.sqlite` as the path in Step 2. Read-only is enough — 
 1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page — there's no separate "New Connection" button to click.
 2. From the **type dropdown** at the top of the form, pick `sqlite`. The form reshapes itself to show the SQLite-specific fields.
 3. Fill in:
-   - **Connection Name** — a label you'll recognize, e.g. `sqlite-myapp`.
+   - **Connection Name** — a label you'll recognize, e.g. `sqlitemyapp`. Letters, digits and spaces only: anything else is stripped as you type, so `sqlite-myapp` becomes `sqlitemyapp`.
    - **Database Path** — the full path from Step 1. Include the extension. Examples: `/var/datanika/sources/app.sqlite`, `/mnt/myapp/data.db`.
-4. Click **Test Connection**. Datanika opens the file and reports success or an error. Because SQLite has no credentials, any failure here is a path or permission issue — not an auth problem.
-   > ⚠️ **A green Test Connection does not mean the load will work.** Test Connection runs in the **web app** container; the load runs in the **worker**. If you skipped the shared volume in Step 1, this button opens the file it can see and reports success, and the run then fails on a path the worker has never had. The probe in Step 1 step 3 is the one that answers the question this button looks like it is answering.
+4. Click **Test Connection**. Datanika opens the file read-only and reads its list of tables. There are no credentials, so no answer is ever about authentication. You get one of three:
+   - *Connected — read the database at '…'.* (green)
+   - *No database at '…'. Check the path, or create the file first.* — nothing exists at that path. Testing does not create a file.
+   - *Cannot open '…' — check that it is a database file and that it is readable.* — something is there, but it is not a SQLite database you can read. A plain text file lands here, not on the green answer.
+   > ⚠️ **A green Test Connection does not mean the load will work.** Test Connection runs in the **web app** container; the load runs in the **worker**. If the worker cannot see the same file, this button still opens the one the web app sees and reports success — and the run then either fails or succeeds with nothing (Step 1). The checksum comparison in Step 1 step 3 is the one that answers the question this button looks like it is answering.
 5. Click **Create Connection**.
 
-> **Name + path is all you get on the form.** The SQLite Connection form has exactly two inputs: Connection Name and Database Path (plus a **Use raw JSON config** escape hatch for advanced cases). Datanika never writes to a SQLite source — the connector opens the file read-only at pipeline runtime, enforced by the source role, so no UI toggle is needed.
+> **Name + path is all you get on the form.** The SQLite Connection form has exactly two inputs: Connection Name and Database Path (plus a **Use raw JSON config** escape hatch for advanced cases). There is no read-only toggle. A run reads your tables without changing the file — its checksum is the same before and after — but it is not a read-only open: pointed at a path where the worker finds no file, it creates an empty one there ([core#1401](https://github.com/datanika-io/datanika-core/issues/1401)).
 
 ![Adding the SQLite connection in Datanika](/docs/connectors/sqlite/02-add-connection.png)
 
@@ -92,7 +101,7 @@ Then use `/mnt/myapp/app.sqlite` as the path in Step 2. Read-only is enough — 
 Extract-load is configured at **`/uploads`**, not on the connection. There is no "Configure pipeline" button — connection rows offer only Test / Edit / Copy / Delete, and `/pipelines` is the **dbt** builder, which is a different thing.
 
 1. Open **`/uploads`**. The **New Upload** form is rendered inline on the page.
-2. Fill in **Upload name** (letters and digits only — anything else is stripped as you type, so `appdatasync` becomes `appdatasync`) and an optional **Description**.
+2. Fill in **Upload name** (letters and digits only — anything else is stripped as you type, so `app-data-sync` becomes `appdatasync`) and an optional **Description**.
 3. Pick the **Source connection** and the **Destination connection** — the SQLite connection from Step 2 is the source. Each picker opens a dialog listing entries as `16 — myconnection (postgres)`, i.e. id, name, type.
 4. Because the source is a SQL database, you also get:
    - **Load Mode** — `full_database` (the default) or `single_table`.
@@ -112,7 +121,11 @@ Extract-load is configured at **`/uploads`**, not on the connection. There is no
 1. On the **`/uploads`** row for your upload, click **Run**. There is no "Run now" on a pipeline page — the trigger lives on the upload's own row.
 2. Watch **`/runs`**. The run shows a status badge, start and finish timestamps and a **Rows** count; the **Logs** icon on the row opens the detail.
 3. When it finishes, open **Models** (`/models`) and browse the landed tables. The upload lands them in a schema **named after the upload** — `appdatasync` creates schema `appdatasync` in the destination. dlt also creates its own `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables in that schema, but **Models does not list them** — seeing only your own tables there is correct, not a partial load. There is no target-schema field to choose.
-4. Spot-check the row count against the source. **Verify in the destination rather than trusting the status badge** — a green run means the load finished, not that it moved what you expected.
+4. Spot-check the row count against the source. **Verify in the destination rather than trusting the status badge** — a green run means the load finished, not that it moved what you expected. For SQLite this is not a formality: a run that could not see your file can still finish green with `0` in **Rows** (Step 1).
+
+![The Data preview of a table loaded from SQLite, after its first run in Datanika](/docs/connectors/sqlite/04-first-run.png)
+
+> **Dates and times.** SQLite has no date type, so a `DATETIME` column usually holds text such as `2025-06-09 20:23:24`. Loaded into PostgreSQL, a column declared that way lands as `timestamp with time zone`, with the same clock time read as **UTC**. If your application wrote local time, convert it in the warehouse.
 
 ## Step 5 — Schedule it
 
@@ -130,13 +143,13 @@ Schedules live on their own page and reference the upload **by name**.
 ## Troubleshooting
 
 ### `unable to open database file`
-**Cause.** The path is wrong, the file doesn't exist, or the container asking for it can't see it. This is the single most common failure mode.
-**Fix.** Check the path from **both** containers, because they have separate filesystems and the load runs in the worker:
+**Cause.** This is how a **run** reports that the worker has no such directory — in full, `(sqlite3.OperationalError) unable to open database file`. The path is wrong, or the worker cannot see the volume the file is on. Test Connection words the same problem differently (*No database at '…'*), and if the web app can see the file it does not report a problem at all.
+**Fix.** Check the file from **both** containers, because they have separate filesystems and the load runs in the worker:
 ```bash
-docker exec datanika-app    ls -l <path>
-docker exec datanika-celery ls -l <path>
+docker exec datanika-app    sha256sum <path>
+docker exec datanika-celery sha256sum <path>
 ```
-If it is missing from `datanika-celery` but present in `datanika-app`, your volume is not shared — go back to Step 1. That combination is the one worth recognising: it is also the state in which **Test Connection succeeds and every run fails**. If the file is in both but Datanika still can't open it, check permissions (`chmod 644 <file>` as the file owner on the host).
+If it is missing from `datanika-celery` but present in `datanika-app`, your volume is not shared — go back to Step 1. That combination is the one worth recognising: it is also the state in which **Test Connection succeeds and the run fails**. If the file is in both but Datanika still can't open it, check permissions (`chmod 644 <file>` as the file owner on the host).
 
 ### `database disk image is malformed`
 **Cause.** The SQLite file was truncated or corrupted, usually because it was copied while another process was mid-write.
@@ -151,8 +164,8 @@ If it is missing from `datanika-celery` but present in `datanika-app`, your volu
 **Fix.** Clean the source: `UPDATE <table> SET <col> = CAST(<col> AS INTEGER) WHERE typeof(<col>) = 'text';`. Or set the column's destination type explicitly to `TEXT` in Datanika's schema override so you can clean it downstream in dbt.
 
 ### First run completes instantly with zero rows
-**Cause.** You pointed Datanika at an empty or unused SQLite file, or the tables are in a different attached database than Datanika sees.
-**Fix.** In the `sqlite3` CLI, run `.tables` against the file to confirm it actually contains data. If the app uses `ATTACH DATABASE`, each attached file is a separate connection — point Datanika at the specific file you need, not the main one.
+**Cause.** Most often, **the worker is not reading your file.** If the worker has the directory but not the file, the run creates an empty database at that path and finishes `success` with `0` rows — and every later run does the same ([core#1401](https://github.com/datanika-io/datanika-core/issues/1401)). Otherwise the file itself is empty or unused, or the tables are in a different attached database than Datanika sees.
+**Fix.** Run the checksum comparison from Step 1 step 3 first. A 0-byte file, or a checksum that differs from the web app's, means the worker is looking somewhere else: fix the volume so both containers mount the same one, then run again. If the checksums match, run `.tables` against the file in the `sqlite3` CLI to confirm it contains data. If the app uses `ATTACH DATABASE`, each attached file is a separate connection — point Datanika at the specific file you need, not the main one.
 
 ## Related
 
