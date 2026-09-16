@@ -156,7 +156,7 @@ export const connectors: Connector[] = [
     ],
     configFields: [
       { name: "host", description: "ClickHouse hostname" },
-      { name: "port", description: "HTTP port (default: 8123)" },
+      { name: "port", description: "HTTP port (default: 8123). As a destination, the native TCP port is derived from `secure` — 9000, or 9440 with TLS — and is not a separate field" },
       { name: "database", description: "Database name" },
       { name: "user", description: "Username" },
       { name: "password", description: "Password (encrypted at rest)" },

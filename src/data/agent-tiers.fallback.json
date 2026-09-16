@@ -73,7 +73,7 @@
     {
       "number": 4,
       "name": "Execute & Control",
-      "summary": "Trigger runs synchronously with `?wait=true`, cancel stuck runs, retry safely with Idempotency-Key headers, monitor history, and browse the auto-generated catalog.",
+      "summary": "Trigger runs synchronously with `?wait=true`, retry safely with Idempotency-Key headers, monitor history, and browse the auto-generated catalog.",
       "capabilities": [
         {
           "name": "Execute",
@@ -86,7 +86,7 @@
         },
         {
           "name": "Control",
-          "description": "Cancel runs, monitor run history, stream logs, browse the data catalog.",
+          "description": "Mark runs cancelled (this does not stop a run), monitor run history, stream logs, browse the data catalog.",
           "endpoints": [
             "POST /api/v1/runs/{id}/cancel",
             "GET /api/v1/runs",
