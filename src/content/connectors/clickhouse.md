@@ -4,8 +4,8 @@ description: "Step-by-step guide to set up ClickHouse as a destination in Datani
 source: "clickhouse"
 source_name: "ClickHouse"
 category: "database"
-verified_by: "product-ui"
-verified_date: "2026-07-19"
+verified_by: "growth-ui"
+verified_date: "2026-09-16"
 related_use_cases:
   - "kafka-to-clickhouse"
 related_comparisons:
@@ -26,7 +26,7 @@ ClickHouse is the fastest-growing analytics destination on Datanika — teams ch
 - A **ClickHouse instance** — self-hosted (single node or cluster) or ClickHouse Cloud. If you're starting from scratch: [clickhouse.com/cloud](https://clickhouse.com/cloud) for managed, or the [ClickHouse docs](https://clickhouse.com/docs/en/install) for self-hosted.
 - A **source connection** already set up in Datanika (e.g., PostgreSQL, Stripe, CSV). ClickHouse is destination-only — you need something to pipe data *from*.
 - **Database user** with permission to create tables and insert data in the target database. For ClickHouse Cloud, the default user works; for self-hosted, create a dedicated user (see Step 1).
-- **Network reachability** from Datanika to your ClickHouse instance on the HTTP port (default `8443` for TLS, `8123` for plain HTTP). For ClickHouse Cloud, allowlist Datanika's egress IPs in the service's IP access list.
+- **Network reachability** from Datanika to your ClickHouse instance on **both** ports a destination uses: the HTTP port (default `8443` for TLS, `8123` for plain HTTP), **and** the native TCP port (`9440` with TLS, `9000` without) that the load's `sync` step dials. A firewall opened to the HTTP port alone lets a load create its tables and then fail partway. For ClickHouse Cloud, allowlist Datanika's egress IPs in the service's IP access list.
 
 ## Step 1 — Create a database user in ClickHouse
 
@@ -45,10 +45,22 @@ Create a **dedicated loader user** rather than reusing the `default` admin accou
    CREATE USER datanika_loader IDENTIFIED BY '<generate-a-strong-one>';
    GRANT SELECT, INSERT, CREATE TABLE, ALTER TABLE, DROP TABLE
      ON raw_data.* TO datanika_loader;
+   GRANT SELECT ON INFORMATION_SCHEMA.* TO datanika_loader;
    ```
 4. If you plan to use multiple landing databases (e.g., `raw_postgres`, `raw_stripe`), repeat the `CREATE DATABASE` and `GRANT` statements for each.
 
-> **Least privilege.** Datanika needs `CREATE TABLE` (first run), `INSERT` (every run), `ALTER TABLE` (schema evolution), and `DROP TABLE` (for `replace` mode). It does not need `SYSTEM`, `CLUSTER`, or access to other databases.
+> 🚨 **That second `GRANT` is not optional, and leaving it out fails in the worst possible way.** The
+> loader reads column types out of `INFORMATION_SCHEMA` before it writes. Without it **Test Connection
+> is still green**, and the first run fails at `step=load` with
+> `Code: 497 … datanika_loader: Not enough privileges … ON INFORMATION_SCHEMA.COLUMNS`, leaving the
+> destination holding one empty bookkeeping table and nothing else. Measured on ClickHouse 24.8.
+>
+> ⚠️ **Case matters here.** ClickHouse exposes `INFORMATION_SCHEMA` and `information_schema` as two
+> *different* databases, and a grant on one does not cover the other. The **uppercase** form above is
+> the one the loader needs; granting only the lowercase spelling leaves the run failing exactly as
+> before.
+
+> **Least privilege.** Datanika needs `CREATE TABLE` (first run), `INSERT` (every run), `ALTER TABLE` (schema evolution), `DROP TABLE` (for `replace` mode), and `SELECT` on `INFORMATION_SCHEMA` (reading column types before a load). It does not need `SYSTEM`, `CLUSTER`, or access to other databases — with exactly the grants above the loader is still refused `system.users`, `CREATE DATABASE`, and writes into any other database.
 
 > **ClickHouse Cloud.** If you're using ClickHouse Cloud, the default user already has full permissions. You can skip user creation and use the credentials from your ClickHouse Cloud service page directly — but we still recommend creating a dedicated user for audit purposes.
 
@@ -111,8 +123,19 @@ A destination is chosen per **upload**, at **`/uploads`** — not on the connect
 
 1. On the **`/uploads`** row for your upload, click **Run**. There is no "Run now" on a pipeline page — the trigger lives on the upload's own row.
 2. Watch **`/runs`**. The run shows a status badge, start and finish timestamps and a **Rows** count; the **Logs** icon on the row opens the detail.
-3. When it finishes, open **Models** (`/models`) and browse the landed tables. The upload lands them in a schema **named after the upload** — `eventsdailyload` creates schema `eventsdailyload` in the destination. dlt also creates its own `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables in that schema, but **Models does not list them** — seeing only your own tables there is correct, not a partial load. There is no target-schema field to choose.
+3. **Check the result in ClickHouse itself, not in Datanika.** ClickHouse has no schemas, so an upload cannot land in one named after itself. Everything goes into the **database on the connection**, with the upload name folded into each table name as `<upload>___<table>`. An upload called `clickhouserawload` carrying four tables lands `clickhouserawload___goods`, `___orders`, `___order_items` and `___sellers` in `raw_data`, beside dlt's own `<upload>____dlt_loads`, `____dlt_pipeline_state` and `____dlt_version` bookkeeping tables and an empty `___dlt_sentinel_table`. There is no target-schema field to choose.
+   ```sql
+   SELECT name FROM system.tables WHERE database = 'raw_data' ORDER BY name;
+   SELECT count() FROM raw_data.`<upload>___<table>`;
+   ```
 4. Spot-check the row count against the source. **Verify in the destination rather than trusting the status badge** — a green run means the load finished, not that it moved what you expected.
+
+> ⚠️ **`/models` does not list what a ClickHouse load landed, so the in-app Data preview is not
+> available for this destination.** Measured on a run that finished `success` with **7,182 rows**
+> across four tables: the tables were present in ClickHouse, and `/models` showed **nothing** for that
+> upload. Every entry it did show came from an upload whose destination was PostgreSQL. Use the SQL
+> above instead. *(Whether the catalogue is PostgreSQL-only by design, or this is specific to
+> ClickHouse, is not established — only one non-PostgreSQL destination has been walked.)*
 
 ## Step 5 — Schedule it
 
@@ -129,10 +152,11 @@ Schedules live on their own page and reference the upload **by name**.
 
 ## Troubleshooting
 
-### `Test connection failed: Connection refused`
-**Cause.** Wrong port. ClickHouse has two interfaces: native TCP (9000/9440) and HTTP (8123/8443). **Test Connection and dbt both speak HTTP**, so this button is exercising the HTTP port.
-**Fix.** Change the port to `8443` (ClickHouse Cloud / TLS) or `8123` (self-hosted plain HTTP). The native TCP port will refuse HTTP connections.
-⚠️ **A green Test Connection does not prove a load will work.** It exercises the HTTP half only; a load also dials the native port (see the callout in Step 2).
+### `Test connection failed` after entering the wrong port
+**Cause.** ClickHouse has two interfaces: native TCP (9000/9440) and HTTP (8123/8443). **Test Connection and dbt both speak HTTP**, so this button exercises the HTTP port.
+**What you actually see.** Not a bare "connection refused" — the server answers over HTTP and names the right port itself. Measured on a stock 24.8 server with `9000` in the port field: `Connection failed — check your credentials and network settings: HTTP driver received HTTP status 400, server response: Port 9000 is for clickhouse-client program You must use port 8123 for HTTP.`
+**Fix.** Change the port to `8443` (ClickHouse Cloud / TLS) or `8123` (self-hosted plain HTTP).
+⚠️ **A green Test Connection does not prove a load will work.** It exercises the HTTP half only; a load also dials the native port (see the callout in Step 2) and reads `INFORMATION_SCHEMA` (see Step 1).
 
 ### The load fails at `step=sync`, but Test Connection is green
 **Cause.** The `sync` step speaks ClickHouse's native TCP protocol, which Test Connection never touches. Either the native port — `9000`, or `9440` with TLS — is blocked between Datanika and the server, or this connection still stores a native port in **Port**, which Datanika reads as the HTTP port.
