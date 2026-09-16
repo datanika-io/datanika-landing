@@ -15,7 +15,7 @@ draft: false
 
 Pipedrive is the sales CRM of record for many SMBs — deals, pipelines, activities, and contacts all live there. This guide lands Pipedrive data in your warehouse so you can build revenue and sales-velocity dashboards (win rate, stage conversion, activity-to-close) that join with product and finance data. Get an API token, wire it into Datanika, pick resources, run, and schedule. Under 10 minutes.
 
-> **Looking for the connector spec?** This is the hands-on setup guide. For the full field-by-field reference — supported resources, incremental sync, pagination — see the [Pipedrive connector page](/connectors/pipedrive).
+> **Looking for the connector spec?** This is the hands-on setup guide. For the full field-by-field reference — supported resources and pagination — see the [Pipedrive connector page](/connectors/pipedrive).
 
 ## Prerequisites
 
@@ -81,6 +81,8 @@ Schedules live on their own page and reference the upload **by name**.
    - **Timezone** — defaults to `UTC`. The cron is evaluated in this zone, which matters for daily and weekly cadences.
 3. Click **Create Schedule**. The row lands as **Active**, with **Pause** available per row.
 4. Wire up failure alerts in **Settings → Notifications** so you hear about broken runs before your stakeholders do.
+
+**What a scheduled run does to your tables:** each run replaces the upload's tables with what that run fetched, so a schedule keeps one copy of each record instead of adding another. A record the API no longer returns is gone after the next run, and so are rows only an earlier run had loaded. To keep every run's rows, the upload needs an explicit `"write_disposition": "append"` in its raw JSON config.
 
 ## Troubleshooting
 

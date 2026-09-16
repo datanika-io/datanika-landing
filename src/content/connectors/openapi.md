@@ -178,15 +178,17 @@ The names are the resource names derived from the spec's paths — the same name
 3. Click **Create Schedule**. The row lands as **Active**, with **Pause** available per row.
 4. Wire up failure alerts in **Settings → Notifications**.
 
-> 🚨 **Every run loads every record again, so a schedule multiplies your tables.** An upload created on this form appends: each run adds a full copy of every table instead of updating the rows already there. Running an unchanged upload a second time **doubled every table**, and both runs were green. A schedule runs the same upload, so each firing adds another copy — an hourly schedule adds 24 a day.
+> **Each run replaces this upload's tables with what that run fetched.** Running an unchanged upload again leaves each record in the destination once, and a schedule does the same on every firing. A record the API no longer returns is gone after the next run, and so are rows only an earlier run had loaded. A table that still holds copies from earlier runs goes back to one copy at the upload's next run.
 >
-> Until that is fixed, schedule this upload only if something downstream keeps a single copy. Each run's rows carry that run's `_dlt_load_id`, so a transformation can keep just the rows from the most recent load. Otherwise, run the upload by hand when you need fresh data, and clear its tables first.
+> To keep every run's rows instead, for history or snapshots, the upload needs an explicit `"write_disposition": "append"` in its raw JSON config. Each row carries its run's `_dlt_load_id`, so a transformation can pick the most recent load.
 
-<!-- core#1336. Measured on this connector by QA's 2026-09-15 walk: activities 30 -> 60 on a second run, 30 distinct
-     ids, two _dlt_load_id values of 30 rows each (README "Defect 2", and QA's comment on core#1336). A scheduled
-     firing calls the same run_upload_task -> run_upload as a manual run; scheduled=True only adds a dependency
-     check. Remove this block and the "Every table doubles" troubleshooting entry when a re-run leaves each record
-     once. -->
+<!-- core#1336, fixed in production 2026-09-16 (core master 01de8b0c). This replaced a warning that
+     each run appended a full copy. Measured after the fix: core's
+     tests/test_services/test_rerun_lands_each_record_once.py (openapi path into a real DuckDB file:
+     two runs leave each record once, a table holding copies goes back to one copy, an explicit
+     append still appends) and QA's reading of the deployed decision function on core#1336.
+     "A record the API no longer returns is gone" follows from replace and was not separately
+     measured. -->
 
 > **If the vendor revises their spec, Datanika will not notice.** The catalog is parsed once, at save time, and stored on the connection. New endpoints, renamed fields and changed pagination arrive only when you re-paste the spec and save again. Put that on the same calendar as any other vendor API review.
 
@@ -248,9 +250,9 @@ The first run fails with this message when the connection holds no endpoints to 
 **Cause.** The records are not where the spec says they are. Datanika takes the path to the record array from the response schema the spec declares — under any property name, not only the common envelope keys — so when the API's real response is shaped differently from that schema, the path misses the records.
 **Fix.** Use the REST API connector for that endpoint, where you can point at the collection explicitly.
 
-### Every table doubles when the upload runs again
-**Cause.** An upload created on this form appends: each run adds a full copy of every table instead of updating the rows already there, and the inferred primary key does not prevent it. It is not a setting you missed — the form shows no write-disposition control for this source.
-**Fix.** See the warning in Step 5. To clean a table that already holds copies, keep the rows from its most recent `_dlt_load_id`, or drop the table and run the upload once.
+### Rows that were in a table are gone after a run
+**Cause.** Each run replaces the upload's tables with what that run fetched. A record the API no longer returns (deleted, or outside what the endpoint lists by default, such as a date window) is removed at the next run, along with rows only an earlier run had loaded.
+**Fix.** If those rows should stay, give the upload an explicit `"write_disposition": "append"` in its raw JSON config, and keep a single copy downstream: each row carries its run's `_dlt_load_id`.
 
 ### Only the first page loaded
 **Cause.** The endpoint's pagination is not described in the spec in a way the paginator inference recognises.
