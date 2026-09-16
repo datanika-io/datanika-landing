@@ -103,7 +103,7 @@ Extract-load is configured at **`/uploads`**, not on the connection. There is no
 
 - `idle_timeout_ms` — how long a topic must stay quiet before the run stops draining it and finishes.
 - `start_from` — `earliest` (default) or `latest`, i.e. `auto.offset.reset` for a group with no committed offset.
-- `enable_auto_commit` — `true` by default. Set it to `false` for at-least-once: every message carries `_kafka_partition` and `_kafka_offset` as its primary key, so re-reads deduplicate on merge.
+- `enable_auto_commit` — `true` by default. Set it to `false` for at-least-once. Every message carries `_kafka_partition` and `_kafka_offset` as its primary key, but a key deduplicates only under `merge`, and a Kafka upload appends unless told otherwise: add `"write_disposition": "merge"` to this config, or each re-read lands the same messages again.
 - `topics` — overrides the connection's topic list for this upload only.
 
 The four authentication keys are **not** in that list and are rejected by name. See [Broker authentication](#broker-authentication) for why.
@@ -170,7 +170,7 @@ Kafka failures surface on the **run**, not on Test Connection — see the note i
 
 ### Runs get slower over time
 **Cause.** A previous run failed mid-batch and didn't commit its offset. The next run re-reads messages from the last committed offset, including messages that were already loaded.
-**Fix.** Check the **Runs** tab for failed runs. Re-reads are deduplicated on `_kafka_partition` + `_kafka_offset`, so they cost time rather than correctness. If the overlap is large, set `enable_auto_commit` back to `true` so a successful run advances the offset.
+**Fix.** Check the **Runs** tab for failed runs. Re-read messages land again unless the upload's raw JSON config sets `"write_disposition": "merge"` (see above), which deduplicates them on `_kafka_partition` + `_kafka_offset`. If the overlap is large, set `enable_auto_commit` back to `true` so a successful run advances the offset.
 
 ## Related
 

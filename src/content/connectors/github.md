@@ -15,7 +15,7 @@ draft: false
 
 GitHub is the easiest API-based sandbox for Datanika: the personal access token is free, the REST API is well-documented, the rate limit is generous (5,000 requests per hour for authenticated users), and every developer already has an account. This makes it the ideal first SaaS source for anyone learning Datanika without paying for a Segment/Salesforce/Stripe trial. It's also a genuinely useful production source — open-source maintainers, DevRel teams, and engineering-org analytics leads all run pipelines that sync issues, pull requests, reviews, and stargazers into a warehouse for health metrics. This guide walks through syncing a single repo (or an org's worth of repos) end-to-end.
 
-> **Looking for the connector spec?** This is the hands-on setup guide. For the full list of supported resources, rate-limit handling, how incremental syncs use the `updated_at` cursor, and the difference between REST and GraphQL backends, see the [GitHub connector page](/connectors/github).
+> **Looking for the connector spec?** This is the hands-on setup guide. For the full list of supported resources, rate-limit handling, and the difference between REST and GraphQL backends, see the [GitHub connector page](/connectors/github).
 
 ## Prerequisites
 
@@ -100,6 +100,8 @@ Schedules live on their own page and reference the upload **by name**.
    - **Timezone** — defaults to `UTC`. The cron is evaluated in this zone, which matters for daily and weekly cadences.
 3. Click **Create Schedule**. The row lands as **Active**, with **Pause** available per row.
 4. Wire up failure alerts in **Settings → Notifications** so you hear about broken runs before your stakeholders do.
+
+**What a scheduled run does to your tables:** each run replaces the upload's tables with what that run fetched, so a schedule keeps one copy of each record instead of adding another. A record the API no longer returns is gone after the next run, and so are rows only an earlier run had loaded. To keep every run's rows, the upload needs an explicit `"write_disposition": "append"` in its raw JSON config.
 
 ## Troubleshooting
 

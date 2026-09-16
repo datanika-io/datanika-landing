@@ -98,6 +98,8 @@ Schedules live on their own page and reference the upload **by name**.
 3. Click **Create Schedule**. The row lands as **Active**, with **Pause** available per row.
 4. Wire up failure alerts in **Settings → Notifications** so you hear about broken runs before your stakeholders do.
 
+**What a scheduled run does to your tables:** each run replaces each sheet's table with the rows that run read, so a schedule keeps one copy of each row instead of adding another. A row removed from the sheet is gone after the next run.
+
 ## Troubleshooting
 
 ### `The caller does not have permission` (403)

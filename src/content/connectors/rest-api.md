@@ -120,6 +120,8 @@ Schedules live on their own page and reference the upload **by name**.
 3. Click **Create Schedule**. The row lands as **Active**, with **Pause** available per row.
 4. Wire up failure alerts in **Settings → Notifications** so you hear about broken runs before your stakeholders do.
 
+**What a scheduled run does to your tables:** a REST API upload **appends** unless a resource says otherwise, so each run adds another copy of every record it fetches. For an endpoint that returns everything on every call, set `"write_disposition": "replace"` on its resource to keep one copy, or `"merge"` together with a `"primary_key"` to update rows in place.
+
 ## Troubleshooting
 
 ### `401 Unauthorized` or `403 Forbidden`

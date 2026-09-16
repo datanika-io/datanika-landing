@@ -109,6 +109,8 @@ UI-uploaded files are one-shot. Scheduling is only meaningful for the directory-
 3. Set the **Timezone** (defaults to `UTC`; the cron is evaluated in it) and click **Create Schedule**. The row lands as **Active** and can be paused per row.
 4. Wire up failure alerts in **Settings → Notifications** so malformed files or missing drops surface immediately.
 
+**What a scheduled run does to your tables:** each run reads every file the glob matches and replaces the upload's tables with their rows, so unchanged files keep one copy. Keep a file in place for as long as its rows should stay: a file that is moved, deleted or renamed out of the glob takes its rows out of the table at the next run. To keep those rows anyway, the upload needs an explicit `"write_disposition": "append"` in its raw JSON config, and every run then adds every matching file again.
+
 ## Troubleshooting
 
 ### `Invalid JSON: Expecting value: line 1 column 1 (char 0)`
@@ -127,9 +129,9 @@ UI-uploaded files are one-shot. Scheduling is only meaningful for the directory-
 **Cause.** The arrays are arrays of **scalars** (strings, numbers, booleans), not arrays of objects. Datanika only creates child tables for object arrays — scalar arrays stay inline as typed array columns.
 **Fix.** If you want each scalar as a separate row, transform post-load in dbt using the destination's `UNNEST` / `LATERAL VIEW EXPLODE` / `jsonb_array_elements` function, depending on the warehouse.
 
-### Directory watcher is re-loading the same file on every run
-**Cause.** Same as the CSV troubleshooting entry — Datanika's processed-file tracker was cleared, or the file was renamed in place.
-**Fix.** Check **Pipelines → `<your pipeline>` → Processed files** to see the tracked list. Best practice: upstream producers should write files with timestamp suffixes (`events-20260414-0300.jsonl`), not rotate in place.
+### Every run loads the same files again
+**Cause.** That is how the directory watcher works. Datanika keeps no record of which files it has already loaded: each run reads every file the glob matches and replaces the tables with their rows.
+**Fix.** Nothing, if the tables should match the files. Keep a file in place for as long as its rows should stay, because moving or deleting it removes them at the next run. Name drops by timestamp (`events-20260414-0300.jsonl`) rather than rotating one file in place: a file overwritten in place replaces the rows it used to hold.
 
 ## Related
 

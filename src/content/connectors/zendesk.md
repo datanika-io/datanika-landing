@@ -15,7 +15,7 @@ draft: false
 
 Zendesk is the system of record for customer support — tickets, satisfaction scores, agent performance, and SLA compliance all live there. This guide lands Zendesk data in your warehouse so you can build support-analytics dashboards (first-response time, resolution rate, CSAT trends) that join with product and revenue data. Create an API token, wire it into Datanika, pick resources, run, and schedule. Under 10 minutes.
 
-> **Looking for the connector spec?** This is the hands-on setup guide. For the full field-by-field reference — supported ticket fields, incremental exports, pagination — see the [Zendesk connector page](/connectors/zendesk).
+> **Looking for the connector spec?** This is the hands-on setup guide. For the full field-by-field reference — supported ticket fields and pagination — see the [Zendesk connector page](/connectors/zendesk).
 
 ## Prerequisites
 
@@ -86,6 +86,8 @@ Schedules live on their own page and reference the upload **by name**.
 3. Click **Create Schedule**. The row lands as **Active**, with **Pause** available per row.
 4. Wire up failure alerts in **Settings → Notifications** so you hear about broken runs before your stakeholders do.
 
+**What a scheduled run does to your tables:** each run replaces the upload's tables with what that run fetched, so a schedule keeps one copy of each record instead of adding another. A record the API no longer returns is gone after the next run, and so are rows only an earlier run had loaded. To keep every run's rows, the upload needs an explicit `"write_disposition": "append"` in its raw JSON config.
+
 ## Troubleshooting
 
 ### `Couldn't authenticate you` (401)
@@ -100,9 +102,9 @@ Schedules live on their own page and reference the upload **by name**.
 **Cause.** Custom fields are returned as `custom_fields` — an array of `{id, value}` pairs. They're not top-level columns by default.
 **Fix.** The raw table has a `custom_fields` JSON column. Unnest and pivot it in a dbt staging model to get named columns.
 
-### Incremental runs are slow
-**Cause.** Zendesk's incremental export API has a rate limit of 10 requests per minute for the exports endpoint. Large backlogs of updated tickets can take a while.
-**Fix.** This is expected behavior. Subsequent incremental runs are much faster once the initial backfill is done. dlt respects the rate limit automatically.
+### Every run takes as long as the first
+**Cause.** Each run fetches every ticket, user and organization again. Datanika does not use Zendesk's incremental export API and keeps no cursor between runs, and the run then replaces the tables with that fetch.
+**Fix.** Expected. Schedule the upload no more often than a full fetch takes to finish.
 
 ### CSAT scores don't match the Zendesk dashboard
 **Cause.** Zendesk calculates CSAT % based on rated tickets only (excludes unrated). Your warehouse query may be including rows with NULL ratings.

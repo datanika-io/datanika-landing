@@ -107,6 +107,8 @@ Schedules live on their own page and reference the upload **by name**.
 3. Click **Create Schedule**. The row lands as **Active**, with **Pause** available per row.
 4. Wire up failure alerts in **Settings → Notifications** so you hear about broken runs before your stakeholders do.
 
+**What a scheduled run does to your tables:** each run replaces the upload's tables with the documents that run read, so a schedule keeps one copy of each document instead of adding another. A document deleted from the collection, or no longer matched by the upload's query, is gone after the next run.
+
 ## Troubleshooting
 
 ### `Authentication failed`
