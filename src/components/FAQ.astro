@@ -6,6 +6,7 @@
  * to emit matching `FAQPage` JSON-LD without drift.
  */
 import type { FAQItem } from "../data/pricing-faq";
+import { renderInline } from "../utils/inline-markdown";
 
 interface Props {
   items: FAQItem[];
@@ -50,9 +51,7 @@ const {
               <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
             </svg>
           </summary>
-          <div class="px-6 pb-5 text-slate-300 leading-relaxed">
-            {item.answer}
-          </div>
+          <div class="px-6 pb-5 text-slate-300 leading-relaxed" set:html={renderInline(item.answer)} />
         </details>
       ))}
     </div>

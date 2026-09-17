@@ -115,7 +115,7 @@ Schedules live on their own page and reference the upload **by name**.
 
 ### `PERMISSION_DENIED: User does not have USE SCHEMA on schema`
 **Cause.** The token's user or service principal doesn't have the required Unity Catalog grants.
-**Fix.** As a catalog admin, run: `GRANT USE SCHEMA, CREATE TABLE, MODIFY ON SCHEMA main.raw_data TO \`datanika-loader\`;`. Replace `main.raw_data` with your catalog.schema.
+**Fix.** As a catalog admin, run: `` GRANT USE SCHEMA, CREATE TABLE, MODIFY ON SCHEMA main.raw_data TO `datanika-loader`; ``. Replace `main.raw_data` with your catalog.schema.
 
 ### Run succeeds but tables aren't visible in Data Explorer
 **Cause.** The tables were created in `hive_metastore` (legacy) instead of your Unity Catalog. This happens when the **Catalog** field is left blank.

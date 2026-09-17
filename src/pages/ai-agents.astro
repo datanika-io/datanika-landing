@@ -4,6 +4,7 @@ import Navbar from "../components/Navbar.astro";
 import Footer from "../components/Footer.astro";
 import ConversionCTA from "../components/ConversionCTA.astro";
 import { tiers, tierCount } from "../data/agent-tiers";
+import { renderInline } from "../utils/inline-markdown";
 import { availableConnectors, connectors } from "../data/connectors";
 
 // Kept in the frontmatter so the JSON braces render as text without escaping.
@@ -224,7 +225,7 @@ const competitors = [
               </span>
               <h3 class="text-lg font-semibold text-white">{tier.name}</h3>
             </div>
-            <p class="text-sm text-slate-400 mb-3">{tier.summary}</p>
+            <p class="text-sm text-slate-400 mb-3" set:html={renderInline(tier.summary)} />
             <ul class="space-y-2">
               {tier.capabilities.map((cap) => (
                 <li class="text-xs text-slate-500">

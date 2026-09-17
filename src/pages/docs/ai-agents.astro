@@ -79,11 +79,11 @@ import {
   {tiers.map((tier) => (
     <section>
       <h3 id={`tier-${tier.number}`}>Tier {tier.number} — {tier.name}</h3>
-      <p>{tier.summary}</p>
+      <p set:html={renderInline(tier.summary)} />
       {tier.capabilities.map((cap) => (
         <>
           <h4>{cap.name}</h4>
-          <p>{cap.description}</p>
+          <p set:html={renderInline(cap.description)} />
           <ul>
             {cap.endpoints.map((endpoint) => (
               <li><code>{endpoint}</code></li>
@@ -120,7 +120,7 @@ import {
       {errorCodes.map((err) => (
         <tr>
           <td><code>{err.code}</code></td>
-          <td>{err.meaning}</td>
+          <td set:html={renderInline(err.meaning)} />
           <td set:html={renderInline(err.action)} />
         </tr>
       ))}
