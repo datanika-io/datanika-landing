@@ -189,14 +189,10 @@ export const allCapabilities: Array<AgentCapability & { tierNumber: number; tier
   );
 
 /**
- * Convert markdown-ish inline syntax (`code` + **bold**) into safe HTML.
- * Used for rendering `goldenPath` and `uiOnlyOperations` strings, which
- * are authored in markdown style in core. Safe because the source is
- * Engineering's SoT, not user input — escape anything external first if
- * you extend this to user content.
+ * Core authors every prose field of this payload in markdown style, so render
+ * each one through `renderInline` rather than as text. It lives in
+ * `src/utils/inline-markdown.ts` so a page that only needs the renderer does not
+ * import this module, whose top-level fetch runs on import. Re-exported here for
+ * the pages that already import it from this path.
  */
-export function renderInline(s: string): string {
-  return s
-    .replace(/`([^`]+)`/g, "<code>$1</code>")
-    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
-}
+export { renderInline } from "../utils/inline-markdown";

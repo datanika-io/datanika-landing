@@ -7,6 +7,7 @@ import { connectors, availableConnectors, sourceConnectors, destinationConnector
 import type { Connector } from "../../data/connectors";
 import { useCases } from "../../data/use-cases";
 import { templates } from "../../data/templates";
+import { renderInline } from "../../utils/inline-markdown";
 import { existsSync } from "fs";
 import { resolve } from "path";
 
@@ -188,7 +189,7 @@ const comparisonSlugs = ["airbyte", "fivetran", "stitch", "hevo"];
             {connector.configFields.map((f, i) => (
               <tr class={`border-b border-slate-800/50 ${i % 2 === 0 ? "bg-slate-900/30" : ""}`}>
                 <td class="px-6 py-3 text-violet-300 font-mono text-sm">{f.name}</td>
-                <td class="px-6 py-3 text-slate-300 text-sm">{f.description}</td>
+                <td class="px-6 py-3 text-slate-300 text-sm" set:html={renderInline(f.description)} />
               </tr>
             ))}
           </tbody>
