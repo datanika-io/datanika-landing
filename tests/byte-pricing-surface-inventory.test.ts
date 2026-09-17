@@ -260,11 +260,11 @@ const EVERGREEN_UNINVENTORIED = [
  * inventoried rather than ignored, because "we did not know it was there" is
  * the failure being fixed.
  *
- * 🚨 `plans/growth/scripts/devto_crosspost.py` parses this array by name as its
- * gate 2 — a post here is withheld from syndication. Renaming the constant
- * silently un-gates the lot. `/blog/postgresql-to-bigquery` was added
- * 2026-09-01 and **is already live on dev.to** (article 4539606); gate 2 stops
- * the next batch, not the last one.
+ * This array is an inventory, not a verdict. Until 2026-09-17 the dev.to
+ * tooling also parsed it as its gate 2 and withheld every post here from
+ * syndication, on the premise that production did not enforce these terms. That
+ * premise was refuted on landing#396 on 2026-09-07, so the gate now reads
+ * `WITHHELD_FROM_SYNDICATION` below instead.
  *
  * `/blog/billing-provider-migration` entered this list on 2026-09-01 for a
  * reason worth keeping: the **dated correction added to it in the same commit**
@@ -307,6 +307,23 @@ const DATED_POSTS = [
 ];
 
 const INVENTORY = [...INVENTORIED_BY_396, ...EVERGREEN_UNINVENTORIED, ...DATED_POSTS].sort();
+
+/**
+ * Gate 2 of the dev.to syndication tools (`plans/growth/scripts/devto_crosspost.py`, which
+ * `devto_update.py` and `devto_list.py` import): posts withheld from dev.to because the byte
+ * terms they publish are ones production does not enforce.
+ *
+ * **Empty since 2026-09-17, on a production reading, not on an argument.** landing#396's
+ * comment of 2026-09-07 read the prod `plans` table and the serving containers' interpreters:
+ * Free 10 GiB hard-capped, Pro 100 GiB not hard-capped at 50¢/GB, Enterprise 1 TiB at 25¢/GB,
+ * with `bytes_quota_enforce` and `overage_charge_enable` on. The terms `DATED_POSTS` inventories
+ * are the enforced ones, so while the gate read that array it withheld true claims, and it kept
+ * a correction off a dev.to copy that was already live.
+ *
+ * Add a slug only with a dated reading showing its terms unenforced. The tools parse this
+ * declaration by name and fail closed when they cannot, so its form is pinned by a test below.
+ */
+const WITHHELD_FROM_SYNDICATION: string[] = [];
 
 const ROOT = resolve(__dirname, "..");
 const DIST = resolve(ROOT, "dist");
@@ -489,6 +506,22 @@ describe("V2 byte-pricing surface inventory (landing#403 / #396)", () => {
     expect(new Set(INVENTORY).size, "an entry is in two buckets").toBe(INVENTORY.length);
     // The headline number in #403: five evergreen surfaces #396 does not name.
     expect(EVERGREEN_UNINVENTORIED.length).toBe(5);
+  });
+
+  it("a post withheld from syndication is one that publishes byte terms", () => {
+    // Withholding exists for unenforced byte terms, so only an inventoried dated post can be
+    // withheld. Anything else in the list would be a gate held for a reason it does not state.
+    expect(WITHHELD_FROM_SYNDICATION.filter((r) => !DATED_POSTS.includes(r))).toEqual([]);
+  });
+
+  it("the syndication gate's list keeps the form the dev.to tools parse", () => {
+    // The tools read this file with a regex, not by importing it. A rename or a reformat makes
+    // them refuse every post (they fail closed), and nothing in this repo would say why.
+    const own = readFileSync(resolve(__dirname, "byte-pricing-surface-inventory.test.ts"), "utf-8");
+    const decl = own.match(/const WITHHELD_FROM_SYNDICATION: string\[\] = \[(.*?)\];/s);
+    expect(decl, "declaration not found in the form the tools parse").not.toBeNull();
+    const parsed = [...(decl?.[1] ?? "").matchAll(/"(\/blog\/[a-z0-9-]+)"/g)].map((m) => m[1]);
+    expect(parsed).toEqual(WITHHELD_FROM_SYNDICATION);
   });
 });
 
