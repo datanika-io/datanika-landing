@@ -30,7 +30,7 @@ Your MySQL instance is serving an application. It is sized for transactional rea
 
 The shape that works is the one ELT was named for:
 
-1. **Extract** from MySQL — full tables, or incrementally on a monotonic column.
+1. **Extract** from MySQL — a whole database, or one table at a time.
 2. **Load** into a warehouse, raw and untransformed.
 3. **Transform** there, with dbt, where the compute is separate from the database your customers are hitting.
 

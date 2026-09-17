@@ -72,7 +72,7 @@ So we pressed Run again, with nothing changed in MySQL. The second run was green
 
 Check 1 now fails, and check 2 says what happened: twice the rows over the same keys is a second copy of every row, not 2,000 new orders. Any revenue figure built on that table doubles along with it.
 
-If you want a copy you can refresh, choose **replace** on the upload. Keep **append** for sources that only ever add rows.
+If you want a copy you can refresh, choose **replace** on the upload, or **merge** with a primary key. **append** is only safe for an upload you run once: every run reads the whole table, because an upload keeps no cursor from one run to the next ([core#1404](https://github.com/datanika-io/datanika-core/issues/1404)), so even a table that only ever gains rows gets a second copy of the old ones.
 
 ## Check 3: a sum, not only a count
 

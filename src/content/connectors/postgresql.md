@@ -96,13 +96,13 @@ Extract-load is configured at **`/uploads`**, not on the connection. There is no
 
 1. On the **`/uploads`** row for your upload, click **Run**. (There is no "Run now" on a pipeline page — the button lives on the upload's own row.)
 2. Watch **`/runs`**. The run appears with a status badge, start and finish timestamps, and a **Rows** count; the **Logs** icon on the row opens the detail.
-3. A typical first run takes seconds for a small database and hours for one in the hundreds of GB. Subsequent incremental runs are much faster because only new/changed rows move.
+3. A typical first run takes seconds for a small database and hours for one in the hundreds of GB. Expect later runs to take about as long: every run reads the selected tables again from the start, because an upload keeps no cursor from one run to the next ([Uploads → Incremental cursor](/docs/uploads#incremental-cursor)).
 4. When the run finishes, open **Models** (`/models`) and browse the landed tables. The upload lands them in a schema named after the upload — an upload called `customerorders` creates schema `customerorders` in the destination. dlt also creates its own `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables in that schema, but **Models does not list them** — seeing only your own tables there is correct, not a partial load.
 5. **Click a table to open its model detail page, then click `Load first 100 rows`.** The **Data preview** runs a live `SELECT` against your destination, so the rows on screen are the rows in your warehouse — not a copy of what the run *reported*.
 
 ![The Data preview on the landed customers table, showing 12 rows read live from the destination Postgres database](/docs/connectors/postgresql/04-first-run.png)
 
-6. Spot-check row counts against the source: `SELECT count(*) FROM <schema>.<table>;` on both sides should match (or differ by exactly the rows written during the sync window for incremental loads). **Check this rather than trusting the status badge** — the Rows figure counts everything the run moved across all tables, so one number covers the whole sync.
+6. Spot-check row counts against the source: `SELECT count(*) FROM <schema>.<table>;` on both sides should match after the first run, allowing for rows written to the source while the run was reading it. **Check this rather than trusting the status badge** — the Rows figure counts everything the run moved across all tables, so one number covers the whole sync.
 
 > **A green run row is not evidence that your data arrived.** Two shipped bugs made that precise: file sources once loaded a *listing* of the files rather than their contents and reported `success` ([core#492](https://github.com/datanika-io/datanika-core/issues/492)), and a glob matching zero files still completes as `success` ([core#493](https://github.com/datanika-io/datanika-core/issues/493)) — so a wrong path and a right path look identical in `/runs`. Both are fixed, and the habit is still the right one: **the Data preview, or a `count(*)` in your own warehouse, is what confirms a load.**
 
@@ -127,6 +127,8 @@ Schedules live on their own page and reference the upload **by name**.
 
 > **Target name is matched against your existing uploads as you type**, and the suggestion list appears directly over the cron field — pick from it rather than typing past it.
 
+**What a scheduled run does to your tables:** every run reads the selected tables again from the start, because an upload keeps no cursor from one run to the next, not even with **Enable incremental loading** ticked ([Uploads → Incremental cursor](/docs/uploads#incremental-cursor)). **Write Disposition** decides what that leaves behind. Under `append`, the default, each run adds another copy of every row: over an unchanged database, a second run doubles every table. Choose `merge` with a primary key to keep one row per key, or `replace` to keep only the latest run's rows.
+
 ## Troubleshooting
 
 ### `FATAL: password authentication failed for user "datanika_readonly"`
@@ -141,13 +143,13 @@ Schedules live on their own page and reference the upload **by name**.
 **Cause.** Datanika can't reach your Postgres host. Almost always a firewall or `pg_hba.conf` issue.
 **Fix.** Check, in order: (1) is the host reachable from the internet at all (`nc -zv <host> 5432`), (2) does `pg_hba.conf` have a `hostssl` rule matching `datanika_readonly` from Datanika's IPs, (3) did you reload Postgres after editing `pg_hba.conf` (`SELECT pg_reload_conf();`), (4) is your cloud firewall (AWS SG, GCP VPC, etc.) allowlisting our egress IPs.
 
-### Incremental run is pulling every row every time
-**Cause.** The incremental cursor column isn't actually monotonic, or the pipeline was left on `replace` instead of `merge`.
-**Fix.** Verify your cursor column in Step 3. Typical gotcha: `updated_at` exists but isn't updated on every write (e.g., the app sets it in most paths but not in bulk loaders). Switch to an application-enforced `updated_at` trigger, or use a sequence-backed `id` for append-only tables.
+### Every run pulls every row, even with an incremental cursor
+**Cause.** An upload keeps no cursor from one run to the next. Each run builds a new dlt pipeline with no stored state, so it starts again from the cursor's initial value, or from the first row when none is set, however monotonic the cursor column is ([core#1404](https://github.com/datanika-io/datanika-core/issues/1404)).
+**Fix.** The full read is expected. To stop the table from growing with every run, set **Write Disposition** to `merge` with a primary key, or `replace`. See [Uploads → Incremental cursor](/docs/uploads#incremental-cursor).
 
 ### Replication slot filling up the source
 **Cause.** You enabled CDC/logical replication on the source and a replication slot isn't being consumed.
-**Fix.** Datanika's default PostgreSQL loader uses cursor-based incremental, not logical replication — you don't need a replication slot. If you previously enabled one, drop it with `SELECT pg_drop_replication_slot('<name>');` after confirming nothing else depends on it.
+**Fix.** Datanika reads PostgreSQL tables with `SELECT` queries, not logical replication — you don't need a replication slot. If you previously enabled one, drop it with `SELECT pg_drop_replication_slot('<name>');` after confirming nothing else depends on it.
 
 ## Related
 

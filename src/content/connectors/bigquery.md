@@ -117,12 +117,12 @@ Schedules live on their own page and reference the upload **by name**.
 **Fix.** Either create the dataset manually in the BigQuery Console, or grant `BigQuery Data Editor` at the project level (not just on an existing dataset).
 
 ### Run succeeds but BigQuery shows 0 rows
-**Cause.** The source query returned no data — common when using an incremental cursor with a `start_date` that's in the future, or when the source table is genuinely empty.
-**Fix.** Check the source connection: run a manual query or spot-check in the source system. If using incremental with `start_date`, try clearing it for one full-refresh run.
+**Cause.** The source returned no data, usually because the source table is empty.
+**Fix.** Check the source connection: run a manual query or spot-check in the source system.
 
 ### Costs are higher than expected
-**Cause.** Using `replace` (full refresh) on large tables means every run rewrites the entire table and downstream queries re-scan everything.
-**Fix.** Switch to `merge` with an incremental cursor. For partitioned tables, dlt automatically writes to the latest partition — downstream queries that filter by partition column scan far fewer bytes.
+**Cause.** Every run reads the selected source tables again from the start and writes all of those rows again, because an upload keeps no cursor from one run to the next ([Uploads → Incremental cursor](/docs/uploads#incremental-cursor)). `replace` rewrites each table on every run, `merge` merges every row again, and `append` adds another copy of every row.
+**Fix.** Use `merge` with a primary key or `replace`, never `append`, for a scheduled upload. Restrict **Table names** to the tables you query, and schedule the upload no more often than you need fresh data.
 
 ### `Quota exceeded: Too many table update operations`
 **Cause.** BigQuery limits table DML operations to ~1,500/day per table. Very frequent schedules (every few minutes) on many tables can hit this.

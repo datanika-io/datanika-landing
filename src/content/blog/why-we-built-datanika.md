@@ -3,6 +3,7 @@ title: "Why We Built Datanika: One Tool Instead of Five"
 description: "The modern data stack asks a two-person team to run five tools to move one table. Here's the case for collapsing ingestion, transformation, orchestration, and observability into a single platform — and what that trade-off costs."
 date: 2026-07-30
 publishedAt: 2026-07-30
+updatedDate: 2026-09-17
 author: "Datanika Team"
 category: "company"
 tags: ["origin-story", "modern-data-stack", "elt", "dbt", "dlt"]
@@ -30,7 +31,9 @@ For a team of two, it's most of the job.
 
 Datanika started from a narrow, unglamorous question: what would it take for one person to run a real pipeline — sources, transforms, schedules, monitoring — without becoming a full-time integrator?
 
-Not a toy. Real credentials, real incremental loads, real dbt models with tests, real retries, real multi-tenancy. Just without the five-way integration tax.
+Not a toy. Real credentials, real scheduled loads, real dbt models with tests, real retries, real multi-tenancy. Just without the five-way integration tax.
+
+> **Corrected 2026-09-17.** This line originally promised "real incremental loads". An upload's cursor does not carry from one run to the next, so every run starts again from the beginning of each table ([core#1404](https://github.com/datanika-io/datanika-core/issues/1404)).
 
 The answer turned out to be: use the good open-source pieces, but own the seams.
 

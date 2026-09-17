@@ -55,7 +55,7 @@ import { availableConnectors, connectors, sourceConnectors, destinationConnector
 
   <h2>Data Flow</h2>
   <h3>1. Extract + Load</h3>
-  <p>User configures a source connection and a destination connection, then creates an upload. When triggered (manually or by schedule), a Celery task runs dlt to extract data from the source and load it into the destination schema. dlt handles schema mapping, type conversion, and incremental loading automatically.</p>
+  <p>User configures a source connection and a destination connection, then creates an upload. When triggered (manually or by schedule), a Celery task runs dlt to extract data from the source and load it into the destination schema. dlt handles schema mapping and type conversion. Each run builds a new dlt pipeline, so no incremental cursor carries from one run to the next (see <a href="/docs/uploads#incremental-cursor">Uploads</a>).</p>
 
   <h3>2. Transform</h3>
   <p>User writes SQL models in Datanika's built-in editor. Models are stored as <code>.sql</code> files in per-tenant dbt projects at <code>dbt_projects/tenant_{'{org_id}'}/</code>. When a pipeline runs, dbt-core compiles and executes the models against the destination warehouse.</p>

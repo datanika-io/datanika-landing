@@ -130,8 +130,8 @@ Schedules live on their own page and reference the upload **by name**.
 **Fix.** For Datanika Cloud, data is staged in our managed S3 bucket and `COPY`d directly — no action needed. For self-hosted, ensure Datanika has access to an S3 bucket in the same region as your Redshift cluster, and configure it in the pipeline's advanced settings. Cross-region `COPY` is significantly slower.
 
 ### `Disk full` or `out of storage` errors
-**Cause.** Provisioned Redshift clusters have fixed disk. Using `replace` on large tables or running many pipelines can exhaust storage.
-**Fix.** Switch to `merge` (incremental) to avoid full table rewrites. Run `VACUUM DELETE ONLY` to reclaim space from deleted rows. For persistent storage pressure, resize the cluster or migrate to Redshift Serverless (managed storage, auto-scales).
+**Cause.** Provisioned Redshift clusters have fixed disk, and every run writes its whole selection again, because an upload keeps no cursor from one run to the next ([Uploads → Incremental cursor](/docs/uploads#incremental-cursor)). Under `append`, the default, each run adds another copy of every row.
+**Fix.** Use `merge` with a primary key, or `replace`, so a run does not add copies. Run `VACUUM DELETE ONLY` to reclaim space from deleted rows. For persistent storage pressure, resize the cluster or migrate to Redshift Serverless (managed storage, auto-scales).
 
 ## Related
 

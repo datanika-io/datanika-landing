@@ -206,6 +206,8 @@ Schedules live on their own page and reference the upload **by name**.
 
 ![Scheduling the <Source> upload](/docs/connectors/<source-slug>/05-schedule.png)
 
+**What a scheduled run does to your tables:** `<Say what every run leaves behind. For a SQL source, copy the paragraph from the PostgreSQL guide: every run reads the selected tables again from the start because an upload keeps no cursor between runs, and append, the default, adds another copy of every row. For a SaaS or file source, copy the paragraph from the Stripe or CSV guide: each run replaces the upload's tables with what it fetched.>`
+
 ## Troubleshooting
 
 ### `<Error message 1>`
@@ -224,9 +226,9 @@ Schedules live on their own page and reference the upload **by name**.
 **Cause:** Datanika can't reach <Source> — usually a firewall or IP allowlist issue.
 **Fix:** Allowlist Datanika's egress IPs (see [Self-hosting networking](/docs/self-hosting)) or expose <Source> on a reachable endpoint.
 
-### Incremental run is pulling everything every time
-**Cause:** The incremental cursor column isn't actually monotonic, or the upload was set to `replace` instead of `merge`.
-**Fix:** Verify the cursor column in Step 3 and switch the write disposition to `merge` with a correct primary key. (SQL sources only — a SaaS source renders no such control.)
+### Every run pulls every row, even with an incremental cursor
+**Cause:** An upload keeps no cursor from one run to the next, so every run reads from the cursor's initial value, or the first row, again ([core#1404](https://github.com/datanika-io/datanika-core/issues/1404)).
+**Fix:** The full read is expected. Set the write disposition to `merge` with a correct primary key, or `replace`, so repeated runs do not add copies. (SQL sources only — a SaaS source renders no such control.)
 
 ## Related
 

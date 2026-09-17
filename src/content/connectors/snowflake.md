@@ -138,8 +138,8 @@ Schedules live on their own page and reference the upload **by name**.
 **Fix.** Verify the warehouse exists: `SHOW WAREHOUSES;`. Then grant: `GRANT USAGE ON WAREHOUSE DATANIKA_WH TO ROLE DATANIKA_LOADER;`
 
 ### Run succeeds but only the schema is created — no tables
-**Cause.** The source returned no data (empty table, or incremental cursor filtered everything out), or the pipeline was saved without selecting any tables.
-**Fix.** Re-open the pipeline config and verify at least one table is selected. If using incremental with a `start_date`, try clearing it for a full-refresh test run.
+**Cause.** The source returned no data (an empty table), or the upload was saved without selecting any tables.
+**Fix.** Re-open the upload and verify at least one table is selected.
 
 ### Snowflake costs seem high for small data volumes
 **Cause.** The warehouse is oversized for the workload, or `AUTO_SUSPEND` is set too high (e.g., 300 seconds when loads finish in 10 seconds).
