@@ -903,3 +903,41 @@ control of the form *"the old wording is present at the previous release"* read 
 releases, because the comment broke the phrase across two lines. The control failing is what
 exposed the blind evidence grep; a `0` at the new release alone would have read as proof. Use a
 fragment that fits on one line, or `git diff` the two revisions.
+
+## Claims about behaviour, and checks that pass on their own text (2026-09-17)
+
+**A benchmark of the library is not a benchmark of the product.** The benchmark post published
+incremental timings of 11.3s and 46.9s. They were real measurements of dlt run under one fixed
+pipeline name. A Datanika upload names its pipeline after the run, so its cursor never resumes
+(core#1404). The script had been in this repo all along, and one grep for which API it calls would
+have shown it. **Before publishing a number as the product's, check that the code the measurement
+ran is the code a user's run takes.** The full syncs came from the same script, and the post now
+says so too.
+
+**Grep for the behaviour's consequences, not only its name.** When core#1404 refuted incremental
+loading, the sweep for "incremental" found 68 matches on 22 pages. It missed a scheduled post that
+advised `append` "for sources that only ever add rows". That advice is safe only if runs resume, and
+the post never says so. A grep for `append` found it. **When a behaviour is refuted, list what would
+follow if it held, and grep for each of those.**
+
+**An inventory is not a verdict, and a gate built on an inventory outlives its premise.** The dev.to
+tooling withheld from syndication every post in the byte-pricing inventory (`DATED_POSTS`), because
+those terms were once unenforced. landing#396 measured them enforced on 2026-09-07. For ten days
+after that, the gate kept withholding true claims, and it refused to correct a live copy that still
+carried a false one. "Where X is said" and "where X is false" are different lists. **Keep them in
+different constants, and put the dated reading beside the second.**
+
+**A class name written in a test compiles the CSS that test looks for.** Tailwind scans every project
+file for class candidates. The link-cue guard asserted that the compiled stylesheet contains the
+underline rule, and that assertion stayed green with the fix reverted, because the guard file
+itself spelled out the class name. Only reverting the fix and rebuilding found it. The name is now
+assembled from parts. **Do not write such a class name out in docs either, this file included.**
+
+**A sample understates a class of defect.** #620's 26-page axe sample put links marked by colour
+alone on 15 pages. axe over all 171 pages found 994 such links on 150. The count changed the fix,
+from editing a few legal pages to three containers and two class patterns. This extends *"count the
+symptom over `dist/` before fixing the page you were shown"* to the rules that need a browser.
+
+**Your own handoff's "not started" is a claim too.** #527 was carried as "open, not started" while
+its fix had shipped weeks earlier, on `main` and armed. The rule *open ≠ undone* covers the file you
+wrote yourself. Re-read the issue and `git log` before starting work that a note says is undone.
