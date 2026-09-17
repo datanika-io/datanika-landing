@@ -17,8 +17,8 @@ The 2026-07-18 record that stood here before was **field parity against the ship
 add-connection capture. It was real and it is still true of the form, but it was not a connection and a run,
 which is what `SPEC_CONNECTOR_GUIDE_VERIFICATION` §2 means by verified. The walk below is.
 
-⚠️ **Part A (SQL Server as a source) is verified. Part B (SQL Server as a destination) is NOT — it fails
-today**, and the guide says so. See *Part B* below.
+⚠️ **Part A (SQL Server as a source) is verified. Part B (SQL Server as a destination) is NOT.** It failed
+on the walked revision, and it has not been walked since the change that makes it load. See *Part B* below.
 
 ### Where and on what this was walked (`SPEC_CONNECTOR_GUIDE_VERIFICATION.md` §2.4)
 
@@ -108,6 +108,20 @@ Walked because the guide documents it, and it does not work on this revision:
 [core#1379](https://github.com/datanika-io/datanika-core/issues/1379). The destination-side grants in Part B
 were created and the login connects, but **nothing has ever been written through them**, so those grants are
 unverified beyond that.
+
+#### 2026-09-17 — the guide's "fails today" note is replaced, and Part B is still not walked
+
+Product replaced Part B's *"This direction does not work yet"* note with the destination's limitation: loads
+are encrypted, and the server's certificate is not verified. This follows the founder's decision on
+[core#1379](https://github.com/datanika-io/datanika-core/issues/1379), implemented in
+[core PR 1420](https://github.com/datanika-io/datanika-core/pull/1420), which loads through FreeTDS. The text is published only once core `master` carries that change.
+
+**What that rests on is Engineering's measurement, not a walk.** On an image built from the change,
+Engineering loaded through Datanika's own destination builder against SQL Server 2022: append, a second
+append, replace and merge, byte-identical when read back with Microsoft's `sqlcmd`, and
+`sys.dm_exec_connections.encrypt_option` reading `TRUE` for the loader's session and for dbt's.
+**Not exercised:** the upload form and the worker end to end, and the Part B grants above. `verified_by` and
+`verified_date` are unchanged, and they still describe Part A.
 
 ## Not captured
 

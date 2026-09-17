@@ -120,7 +120,7 @@ Schedules live on their own page and reference the upload **by name**.
 
 Load data from any source (SaaS APIs, other databases, files) into SQL Server tables.
 
-> 🚫 **This direction does not work yet — measured 2026-09-15, and Part A above is unaffected.** An upload whose *destination* is a SQL Server connection fails at the load step with `ImportError: libodbc.so.2: cannot open shared object file`, in under a second, and **nothing is written** — the destination database is left with no tables at all. Extracting *from* SQL Server (Part A) uses a different driver and is verified end to end. The upload form does still offer SQL Server connections as destinations, so this can be configured and only fails when the run starts. Tracked as [core#1379](https://github.com/datanika-io/datanika-core/issues/1379); this note comes out when it closes. The rest of Part B describes the intended shape and is kept for when it does.
+> 🔒 **Encrypted, but the server's certificate is not verified.** Datanika loads into SQL Server through the open-source FreeTDS driver, and it requires an encrypted connection for those loads and for transformations that run against the connection. It does **not** verify the server's certificate. That keeps the data from being read in transit, but nothing confirms that the server at the other end is yours. It does not protect against someone on the network path between Datanika and SQL Server who can pose as your server.
 
 > **Same connection, different direction.** The connection you created in Part A works as a destination too. You just select it as the **Destination connection** on an upload. If you're only using SQL Server as a destination, create the connection with a **write-capable** login instead.
 

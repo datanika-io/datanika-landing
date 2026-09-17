@@ -13,6 +13,21 @@ Referenced from `src/content/connectors/synapse.md` (destination-only connector)
 
 `verified_by: product-ui` / `verified_date: 2026-07-18` — Step-2 field labels verified against the live shipped UI (`db_fields()` in `connection_config_fields.py` + `en.json` on `origin/master`). Synapse routes through the generic `db_fields()`: **Connection Name**, **Host**, **Port**, **User**, **Password**, **Database** — and correctly has **no Schema field**. The type dropdown shows the lowercase key **`synapse`** (name ≠ key). Both **Test Connection** and **Create Connection** buttons render. Guide drift fixed: dropdown key + relabels ("Synapse SQL endpoint" → Host, "Port number" → Port, "Database/pool name" → Database, "Username" → User).
 
+### 2026-09-17 — two callouts added to Step 3, resting on Engineering's measurement
+
+Step 3 now states the destination's limitation: loads are encrypted, and the server's certificate is not
+verified. It also says that no load into a live Synapse workspace has been measured. Both follow the
+founder's decision on [core#1379](https://github.com/datanika-io/datanika-core/issues/1379), implemented in
+[core PR 1420](https://github.com/datanika-io/datanika-core/pull/1420). The text is published only once core
+`master` carries that change.
+
+**What that rests on:** Engineering measured, on an image built from the change, that Synapse's connection
+string resolves with the FreeTDS driver, the encryption setting and `LONGASMAX`, and that dlt's Synapse client
+opens a session reading `encrypt_option = TRUE`. **That was against SQL Server 2022, not Synapse.** There is no
+Synapse account, so Synapse's own table DDL was never run. On the same issue, Engineering measured that before
+the change the image could not load into Synapse at all (`import pyodbc` failed on `libodbc.so.2`), so no walk
+of this guide has ever reached a run. `verified_by` and `verified_date` are unchanged.
+
 ## Not yet captured (deferred, not embedded in the guide)
 
 - `01-credentials.png` (writer-user creation) and `04/05` — need a source→Synapse pipeline run.
