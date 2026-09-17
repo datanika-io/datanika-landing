@@ -2,6 +2,7 @@
 import "../styles/global.css";
 import Navbar from "../components/Navbar.astro";
 import Footer from "../components/Footer.astro";
+import PlausibleScript from "../components/PlausibleScript.astro";
 
 interface Props {
   title: string;
@@ -93,6 +94,7 @@ const breadcrumbLD = JSON.stringify({
     <!-- Structured Data -->
     <script type="application/ld+json" set:html={articleLD} />
     <script type="application/ld+json" set:html={breadcrumbLD} />
+    <PlausibleScript />
   </head>
   <body class="min-h-screen antialiased">
     <Navbar />
@@ -100,8 +102,8 @@ const breadcrumbLD = JSON.stringify({
       <div class="flex gap-10">
         <!-- Sidebar -->
         <aside class="hidden w-56 shrink-0 md:block">
-          <nav class="sticky top-24 max-h-[calc(100vh-7rem)] space-y-1 overflow-y-auto pr-2">
-            <div class="mb-2 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-slate-500">
+          <nav aria-label="API documentation" class="sticky top-24 max-h-[calc(100vh-7rem)] space-y-1 overflow-y-auto pr-2">
+            <div class="mb-2 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-slate-400">
               API
             </div>
             {sections.map((s) => (
@@ -124,6 +126,7 @@ const breadcrumbLD = JSON.stringify({
         <div class="mb-6 md:hidden">
           <select
             id="api-mobile-nav"
+            aria-label="API documentation page"
             class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-300"
           >
             {sections.map((s) => (

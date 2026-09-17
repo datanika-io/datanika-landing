@@ -873,3 +873,33 @@ published both. Two of our own live legal documents disagreed and nothing was re
 `["Pointer","Aweb","Cloudflare","Resend","Paddle","GitHub"]` — carried the comment *"derived from
 /trust's own published table."* It was derived once, by a person, on the day it was written.
 **When a guard names a set in literal syntax, it can only ever check the day it was authored.**
+
+## Templates, not pages (2026-09-17)
+
+🚨 **A tag added to one layout reaches only that layout's pages.** Plausible was added to
+`Layout.astro` on 2026-04-12. `DocsLayout` and `ApiLayout` render their own `<head>`, so for five
+months the docs, all 37 connector setup guides and the API section recorded no pageviews, and
+those are the pages the SEO work exists for (#612). The dashboard showed zero for them, which is
+also what pages nobody reads look like. **Anything every page must carry goes in a component
+that every layout renders, and its guard reads `dist/`.** A list of layouts records the day it was
+written. The built pages record what a visitor actually receives.
+
+🔑 **Calibrate a borrowed instrument on the reporter's own pages before using it anywhere else.**
+Before trusting a local axe run over 26 pages, I ran it on the three production pages QA had
+scanned. It reproduced QA's counts exactly: 5, 2 and 7 contrast failures, 2 redundant alts on
+each, and the same `/pricing` and `/docs` landmark findings. Only after that were the site-wide
+numbers evidence. A local copy that disagrees with the reporter on the reporter's own pages is
+measuring something else. For example, a stylesheet that failed to load reads as a contrast pass.
+
+**Every finding in QA's three-page sweep turned out to be a template or a class.** #611 named
+three pages, and a count over the whole build put the same defects on 38, 62, 63 and 171 pages. The
+37 connector guides had never rendered an `<h1>`. #609 named two pages, and literal
+backticks showed on four more: three data-file strings interpolated as text, and one code span
+that CommonMark closed early. This extends *"an issue naming one instance is a
+sample"* to structure. **Count the symptom over `dist/` before fixing the page you were shown.**
+
+**A grep for a phrase that wraps across lines in the source returns 0 at every revision.** A
+control of the form *"the old wording is present at the previous release"* read 0 at both
+releases, because the comment broke the phrase across two lines. The control failing is what
+exposed the blind evidence grep; a `0` at the new release alone would have read as proof. Use a
+fragment that fits on one line, or `git diff` the two revisions.

@@ -25,7 +25,7 @@ import {
     tell the agent everything it needs to know, and a {tierCount}-tier capability stack lets it build,
     validate, and run pipelines without human intervention.
   </p>
-  <p class="text-xs text-slate-500">
+  <p class="text-xs text-slate-400">
     The tier structure on this page is fetched at build time from <code>app.datanika.io/api/v1/meta/agent-tiers</code>, so
     it stays in sync with the live API. See <a href="https://github.com/datanika-io/datanika-landing/issues/108" target="_blank" rel="noopener">issue #108</a> for background.
   </p>
@@ -79,11 +79,11 @@ import {
   {tiers.map((tier) => (
     <section>
       <h3 id={`tier-${tier.number}`}>Tier {tier.number} — {tier.name}</h3>
-      <p>{tier.summary}</p>
+      <p set:html={renderInline(tier.summary)} />
       {tier.capabilities.map((cap) => (
         <>
           <h4>{cap.name}</h4>
-          <p>{cap.description}</p>
+          <p set:html={renderInline(cap.description)} />
           <ul>
             {cap.endpoints.map((endpoint) => (
               <li><code>{endpoint}</code></li>
@@ -120,7 +120,7 @@ import {
       {errorCodes.map((err) => (
         <tr>
           <td><code>{err.code}</code></td>
-          <td>{err.meaning}</td>
+          <td set:html={renderInline(err.meaning)} />
           <td set:html={renderInline(err.action)} />
         </tr>
       ))}

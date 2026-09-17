@@ -522,21 +522,39 @@ describe("no built page ships an advertising tag (landing#481)", () => {
   });
 });
 
-describe("the shared layout carries no advertising tag (source side)", () => {
+describe("the files that write a page's <head> carry no advertising tag (source side)", () => {
   // dist/ is what we published and is blind to nothing, so it is the primary
   // assertion. This one exists because it names the file to edit, in one line,
   // instead of listing 101 built pages.
-  const layout = readFileSync(resolve(SRC, "layouts/Layout.astro"), "utf-8");
+  //
+  // Since landing#612 that is more than one file: every layout renders its own
+  // <head>, and the Plausible tag lives in a component all of them render. The
+  // layouts are read from the directory, so a new one is covered on arrival.
+  const ANALYTICS_COMPONENT = "components/PlausibleScript.astro";
+  const headSources = [
+    ...readdirSync(resolve(SRC, "layouts"))
+      .filter((f) => extname(f) === ".astro")
+      .map((f) => `layouts/${f}`),
+    ANALYTICS_COMPONENT,
+  ];
+  const source = new Map(headSources.map((p) => [p, readFileSync(resolve(SRC, p), "utf-8")]));
 
-  it("Layout.astro loads no gtag/GTM script", () => {
-    expect(layout).not.toMatch(/googletagmanager\.com/i);
-    expect(layout).not.toMatch(/\bAW-\d{6,}\b/);
+  it("reads every layout, not only Layout.astro", () => {
+    // DocsLayout and ApiLayout existed while this file read Layout.astro alone.
+    expect(headSources).toEqual(
+      expect.arrayContaining(["layouts/Layout.astro", "layouts/DocsLayout.astro", "layouts/ApiLayout.astro"]),
+    );
   });
 
-  it("Layout.astro still loads the two analytics scripts we do disclose", () => {
-    // Without this, deleting Plausible would make the assertion above pass for
+  it.each(headSources)("%s loads no gtag/GTM script", (path) => {
+    expect(source.get(path)).not.toMatch(/googletagmanager\.com/i);
+    expect(source.get(path)).not.toMatch(/\bAW-\d{6,}\b/);
+  });
+
+  it("the files read above still carry the two analytics scripts we do disclose", () => {
+    // Without this, deleting Plausible would make the assertions above pass for
     // the wrong reason.
-    expect(layout).toContain("plausible.datanika.io/js/script");
-    expect(layout).toContain("static.cloudflareinsights.com/beacon");
+    expect(source.get(ANALYTICS_COMPONENT)).toContain("plausible.datanika.io/js/script");
+    expect(source.get("layouts/Layout.astro")).toContain("static.cloudflareinsights.com/beacon");
   });
 });

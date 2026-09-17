@@ -41,8 +41,9 @@ function getApiPages(): string[] {
 
 function extractApiSidebarLinks(html: string): string[] {
   // ApiLayout.astro renders the sidebar as <nav class="sticky ...">. Same
-  // shape as DocsLayout but lives at /api/* instead of /docs/*.
-  const navMatch = html.match(/<nav class="sticky[^"]*">([\s\S]*?)<\/nav>/);
+  // shape as DocsLayout but lives at /api/* instead of /docs/*. Other attributes
+  // may sit beside the class (the nav's aria-label, landing#611).
+  const navMatch = html.match(/<nav\b[^>]*\sclass="sticky[^"]*"[^>]*>([\s\S]*?)<\/nav>/);
   if (!navMatch) return [];
 
   const links: string[] = [];
@@ -77,7 +78,7 @@ describe("api sidebar consistency", () => {
     const filePath = join(DIST, "index.html");
     if (!existsSync(filePath)) return;
     const html = readFileSync(filePath, "utf-8");
-    const navMatch = html.match(/<nav class="(sticky[^"]*)">/);
+    const navMatch = html.match(/<nav\b[^>]*\sclass="(sticky[^"]*)"[^>]*>/);
     expect(navMatch, "api sidebar <nav class=\"sticky ...\"> not found").not.toBeNull();
     const navClasses = navMatch![1];
     expect(navClasses).toMatch(/max-h-\[calc\(100vh-/);

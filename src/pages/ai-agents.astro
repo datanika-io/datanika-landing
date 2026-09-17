@@ -4,6 +4,7 @@ import Navbar from "../components/Navbar.astro";
 import Footer from "../components/Footer.astro";
 import ConversionCTA from "../components/ConversionCTA.astro";
 import { tiers, tierCount } from "../data/agent-tiers";
+import { renderInline } from "../utils/inline-markdown";
 import { availableConnectors, connectors } from "../data/connectors";
 
 // Kept in the frontmatter so the JSON braces render as text without escaping.
@@ -70,7 +71,7 @@ const competitors = [
           View /llms.txt
         </a>
       </div>
-      <p class="mt-6 text-sm text-slate-500">
+      <p class="mt-6 text-sm text-slate-400">
         Using Claude or Cursor?
         <a href="#mcp" class="text-violet-400 hover:underline">Install the MCP server &darr;</a>
       </p>
@@ -107,13 +108,13 @@ const competitors = [
         </div>
 
         <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur p-7">
-          <div class="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-3">What a bespoke engine writes</div>
+          <div class="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-3">What a bespoke engine writes</div>
           <h3 class="text-xl font-semibold text-white mb-3">Something only it can run</h3>
           <ul class="space-y-2.5 text-sm text-slate-300">
-            <li><span class="text-slate-600 mr-2">&#10007;</span>Transformations in a vendor-specific DSL or JSON config</li>
-            <li><span class="text-slate-600 mr-2">&#10007;</span>Tests and lineage expressed in a private format</li>
-            <li><span class="text-slate-600 mr-2">&#10007;</span>Leaving means rewriting, not exporting</li>
-            <li><span class="text-slate-600 mr-2">&#10007;</span>Your agent has to learn the format before it's useful</li>
+            <li><span class="text-slate-400 mr-2">&#10007;</span>Transformations in a vendor-specific DSL or JSON config</li>
+            <li><span class="text-slate-400 mr-2">&#10007;</span>Tests and lineage expressed in a private format</li>
+            <li><span class="text-slate-400 mr-2">&#10007;</span>Leaving means rewriting, not exporting</li>
+            <li><span class="text-slate-400 mr-2">&#10007;</span>Your agent has to learn the format before it's useful</li>
           </ul>
           <p class="text-sm text-slate-400 mt-5 pt-5 border-t border-slate-800">
             "Open source" and "portable" are different claims. A platform can be fully open source and still
@@ -152,15 +153,15 @@ const competitors = [
 
       <div class="grid lg:grid-cols-2 gap-8 items-start">
         <div class="rounded-2xl border border-slate-800 bg-slate-900/80 backdrop-blur overflow-hidden">
-          <div class="flex items-center gap-2 px-4 py-3 border-b border-slate-800 text-sm text-slate-500">
+          <div class="flex items-center gap-2 px-4 py-3 border-b border-slate-800 text-sm text-slate-400">
             <span class="h-3 w-3 rounded-full bg-red-500/60"></span>
             <span class="h-3 w-3 rounded-full bg-yellow-500/60"></span>
             <span class="h-3 w-3 rounded-full bg-green-500/60"></span>
             <span class="ml-2">the local path &mdash; claude_desktop_config.json</span>
           </div>
-          <pre class="p-6 text-sm leading-relaxed overflow-x-auto"><code class="text-slate-300">{mcpConfig}</code></pre>
+          <pre tabindex="0" class="p-6 text-sm leading-relaxed overflow-x-auto"><code class="text-slate-300">{mcpConfig}</code></pre>
           <div class="px-6 pb-6 -mt-2">
-            <p class="text-xs text-slate-500">
+            <p class="text-xs text-slate-400">
               Prefer no install? Paste
               <code class="text-violet-300 bg-slate-800 px-1.5 py-0.5 rounded text-xs">https://app.datanika.io/mcp</code>
               wherever your client accepts a remote MCP server and authorize in the browser.
@@ -224,10 +225,10 @@ const competitors = [
               </span>
               <h3 class="text-lg font-semibold text-white">{tier.name}</h3>
             </div>
-            <p class="text-sm text-slate-400 mb-3">{tier.summary}</p>
+            <p class="text-sm text-slate-400 mb-3" set:html={renderInline(tier.summary)} />
             <ul class="space-y-2">
               {tier.capabilities.map((cap) => (
-                <li class="text-xs text-slate-500">
+                <li class="text-xs text-slate-400">
                   <span class="text-slate-300 font-medium">{cap.name}</span>
                   <code class="block mt-1 bg-slate-900 rounded px-2 py-1.5 break-all">
                     {cap.endpoints.slice(0, 2).join(", ")}{cap.endpoints.length > 2 ? ", …" : ""}
@@ -249,21 +250,21 @@ const competitors = [
         Tell your AI agent to read <code class="text-violet-300 bg-slate-800 px-1.5 py-0.5 rounded text-sm">/llms.txt</code>, or use the API directly with any HTTP client.
       </p>
       <div class="rounded-2xl border border-slate-800 bg-slate-900/80 backdrop-blur overflow-hidden">
-        <div class="flex items-center gap-2 px-4 py-3 border-b border-slate-800 text-sm text-slate-500">
+        <div class="flex items-center gap-2 px-4 py-3 border-b border-slate-800 text-sm text-slate-400">
           <span class="h-3 w-3 rounded-full bg-red-500/60"></span>
           <span class="h-3 w-3 rounded-full bg-yellow-500/60"></span>
           <span class="h-3 w-3 rounded-full bg-green-500/60"></span>
           <span class="ml-2">agent_pipeline.py</span>
         </div>
-        <pre class="p-6 text-sm leading-relaxed overflow-x-auto"><code class="text-slate-300">import httpx
+        <pre tabindex="0" class="p-6 text-sm leading-relaxed overflow-x-auto"><code class="text-slate-300">import httpx
 
 BASE = "https://app.datanika.io/api/v1"
 H = {"{"}\"Authorization\": \"Bearer etf_your_key\"{"}"}
 
-<span class="text-slate-500"># 1. Discover available connection types (full JSON Schema)</span>
+<span class="text-slate-400"># 1. Discover available connection types (full JSON Schema)</span>
 types = httpx.get(f"{"{"}BASE{"}"}/meta/connection-types", headers=H).json()
 
-<span class="text-slate-500"># 2. Create source + destination</span>
+<span class="text-slate-400"># 2. Create source + destination</span>
 src = httpx.post(f"{"{"}BASE{"}"}/connections", headers=H, json={"{"}
     "name": "Stripe", "connection_type": "stripe",
     "config": {"{"}\"api_key\": \"sk_live_...\"{"}"}
@@ -274,7 +275,7 @@ dst = httpx.post(f"{"{"}BASE{"}"}/connections", headers=H, json={"{"}
     "config": {"{"}\"project\": \"analytics\", \"dataset\": \"raw\", \"service_account_json\": \"{"{"}...{"}"}\"{"}"}
 {"}"}).json()
 
-<span class="text-slate-500"># 3. Introspect source, build upload, run with wait mode</span>
+<span class="text-slate-400"># 3. Introspect source, build upload, run with wait mode</span>
 tables = httpx.post(f"{"{"}BASE{"}"}/connections/{"{"}src['id']{"}"}/introspect", headers=H).json()
 upload = httpx.post(f"{"{"}BASE{"}"}/uploads", headers=H, json={"{"}
     "name": "Stripe Charges", "source_connection_id": src["id"],
@@ -283,15 +284,15 @@ upload = httpx.post(f"{"{"}BASE{"}"}/uploads", headers=H, json={"{"}
 {"}"}).json()
 run = httpx.post(f"{"{"}BASE{"}"}/uploads/{"{"}upload['id']{"}"}/run?wait=true", headers=H).json()
 
-<span class="text-slate-500"># 4. Write + validate a transformation</span>
+<span class="text-slate-400"># 4. Write + validate a transformation</span>
 model = httpx.post(f"{"{"}BASE{"}"}/transformations", headers=H, json={"{"}
     "name": "monthly_revenue", "destination_connection_id": dst["id"],
     "sql": "SELECT date_trunc('month', created) as month, sum(amount)/100 as revenue FROM {"{"}{"{"} source('raw', 'charges') {"}"}{"}"} GROUP BY 1"
 {"}"}).json()
-httpx.post(f"{"{"}BASE{"}"}/transformations/{"{"}model['id']{"}"}/compile", headers=H)  <span class="text-slate-500"># validate first!</span>
-httpx.post(f"{"{"}BASE{"}"}/transformations/{"{"}model['id']{"}"}/preview", headers=H)  <span class="text-slate-500"># preview output</span></code></pre>
+httpx.post(f"{"{"}BASE{"}"}/transformations/{"{"}model['id']{"}"}/compile", headers=H)  <span class="text-slate-400"># validate first!</span>
+httpx.post(f"{"{"}BASE{"}"}/transformations/{"{"}model['id']{"}"}/preview", headers=H)  <span class="text-slate-400"># preview output</span></code></pre>
       </div>
-      <p class="text-center text-slate-500 text-sm mt-4">
+      <p class="text-center text-slate-400 text-sm mt-4">
         Or just tell your agent: <em>"Read https://app.datanika.io/llms.txt and build me a Stripe-to-BigQuery pipeline."</em>
       </p>
     </div>
@@ -344,10 +345,10 @@ httpx.post(f"{"{"}BASE{"}"}/transformations/{"{"}model['id']{"}"}/preview", head
             <tr class="border-b border-slate-800">
               <th class="px-4 py-3 text-slate-400 font-semibold">Capability</th>
               <th class="px-4 py-3 text-center text-violet-400 font-semibold">Datanika</th>
-              <th class="px-4 py-3 text-center text-slate-500 font-semibold">Fivetran</th>
-              <th class="px-4 py-3 text-center text-slate-500 font-semibold">Airbyte</th>
-              <th class="px-4 py-3 text-center text-slate-500 font-semibold">Stitch</th>
-              <th class="px-4 py-3 text-center text-slate-500 font-semibold">Hevo</th>
+              <th class="px-4 py-3 text-center text-slate-400 font-semibold">Fivetran</th>
+              <th class="px-4 py-3 text-center text-slate-400 font-semibold">Airbyte</th>
+              <th class="px-4 py-3 text-center text-slate-400 font-semibold">Stitch</th>
+              <th class="px-4 py-3 text-center text-slate-400 font-semibold">Hevo</th>
             </tr>
           </thead>
           <tbody>
@@ -364,8 +365,8 @@ httpx.post(f"{"{"}BASE{"}"}/transformations/{"{"}model['id']{"}"}/preview", head
           </tbody>
         </table>
       </div>
-      <p class="text-xs text-slate-500 mt-4 text-center max-w-3xl mx-auto">
-        Comparison current as of 2026-04-13. Sources: <a href="https://www.fivetran.com/docs/rest-api" class="underline hover:text-slate-400" target="_blank" rel="noopener">Fivetran REST API docs</a>, <a href="https://reference.airbyte.com/reference/start" class="underline hover:text-slate-400" target="_blank" rel="noopener">Airbyte API reference</a>, <a href="https://www.stitchdata.com/docs/developers/stitch-connect/api" class="underline hover:text-slate-400" target="_blank" rel="noopener">Stitch Connect API</a>, <a href="https://hevodata.com/learn/rest-api" class="underline hover:text-slate-400" target="_blank" rel="noopener">Hevo REST API</a>, <a href="https://docs.getdbt.com/dbt-cloud/api-v2-legacy" class="underline hover:text-slate-400" target="_blank" rel="noopener">dbt Cloud API</a>. We update this when a competitor ships a new agent-facing feature.
+      <p class="text-xs text-slate-400 mt-4 text-center max-w-3xl mx-auto">
+        Comparison current as of 2026-04-13. Sources: <a href="https://www.fivetran.com/docs/rest-api" class="underline hover:text-slate-300" target="_blank" rel="noopener">Fivetran REST API docs</a>, <a href="https://reference.airbyte.com/reference/start" class="underline hover:text-slate-300" target="_blank" rel="noopener">Airbyte API reference</a>, <a href="https://www.stitchdata.com/docs/developers/stitch-connect/api" class="underline hover:text-slate-300" target="_blank" rel="noopener">Stitch Connect API</a>, <a href="https://hevodata.com/learn/rest-api" class="underline hover:text-slate-300" target="_blank" rel="noopener">Hevo REST API</a>, <a href="https://docs.getdbt.com/dbt-cloud/api-v2-legacy" class="underline hover:text-slate-300" target="_blank" rel="noopener">dbt Cloud API</a>. We update this when a competitor ships a new agent-facing feature.
       </p>
     </div>
   </section>

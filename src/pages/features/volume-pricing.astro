@@ -166,7 +166,7 @@ const faq = [
             <div class="mb-6 p-4 rounded-lg bg-slate-900/50 border border-slate-700">
               <div class="text-sm text-slate-400 mb-1">Included volume</div>
               <div class="text-2xl font-bold text-emerald-400">{tier.volume}</div>
-              <div class="text-sm text-slate-500 mt-1">Overage: {tier.overage}</div>
+              <div class="text-sm text-slate-400 mt-1">Overage: {tier.overage}</div>
             </div>
             <ul class="space-y-3">
               {tier.features.map((f) => (
@@ -258,19 +258,19 @@ const faq = [
           <h3 class="font-bold mb-3">Worked example</h3>
           <div class="space-y-2 text-sm text-slate-300">
             <div class="flex items-center gap-3">
-              <span class="w-24 text-slate-500 shrink-0">Source</span>
+              <span class="w-24 text-slate-400 shrink-0">Source</span>
               <span>1 GB HubSpot JSON export</span>
             </div>
             <div class="flex items-center gap-3">
-              <span class="w-24 text-slate-500 shrink-0">Normalize</span>
+              <span class="w-24 text-slate-400 shrink-0">Normalize</span>
               <span>Flattens nested objects → ~3 GB wide table</span>
             </div>
             <div class="flex items-center gap-3">
-              <span class="w-24 text-slate-500 shrink-0">Transform</span>
+              <span class="w-24 text-slate-400 shrink-0">Transform</span>
               <span>dbt aggregation → 100 MB summary</span>
             </div>
             <div class="flex items-center gap-3 pt-2 border-t border-slate-700">
-              <span class="w-24 text-slate-500 shrink-0 font-bold">Metered</span>
+              <span class="w-24 text-slate-400 shrink-0 font-bold">Metered</span>
               <span class="text-emerald-400 font-bold">3.1 GB counted against your quota</span>
             </div>
           </div>
@@ -326,7 +326,7 @@ const faq = [
           </tbody>
         </table>
       </div>
-      <p class="text-xs text-slate-500 mt-4">
+      <p class="text-xs text-slate-400 mt-4">
         The Fivetran and Airbyte columns are illustrative estimates, not quotes. Checked in August 2026, neither vendor
         published a rate card a bill could be computed from: Fivetran points at an estimator and a consumption table and
         publishes no per-MAR rate, and Airbyte prices its paid tiers on compute capacity rather than data moved. Ours convert
@@ -386,7 +386,7 @@ const faq = [
           </div>
           <div class="pt-4 border-t border-slate-700 text-center">
             <span class="text-emerald-400 font-bold text-lg">5.8x faster</span>
-            <span class="text-slate-500 text-sm block">than legacy operators</span>
+            <span class="text-slate-400 text-sm block">than legacy operators</span>
           </div>
         </div>
         <div class="rounded-2xl bg-slate-800/50 border border-slate-700 p-8">
@@ -412,11 +412,11 @@ const faq = [
           </div>
           <div class="pt-4 border-t border-slate-700 text-center">
             <span class="text-emerald-400 font-bold text-lg">3.5x faster</span>
-            <span class="text-slate-500 text-sm block">per million rows, normalized</span>
+            <span class="text-slate-400 text-sm block">per million rows, normalized</span>
           </div>
         </div>
       </div>
-      <p class="text-xs text-slate-500 mt-6 text-center">
+      <p class="text-xs text-slate-400 mt-6 text-center">
         Arrow mode bypasses JSON normalization entirely — data flows as columnar Parquet directly to the destination.
         The same architecture powers Datanika's ELT mode, which is why the meter reads fewer bytes.
         <a href="/blog/dlt-arrow-5x-faster-pipeline/" class="text-emerald-400 hover:underline">Full technical deep-dive</a>.

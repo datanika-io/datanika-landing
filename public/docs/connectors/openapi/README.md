@@ -6,7 +6,7 @@ Referenced from `src/content/connectors/openapi.md` (source-only API connector).
 
 | Filename | Step | Notes |
 |---|---|---|
-| `02-add-connection.png` | Step 2 | The **New Connection** form with `openapi` selected. Captured 2026-09-15 from a **local stack** (see *Where and on what this was walked*), light theme. **Connection Name** `fakerestapi`, the vendor's published FakeRESTApi spec pasted (sha256 `c0367244…`; the textarea shows its last lines), **Base URL** filled, **API Key** empty because this source needs none. `PRODUCT_RULES` §4 credential gate before the shot: 4 inputs, 1 credential-shaped, 0 non-empty. The form was not submitted. |
+| `02-add-connection.png` | Step 2 | The **New Connection** form with `openapi` selected. **Recaptured 2026-09-17** from a **local stack** on core `master` (see *2026-09-17 — Step 2 recaptured on core master*), light theme, CSS scale, 992×696. **Connection Name** `fakerestapi`, the vendor's published FakeRESTApi spec pasted unedited (sha256 `c0367244…`, the same document as on 2026-09-15; the textarea shows its last lines), **Base URL** filled and labelled without an asterisk, **API Key** empty because this source needs none. `PRODUCT_RULES` §4 credential gate before the shot: 4 inputs, 1 credential-shaped, 0 non-empty. The form was not submitted, and the PNG carries no text chunk. It replaces the 2026-09-15 capture, which showed the label `Base URL *` that core `master` no longer renders ([core#1346](https://github.com/datanika-io/datanika-core/pull/1346)). |
 | `04-first-run.png` | Step 4 | The **Data preview** on `/models/2`, the model detail page for the landed `activities` table: six columns (`id`, `title`, `due_date`, `completed`, `_dlt_load_id`, `_dlt_id`) and 30 rows, `Activity 1` to `Activity 30`, read live from the destination. Taken after run 3, the first run that loaded anything, while the table held exactly 30 rows. Every row carries the same `_dlt_load_id`. The `Rows: 30` label is out of frame. Credential gate: 0 non-empty credential-shaped fields. |
 
 ⚠️ **A re-take of the Data preview after run 4 read `Rows: 60`, and it was not used.** Running the unchanged upload
@@ -59,6 +59,9 @@ count for `activities`.
 
 #### 🚨 Defect 1: the vendor's published spec imports zero endpoints ([core#1345](https://github.com/datanika-io/datanika-core/issues/1345))
 
+> **2026-09-17: fixed on core `master`, and re-measured through the form.** The same published document, unedited,
+> stored 5 resources and loaded rows. See *2026-09-17 — Step 2 recaptured on core master* below.
+
 Every collection response in the spec is declared as `application/json; v=1.0`. Swashbuckle emits that type when
 ASP.NET API versioning is on. The parser matches only an exact `application/json`, so the parse found
 **0 resources**. **Create Connection** succeeded **with no warning on screen**. Every run then failed in under a
@@ -76,6 +79,9 @@ and 4, the Models and Data preview observations and the first-run capture used t
 add-connection capture shows the published one.
 
 #### 🚨 Defect 2: a re-run lands every row again ([core#1336](https://github.com/datanika-io/datanika-core/issues/1336), measured here)
+
+> **2026-09-17: fixed on core `master`, and re-measured.** A second run of an unchanged upload left each table at
+> that run's own count. See *2026-09-17 — Step 2 recaptured on core master* below.
 
 An upload saved on the structured form stores a hidden `write_disposition: append`. Neither Write Disposition nor
 Load Mode is rendered for this source type, and the stored row reads
@@ -121,6 +127,73 @@ Step 5's schedule would therefore add another full copy of every table.
   remedy does not work for defect 1.
 - Not mentioned: a new upload lands as `draft`, and the spec's `dueDate` lands as `due_date`. The **Test** action on a
   saved connection's row shows the same verdict only as a status icon; the sentence is in that icon's hover tooltip.
+
+### 2026-09-17 — Step 2 recaptured on core master; both defects re-measured
+
+Walked by Product through the UI. Three changes reached core `master` after the 2026-09-15 walk, and each changes
+what this guide shows or promises: [core#1346](https://github.com/datanika-io/datanika-core/pull/1346) removed the
+asterisk from Base URL's label, [core#1345](https://github.com/datanika-io/datanika-core/issues/1345) changed what
+the parse reads and what the form refuses, and [core#1336](https://github.com/datanika-io/datanika-core/issues/1336)
+changed what a re-run does.
+
+`verified_by` and `verified_date` still name the 2026-09-15 walk, and this section does not change them. It adds a
+later walk of Steps 2 to 4 to the record.
+
+#### Where and on what (`SPEC_CONNECTOR_GUIDE_VERIFICATION.md` §2.4)
+
+| field | value |
+|---|---|
+| **Environment** | `local stack`: the image core's `scripts/build-from-worktree.sh` built, run with core's `scripts/worktree-stack.sh` (its own compose project, container names and host ports). The one-origin proxy did not start, because its host port was inside a range the host had reserved. The browser used the frontend and backend ports directly. Every websocket reached this stack's own backend, and every request to a host other than `localhost` was aborted. |
+| **Core revision** | `ba7289b92ca37daa6110958a605282020a16771a`: `origin/master` when built and when this record was written, and the revision production deployed on 2026-09-16. Four core files inside the image matched their git blobs at that commit. One of them, `connections.py`, differs on `origin/dev`, and the image's copy did not match `dev`'s. `git merge-base --is-ancestor` against `origin/master` after a fresh fetch: **yes**. Control: core `dev` `3a2d4147` answered **no**. |
+| **Cloud revision** | `68a2ee5631db3f5099fca769d52a84187fb4f354`, `origin/master` when built. Cloud `master` has since moved on. Ancestor check: **yes**. Control: an unmerged cloud branch answered **no**. |
+| **Edition** | cloud, read from the app, worker and scheduler's own interpreters |
+| **Configuration** | `production-graded`. `datanika_allow_local_file_paths` is `False` in the app, worker and scheduler, each read from its own interpreter. The billing settings were left at their code defaults, as on 2026-09-15. |
+| **Guide revision** | blob `f941dda8`, the text of landing `c81d0b8`, which reached `dev` as `389be33` during this walk |
+| **Not exercised** | allowlisting Datanika's egress IPs · an API key and the auth table (the spec declares no `securitySchemes`) · a blank Base URL · creating the connection through the API · pagination, incremental cursors and envelope keys · `resource_names` · the four save-time error codes · a `+json` media type (read in code only) · the Columns schema contract · Test Connection · the Data preview (`04-first-run.png` is still the 2026-09-15 capture) · Step 5 |
+
+#### What happened
+
+- **Step 2, photographed and not submitted.** The labels as rendered: `Connection Name *`, `OpenAPI Spec *`,
+  `Base URL`, `API Key (optional)`. The Base URL input has no `required` attribute.
+- **Step 2, submitted separately.** The published spec, unedited and still declaring `application/json; v=1.0` 27
+  times, saved. Read back through the app's own interpreter, the connection holds **5 resources**:
+  `activities`, `authors`, `books`, `coverphotos`, `users`, each with primary key `id`. On 2026-09-15 the same
+  document stored none.
+- **The refusal Step 1 describes.** A spec whose only GETs are a templated path and a path whose response is a
+  single object was refused at save, and no connection was created. The form showed:
+  `Invalid config: This spec has no endpoint the connector can load: Skipped templated endpoint /users/{id} — detail endpoints need a parent (P3).; Skipped GET /status — no array/collection JSON response schema.`
+- **Steps 3 and 4.** Destination connection **2** `walkwarehouse` (postgres, a database in the stack's own
+  Postgres), source connection **3** `fakerestapi`, upload **1** `fakerestapiwalk` on the structured form with
+  *Use raw JSON config* unticked. The upload landed as `draft` and stored `{"mode": "full_database"}`, with no
+  `write_disposition` (on 2026-09-15 it stored `append`). Run **1** `success`, Rows `1040`; run **2**, the same
+  upload unchanged, `success`, Rows `1034`. `/models` listed all five tables.
+
+**Rows counted in the destination database, not through the app:**
+
+| table | after run 1 | after run 2 | ids after run 2 | `_dlt_load_id` values after run 2 |
+|---|---|---|---|---|
+| `activities` | 30 | 30 | 1–30 | 1 |
+| `authors` | 600 | 594 | 1–594 | 1 |
+| `books` | 200 | 200 | 1–200 | 1 |
+| `coverphotos` | 200 | 200 | 1–200 | 1 |
+| `users` | 10 | 10 | 1–10 | 1 |
+
+In every table, after each run, the row count equals the count of distinct `id`. Each run's table total equals its
+Rows count. At the source, read after each run, `activities`, `books`, `coverphotos` and `users` returned the counts
+above; `authors` returns a list of random length on every request, as on 2026-09-15.
+
+- **Defect 1 is fixed on this revision.** The published document needed no edit.
+- **Defect 2 is fixed on this revision.** The second run replaced each table rather than appending to it.
+  `authors` also shows the consequence Step 5 states: it held 600 rows after run 1 and 594 after run 2, so rows that
+  only the first run had loaded did not survive the second.
+
+#### Found on this walk
+
+- The refusal message lists an auth warning as if it were a reason, and shows internal phase labels and a doubled
+  `.;` → [core#1416](https://github.com/datanika-io/datanika-core/issues/1416). The guide quotes the OAuth2 warning
+  with its `in P1`, so that sentence changes when the fix reaches `master`.
+- `OpenAPI Spec *` is marked, and the form refuses it blank, but its textarea has no `required` attribute. Recorded on
+  [core#1311](https://github.com/datanika-io/datanika-core/issues/1311).
 
 ## Not captured
 

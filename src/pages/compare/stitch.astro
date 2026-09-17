@@ -137,7 +137,7 @@ const gbPricingRows = [
   <section class="py-20">
     <div class="max-w-5xl mx-auto px-6">
       <h2 class="text-3xl font-bold text-center mb-3">GB-normalized pricing</h2>
-      <p class="text-sm text-slate-500 text-center mb-10 max-w-2xl mx-auto">
+      <p class="text-sm text-slate-400 text-center mb-10 max-w-2xl mx-auto">
         How the bill looks at three common volumes. Stitch numbers are illustrative Standard-tier estimates via row-to-GB conversion — open <a href="/why-cheaper" class="text-violet-400 underline hover:text-violet-300">/why-cheaper</a> for the live GB calculator and the honesty disclosure, or hit <a href="https://www.stitchdata.com/pricing/" class="text-slate-400 underline hover:text-slate-300" rel="nofollow">Stitch&rsquo;s pricing page</a> for a binding number on your specific schema shape.
       </p>
       <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur p-8 overflow-x-auto">
@@ -154,7 +154,7 @@ const gbPricingRows = [
               <tr class="border-b border-slate-800/60">
                 <td class="py-4 pr-4 text-sm text-slate-300">
                   <strong class="text-white">{row.volume}</strong>
-                  <br /><span class="text-xs text-slate-500">{row.note}</span>
+                  <br /><span class="text-xs text-slate-400">{row.note}</span>
                 </td>
                 <td class="py-4 px-4 text-center text-sm">
                   <span class="text-white font-mono">{row.datanika}</span>
@@ -162,14 +162,14 @@ const gbPricingRows = [
                 </td>
                 <td class="py-4 pl-4 text-center text-sm">
                   <span class="text-slate-300 font-mono">{row.competitor}</span>
-                  <br /><span class="text-xs text-slate-500">{row.competitorPerGB}</span>
+                  <br /><span class="text-xs text-slate-400">{row.competitorPerGB}</span>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      <p class="text-xs text-slate-600 mt-6 text-center">
+      <p class="text-xs text-slate-400 mt-6 text-center">
         Datanika Free caps at 10 GB/mo. Pro includes 100 GB, $0.50/GB after. Enterprise includes 1 TB, $0.25/GB after. Stitch has no self-host option; Datanika self-host (AGPL-3.0) is $0 at any volume — the comparison above is the managed path only.
       </p>
     </div>
@@ -196,7 +196,7 @@ const gbPricingRows = [
           <ul class="space-y-3">
             {chooseStitch.map((item) => (
               <li class="flex items-start gap-3 text-slate-300">
-                <span class="text-slate-500 mt-0.5">&#10003;</span>
+                <span class="text-slate-400 mt-0.5">&#10003;</span>
                 <span>{item}</span>
               </li>
             ))}

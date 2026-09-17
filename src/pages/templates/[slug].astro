@@ -6,6 +6,7 @@ import ConversionCTA from "../../components/ConversionCTA.astro";
 import { templates } from "../../data/templates";
 import type { Template } from "../../data/templates";
 import { connectors } from "../../data/connectors";
+import { renderInline } from "../../utils/inline-markdown";
 
 export function getStaticPaths() {
   return templates.map((tpl) => ({
@@ -91,12 +92,12 @@ const howToJsonLd = {
     <div class="glow bg-violet-600 -top-40 -left-40"></div>
     <div class="glow bg-cyan-600 -bottom-40 -right-40"></div>
     <div class="relative max-w-4xl mx-auto px-6">
-      <div class="flex items-center gap-2 text-sm text-slate-500 mb-4">
+      <div class="flex items-center gap-2 text-sm text-slate-400 mb-4">
         <a href={`/connectors/${template.sourceConnectorSlug}`} class="px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 hover:text-white transition-colors">{template.source}</a>
-        <span class="text-slate-600">→</span>
+        <span class="text-slate-400">→</span>
         <a href={`/connectors/${template.destinationConnectorSlug}`} class="px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300 hover:text-white transition-colors">{template.destination}</a>
-        <span class="ml-3 text-slate-600">•</span>
-        <span class="text-slate-500">{template.timeToFirstRun} to first run</span>
+        <span class="ml-3 text-slate-400">•</span>
+        <span class="text-slate-400">{template.timeToFirstRun} to first run</span>
       </div>
       <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight mb-4">
         <span class="gradient-text">{template.h1}</span>
@@ -148,7 +149,7 @@ const howToJsonLd = {
         {template.prerequisites.map((req) => (
           <li class="flex items-start gap-3 rounded-xl border border-slate-800 bg-slate-900/50 p-4">
             <span class="text-amber-400 mt-0.5 shrink-0">&#9888;</span>
-            <p class="text-slate-300">{req}</p>
+            <p class="text-slate-300" set:html={renderInline(req)} />
           </li>
         ))}
       </ul>
@@ -177,7 +178,7 @@ const howToJsonLd = {
     <div class="max-w-4xl mx-auto px-6">
       <h2 class="text-2xl font-bold mb-6">Example transformation</h2>
       <p class="text-slate-400 mb-4">Once the template loads, write dbt models against the staging schema. This example runs on the output of the {template.h1}:</p>
-      <pre class="rounded-xl border border-slate-800 bg-slate-950/80 p-6 overflow-x-auto text-sm text-slate-200"><code>{template.exampleSql}</code></pre>
+      <pre tabindex="0" class="rounded-xl border border-slate-800 bg-slate-950/80 p-6 overflow-x-auto text-sm text-slate-200"><code>{template.exampleSql}</code></pre>
     </div>
   </section>
 
@@ -188,14 +189,14 @@ const howToJsonLd = {
       <div class="grid sm:grid-cols-2 gap-4">
         {sourceConnector && (
           <a href={`/connectors/${sourceConnector.slug}`} class="rounded-xl border border-slate-800 bg-slate-900/50 p-5 transition-colors hover:border-violet-500/50">
-            <p class="text-sm text-slate-500 mb-1">Source</p>
+            <p class="text-sm text-slate-400 mb-1">Source</p>
             <p class="font-semibold text-white">{sourceConnector.name}</p>
             <p class="text-sm text-slate-400 mt-1">Connector details and setup guide →</p>
           </a>
         )}
         {destConnector && (
           <a href={`/connectors/${destConnector.slug}`} class="rounded-xl border border-slate-800 bg-slate-900/50 p-5 transition-colors hover:border-violet-500/50">
-            <p class="text-sm text-slate-500 mb-1">Destination</p>
+            <p class="text-sm text-slate-400 mb-1">Destination</p>
             <p class="font-semibold text-white">{destConnector.name}</p>
             <p class="text-sm text-slate-400 mt-1">Connector details and setup guide →</p>
           </a>
@@ -211,9 +212,9 @@ const howToJsonLd = {
         <div class="grid sm:grid-cols-2 gap-4">
           {relatedTemplateDetails.map((rel) => (
             <a href={`/templates/${rel.slug}`} class="rounded-xl border border-slate-800 bg-slate-900/50 p-5 transition-colors hover:border-violet-500/50">
-              <div class="flex items-center gap-2 text-xs text-slate-500 mb-2">
+              <div class="flex items-center gap-2 text-xs text-slate-400 mb-2">
                 <span class="px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">{rel.source}</span>
-                <span class="text-slate-600">→</span>
+                <span class="text-slate-400">→</span>
                 <span class="px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300">{rel.destination}</span>
               </div>
               <p class="font-semibold text-white">{rel.h1}</p>
