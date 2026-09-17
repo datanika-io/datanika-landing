@@ -18,14 +18,20 @@
  *   1. No link inside <main> (outside a <nav>) is underlined only on hover.
  *   2. Every prose-docs container carries the class-less-anchor underline rule.
  *   3. The compiled stylesheet contains that rule. A Tailwind class that was never compiled is a no-op
- *      that still reads as applied in the HTML.
+ *      that still reads as applied in the HTML. The class name is assembled from parts below, so that
+ *      this file cannot be the reason it compiled.
  */
 import { describe, it, expect } from "vitest";
 import { readdirSync, readFileSync, statSync, existsSync } from "fs";
 import { resolve, extname, relative, sep } from "path";
 
 const DIST = resolve(__dirname, "..", "dist");
-const PROSE_UNDERLINE = "[&_a:not([class])]:underline";
+/**
+ * Built from parts on purpose. Tailwind scans every file in the project for class candidates, this one
+ * included, so a literal here compiled the rule by itself: the stylesheet check below passed on a tree
+ * whose pages did not use the class. Measured, by reverting the fix and rebuilding.
+ */
+const PROSE_UNDERLINE = ["[&_a:not([class])]", "underline"].join(":");
 
 function walk(dir: string, ext: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
@@ -61,8 +67,10 @@ describe("links in running text are underlined (landing#620)", () => {
 
   it("reads a real build (anti-vacuity)", () => {
     expect(pages.length, "run `npm run build` first").toBeGreaterThan(100);
-    const anchors = pages.reduce((n, p) => n + (runningContent(p.html).match(/<a\b/g) ?? []).length, 0);
-    expect(anchors, "too few links read inside <main> to mean anything").toBeGreaterThan(1000);
+    // Counted over whole pages, not inside <main>: this proves the walk reads links at all, and must not
+    // depend on the <main> fix that a11y-structure.test.ts guards.
+    const anchors = pages.reduce((n, p) => n + (p.html.match(/<a\b/g) ?? []).length, 0);
+    expect(anchors, "too few links read to mean anything").toBeGreaterThan(1000);
   });
 
   it("the checker flags the pre-fix class and passes the fixed one", () => {
