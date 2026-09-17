@@ -109,6 +109,8 @@ Same logic as CSV and JSON — one-shot uploads don't need a schedule, directory
 3. Set the **Timezone** (defaults to `UTC`; the cron is evaluated in it) and click **Create Schedule**. The row lands as **Active** and can be paused per row.
 4. Wire up failure alerts in **Settings → Notifications**. Schema drift in Parquet is rare (strict types prevent most of the CSV/JSON failure modes) but file corruption and missing partitions happen.
 
+**What a scheduled run does to your tables:** each run reads every file the glob matches and replaces the upload's tables with their rows, so unchanged files keep one copy. Keep a file in place for as long as its rows should stay: a file that is moved, deleted or renamed out of the glob takes its rows out of the table at the next run. To keep those rows anyway, the upload needs an explicit `"write_disposition": "append"` in its raw JSON config, and every run then adds every matching file again.
+
 ## Troubleshooting
 
 ### `Invalid: Parquet file size is 0 bytes`

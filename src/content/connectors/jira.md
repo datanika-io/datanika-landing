@@ -85,6 +85,8 @@ Schedules live on their own page and reference the upload **by name**.
 3. Click **Create Schedule**. The row lands as **Active**, with **Pause** available per row.
 4. Wire up failure alerts in **Settings → Notifications** so you hear about broken runs before your stakeholders do.
 
+**What a scheduled run does to your tables:** each run replaces the upload's tables with what that run fetched, so a schedule keeps one copy of each record instead of adding another. A record the API no longer returns is gone after the next run, and so are rows only an earlier run had loaded. To keep every run's rows, the upload needs an explicit `"write_disposition": "append"` in its raw JSON config.
+
 ## Troubleshooting
 
 ### `401 Unauthorized`

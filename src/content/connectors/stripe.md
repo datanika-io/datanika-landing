@@ -16,7 +16,7 @@ draft: false
 
 Stripe is the highest buyer-intent source we ship — most Datanika teams start here because landing Stripe in a warehouse is what turns raw payments data into revenue dashboards, cohort analyses, and finance-ops reports. This guide walks you end-to-end: create a read-only restricted key in Stripe, wire it into Datanika, pick which resources to sync, run the first backfill, and put it on a schedule. Expect 5–10 minutes for a first run against a small account.
 
-> **Looking for the connector spec?** This is the hands-on setup guide. For the full field-by-field reference — supported endpoints, load modes, incremental strategy — see the [Stripe connector page](/connectors/stripe).
+> **Looking for the connector spec?** This is the hands-on setup guide. For the full field-by-field reference — supported endpoints and load modes — see the [Stripe connector page](/connectors/stripe).
 
 ## Prerequisites
 
@@ -93,6 +93,8 @@ Schedules live on their own page and reference the upload **by name**.
    - **Timezone** — defaults to `UTC`. The cron is evaluated in this zone, which matters for daily and weekly cadences.
 3. Click **Create Schedule**. The row lands as **Active**, with **Pause** available per row.
 4. Wire up failure alerts in **Settings → Notifications** so you hear about broken runs before your stakeholders do.
+
+**What a scheduled run does to your tables:** each run replaces the upload's tables with what that run fetched, so a schedule keeps one copy of each record instead of adding another. A record the API no longer returns is gone after the next run, and so are rows only an earlier run had loaded. To keep every run's rows, the upload needs an explicit `"write_disposition": "append"` in its raw JSON config.
 
 ## Troubleshooting
 

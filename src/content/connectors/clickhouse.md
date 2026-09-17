@@ -130,12 +130,15 @@ A destination is chosen per **upload**, at **`/uploads`** — not on the connect
    ```
 4. Spot-check the row count against the source. **Verify in the destination rather than trusting the status badge** — a green run means the load finished, not that it moved what you expected.
 
+<!-- landing#604. Remove this callout, and send Step 4 back to /models, when core#1397 ships. -->
+
 > ⚠️ **`/models` does not list what a ClickHouse load landed, so the in-app Data preview is not
 > available for this destination.** Measured on a run that finished `success` with **7,182 rows**
 > across four tables: the tables were present in ClickHouse, and `/models` showed **nothing** for that
 > upload. Every entry it did show came from an upload whose destination was PostgreSQL. Use the SQL
-> above instead. *(Whether the catalogue is PostgreSQL-only by design, or this is specific to
-> ClickHouse, is not established — only one non-PostgreSQL destination has been walked.)*
+> above instead. *(The catalogue does cover other destinations: a DuckDB load catalogues its tables
+> through the same path. The gap is specific to ClickHouse, tracked as
+> [core#1397](https://github.com/datanika-io/datanika-core/issues/1397).)*
 
 ## Step 5 — Schedule it
 
