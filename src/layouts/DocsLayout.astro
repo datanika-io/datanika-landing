@@ -2,6 +2,7 @@
 import "../styles/global.css";
 import Navbar from "../components/Navbar.astro";
 import Footer from "../components/Footer.astro";
+import PlausibleScript from "../components/PlausibleScript.astro";
 
 interface Props {
   title: string;
@@ -152,6 +153,7 @@ const breadcrumbLD = JSON.stringify({
     <!-- Structured Data -->
     <script type="application/ld+json" set:html={articleLD} />
     <script type="application/ld+json" set:html={breadcrumbLD} />
+    <PlausibleScript />
   </head>
   <body class="min-h-screen antialiased">
     <Navbar />

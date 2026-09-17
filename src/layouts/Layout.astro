@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import PlausibleScript from "../components/PlausibleScript.astro";
 
 export interface ArticleMeta {
   publishDate: string | Date;
@@ -225,7 +226,7 @@ const breadcrumbLD =
     {extraJsonLd?.map((obj) => (
       <script type="application/ld+json" set:html={JSON.stringify(obj)} />
     ))}
-    <script defer data-domain="datanika.io" src="https://plausible.datanika.io/js/script.tagged-events.js"></script>
+    <PlausibleScript />
     <!-- Cloudflare Web Analytics (manual install — auto-install fails on this zone, see landing#141) --><script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "3a0130e3eec942769b3ecef15213b015"}'></script><!-- End Cloudflare Web Analytics -->
     {/*
       No advertising tag here, and that is deliberate (landing#481). This is an
