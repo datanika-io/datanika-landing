@@ -41,8 +41,10 @@ Save it to a file, or copy it to the clipboard — you are going to paste the wh
 > **A spec with no endpoint Datanika can load is refused at save**, with the parser's reasons: `Invalid config: This spec has no endpoint the connector can load: …`, listing up to three. A JSON response counts however it is declared: plain `application/json`, with a parameter such as `application/json; v=1.0` (what ASP.NET's Swashbuckle emits when API versioning is on), or a `+json` type.
 
 <!-- core#1345, fixed in production. This replaced a warning, walked 2026-09-15, that told readers to strip
-     media-type parameters by hand before pasting. Read in code on core master ba7289b: the parser's
-     _is_json_media_type, and the save-time refusal in connection_state.py. Not walked since the fix. -->
+     media-type parameters by hand before pasting. Walked 2026-09-17 on a local stack from core master ba7289b
+     (public/docs/connectors/openapi/README.md, "2026-09-17"): the vendor's published spec, unedited, saved with
+     5 endpoints and loaded rows, and a spec with no loadable endpoint was refused with the message quoted in
+     Troubleshooting. The +json case is read in code only. The reasons inside that message are core#1416. -->
 
 **Two limits, both enforced at save time:**
 
@@ -65,9 +67,10 @@ A spec over these limits is not a bug to report — it is a spec describing more
    - **API Key (optional)** — your token. Stored encrypted at rest with Fernet. How it is *used* depends on what the spec declares; see below.
 5. Click **Create Connection**.
 
-<!-- core#1311's first slice (core PR #1346) removes the asterisk from openapi's Base URL label, while self-hosted
-     release tags keep the old label, so the Base URL sentence above covers both on purpose. The Step 2 screenshot
-     shows the old label: recapture 02-add-connection.png from core master once #1346 is there. -->
+<!-- core#1311's first slice (core PR #1346) removed the asterisk from openapi's Base URL label. Release tags
+     v0.1.0 to v0.1.3 still render "Base URL *", so the Base URL sentence above covers both on purpose; drop its
+     asterisk warning once no supported tag renders it. 02-add-connection.png was recaptured on 2026-09-17 from
+     core master ba7289b and shows the unmarked label (README, "2026-09-17"). -->
 
 Two more things are on that screen. A notice that the **S3 connector is temporarily unavailable** —
 unrelated to OpenAPI, ignore it. And a **Use raw JSON config** checkbox below the fields: **leave it
@@ -183,8 +186,9 @@ The names are the resource names derived from the spec's paths — the same name
      tests/test_services/test_rerun_lands_each_record_once.py (openapi path into a real DuckDB file:
      two runs leave each record once, a table holding copies goes back to one copy, an explicit
      append still appends) and QA's reading of the deployed decision function on core#1336.
-     "A record the API no longer returns is gone" follows from replace and was not separately
-     measured. -->
+     Walked 2026-09-17 on a local stack from core master ba7289b (README, "2026-09-17"): a second run of
+     an unchanged upload left each table at that run's own count, counted in the destination, and
+     authors went from 600 rows to 594, so rows only the first run had loaded were gone. -->
 
 > **If the vendor revises their spec, Datanika will not notice.** The catalog is parsed once, at save time, and stored on the connection. New endpoints, renamed fields and changed pagination arrive only when you re-paste the spec and save again. Put that on the same calendar as any other vendor API review.
 
