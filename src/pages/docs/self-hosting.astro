@@ -20,7 +20,7 @@ import { availableConnectors, connectors, sourceConnectors, destinationConnector
   </ul>
 
   <h2>Quick Start</h2>
-  <pre><code>git clone https://github.com/datanika-io/datanika-core.git
+  <pre tabindex="0"><code>git clone https://github.com/datanika-io/datanika-core.git
 cd datanika-core
 cp .env.example .env
 # Edit .env — at minimum set POSTGRES_PASSWORD, REDIS_PASSWORD and SECRET_KEY
@@ -80,7 +80,7 @@ docker compose up -d</code></pre>
   </table>
 
   <p>An observability stack — Prometheus, Grafana, cAdvisor, node-exporter, postgres-exporter and blackbox — ships in the same file behind a Compose profile, so it is opt-in rather than part of a default start:</p>
-  <pre><code>docker compose --profile monitoring up -d</code></pre>
+  <pre tabindex="0"><code>docker compose --profile monitoring up -d</code></pre>
   <p>Grafana then listens on <code>127.0.0.1:3001</code> and needs <code>GRAFANA_ADMIN_PASSWORD</code> set in <code>.env</code>. Two of the dashboards it mounts belong to the closed-source cloud edition and will be missing from a core-only clone; the rest work.</p>
 
   <h2>Configuration</h2>
@@ -169,11 +169,11 @@ docker compose up -d</code></pre>
   <p>Names must match exactly — an unrecognised variable is ignored in silence rather than rejected, so a typo looks like a setting that applied.</p>
 
   <h2>Database Migrations</h2>
-  <pre><code>docker compose exec app alembic upgrade head</code></pre>
+  <pre tabindex="0"><code>docker compose exec app alembic upgrade head</code></pre>
   <p>Migrations run automatically on first start. For upgrades, pull the latest image and restart.</p>
 
   <h2>Upgrading</h2>
-  <pre><code>cd datanika-core
+  <pre tabindex="0"><code>cd datanika-core
 git pull origin master
 docker compose up -d --build</code></pre>
   <p>The app container runs migrations automatically on startup.</p>
@@ -182,7 +182,7 @@ docker compose up -d --build</code></pre>
   <p>A minimal Helm chart ships in-tree at <code>deploy/helm/datanika/</code>. It installs the same image as the Docker Compose path — one <code>app</code> Deployment (frontend + backend), one <code>celery</code> Deployment, bundled Postgres and Redis, and an optional ingress. Read the <a href="https://github.com/datanika-io/datanika-core/blob/master/deploy/helm/datanika/README.md">chart README</a> for the full <code>values.yaml</code> reference.</p>
 
   <p>Quickstart from a clone of <code>datanika-core</code>:</p>
-  <pre><code>helm install my-datanika ./deploy/helm/datanika \
+  <pre tabindex="0"><code>helm install my-datanika ./deploy/helm/datanika \
   --namespace datanika --create-namespace \
   --set secrets.POSTGRES_PASSWORD=$(openssl rand -base64 24) \
   --set secrets.REDIS_PASSWORD=$(openssl rand -base64 24) \

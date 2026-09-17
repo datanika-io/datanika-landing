@@ -21,12 +21,12 @@ import ApiLayout from "../../layouts/ApiLayout.astro";
 
   <h2>Base URL</h2>
   <p>All API requests target the cloud app:</p>
-  <pre><code set:html={`https://app.datanika.io/api/v1`} /></pre>
+  <pre tabindex="0"><code set:html={`https://app.datanika.io/api/v1`} /></pre>
   <p>Self-hosted deployments use the same path under their own host. See <a href="/docs/self-hosting">Self-Hosting</a>.</p>
 
   <h2>Authentication</h2>
   <p>Every request requires an API key in the <code>Authorization</code> header:</p>
-  <pre><code set:html={`curl -H "Authorization: Bearer etf_your_api_key_here" \\
+  <pre tabindex="0"><code set:html={`curl -H "Authorization: Bearer etf_your_api_key_here" \\
      https://app.datanika.io/api/v1/connections`} /></pre>
 
   <h2>What the API is good for</h2>

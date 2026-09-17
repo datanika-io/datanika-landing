@@ -44,6 +44,7 @@ const competitors = [
   ogSlug="ai-agents"
 >
   <Navbar />
+  <main>
 
   <!-- Hero -->
   <section class="relative pt-32 pb-20 overflow-hidden">
@@ -73,7 +74,7 @@ const competitors = [
       </div>
       <p class="mt-6 text-sm text-slate-400">
         Using Claude or Cursor?
-        <a href="#mcp" class="text-violet-400 hover:underline">Install the MCP server &darr;</a>
+        <a href="#mcp" class="text-violet-400 underline underline-offset-2 hover:text-violet-300">Install the MCP server &darr;</a>
       </p>
     </div>
   </section>
@@ -125,8 +126,8 @@ const competitors = [
 
       <p class="text-center text-slate-400 text-sm mt-10 max-w-3xl mx-auto">
         This is also why we don't gate connectors by plan: all {availableConnectors.length} are on every tier, including free.
-        We charge for volume, not for capability — see <a href="/pricing" class="text-violet-400 hover:underline">pricing</a>
-        and <a href="/docs/self-hosting" class="text-violet-400 hover:underline">self-hosting</a>, where the whole thing runs on your own infrastructure under AGPL.
+        We charge for volume, not for capability — see <a href="/pricing" class="text-violet-400 underline underline-offset-2 hover:text-violet-300">pricing</a>
+        and <a href="/docs/self-hosting" class="text-violet-400 underline underline-offset-2 hover:text-violet-300">self-hosting</a>, where the whole thing runs on your own infrastructure under AGPL.
       </p>
     </div>
   </section>
@@ -175,10 +176,10 @@ const competitors = [
             <p class="text-sm text-slate-400">
               17 read tools are always available. The 8 write tools stay off until you say otherwise —
               approved once in the browser at
-              <a href="/docs/mcp-server#hosted-writes" class="text-violet-400 hover:underline">authorization time</a>
+              <a href="/docs/mcp-server#hosted-writes" class="text-violet-400 underline underline-offset-2 hover:text-violet-300">authorization time</a>
               on the hosted endpoint, or with
               <code class="text-violet-300 bg-slate-800 px-1.5 py-0.5 rounded text-xs">--allow-write</code>
-              <a href="/docs/mcp-server#local" class="text-violet-400 hover:underline">locally</a>. A client
+              <a href="/docs/mcp-server#local" class="text-violet-400 underline underline-offset-2 hover:text-violet-300">locally</a>. A client
               that asks for nothing gets read-only.
             </p>
           </div>
@@ -312,7 +313,7 @@ httpx.post(f"{"{"}BASE{"}"}/transformations/{"{"}model['id']{"}"}/preview", head
             Plain-text discovery document at the site root. Contains the API summary, base URL, authentication format, rate limits by plan, and the complete {tierCount}-tier capability list.
           </p>
           <p class="text-slate-400 text-sm mb-4">Point any LLM here first.</p>
-          <a href="https://app.datanika.io/llms.txt" class="text-violet-400 text-sm hover:underline" target="_blank" rel="noopener">
+          <a href="https://app.datanika.io/llms.txt" class="text-violet-400 text-sm underline underline-offset-2 hover:text-violet-300" target="_blank" rel="noopener">
             View /llms.txt &rarr;
           </a>
         </div>
@@ -324,7 +325,7 @@ httpx.post(f"{"{"}BASE{"}"}/transformations/{"{"}model['id']{"}"}/preview", head
           <p class="text-slate-400 text-sm mb-4">
             Markdown strategy guide for LLM agents. A 17-step golden-path loop from discovery to monitoring, typed error codes with recovery actions, idempotency patterns, and explicit "what the API cannot do" to prevent hallucination loops.
           </p>
-          <a href="https://app.datanika.io/api/v1/agent-guide.md" class="text-violet-400 text-sm hover:underline" target="_blank" rel="noopener">
+          <a href="https://app.datanika.io/api/v1/agent-guide.md" class="text-violet-400 text-sm underline underline-offset-2 hover:text-violet-300" target="_blank" rel="noopener">
             View Agent Guide &rarr;
           </a>
         </div>
@@ -388,5 +389,6 @@ httpx.post(f"{"{"}BASE{"}"}/transformations/{"{"}model['id']{"}"}/preview", head
     </div>
   </section>
 
+  </main>
   <Footer />
 </Layout>
