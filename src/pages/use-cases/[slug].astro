@@ -77,9 +77,9 @@ const withdrawnHalves = [useCase.sourceSlug, useCase.destinationSlug]
     <div class="glow bg-violet-600 -top-40 -left-40"></div>
     <div class="glow bg-cyan-600 -bottom-40 -right-40"></div>
     <div class="relative max-w-4xl mx-auto px-6">
-      <div class="flex items-center gap-2 text-sm text-slate-500 mb-4">
+      <div class="flex items-center gap-2 text-sm text-slate-400 mb-4">
         <a href={`/connectors/${useCase.sourceSlug}`} class="px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 hover:text-white transition-colors">{useCase.source}</a>
-        <span class="text-slate-600">→</span>
+        <span class="text-slate-400">→</span>
         <a href={`/connectors/${useCase.destinationSlug}`} class="px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300 hover:text-white transition-colors">{useCase.destination}</a>
       </div>
       <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight mb-4">
@@ -157,12 +157,12 @@ const withdrawnHalves = [useCase.sourceSlug, useCase.destinationSlug]
       <h2 class="text-2xl font-bold mb-6">Connector Details</h2>
       <div class="grid sm:grid-cols-2 gap-4">
         <a href={`/connectors/${useCase.sourceSlug}`} class="rounded-xl border border-slate-800 bg-slate-900/50 p-5 transition-colors hover:border-violet-500/50">
-          <p class="text-sm text-slate-500 mb-1">Source</p>
+          <p class="text-sm text-slate-400 mb-1">Source</p>
           <p class="font-semibold text-white">{useCase.source} Connector</p>
           <p class="text-sm text-slate-400 mt-1">Setup guide, config fields, and more use cases →</p>
         </a>
         <a href={`/connectors/${useCase.destinationSlug}`} class="rounded-xl border border-slate-800 bg-slate-900/50 p-5 transition-colors hover:border-violet-500/50">
-          <p class="text-sm text-slate-500 mb-1">Destination</p>
+          <p class="text-sm text-slate-400 mb-1">Destination</p>
           <p class="font-semibold text-white">{useCase.destination} Connector</p>
           <p class="text-sm text-slate-400 mt-1">Setup guide, config fields, and more use cases →</p>
         </a>
@@ -173,7 +173,7 @@ const withdrawnHalves = [useCase.sourceSlug, useCase.destinationSlug]
   <!-- Compare Alternatives -->
   <section class="py-8">
     <div class="max-w-4xl mx-auto px-6">
-      <p class="text-sm text-slate-500">Evaluating ELT tools? Compare Datanika with{" "}
+      <p class="text-sm text-slate-400">Evaluating ELT tools? Compare Datanika with{" "}
         <a href="/compare/airbyte" class="text-violet-400 hover:underline">Airbyte</a>,{" "}
         <a href="/compare/fivetran" class="text-violet-400 hover:underline">Fivetran</a>,{" "}
         <a href="/compare/stitch" class="text-violet-400 hover:underline">Stitch</a>, and{" "}

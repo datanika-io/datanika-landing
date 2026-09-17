@@ -97,8 +97,9 @@ function getDocPages(): string[] {
 function extractSidebarLinks(html: string): string[] {
   // The sidebar is inside <aside> with class containing "md:block"
   // Each link is: <a href="/docs/..." class="block rounded-lg ...">Label</a>
-  // We extract hrefs from the <nav class="sticky ..."> section
-  const navMatch = html.match(/<nav class="sticky[^"]*">([\s\S]*?)<\/nav>/);
+  // We extract hrefs from the <nav class="sticky ..."> section. Other attributes
+  // may sit beside the class (the nav's aria-label, landing#611).
+  const navMatch = html.match(/<nav\b[^>]*\sclass="sticky[^"]*"[^>]*>([\s\S]*?)<\/nav>/);
   if (!navMatch) return [];
 
   const links: string[] = [];
@@ -264,7 +265,7 @@ describe("docs sidebar consistency", () => {
       ? join(DIST, "architecture", "index.html")
       : join(DIST, pages[0] === "index" ? "index.html" : `${pages[0]}/index.html`);
     const html = readFileSync(filePath, "utf-8");
-    const navMatch = html.match(/<nav class="(sticky[^"]*)">/);
+    const navMatch = html.match(/<nav\b[^>]*\sclass="(sticky[^"]*)"[^>]*>/);
     expect(navMatch, "sidebar <nav class=\"sticky ...\"> not found").not.toBeNull();
     const navClasses = navMatch![1];
     expect(navClasses, "sidebar nav must have a viewport-bounded max-height").toMatch(

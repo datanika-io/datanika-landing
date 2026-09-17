@@ -149,7 +149,7 @@ const pageDescription =
       <p class="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-4">
         Fivetran charges per Monthly Active Row. Datanika charges per GB processed — $0.50/GB on Pro, $0.25/GB on Enterprise, with 100 GB and 1 TB included.
       </p>
-      <p class="text-sm text-slate-500 max-w-xl mx-auto">
+      <p class="text-sm text-slate-400 max-w-xl mx-auto">
         Punch in a monthly volume below and see what MAR pricing costs at the same scale.
       </p>
     </div>
@@ -172,14 +172,14 @@ const pageDescription =
     <div class="max-w-5xl mx-auto px-6">
       <div class="grid md:grid-cols-2 gap-6">
         <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur p-8">
-          <h3 class="text-sm font-semibold uppercase tracking-widest text-slate-500 mb-3">Fivetran charges for</h3>
+          <h2 class="text-sm font-semibold uppercase tracking-widest text-slate-400 mb-3">Fivetran charges for</h2>
           <p class="text-2xl font-bold text-white mb-2">Rows moved (MAR)</p>
           <p class="text-sm text-slate-400">
             Every unique row touched by a sync in a billing month. The wider your schemas and the more frequent your syncs, the higher the MAR count — and every new source compounds it.
           </p>
         </div>
         <div class="rounded-2xl border border-violet-500/40 bg-slate-900/50 backdrop-blur p-8">
-          <h3 class="text-sm font-semibold uppercase tracking-widest text-violet-400 mb-3">Datanika charges for</h3>
+          <h2 class="text-sm font-semibold uppercase tracking-widest text-violet-400 mb-3">Datanika charges for</h2>
           <p class="text-2xl font-bold text-white mb-2">Bytes processed (GB)</p>
           <p class="text-sm text-slate-400">
             The actual output bytes our infrastructure touches. A 1M-row narrow table and a 1k-row wide JSON blob land on the same disk for the same price — your schema doesn't get punished.
@@ -218,7 +218,7 @@ const pageDescription =
 
         <!-- Custom input + slider -->
         <div class="max-w-md mx-auto mb-10 space-y-4">
-          <label class="block text-xs uppercase tracking-widest text-slate-500 text-center">
+          <label for="gb-input" class="block text-xs uppercase tracking-widest text-slate-400 text-center">
             Monthly volume processed
           </label>
           <div class="flex items-center gap-2">
@@ -230,7 +230,7 @@ const pageDescription =
               value="100"
               class="flex-1 rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-white text-center font-mono focus:border-violet-500 focus:outline-none"
             />
-            <span class="text-slate-500 text-sm">GB/mo</span>
+            <span class="text-slate-400 text-sm">GB/mo</span>
           </div>
           <input
             id="gb-slider"
@@ -242,7 +242,7 @@ const pageDescription =
             class="w-full accent-violet-500"
             aria-label="Monthly GB volume (logarithmic slider)"
           />
-          <p class="text-center text-[10px] uppercase tracking-wider text-slate-600">
+          <p class="text-center text-[10px] uppercase tracking-wider text-slate-400">
             <span>1 GB</span> <span class="mx-2">·</span> <span>log scale</span> <span class="mx-2">·</span> <span>10 TB</span>
           </p>
         </div>
@@ -251,17 +251,17 @@ const pageDescription =
         <div class="grid md:grid-cols-2 gap-6">
           <!-- Fivetran card -->
           <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-6 text-center">
-            <p class="text-xs uppercase tracking-widest text-slate-500 mb-2">Fivetran Starter</p>
+            <p class="text-xs uppercase tracking-widest text-slate-400 mb-2">Fivetran Starter</p>
             <p class="text-5xl font-bold text-slate-300 mb-1">
               <span class="text-2xl align-top">~$</span><span id="result-fivetran">500</span>
             </p>
-            <p class="text-sm text-slate-500">per month</p>
-            <p class="mt-4 text-xs text-slate-500 leading-relaxed">
+            <p class="text-sm text-slate-400">per month</p>
+            <p class="mt-4 text-xs text-slate-400 leading-relaxed">
               Based on <span id="result-fivetran-mar">~20M</span> MAR at your volume<br />
               (using mid-range 5 KB/row conversion)
             </p>
-            <p class="mt-4 text-[11px] text-slate-600">
-              <a href="https://www.fivetran.com/pricing" class="underline hover:text-slate-400" rel="nofollow">→ Fivetran's own calculator</a>
+            <p class="mt-4 text-[11px] text-slate-400">
+              <a href="https://www.fivetran.com/pricing" class="underline hover:text-slate-300" rel="nofollow">→ Fivetran's own calculator</a>
             </p>
           </div>
 
@@ -309,7 +309,7 @@ const pageDescription =
 
         <div class="grid md:grid-cols-2 gap-4 mt-8">
           <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-5">
-            <p class="text-xs uppercase tracking-widest text-slate-500 mb-2">ETL mode</p>
+            <p class="text-xs uppercase tracking-widest text-slate-400 mb-2">ETL mode</p>
             <p class="text-sm text-slate-300 leading-relaxed">
               1 GB HubSpot JSON → ~3 GB of normalized tables.<br />
               Past Pro's 100 GB: <span class="text-white font-mono">3 GB × $0.50/GB</span> per nightly run — <span class="text-white font-mono">$45/mo</span> across 30.
@@ -324,11 +324,11 @@ const pageDescription =
           </div>
         </div>
 
-        <p class="text-xs text-slate-500 mt-4 leading-relaxed">
+        <p class="text-xs text-slate-400 mt-4 leading-relaxed">
           Overage is not charged per run. We total your metered volume for the billing cycle, subtract your plan's included allowance, round the remainder up to the next whole GB, and bill that once at the end of the cycle. The per-run figures above are that monthly total broken down — useful for sizing a pipeline, not a line on your invoice.
         </p>
 
-        <p class="text-xs text-slate-500 mt-6 leading-relaxed">
+        <p class="text-xs text-slate-400 mt-6 leading-relaxed">
           The mode selector lives on every pipeline — it's the first switch in the UI when you create a new one. Existing pipelines can flip modes with a migrate button. See <a href="/blog/real-cost-modern-data-stack" class="text-violet-400 underline hover:text-violet-300">the dedicated post</a> on when to pick which mode.
         </p>
       </div>
@@ -389,7 +389,7 @@ const pageDescription =
   <section class="py-10">
     <div class="max-w-5xl mx-auto px-6">
       <h2 class="text-2xl font-bold text-white text-center mb-3">When Datanika is <em>not</em> cheaper</h2>
-      <p class="text-sm text-slate-500 text-center mb-10 max-w-2xl mx-auto">
+      <p class="text-sm text-slate-400 text-center mb-10 max-w-2xl mx-auto">
         Three cases where a different tool will save you money. We'd rather you know up front than sign up and churn.
       </p>
       <div class="grid md:grid-cols-3 gap-6">
@@ -406,7 +406,7 @@ const pageDescription =
   <!-- Fivetran disclosure (unchanged from V1) -->
   <section class="py-10">
     <div class="max-w-3xl mx-auto px-6">
-      <div class="rounded-xl border border-slate-800/80 bg-slate-950/40 p-6 text-xs text-slate-500 leading-relaxed">
+      <div class="rounded-xl border border-slate-800/80 bg-slate-950/40 p-6 text-xs text-slate-400 leading-relaxed">
         <p class="font-semibold text-slate-400 mb-2">About the Fivetran numbers</p>
         <p>
           Fivetran figures above are illustrative Starter-tier estimates. Actual Fivetran pricing depends on destination, sync frequency, change data capture, historical backfills, and deduplication rules, and changes over time. Run your specific pipeline through <a href="https://www.fivetran.com/pricing" class="text-slate-400 underline hover:text-slate-300" rel="nofollow">Fivetran's own pricing calculator</a> for a binding number. Datanika's per-GB rate is exact — $0.50/GB on Pro, $0.25/GB on Enterprise, with 100 GB and 1 TB included respectively.
@@ -440,15 +440,15 @@ const pageDescription =
         <div class="rounded-xl bg-slate-800/50 border border-slate-700 p-6 text-center">
           <p class="text-3xl font-extrabold text-emerald-400 mb-1">5.8x</p>
           <p class="text-sm text-slate-300 mb-2">faster on 54M MySQL rows</p>
-          <p class="text-xs text-slate-500">17 min (Arrow) vs 99 min (legacy)</p>
+          <p class="text-xs text-slate-400">17 min (Arrow) vs 99 min (legacy)</p>
         </div>
         <div class="rounded-xl bg-slate-800/50 border border-slate-700 p-6 text-center">
           <p class="text-3xl font-extrabold text-emerald-400 mb-1">3.5x</p>
           <p class="text-sm text-slate-300 mb-2">faster on 8.6M MongoDB docs</p>
-          <p class="text-xs text-slate-500">4 min (Arrow) vs 23.5 min (JSON)</p>
+          <p class="text-xs text-slate-400">4 min (Arrow) vs 23.5 min (JSON)</p>
         </div>
       </div>
-      <p class="text-xs text-slate-500 mt-4 text-center">
+      <p class="text-xs text-slate-400 mt-4 text-center">
         Arrow mode skips JSON normalization — fewer bytes through our infrastructure, lower bill at the same per-GB rate.
         <a href="/blog/dlt-arrow-5x-faster-pipeline/" class="text-emerald-400 hover:underline">Read the technical deep-dive</a>.
       </p>

@@ -18,7 +18,8 @@ const faqJsonLd = buildFaqPageJsonLd(pricingFaq);
   extraJsonLd={[softwareApplicationJsonLd, faqJsonLd]}
 >
   <Navbar />
-  <Pricing />
+  <main>
+  <Pricing headingLevel="h1" />
 
   <!-- Comparison nudge — links to the MAR calculator / narrative page. -->
   <section class="pb-12">
@@ -44,5 +45,6 @@ const faqJsonLd = buildFaqPageJsonLd(pricingFaq);
   </section>
 
   <FAQ items={pricingFaq} />
+  </main>
   <Footer />
 </Layout>
