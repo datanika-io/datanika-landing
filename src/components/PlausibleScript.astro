@@ -1,0 +1,15 @@
+---
+/**
+ * The Plausible tag, once, for every layout (landing#612).
+ *
+ * It used to be written into Layout.astro alone. DocsLayout and ApiLayout do not
+ * render Layout, so the docs, the connector setup guides and the API section
+ * loaded no analytics at all. Any layout that renders a <head> renders this.
+ *
+ * tests/analytics-every-page.test.ts reads dist/ and fails when a built page
+ * carries no tag or carries two, and it reads the src and data-domain from this
+ * file, so this is the only copy to change.
+ */
+---
+
+<script is:inline defer data-domain="datanika.io" src="https://plausible.datanika.io/js/script.tagged-events.js"></script>
