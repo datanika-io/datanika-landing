@@ -113,6 +113,9 @@ export const connectors: Connector[] = [
       { name: "user", description: "Username" },
       { name: "password", description: "Password (encrypted at rest)" },
     ],
+    limitations: [
+      "As a destination, the server's certificate is not verified. Datanika loads into SQL Server through the open-source FreeTDS driver and requires an encrypted connection, which keeps the data from being read in transit. Nothing confirms that the server at the other end is yours, so it does not protect against someone on the network path who can pose as your server.",
+    ],
     related: ["postgresql", "mysql", "synapse", "bigquery", "oracle"],
     seoTitle: "SQL Server ETL Tool — MSSQL Pipeline | Datanika",
     seoDescription: "SQL Server ETL tool to replicate MSSQL databases to BigQuery, Snowflake, or Redshift. Built-in dbt transforms and scheduling. Self-hostable. Start free.",
@@ -330,6 +333,8 @@ export const connectors: Connector[] = [
     ],
     limitations: [
       "Not available as a dbt transformation target. Synapse works as a load destination, but no Synapse dbt adapter ships in Datanika: dbt-synapse requires SQLAlchemy 1.x and the rest of the stack is on 2.x. So a pipeline or transformation cannot run against a Synapse pool. Tracked as core#862.",
+      "The server's certificate is not verified. Datanika loads into Synapse through the open-source FreeTDS driver and requires an encrypted connection, which keeps the data from being read in transit. Nothing confirms that the endpoint at the other end is your workspace, so it does not protect against someone on the network path who can pose as it.",
+      "Not yet measured against a live Synapse workspace. The connection path is measured against SQL Server 2022, and the table statements that are specific to Synapse have not been run against a real dedicated SQL pool.",
     ],
     related: ["mssql", "bigquery", "snowflake", "redshift"],
     seoTitle: "Azure Synapse ETL — Data Pipeline | Datanika",

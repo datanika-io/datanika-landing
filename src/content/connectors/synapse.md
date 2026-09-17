@@ -81,6 +81,10 @@ A destination is chosen per **upload**, at **`/uploads`** — not on the connect
 
 > **Batch size** (default 10000) and the optional **Schema Contract** dropdowns — **Tables** / **Columns** / **Data Type** — are on every upload regardless of source. The contract decides whether a changed incoming shape evolves the destination or fails the run.
 
+> 🔒 **Encrypted, but the server's certificate is not verified.** Datanika loads into Synapse through the open-source FreeTDS driver, and it requires an encrypted connection for those loads. It does **not** verify the server's certificate. That keeps the data from being read in transit, but nothing confirms that the endpoint at the other end is your workspace. It does not protect against someone on the network path between Datanika and Synapse who can pose as your workspace.
+
+> ⚠️ **Not yet measured against a live Synapse workspace.** Datanika connects to Synapse the same way it connects to SQL Server, and that path is measured against SQL Server 2022. The table statements that are specific to Synapse have not been run against a real dedicated SQL pool.
+
 ## Step 4 — First run
 
 1. On the **`/uploads`** row for your upload, click **Run**. There is no "Run now" on a pipeline page — the trigger lives on the upload's own row.
