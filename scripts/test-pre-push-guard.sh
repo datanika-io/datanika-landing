@@ -75,6 +75,11 @@ expect() {
 
 cp "$HOOK" "$TMP/repo/scripts/hooks/pre-push"
 H="$TMP/repo/scripts/hooks/pre-push"
+# landing#622: the hook runs the attribution-trailer gate over origin/dev..HEAD, so the throwaway repo
+# carries the real checker and an origin/dev ref. At HEAD_SHA the range is empty, which the gate reports
+# as measuring nothing and passes -- so cases 1-8 exercise exactly what they did before the gate existed.
+cp "$REPO_ROOT/scripts/check-attribution-trailers.mjs" "$TMP/repo/scripts/check-attribution-trailers.mjs"
+git update-ref refs/remotes/origin/dev "$HEAD_SHA"
 
 echo "== cases that must SKIP the gate (nothing new is being pushed) =="
 # 1. The post-promotion resync: `git push origin origin/main:refs/heads/dev`.
@@ -137,6 +142,52 @@ case "$HOOK_OUT" in
   *) fail "8 skip printed no explanation: $HOOK_OUT" ;;
 esac
 [ "$HOOK_RC" = "0" ] && ok "8 skip exits 0" || fail "8 skip exited $HOOK_RC — the push would be refused"
+
+echo "== 9-11. the attribution-trailer gate (landing#622), driven through the REAL hook =="
+# The key is BUILT, never written whole: this harness is a document about the trailer.
+KEY="Co-Authored"; KEY="$KEY-By"
+printf 'subject\n\nbody\n\n%s: A B <a@b.c>\n' "$KEY" > "$TMP/trailer-msg.txt"
+git -c user.email=t@example.com -c user.name=t commit -q --allow-empty -F "$TMP/trailer-msg.txt"
+TRAILER_SHA=$(git rev-parse HEAD)
+
+# 9. A HEAD push whose commit carries a trailer: refused BEFORE the build, and it says why.
+got=$(run_hook "$H" "refs/heads/f $TRAILER_SHA refs/heads/f $ZEROS
+")
+if [ "$got" = "skipped" ]; then ok "9 trailer commit -> the build never ran"; else fail "9 trailer commit -> the build RAN ('$got')"; fi
+run_hook "$H" "refs/heads/f $TRAILER_SHA refs/heads/f $ZEROS
+" >/dev/null
+[ "$HOOK_RC" != "0" ] && ok "9 trailer commit -> hook exits $HOOK_RC" || fail "9 trailer commit -> hook exited 0, the push would go through"
+case "$HOOK_OUT" in
+  *"REFUSED: attribution trailer"*) ok "9 the refusal names the gate" ;;
+  *) fail "9 refused, but not by the gate: $HOOK_OUT" ;;
+esac
+
+# 10. Anti-vacuity: strip the gate's invocation from the REAL hook, and case 9 must flip to 'ran'.
+GATE_LINES=$(grep -v '^[[:space:]]*#' "$HOOK" | grep -cF 'check-attribution-trailers.mjs')
+if [ "$GATE_LINES" -lt 1 ]; then
+  fail "10 the real hook has no gate invocation to remove -- control not armed"
+else
+  grep -vF 'check-attribution-trailers.mjs' "$HOOK" > "$TMP/repo/scripts/hooks/no-gate"
+  got=$(run_hook "$TMP/repo/scripts/hooks/no-gate" "refs/heads/f $TRAILER_SHA refs/heads/f $ZEROS
+")
+  if [ "$got" = "ran" ]; then ok "10 gate removed -> the trailer commit builds (this harness can see the gate)"; else fail "10 gate removed -> still '$got'"; fi
+fi
+
+# 11. A clean commit on top of origin/dev: the gate reads ONE commit, finds nothing, and the build runs.
+git reset -q --hard "$HEAD_SHA"
+git -c user.email=t@example.com -c user.name=t commit -q --allow-empty -m "clean subject"
+CLEAN_SHA=$(git rev-parse HEAD)
+got=$(run_hook "$H" "refs/heads/f $CLEAN_SHA refs/heads/f $ZEROS
+")
+if [ "$got" = "ran" ]; then ok "11 clean commit -> the build runs"; else fail "11 clean commit -> '$got'"; fi
+# ⚠️ `got=$(run_hook ...)` runs in a subshell, so HOOK_OUT from that call never reaches this shell. Re-run
+# in THIS shell before reading it -- the first version of this case read case 9's leftover refusal instead.
+run_hook "$H" "refs/heads/f $CLEAN_SHA refs/heads/f $ZEROS
+" >/dev/null
+case "$HOOK_OUT" in
+  *"attribution trailers: 0 found in 1 commit"*) ok "11 the gate says what it read" ;;
+  *) fail "11 the gate did not report reading one commit: $HOOK_OUT" ;;
+esac
 
 echo
 echo "pre-push guard: $PASS passed, $FAIL failed"
