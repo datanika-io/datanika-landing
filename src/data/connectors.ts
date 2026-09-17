@@ -44,12 +44,11 @@ export const connectors: Connector[] = [
     name: "PostgreSQL",
     category: "Database",
     direction: "both",
-    description: "Connect to PostgreSQL 12+ as a source to extract data or as a destination to load transformed data. Supports full-database replication, single-table extraction, and incremental loading.",
+    description: "Connect to PostgreSQL 12+ as a source to extract data or as a destination to load transformed data. Supports full-database replication and single-table extraction.",
     useCases: [
       "Replicate production PostgreSQL to a warehouse for analytics",
       "Sync PostgreSQL tables to BigQuery or Snowflake",
       "Use as a destination for dbt-transformed data",
-      "Incremental loading with change tracking",
     ],
     configFields: [
       { name: "host", description: "Database hostname" },
@@ -60,7 +59,7 @@ export const connectors: Connector[] = [
     ],
     related: ["mysql", "bigquery", "snowflake", "redshift"],
     seoTitle: "PostgreSQL Data Pipeline | Datanika",
-    seoDescription: "PostgreSQL data pipeline to replicate tables to BigQuery, Snowflake, or any warehouse. Incremental sync, dbt transforms, and scheduling built in. Start free.",
+    seoDescription: "PostgreSQL data pipeline to replicate tables to BigQuery, Snowflake, or any warehouse. Schema mapping, dbt transforms, and scheduling built in. Start free.",
     seoH1: "PostgreSQL Data Pipeline",
   },
   {
@@ -73,12 +72,11 @@ export const connectors: Connector[] = [
     // SQLAlchemy destination, which can write MySQL, is not one Datanika uses
     // (core#865; wording re-dated 2026-09-16, landing#577).
     direction: "source",
-    description: "Connect to MySQL 5.7+ or MariaDB as a source. Extract full databases or individual tables with incremental loading support.",
+    description: "Connect to MySQL 5.7+ or MariaDB as a source. Extract full databases or individual tables.",
     useCases: [
       "Migrate MySQL data to a cloud warehouse",
       "Replicate e-commerce MySQL databases for reporting",
       "Sync MySQL to PostgreSQL or BigQuery",
-      "Incremental extraction for large tables",
     ],
     configFields: [
       { name: "host", description: "Database hostname" },
@@ -93,7 +91,7 @@ export const connectors: Connector[] = [
     ],
     related: ["postgresql", "bigquery", "snowflake", "mssql"],
     seoTitle: "MySQL ETL Tool — Database Pipeline | Datanika",
-    seoDescription: "MySQL ETL tool to replicate databases to BigQuery, Snowflake, or PostgreSQL. Incremental sync, dbt transforms, and scheduling built in. Start free today.",
+    seoDescription: "MySQL ETL tool to replicate databases to BigQuery, Snowflake, or PostgreSQL. Schema mapping, dbt transforms, and scheduling built in. Start free today.",
     seoH1: "MySQL ETL Tool",
   },
   {
@@ -199,7 +197,6 @@ export const connectors: Connector[] = [
       "Extract Oracle ERP and finance data into a cloud warehouse",
       "Offload analytics from a production Oracle OLTP database",
       "Replicate Oracle tables to BigQuery, Snowflake, or PostgreSQL",
-      "Incremental extraction of large Oracle tables",
     ],
     configFields: [
       { name: "host", description: "Oracle hostname" },
@@ -211,7 +208,7 @@ export const connectors: Connector[] = [
     ],
     related: ["postgresql", "mysql", "mssql", "bigquery"],
     seoTitle: "Oracle ETL Tool — Data Pipeline | Datanika",
-    seoDescription: "Oracle ETL tool to replicate Oracle tables to BigQuery, Snowflake, or PostgreSQL. Incremental sync, dbt transforms, and scheduling built in. Start free today.",
+    seoDescription: "Oracle ETL tool to replicate Oracle tables to BigQuery, Snowflake, or PostgreSQL. Schema mapping, dbt transforms, and scheduling built in. Start free today.",
     seoH1: "Oracle ETL Tool",
   },
 
@@ -310,7 +307,7 @@ export const connectors: Connector[] = [
     ],
     related: ["snowflake", "bigquery", "s3", "redshift"],
     seoTitle: "Databricks Data Ingestion | Datanika",
-    seoDescription: "Load data into Databricks Delta Lake from PostgreSQL, Stripe, S3, and 30+ sources. Incremental sync, monitoring and scheduling built in. Start free today.",
+    seoDescription: "Load data into Databricks Delta Lake from PostgreSQL, Stripe, S3, and 30+ sources. Schema mapping, monitoring and scheduling built in. Start free today.",
     seoH1: "Databricks Data Ingestion",
   },
   {
@@ -336,7 +333,7 @@ export const connectors: Connector[] = [
     ],
     related: ["mssql", "bigquery", "snowflake", "redshift"],
     seoTitle: "Azure Synapse ETL — Data Pipeline | Datanika",
-    seoDescription: "Azure Synapse ETL tool to load data from SQL Server, PostgreSQL, and 30+ other sources. Incremental sync and scheduling built in. Self-hostable. Start free.",
+    seoDescription: "Azure Synapse ETL tool to load data from SQL Server, PostgreSQL, and 30+ other sources. Schema mapping and scheduling built in. Self-hostable. Start free.",
     seoH1: "Azure Synapse ETL",
   },
 
@@ -856,12 +853,11 @@ export const connectors: Connector[] = [
     name: "Amazon S3",
     category: "File",
     direction: "source",
-    description: "Extract files from Amazon S3 buckets — CSV, JSON, and Parquet. Supports prefix filtering and incremental file discovery.",
+    description: "Extract files from Amazon S3 buckets — CSV, JSON, and Parquet. Supports prefix filtering, and each run reads every file that matches.",
     useCases: [
       "Load data lake files from S3 into your warehouse",
       "Ingest application logs stored in S3",
       "Process file-based data exports from partners",
-      "Incremental loading of new files from S3 buckets",
     ],
     configFields: [
       { name: "bucket_url", description: "S3 bucket URL, e.g. s3://my-bucket/path/prefix/" },
@@ -874,7 +870,7 @@ export const connectors: Connector[] = [
       "S3 connections cannot currently be created. The S3 transport left the shipped image when an upstream dependency conflict removed s3fs from the lockfile, so fsspec raises ImportError on any s3:// path — the connector is hidden in the app and existing S3 connections will not run. Restoring it is tracked as core#863; this page and the setup guide stay published because the steps are unchanged for when it returns.",
     related: ["csv", "json", "parquet", "redshift"],
     seoTitle: "S3 to Warehouse — Load S3 Data | Datanika",
-    seoDescription: "Load CSV, JSON, and Parquet files from Amazon S3 into Snowflake, BigQuery, or PostgreSQL. Incremental file discovery and scheduling. Start free on Datanika.",
+    seoDescription: "Load CSV, JSON, and Parquet files from Amazon S3 into Snowflake, BigQuery, or PostgreSQL. Prefix filtering and scheduling built in. Start free on Datanika.",
     seoH1: "S3 to Warehouse",
   },
   {

@@ -114,6 +114,8 @@ Schedules live on their own page and reference the upload **by name**.
 3. Click **Create Schedule**. The row lands as **Active**, with **Pause** available per row.
 4. Wire up failure alerts in **Settings → Notifications** so you hear about broken runs before your stakeholders do.
 
+**What a scheduled run does to your tables:** every run reads the selected tables again from the start, because an upload keeps no cursor from one run to the next, not even with **Enable incremental loading** ticked ([Uploads → Incremental cursor](/docs/uploads#incremental-cursor)). **Write Disposition** decides what that leaves behind. Under `append`, the default, each run adds another copy of every row: over an unchanged database, a second run doubles every table. Choose `merge` with a primary key to keep one row per key, or `replace` to keep only the latest run's rows.
+
 ---
 
 ## Part B — SQL Server as a Destination
@@ -183,8 +185,8 @@ GRANT CREATE SCHEMA TO datanika_writer;
 **Fix.** This is a SQL Server-specific issue. Most destination warehouses (BigQuery, Snowflake, PostgreSQL) handle string data without collation constraints. If loading into another SQL Server, ensure the target database collation matches the source, or use `COLLATE DATABASE_DEFAULT` in downstream queries.
 
 ### `rowversion` / `timestamp` columns
-**Cause.** SQL Server's `rowversion` (formerly `timestamp`) columns are auto-generated binary values that change on every row update. They're useful as incremental cursors but cannot be used as primary keys.
-**Fix.** Use `rowversion` as the **incremental cursor** in merge mode, but set a different column (e.g., the actual `INT` primary key) as the **primary key** for upsert logic.
+**Cause.** SQL Server's `rowversion` (formerly `timestamp`) columns are auto-generated binary values that change on every row update, so they cannot serve as a primary key: an updated row would arrive under a new key.
+**Fix.** With `merge`, set the table's real key (e.g., its `INT` identity column) as the **primary key**. A `rowversion` cursor does not make later runs read less: an upload keeps no cursor from one run to the next, so every run starts again from the beginning ([Uploads → Incremental cursor](/docs/uploads#incremental-cursor)).
 
 ### Bulk insert is slow (destination)
 **Cause.** SQL Server's default transaction isolation and logging can slow down large inserts.

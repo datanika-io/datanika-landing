@@ -39,6 +39,7 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
       <tr><td><code>merge</code></td><td>Upsert — update existing rows and insert new ones (requires a primary key)</td></tr>
     </tbody>
   </table>
+  <p>The Write Disposition control appears for SQL database sources. A run of one does not remember where the previous run stopped (see <a href="#incremental-cursor">Incremental cursor</a>), so every run reads the rows an earlier run already loaded, plus any new ones. The disposition decides what that leaves behind: <code>append</code>, the default, adds them all again, so the table holds another copy after each run; <code>merge</code> keeps one row per primary key; <code>replace</code> keeps only the latest run's rows. Choose <code>merge</code> or <code>replace</code> for an upload you schedule.</p>
 
   <h2>How to create an upload</h2>
   <ol class="list-decimal pl-6 space-y-2">
@@ -49,9 +50,18 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
     <li>Select a <strong>Destination</strong> connection (where data goes)</li>
     <li>Choose mode: <strong>Single table</strong> (specify table name) or <strong>Full database</strong> (replicate all tables)</li>
     <li>Select a write disposition: <code>append</code>, <code>replace</code>, or <code>merge</code> (merge requires a primary key)</li>
-    <li>Optionally enable <strong>incremental loading</strong> by specifying a cursor column (e.g., <code>updated_at</code>)</li>
+    <li>Optionally, on a <strong>Single table</strong> upload, tick <strong>Enable incremental loading</strong> and give a cursor column (e.g., <code>updated_at</code>). Read <a href="#incremental-cursor">Incremental cursor</a> first: the cursor does not carry from one run to the next.</li>
     <li>Click <strong>Create Upload</strong> to save, then click <strong>Run</strong> to execute</li>
   </ol>
+
+  <h2 id="incremental-cursor">Incremental cursor</h2>
+  <p>A <strong>Single table</strong> upload from a SQL database offers <strong>Enable incremental loading</strong>, with a cursor column such as <code>updated_at</code>, an optional initial value and a row order.</p>
+  <p><strong>The cursor does not carry from one run to the next.</strong> Each run builds a new dlt pipeline with no stored state, so it starts again from the initial value, or from the first row when none is set, and reads every row past it. It does not skip the rows an earlier run already loaded:</p>
+  <ul>
+    <li>Under <code>append</code>, the default, every run adds those rows again, so the table grows by the whole selection on each run.</li>
+    <li>Under <code>merge</code> with a primary key, the table keeps one row per key, but every run still reads and writes the whole selection.</li>
+  </ul>
+  <p>For a scheduled upload, choose <code>merge</code> or <code>replace</code>. Tracked as <a href="https://github.com/datanika-io/datanika-core/issues/1404">core#1404</a>.</p>
 
   <h2>Schema Contract</h2>
   <p>Define how Datanika handles schema changes detected in the source:</p>

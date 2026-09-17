@@ -95,7 +95,7 @@ order by 1 desc;`,
     tagline: "Replicate OLTP to a warehouse without touching production.",
     timeToFirstRun: "10 minutes",
     description:
-      "Extract any PostgreSQL schema into Google BigQuery with incremental merge-mode writes. Built for teams who need warehouse-grade analytics without blocking the transactional database.",
+      "Extract any PostgreSQL schema into Google BigQuery with merge-mode writes. Built for teams who need warehouse-grade analytics without blocking the transactional database.",
     useCase:
       "Move production Postgres data into BigQuery for dashboards, ML features, and ad-hoc analytics — without running heavy queries against the OLTP instance that serves live traffic.",
     prerequisites: [
@@ -115,7 +115,7 @@ order by 1 desc;`,
     relatedTemplates: ["stripe-to-postgres"],
     seoTitle: "PostgreSQL to BigQuery Pipeline Template | Datanika",
     seoDescription:
-      "Pre-configured PostgreSQL → BigQuery data pipeline. Incremental merge sync, automatic schema mapping, dbt-ready staging. Offload OLTP analytics. Start free.",
+      "Pre-configured PostgreSQL → BigQuery data pipeline. Merge-mode writes, automatic schema mapping, dbt-ready staging. Offload OLTP analytics. Start free.",
   },
   {
     slug: "csv-to-duckdb",

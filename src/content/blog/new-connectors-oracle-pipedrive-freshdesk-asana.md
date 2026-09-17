@@ -7,6 +7,7 @@ category: "product"
 tags: ["connectors", "oracle", "pipedrive", "freshdesk", "asana", "dlt"]
 heroImage: "/logo.png"
 publishedAt: 2026-07-17
+updatedDate: 2026-09-17
 ---
 
 Datanika just gained four new connectors: [Oracle](/connectors/oracle), [Pipedrive](/connectors/pipedrive), [Freshdesk](/connectors/freshdesk), and [Asana](/connectors/asana). That brings us to 36 connectors — and, like most of the [others](/blog/32-connectors-most-took-a-day), each one was mostly a config exercise on top of [dlt](https://dlthub.com), not a from-scratch integration.
@@ -15,7 +16,9 @@ Here's what each one unlocks.
 
 ## Oracle — get your data *out* of Oracle
 
-[Oracle](/connectors/oracle) is the database enterprises ask for most, and almost always for the same reason: they want to move data *off* Oracle into a modern warehouse without paying for GoldenGate or a legacy ETL suite. Datanika connects to Oracle Database 12c and newer as a source, extracts full schemas or individual tables with incremental loading, and lands the data in [BigQuery](/connectors/bigquery), [Snowflake](/connectors/snowflake), [PostgreSQL](/connectors/postgresql), or any other destination — where dbt can reshape it.
+[Oracle](/connectors/oracle) is the database enterprises ask for most, and almost always for the same reason: they want to move data *off* Oracle into a modern warehouse without paying for GoldenGate or a legacy ETL suite. Datanika connects to Oracle Database 12c and newer as a source, extracts full schemas or individual tables, and lands the data in [BigQuery](/connectors/bigquery), [Snowflake](/connectors/snowflake), [PostgreSQL](/connectors/postgresql), or any other destination — where dbt can reshape it.
+
+> **Corrected 2026-09-17.** This paragraph originally said Datanika extracts Oracle tables "with incremental loading". An upload's cursor does not carry from one run to the next, so every run starts again from the beginning of each table ([core#1404](https://github.com/datanika-io/datanika-core/issues/1404)).
 
 It's source-only for now: extract from Oracle, load elsewhere. If you need Oracle as a *destination* too, [open an issue](https://github.com/datanika-io/datanika-core/issues) — it's a small addition on the same SQLAlchemy path.
 

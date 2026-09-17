@@ -2,7 +2,7 @@
 title: "PostgreSQL to BigQuery in 5 Minutes with Datanika"
 description: "Step-by-step guide to replicating your PostgreSQL database to Google BigQuery for analytics — no code, no Kubernetes, no YAML."
 date: 2026-04-10
-updatedDate: 2026-04-10
+updatedDate: 2026-09-17
 author: "Datanika Team"
 category: "tutorial"
 tags: ["tutorial", "postgresql", "bigquery", "getting-started"]
@@ -19,7 +19,9 @@ Your PostgreSQL database is great for running your app, but running heavy analyt
 
 ## The Solution
 
-Datanika loads your PostgreSQL data into BigQuery using [dlt](https://dlthub.com) under the hood — with automatic schema mapping, incremental loading, and zero YAML configuration. Here's how to set it up.
+Datanika loads your PostgreSQL data into BigQuery using [dlt](https://dlthub.com) under the hood — with automatic schema mapping and zero YAML configuration. Here's how to set it up.
+
+> **Corrected 2026-09-17.** This post originally listed incremental loading among what you get, as "only sync new/changed rows". A Datanika upload does not do that: its cursor does not carry from one run to the next, so every run starts again from the beginning of each table ([core#1404](https://github.com/datanika-io/datanika-core/issues/1404)). Under `append`, the default, each scheduled run would then add another copy of every row, so Step 4 now sets the write disposition, and the claim is gone from the list at the end.
 
 ## Step 1: Sign Up
 
@@ -67,6 +69,7 @@ GRANT SELECT ON ALL TABLES IN SCHEMA public TO datanika_reader;
    - **Full database**: replicate all tables
    - **Single table**: pick specific tables to load
 6. Set a **schema name** for the destination (e.g., `raw_postgres`)
+7. Set **Write Disposition** to `replace`, or to `merge` with a primary key, before you schedule it. `append`, the default, adds another copy of every row each time the upload runs.
 
 ## Step 5: Run It
 
@@ -114,7 +117,6 @@ Your PostgreSQL data will automatically sync to BigQuery every morning. If you a
 - **Fresh analytics data** in BigQuery every day (or every hour — your choice)
 - **No impact on production** — reads from a read-only user
 - **Automatic schema mapping** — dlt handles type conversion
-- **Incremental loading** — only sync new/changed rows (configurable)
 - **dbt transforms** — build staging, intermediate, and mart layers right in Datanika
 - **Monitoring** — see every run's status, duration, and row counts
 
