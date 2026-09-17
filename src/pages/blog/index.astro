@@ -11,6 +11,7 @@ const posts = (await getCollection("blog", ({ data }) => isPostVisible(data)))
 
 <Layout title="Blog — Datanika" description="Insights on data pipelines, ELT, dbt, and building modern data stacks.">
   <Navbar />
+  <main>
   <section class="relative pt-32 pb-20">
     <div class="max-w-4xl mx-auto px-6">
       <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight mb-4">
@@ -48,5 +49,6 @@ const posts = (await getCollection("blog", ({ data }) => isPostVisible(data)))
       )}
     </div>
   </section>
+  </main>
   <Footer />
 </Layout>

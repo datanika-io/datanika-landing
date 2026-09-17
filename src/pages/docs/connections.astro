@@ -122,7 +122,7 @@ const byCategory = categoryOrder.map((category) => ({
   <p>All connection credentials are <strong>encrypted at rest</strong> using Fernet symmetric encryption before being stored in the database. Credentials are only decrypted in memory when a run is executed.</p>
 
   <h3>Example</h3>
-  <pre><code set:html={`Connection: "Production Postgres"
+  <pre tabindex="0"><code set:html={`Connection: "Production Postgres"
 Type: postgres
 Config:
   host: db.example.com
@@ -145,7 +145,7 @@ Config:
 
   <h2>Source Freshness</h2>
   <p>You can configure freshness checks on source connections to monitor whether data is arriving on time. This uses dbt's source freshness feature.</p>
-  <pre><code set:html={`Freshness Config:
+  <pre tabindex="0"><code set:html={`Freshness Config:
   loaded_at_field: updated_at
   warn_after: 12 hours
   error_after: 24 hours`} /></pre>

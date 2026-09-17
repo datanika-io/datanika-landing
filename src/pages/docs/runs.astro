@@ -45,7 +45,7 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
   </ul>
 
   <h3>Example</h3>
-  <pre><code>Run #1247
+  <pre tabindex="0"><code>Run #1247
 Target: Upload → "Sync Stripe data"
 Status: success
 Started: 2026-03-10 02:00:03 UTC
@@ -67,7 +67,7 @@ Rows loaded: 15,832</code></pre>
   <p>
     You can cancel a run that is <code>pending</code> or <code>running</code>:
   </p>
-  <pre><code>POST /api/v1/runs/&#123;id&#125;/cancel</code></pre>
+  <pre tabindex="0"><code>POST /api/v1/runs/&#123;id&#125;/cancel</code></pre>
   <!-- `&#123;id&#125;` rather than literal braces: Astro parses `{...}` in markup as a JS
        expression, so `{id}` fails the build with `id is not defined` — and would render a
        variable's VALUE instead of the path parameter if one happened to be in scope. -->

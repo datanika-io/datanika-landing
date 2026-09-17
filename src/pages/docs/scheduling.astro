@@ -33,7 +33,7 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
   </table>
 
   <h3>Example</h3>
-  <pre><code>Schedule: "Nightly CRM sync"
+  <pre tabindex="0"><code>Schedule: "Nightly CRM sync"
 Target: Upload → "Sync Stripe data"
 Cron: 0 2 * * *
 Timezone: Europe/Berlin
@@ -77,7 +77,7 @@ Active: yes</code></pre>
   <h3>DAG Visualization</h3>
   <p>Dependencies form a directed acyclic graph (DAG). Datanika validates the graph to prevent circular dependencies and displays it visually in the dashboard.</p>
 
-  <pre><code>Upload: CRM Data ──┐
+  <pre tabindex="0"><code>Upload: CRM Data ──┐
                     ├──&gt; Transform: dim_customers ──&gt; Pipeline: Analytics
 Upload: Billing  ──┘</code></pre>
 

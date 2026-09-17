@@ -3,9 +3,31 @@ import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 import tailwindcss from '@tailwindcss/vite';
 
+/**
+ * landing#620: the default Shiki theme, github-dark, colours comments #6A737D, which is 3.05:1 on its
+ * #24292e background. WCAG AA asks 4.5:1 for text this size. #959DA5, the next grey in the same
+ * palette, is 5.34:1. Every other token colour the theme emits here already passes.
+ * tests/a11y-code-contrast.test.ts checks every token colour on the built pages, not only this one.
+ */
+const readableComments = {
+  name: 'readable-comments',
+  span(node) {
+    const style = node.properties?.style;
+    if (typeof style === 'string' && /(^|;)color:#6A737D/i.test(style)) {
+      node.properties.style = style.replace(/(^|;)color:#6A737D/gi, '$1color:#959DA5');
+    }
+  },
+};
+
 // https://astro.build/config
 export default defineConfig({
   site: 'https://datanika.io',
+  markdown: {
+    shikiConfig: {
+      theme: 'github-dark',
+      transformers: [readableComments],
+    },
+  },
   // Permanent redirects for content moved during the docs IA redesign
   // (issue #105). The old /docs/api and /docs/api-keys pages now live under
   // /api/, with their own ApiLayout, separate from platform docs.

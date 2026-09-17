@@ -20,8 +20,16 @@
  * needs rendering, and stays with axe (see a11y-contrast-classes.test.ts for the
  * source-side half).
  *
- * Not covered yet, measured and tracked separately: 101 pages still have no <main>,
- * and links inside running text are marked by colour alone.
+ * landing#620 added two more, both measured over the whole build of `dev` at 1920a42:
+ *
+ *   no <main>                        101 pages: every blog post, connector reference,
+ *                                               use case, compare page and template, their
+ *                                               index pages, /ai-agents, /why-cheaper and
+ *                                               /features/volume-pricing
+ *   <pre> outside the tab order       67 blocks on 20 docs and API pages, which scroll
+ *                                               because a container rule gives them
+ *                                               overflow-x-auto, so a check of the <pre>'s
+ *                                               own class could not see them
  */
 import { describe, it, expect } from "vitest";
 import { readdirSync, readFileSync, statSync, existsSync } from "fs";
@@ -82,18 +90,37 @@ function unnamedControls(html: string): string[] {
   return out;
 }
 
-/** A <pre> that scrolls (by class or inline style) but is not in the tab order. */
-function unfocusableScrollers(html: string): string[] {
+/**
+ * A <pre> that is not in the tab order.
+ *
+ * This used to flag only a <pre> that scrolls by its own class or inline style. landing#620 found
+ * 67 that scroll because their container gives them overflow (`[&_pre]:overflow-x-auto`), which
+ * that check could not see. Whether a block scrolls depends on the viewport, since code that fits
+ * at 1280px scrolls on a phone. So every <pre> is in the tab order, as Shiki already does for its own.
+ */
+function unfocusablePres(html: string): string[] {
   const out: string[] = [];
   for (const m of html.matchAll(/<pre\b([^>]*)>/gi)) {
     const attrs = m[1];
     const cls = attrs.match(/\sclass=["']([^"']*)["']/)?.[1] ?? "";
-    const style = attrs.match(/\sstyle=["']([^"']*)["']/)?.[1] ?? "";
-    const scrolls =
-      /(?:^|\s)overflow-(?:x-|y-)?(?:auto|scroll)(?:\s|$)/.test(cls) || /overflow(?:-x|-y)?\s*:\s*(?:auto|scroll)/.test(style);
-    if (scrolls && !/\stabindex=["']?0["']?/.test(attrs)) out.push(`<pre class="${cls.slice(0, 50)}">`);
+    if (!/\stabindex=["']?0["']?/.test(attrs)) out.push(`<pre class="${cls.slice(0, 50)}">`);
   }
   return out;
+}
+
+/** Exactly one <main>, with the site navbar and the footer outside it. Returns the problems. */
+function mainProblems(html: string): string[] {
+  const opens = [...html.matchAll(/<main[\s>]/gi)].map((m) => m.index!);
+  if (opens.length !== 1) return [`${opens.length} <main>`];
+  const start = opens[0];
+  const end = html.indexOf("</main>", start);
+  if (end === -1) return ["<main> is never closed"];
+  const problems: string[] = [];
+  const nav = html.search(/<nav\b[^>]*\saria-label=["']Main["']/i);
+  if (nav > start && nav < end) problems.push("the site navbar is inside <main>");
+  const footer = html.search(/<footer[\s>]/i);
+  if (footer > start && footer < end) problems.push("the footer is inside <main>");
+  return problems;
 }
 
 // --------------------------------------------------------------------- pages
@@ -156,11 +183,28 @@ describe("every built page has the structure assistive technology relies on (lan
     expect(unnamedControls('<label>Volume <input type="number"></label><input type="hidden" name="x">')).toEqual([]);
 
     const preBefore = '<pre class="p-6 text-sm leading-relaxed overflow-x-auto"><code>{}</code></pre>';
-    expect(unfocusableScrollers(preBefore)).toHaveLength(1);
-    expect(unfocusableScrollers(preBefore.replace("<pre ", '<pre tabindex="0" '))).toEqual([]);
+    expect(unfocusablePres(preBefore)).toHaveLength(1);
+    expect(unfocusablePres(preBefore.replace("<pre ", '<pre tabindex="0" '))).toEqual([]);
     // Shiki's own blocks scroll by inline style and already carry tabindex="0".
-    expect(unfocusableScrollers('<pre class="astro-code github-dark" style="background-color:#24292e;overflow-x:auto" tabindex="0">')).toEqual([]);
-    expect(unfocusableScrollers('<pre class="astro-code github-dark" style="background-color:#24292e;overflow-x:auto">')).toHaveLength(1);
+    expect(unfocusablePres('<pre class="astro-code github-dark" style="background-color:#24292e;overflow-x:auto" tabindex="0">')).toEqual([]);
+    expect(unfocusablePres('<pre class="astro-code github-dark" style="background-color:#24292e;overflow-x:auto">')).toHaveLength(1);
+    // landing#620: a hand-written docs block with no class of its own, which the old check passed.
+    expect(unfocusablePres('<pre><code>GET /api/v1/connections</code></pre>')).toHaveLength(1);
+    expect(unfocusablePres('<pre tabindex="0"><code>GET /api/v1/connections</code></pre>')).toEqual([]);
+
+    // landing#620: the shapes of a page before and after, from the build of dev at 1920a42.
+    const mainBefore = '<nav aria-label="Main" class="fixed"></nav> <section class="pt-32"></section> <footer class="border-t"></footer>';
+    const mainAfter = '<nav aria-label="Main" class="fixed"></nav> <main> <section class="pt-32"></section> </main> <footer class="border-t"></footer>';
+    expect(mainProblems(mainBefore)).toEqual(["0 <main>"]);
+    expect(mainProblems(mainAfter)).toEqual([]);
+    expect(mainProblems('<main><nav aria-label="Main"></nav></main><footer></footer>')).toEqual(["the site navbar is inside <main>"]);
+    expect(mainProblems('<nav aria-label="Main"></nav><main><footer></footer></main>')).toEqual(["the footer is inside <main>"]);
+    expect(mainProblems("<main></main><main></main>")).toEqual(["2 <main>"]);
+  });
+
+  it("every page has exactly one <main>, with the navbar and footer outside it", () => {
+    const found = pages.map(([page, html]): [string, string[]] => [page, mainProblems(html)]);
+    expect(found.filter(([, p]) => p.length).length, summarize(found)).toBe(0);
   });
 
   it("every page has exactly one <h1>", () => {
@@ -186,8 +230,8 @@ describe("every built page has the structure assistive technology relies on (lan
     expect(found.filter(([, p]) => p.length).length, summarize(found)).toBe(0);
   });
 
-  it("every scrollable <pre> can be reached with the keyboard", () => {
-    const found = pages.map(([page, html]): [string, string[]] => [page, unfocusableScrollers(html)]);
+  it("every <pre> can be reached with the keyboard", () => {
+    const found = pages.map(([page, html]): [string, string[]] => [page, unfocusablePres(html)]);
     expect(found.filter(([, p]) => p.length).length, summarize(found)).toBe(0);
   });
 });
