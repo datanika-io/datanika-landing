@@ -17,6 +17,9 @@
  *
  * Exit 0 clean, 1 a trailer was found, 2 the range could not be read (NOT a pass: an unreadable
  * range measures nothing).
+ *
+ * Line endings: `.gitattributes` pins this file to LF (landing#628). Vitest's module transform refuses a
+ * hashbang line that ends in `\r`, which a Windows checkout with `core.autocrlf=true` used to write.
  */
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
