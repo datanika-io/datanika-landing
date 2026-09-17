@@ -36,6 +36,22 @@ if [ "$SAW_ANY" = "1" ] && [ "$PUSHING_HEAD" = "0" ]; then
   exit 0
 fi
 
+# --- attribution trailers (landing#622; ported from datanika-core, core#1385) --------------
+# The founder's standing ruling is that no commit message carries an attribution trailer. It is
+# refused HERE, before the push, because a trailer on `dev` or `main` cannot be removed without a
+# force-push. Blocks rather than warns, and prints its controls' readings beside its verdict.
+# Placed before the build, so a refused push does not first pay for one.
+# scripts/test-pre-push-guard.sh cases 9-11 drive this block through the real hook.
+echo "pre-push: attribution trailers (landing#622)"
+ATRC=0
+node scripts/check-attribution-trailers.mjs --range 'origin/dev..HEAD' || ATRC=$?
+if [ "$ATRC" -eq 2 ]; then
+  echo "  pre-push WARNING: could not read origin/dev..HEAD for the trailer check."
+  echo "      This measured NOTHING. Re-run after 'git fetch origin' if the range is stale."
+elif [ "$ATRC" -ne 0 ]; then
+  exit 1
+fi
+
 echo "pre-push: npm run build"
 npm run build
 echo "pre-push: npm test"
