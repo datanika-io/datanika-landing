@@ -73,8 +73,7 @@ For the managed tiers this unblocks:
 3. Fill in the form:
    - **Connection Name** — e.g. `kafkaprod` or `kafkaevents`. Letters, digits and spaces only: anything else is stripped as you type, so `kafka-events` becomes `kafkaevents`.
    - **Bootstrap Servers** *(required)* — comma-separated list of broker addresses. Example: `broker1:9092, broker2:9092`.
-   - **Topics (comma-separated)** *(required)* — the topics you want to sync. Example: `events`.
-     > ⚠️ **Several topics on one upload load one topic per run.** When an upload reads two topics that both have new messages, one of them lands and the other is skipped, and the run still reports success. The skipped topic catches up only on a later run where the first one has nothing new. Tracked as [core#1408](https://github.com/datanika-io/datanika-core/issues/1408). Until it is fixed, give each topic **its own upload**: list your topics here, then set `topics` to a single topic in each upload's raw JSON (Step 3). Two uploads split that way loaded every message, including when they ran at the same time.
+   - **Topics (comma-separated)** *(required)* — the topics you want to sync. Example: `events, orders`. Every topic listed here is read in the same run, and each lands in its own table.
    - **Consumer Group ID** *(optional)* — the group Datanika uses to track consumption offsets. Leave blank to use the default, `datanika-consumer`: the field's placeholder shows it, and it is the group the broker records. **Every upload on this connection shares that group's position in a topic**, so a message one upload has consumed is not read again by another.
    - **Security Protocol** *(optional)* — `SASL_SSL` for every managed cluster. Leave blank for a PLAINTEXT broker.
    - **SASL Mechanism** *(optional)* — `PLAIN` on Confluent Cloud, `SCRAM-SHA-256` on Redpanda. Defaults to `PLAIN` when you set a `SASL_*` protocol and leave this blank.
@@ -114,7 +113,7 @@ Extract-load is configured at **`/uploads`**, not on the connection. There is no
   }
   ```
   Measured: two runs over the same ten messages left **10** rows with this config, and **20** with `enable_auto_commit` alone.
-- `topics` — overrides the connection's topic list for this upload only. It is also how to load several topics until [core#1408](https://github.com/datanika-io/datanika-core/issues/1408) is fixed: one upload per topic, each with a single topic here.
+- `topics` — overrides the connection's topic list for this upload only.
 
 The four authentication keys are **not** in that list and are rejected by name. The upload still saves; its run fails at once, before any broker is contacted, with the message in [Troubleshooting](#troubleshooting). See [Broker authentication](#broker-authentication) for why.
 
@@ -123,7 +122,7 @@ The four authentication keys are **not** in that list and are rejected by name. 
 1. On the **`/uploads`** row for your upload, click **Run**. There is no "Run now" on a pipeline page — the trigger lives on the upload's own row.
 2. Watch **`/runs`**. The run shows a status badge, start and finish timestamps and a **Rows** count; the **Logs** icon on the row opens the detail.
 3. When it finishes, open **Models** (`/models`) and browse the landed tables. The upload lands them in a schema **named after the upload** — `eventsstreamload` creates schema `eventsstreamload` in the destination. Each topic becomes **its own table, named after the topic**, with a column per field of a JSON message plus `_kafka_topic`, `_kafka_partition`, `_kafka_offset`, `_kafka_timestamp` and `_kafka_key`. dlt also creates its own `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables in that schema, but **Models does not list them** — seeing only your own tables there is correct, not a partial load. There is no target-schema field to choose.
-4. Spot-check the row count against the source. **Verify in the destination rather than trusting the status badge** — a green run means the load finished, not that it moved what you expected. For Kafka the source-side number is each topic's **lag before the run**: `kafka-consumer-groups.sh --bootstrap-server <broker> --describe --group datanika-consumer` (or your own group ID). A topic that had lag and has no rows afterwards is the several-topics case from Step 2.
+4. Spot-check the row count against the source. **Verify in the destination rather than trusting the status badge** — a green run means the load finished, not that it moved what you expected. For Kafka the source-side number is each topic's **lag before the run**: `kafka-consumer-groups.sh --bootstrap-server <broker> --describe --group datanika-consumer` (or your own group ID). Every topic that had lag should have rows afterwards. A run that could not read one of its topics fails and names it rather than finishing green, see [Troubleshooting](#troubleshooting).
 
 ![The Data preview of a Kafka topic loaded by its first run in Datanika, showing the provenance columns](/docs/connectors/kafka/04-first-run.png)
 
@@ -176,12 +175,12 @@ Kafka failures surface on the **run**, not on Test Connection — see the note i
 **Cause.** The credential is wrong, the mechanism does not match what the broker offers, or the API key is scoped to a different cluster.
 **Fix.** Confirm the mechanism first — a correct password under the wrong mechanism fails identically to a wrong password. Confluent Cloud is `PLAIN`; Redpanda Serverless is `SCRAM-SHA-256`. Then re-issue the credential rather than retyping it: most consoles show the secret exactly once, so a transcription error is more likely than a revocation.
 
-### One topic landed and another did not, and the run was green
-**Cause.** The upload reads more than one topic, and more than one of them had new messages. One topic's messages land and the other's are skipped; they arrive only on a later run in which the first topic has nothing new. Tracked as [core#1408](https://github.com/datanika-io/datanika-core/issues/1408).
-**Fix.** One upload per topic: keep the topics on the connection, tick **Use raw JSON config** on each upload and set `topics` to a single topic (Step 3). Uploads split that way loaded every message, including when two of them ran at the same time.
+### `Kafka consumer group '…' assigned this run no partition of '…'`
+**Cause.** The consumer group gave this run none of that topic's partitions, so nothing could be read from it. The run stops **before loading anything** and commits no offset, so the next run reads the same messages. Either another consumer in the same group holds the partitions (for example, a run on the same connection that is still going, or one that has not left the group yet), or the topic does not exist.
+**Fix.** Check the topic name against `kafka-topics.sh --bootstrap-server <broker> --list`. If it exists, look for another run on the same connection, or anything else consuming with the same group ID, and run again once it has finished.
 
 ### First run finds zero messages
-**Cause.** One of five things: (a) the topic is genuinely empty, (b) your consumer group has a committed offset past the end of the partition, (c) the topic name you entered has a typo, (d) **another upload on the same connection already consumed those messages** — every upload on a connection shares its consumer group, or (e) the upload reads several topics and this one was skipped (the entry above).
+**Cause.** One of four things: (a) the topic is genuinely empty, (b) your consumer group has a committed offset past the end of the partition, (c) the topic name you entered has a typo, or (d) **another upload on the same connection already consumed those messages**, because every upload on a connection shares its consumer group.
 **Fix.** Produce a test message and re-run. If messages still don't land, create a new connection with a different **Consumer Group ID** — a fresh group with no committed offsets reads from `start_from`, which defaults to `earliest`. For (c), re-check the topic list against `kafka-topics.sh --bootstrap-server <broker> --list`.
 
 ### Runs get slower over time

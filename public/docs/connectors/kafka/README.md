@@ -100,6 +100,26 @@ Product's `4bbd713` had just told readers to add exactly that; the guide now giv
 and read the other live connections back unchanged. Upload 3 consequently reads `blocked`. The probe uploads 12–16
 remain in the org. The group was left with lag 10 on `events`, because runs 18–21 deliberately committed nothing.
 
+### 2026-09-17 — the one-topic workaround comes out, and the guide is not re-walked
+
+Product removed the core#1408 workaround from Step 2, from the raw JSON `topics` option and from Troubleshooting. It
+restored Step 2's two-topic example, and it replaced the *"one topic landed and another did not"* entry with the refusal
+the fix introduced. The fix is core `6ad0f8e` (*"Read every Kafka topic through one consumer, and refuse a topic the
+group never assigned"*). It is on core `master` `da634df5`, whose production deploy (`deploy-pointer.yml` run
+35228187079) completed `success`.
+
+**What the new text rests on, since nobody walked it again:**
+- **Every topic loads in one run.** Engineering's test against the real builder, a real pipeline and DuckDB, with a
+  faked broker that enforces the membership rule this walk's log showed. Also QA's real-broker arm
+  `kafka-two-topics-both-waiting` (core#1419), which passed in core PR 1432's CI run 35202196876 with its strict-xfail
+  marker removed. Both are recorded on core#1408.
+- **The refusal's wording** was read off core `master`: `_refuse_unassigned_kafka_topics` in `dlt_runner.py`. The same
+  source is behind the claims that the run stops before loading anything and commits no offset, and Engineering's
+  mutant *"a refusal that commits"* went red on core#1408.
+
+**Not exercised:** a two-topic upload through this guide's form on a stack running `da634df5`, and a topic that does
+not exist on a broker that refuses to create it. `verified_by` and `verified_date` are unchanged.
+
 ## Prior record (2026-07-19), kept verbatim
 
 `verified_by: product-ui` / `verified_date: 2026-07-19` — Step-2 field labels verified against the live shipped UI (`kafka_fields()` in `connection_config_fields.py` + `en.json` on `origin/master`). Shipped form: **Connection Name**, **Bootstrap Servers** (required), **Topics (comma-separated)** (required), **Consumer Group ID** (**optional** — no asterisk). The type dropdown shows the lowercase key **`kafka`**. **Drift fixed:** the draft marked **Consumer Group ID as required** — it's optional in the shipped form. Also fixed: dropdown key, "Name" → "Connection Name", "Save" → "Create Connection", and softened the Test-Connection claim. The guide **correctly** documents that the structured form is PLAINTEXT-only and that SASL/SSL/mTLS goes through the **Use raw JSON config** escape hatch.
