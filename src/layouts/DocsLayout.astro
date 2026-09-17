@@ -161,7 +161,7 @@ const breadcrumbLD = JSON.stringify({
       <div class="flex gap-10">
         <!-- Sidebar -->
         <aside class="hidden w-56 shrink-0 md:block">
-          <nav class="sticky top-24 max-h-[calc(100vh-7rem)] space-y-3 overflow-y-auto pr-2">
+          <nav aria-label="Documentation" class="sticky top-24 max-h-[calc(100vh-7rem)] space-y-3 overflow-y-auto pr-2">
             {groups.map((group) => {
               const groupHasCurrent = group.items.some(
                 (i) => i.href.replace(/\/$/, "") === currentPath
@@ -172,7 +172,7 @@ const breadcrumbLD = JSON.stringify({
                   data-sidebar-group={group.label}
                   open={groupHasCurrent}
                 >
-                  <summary class="flex cursor-pointer list-none items-center gap-1 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-slate-500 select-none hover:text-slate-300">
+                  <summary class="flex cursor-pointer list-none items-center gap-1 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-slate-400 select-none hover:text-slate-300">
                     <svg
                       class="h-3 w-3 transition-transform group-open/details:rotate-90"
                       fill="none"
@@ -214,6 +214,7 @@ const breadcrumbLD = JSON.stringify({
         <div class="mb-6 md:hidden">
           <select
             id="docs-mobile-nav"
+            aria-label="Documentation page"
             class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-300"
           >
             {groups.map((group) => (
