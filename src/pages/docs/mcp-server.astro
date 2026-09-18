@@ -288,7 +288,7 @@ const HOSTED_URL = "https://app.datanika.io/mcp";
 
   <h3 id="install">Install</h3>
   <p>Check that it resolves and runs:</p>
-  <pre><code>uvx datanika-mcp --version
+  <pre tabindex="0"><code>uvx datanika-mcp --version
 # datanika-mcp 0.2.0</code></pre>
   <p>
     That is the whole install. You will not normally run the command by hand — an MCP server
@@ -315,7 +315,7 @@ const HOSTED_URL = "https://app.datanika.io/mcp";
   </table>
 
   <p>Add a <code>datanika</code> entry:</p>
-  <pre><code>{claudeDesktopConfig}</code></pre>
+  <pre tabindex="0"><code>{claudeDesktopConfig}</code></pre>
 
   <p>
     Restart Claude Desktop. The Datanika tools appear in the tools menu, and you can ask things like
@@ -325,7 +325,7 @@ const HOSTED_URL = "https://app.datanika.io/mcp";
 
   <h3 id="claude-code">Claude Code</h3>
   <p>One command, from the project you want the server available in:</p>
-  <pre><code>claude mcp add datanika -- uvx datanika-mcp --api-key etf_your_key_here</code></pre>
+  <pre tabindex="0"><code>claude mcp add datanika -- uvx datanika-mcp --api-key etf_your_key_here</code></pre>
   <p>
     Everything after <code>--</code> is the command Claude Code will launch. Add
     <code>--url https://your-instance.example.com</code> if you self-host.
@@ -337,7 +337,7 @@ const HOSTED_URL = "https://app.datanika.io/mcp";
     <code>.cursor/mcp.json</code> inside a single repository. This example configures it through
     environment variables instead of flags — both work everywhere:
   </p>
-  <pre><code>{cursorConfig}</code></pre>
+  <pre tabindex="0"><code>{cursorConfig}</code></pre>
 
   <h3 id="other-clients">Any other MCP client</h3>
   <p>
@@ -419,7 +419,7 @@ const HOSTED_URL = "https://app.datanika.io/mcp";
 
   <h3>Enabling writes locally</h3>
   <p>Add <code>--allow-write</code> (or set <code>DATANIKA_ALLOW_WRITE=true</code>):</p>
-  <pre><code>{claudeDesktopWriteConfig}</code></pre>
+  <pre tabindex="0"><code>{claudeDesktopWriteConfig}</code></pre>
 
   <h3>What still protects you</h3>
   <ul>
@@ -492,7 +492,7 @@ const HOSTED_URL = "https://app.datanika.io/mcp";
     Point <code>--url</code> at whatever origin serves <code>/api/v1</code>. With the default
     <a href="/docs/self-hosting">Docker Compose setup</a> the API listens on port 8000:
   </p>
-  <pre><code>uvx datanika-mcp --url http://localhost:8000 --api-key etf_your_key_here</code></pre>
+  <pre tabindex="0"><code>uvx datanika-mcp --url http://localhost:8000 --api-key etf_your_key_here</code></pre>
   <p>
     If you run Datanika behind a reverse proxy, use the public origin instead — the same one you
     open in a browser.

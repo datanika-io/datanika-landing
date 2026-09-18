@@ -22,14 +22,14 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
 
   <h3>Referencing Other Models</h3>
   <p>Use dbt's <code>ref()</code> function to reference other transformations:</p>
-  <pre><code set:html={`SELECT
+  <pre tabindex="0"><code set:html={`SELECT
   customer_id,
   COUNT(*) as total_orders,
   SUM(amount) as lifetime_value
 FROM {{ ref('stg_orders') }}
 GROUP BY customer_id`} /></pre>
   <p>Use <code>source()</code> to reference raw tables loaded by dlt:</p>
-  <pre><code set:html={`SELECT * FROM {{ source('raw', 'customers') }}`} /></pre>
+  <pre tabindex="0"><code set:html={`SELECT * FROM {{ source('raw', 'customers') }}`} /></pre>
 
   <h2>Materializations</h2>
   <p>Materializations control how dbt builds your model in the warehouse:</p>
@@ -61,7 +61,7 @@ GROUP BY customer_id`} /></pre>
 
   <h3>Incremental Models</h3>
   <p>Incremental models only process new rows, making them efficient for large tables:</p>
-  <pre><code set:html={`{{ config(materialized='incremental') }}
+  <pre tabindex="0"><code set:html={`{{ config(materialized='incremental') }}
 
 SELECT *
 FROM {{ source('raw', 'events') }}

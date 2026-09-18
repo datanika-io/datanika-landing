@@ -15,7 +15,7 @@ draft: false
 
 Oracle Database is the system of record for a huge share of enterprise ERP, finance, and back-office workloads. This guide extracts Oracle tables into a cloud warehouse (BigQuery, Snowflake, PostgreSQL, etc.) so you can build analytics without hammering the production OLTP box or buying a heavyweight replication tool. Create a read-only user, wire it into Datanika, pick tables, run, and schedule.
 
-> **Looking for the connector spec?** This is the hands-on setup guide. For the field-by-field reference — connection identifiers, incremental cursors, supported versions — see the [Oracle connector page](/connectors/oracle).
+> **Looking for the connector spec?** This is the hands-on setup guide. For the field-by-field reference — connection identifiers and supported versions — see the [Oracle connector page](/connectors/oracle).
 
 ## Prerequisites
 
@@ -102,6 +102,8 @@ Schedules live on their own page and reference the upload **by name**.
    - **Timezone** — defaults to `UTC`. The cron is evaluated in this zone, which matters for daily and weekly cadences.
 3. Click **Create Schedule**. The row lands as **Active**, with **Pause** available per row.
 4. Wire up failure alerts in **Settings → Notifications** so you hear about broken runs before your stakeholders do.
+
+**What a scheduled run does to your tables:** every run reads the selected tables again from the start, because an upload keeps no cursor from one run to the next, not even with **Enable incremental loading** ticked ([Uploads → Incremental cursor](/docs/uploads#incremental-cursor)). **Write Disposition** decides what that leaves behind. Under `append`, the default, each run adds another copy of every row: over an unchanged database, a second run doubles every table. Choose `merge` with a primary key to keep one row per key, or `replace` to keep only the latest run's rows.
 
 ## Troubleshooting
 

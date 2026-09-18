@@ -123,22 +123,12 @@ A destination is chosen per **upload**, at **`/uploads`** — not on the connect
 
 1. On the **`/uploads`** row for your upload, click **Run**. There is no "Run now" on a pipeline page — the trigger lives on the upload's own row.
 2. Watch **`/runs`**. The run shows a status badge, start and finish timestamps and a **Rows** count; the **Logs** icon on the row opens the detail.
-3. **Check the result in ClickHouse itself, not in Datanika.** ClickHouse has no schemas, so an upload cannot land in one named after itself. Everything goes into the **database on the connection**, with the upload name folded into each table name as `<upload>___<table>`. An upload called `clickhouserawload` carrying four tables lands `clickhouserawload___goods`, `___orders`, `___order_items` and `___sellers` in `raw_data`, beside dlt's own `<upload>____dlt_loads`, `____dlt_pipeline_state` and `____dlt_version` bookkeeping tables and an empty `___dlt_sentinel_table`. There is no target-schema field to choose.
+3. When it finishes, open **Models** (`/models`) and browse the landed tables. ClickHouse has no schemas, so an upload cannot land in one named after itself. Everything goes into the **database on the connection**, with the upload name folded into each table name as `<upload>___<table>`, and **Models lists each table under that name, in the connection's database**. An upload called `clickhouserawload` carrying four tables lands `clickhouserawload___goods`, `___orders`, `___order_items` and `___sellers` in `raw_data`. dlt also writes its own `<upload>____dlt_loads`, `____dlt_pipeline_state` and `____dlt_version` bookkeeping tables and an empty `___dlt_sentinel_table` there, but **Models does not list them**, so seeing only your own tables is correct, not a partial load. Open a table for its columns and a **Data preview** of its rows. There is no target-schema field to choose.
+4. Spot-check the row count against the source, in ClickHouse itself. **Verify in the destination rather than trusting the status badge** — a green run means the load finished, not that it moved what you expected.
    ```sql
    SELECT name FROM system.tables WHERE database = 'raw_data' ORDER BY name;
    SELECT count() FROM raw_data.`<upload>___<table>`;
    ```
-4. Spot-check the row count against the source. **Verify in the destination rather than trusting the status badge** — a green run means the load finished, not that it moved what you expected.
-
-<!-- landing#604. Remove this callout, and send Step 4 back to /models, when core#1397 ships. -->
-
-> ⚠️ **`/models` does not list what a ClickHouse load landed, so the in-app Data preview is not
-> available for this destination.** Measured on a run that finished `success` with **7,182 rows**
-> across four tables: the tables were present in ClickHouse, and `/models` showed **nothing** for that
-> upload. Every entry it did show came from an upload whose destination was PostgreSQL. Use the SQL
-> above instead. *(The catalogue does cover other destinations: a DuckDB load catalogues its tables
-> through the same path. The gap is specific to ClickHouse, tracked as
-> [core#1397](https://github.com/datanika-io/datanika-core/issues/1397).)*
 
 ## Step 5 — Schedule it
 

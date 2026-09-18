@@ -57,7 +57,7 @@ const templateConnectors = connectors.filter((c) =>
   </table>
 
   <h3>Example</h3>
-  <pre><code>Pipeline: "Nightly Analytics Refresh"
+  <pre tabindex="0"><code>Pipeline: "Nightly Analytics Refresh"
 Destination: Postgres → Analytics DB
 Command: build
 Models: [stg_customers, stg_orders, dim_customers, fct_revenue]
@@ -81,7 +81,7 @@ Full Refresh: false</code></pre>
   <ul>
     <li><strong>Pick from list</strong> — select individual models from the UI</li>
     <li><strong>Custom selector</strong> — use dbt selector syntax for advanced patterns:
-      <pre><code>tag:nightly          # all models tagged "nightly"
+      <pre tabindex="0"><code>tag:nightly          # all models tagged "nightly"
 stg_*                # all staging models
 +dim_customers       # dim_customers and all upstream dependencies</code></pre>
     </li>

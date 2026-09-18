@@ -2,7 +2,7 @@
 title: "Datanika vs the Modern Data Stack: A Reproducible Benchmark"
 description: "We replaced Fivetran + dbt Cloud + Airflow with one tool and measured the difference. 10M rows, a script you can run yourself, and an honest account of what we could not measure."
 date: 2026-04-15
-updatedDate: 2026-08-30
+updatedDate: 2026-09-17
 author: "Datanika Team"
 category: "benchmark"
 tags: ["benchmark", "modern-data-stack", "fivetran", "dbt-cloud", "airflow", "performance", "open-source"]
@@ -14,7 +14,7 @@ The honest answer isn't AI, and it isn't connectors. **The moat is that we repla
 
 This post is the evidence. We ran a reproducible benchmark — 10.1 million rows, Postgres to DuckDB — and compared it against the "default" modern data stack: Fivetran for extract, dbt Cloud for transform, Airflow for orchestration. The script is committed to our repo. You can run it yourself.
 
-> **Updated 2026-08-30.** This post originally ran throughput estimates for Fivetran and Airbyte, a pre-pivot pricing table, and a stale connector count. All three are corrected below, and the corrections are itemised in [What changed in this revision](#what-changed-in-this-revision). The short version: **we deleted every competitor number we could not source**, and we now say plainly which of them nobody publishes.
+> **Updated 2026-08-30.** This post originally ran throughput estimates for Fivetran and Airbyte, a pre-pivot pricing table, and a stale connector count. All three are corrected below, and the corrections are itemised in [What changed in this revision](#what-changed-in-this-revision). The short version: **we deleted every competitor number we could not source**, and we now say plainly which of them nobody publishes. A further correction on 2026-09-17 withdraws our own incremental timings, which measured dlt rather than a Datanika upload.
 
 ## The workload
 
@@ -27,7 +27,7 @@ A realistic e-commerce star schema:
 | `line_items` | 8,000,000 | Product, quantity, unit price |
 | **Total** | **10,100,000** | 3 tables, foreign keys, indexes |
 
-This is the shape of data most teams actually work with — a fact table with millions of rows, a couple of dimension tables, timestamps for incremental loads. It's not a synthetic micro-benchmark; it's the kind of thing a series-A company has in their production Postgres.
+This is the shape of data most teams actually work with — a fact table with millions of rows, a couple of dimension tables, and `updated_at` timestamps. It's not a synthetic micro-benchmark; it's the kind of thing a series-A company has in their production Postgres.
 
 The seed is **deterministic**: the same seed always produces the same rows, and therefore the same bytes. That matters more than it sounds — it means the *volume* numbers below reproduce on any machine, even though the *timing* numbers don't.
 
@@ -72,7 +72,7 @@ For the record, here is what our own setup actually cost, from the [benchmark lo
 
 **Both of those are us, on paper-identical hardware, 3.8× apart.** We're publishing the bad one on purpose. The gap is disk contention on a shared box, not a change in the tool — but if we showed you only the good number and you ran this on a busy VPS, you'd conclude we'd lied to you. Your hardware dominates this metric. Run it on yours.
 
-**Incremental syncs** (100k changed rows out of 2M orders) complete in **11.3s** on the dedicated box and **46.9s** on the shared one, both p50 across three runs. In both cases the *first* run is dramatically slower (186.7s and 705.9s) because the pipeline state is cold — worth knowing if you're timing a single run and wondering why it looks terrible.
+> **Corrected 2026-09-17: the incremental timings are withdrawn.** This paragraph published incremental syncs (100k changed rows out of 2M orders) at 11.3s on the dedicated box and 46.9s on the shared one. Those timings were measured, but not on a Datanika upload. `benchmark.py` calls dlt directly and keeps one pipeline name, `bench_incr`, across runs, so dlt resumed its cursor from one run to the next. A Datanika upload builds a new pipeline on every run, so its cursor does not carry over and every run starts again from the beginning of the table ([core#1404](https://github.com/datanika-io/datanika-core/issues/1404)). The full syncs above come from the same script calling dlt directly: they measure the library an upload runs, not an upload.
 
 **What about Fivetran and Airbyte?** The earlier version of this post had a row for each, with a throughput range like "~21k–55k rows/s." Those were arithmetic performed on estimated minute-ranges, and we've removed them. Neither vendor publishes a sync-latency figure for a defined workload, and we haven't run their products at 10M rows. If you work at either company and have a reproducible 10M-row benchmark, we'd genuinely like to compare — the script is right there.
 
@@ -195,7 +195,7 @@ cd scripts/benchmark
 uv pip install -r requirements.txt
 docker compose up -d
 python seed.py           # generates 10.1M rows into Postgres
-python benchmark.py      # full + incremental syncs, reports p50/p95
+python benchmark.py      # dlt full syncs and incremental runs, reports p50/p95
 python measure_bytes.py  # byte volume — the number our pricing meters
 cat results/*.md         # your numbers
 ```
@@ -227,6 +227,7 @@ Kept honest in public, since this post is itself a claim about honesty:
 - **Fixed** a broken evidence link. The original "Benchmark log" link pointed at a path that was never served and had returned 404 since publication — on the very citation the "measured" claim rested on.
 - **Replaced** the pre-pivot cost table with the current volume-based pricing, and added a measured byte figure so the workload can be priced in the unit we actually bill.
 - **Added** the slower second benchmark run, and the caveat that hardware dominates.
+- **Withdrawn** on 2026-09-17: the incremental timings, 11.3s and 46.9s. `benchmark.py` ran dlt under one fixed pipeline name, which a Datanika upload does not do: an upload's cursor does not carry from one run to the next ([core#1404](https://github.com/datanika-io/datanika-core/issues/1404)). A measurement of the library is not a measurement of the product, and the full syncs are a measurement of the library too.
 
 ## Sources
 

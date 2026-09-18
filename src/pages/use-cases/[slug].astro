@@ -71,6 +71,7 @@ const withdrawnHalves = [useCase.sourceSlug, useCase.destinationSlug]
   ogSlug={useCase.slug}
 >
   <Navbar />
+  <main>
 
   <!-- Hero -->
   <section class="relative pt-32 pb-16 overflow-hidden">
@@ -174,15 +175,15 @@ const withdrawnHalves = [useCase.sourceSlug, useCase.destinationSlug]
   <section class="py-8">
     <div class="max-w-4xl mx-auto px-6">
       <p class="text-sm text-slate-400">Evaluating ELT tools? Compare Datanika with{" "}
-        <a href="/compare/airbyte" class="text-violet-400 hover:underline">Airbyte</a>,{" "}
-        <a href="/compare/fivetran" class="text-violet-400 hover:underline">Fivetran</a>,{" "}
-        <a href="/compare/stitch" class="text-violet-400 hover:underline">Stitch</a>, and{" "}
-        <a href="/compare/hevo" class="text-violet-400 hover:underline">Hevo</a>.
-        See the <a href="/docs/getting-started" class="text-violet-400 hover:underline">Getting Started guide</a> to build this pipeline in 5 minutes.
+        <a href="/compare/airbyte" class="text-violet-400 underline underline-offset-2 hover:text-violet-300">Airbyte</a>,{" "}
+        <a href="/compare/fivetran" class="text-violet-400 underline underline-offset-2 hover:text-violet-300">Fivetran</a>,{" "}
+        <a href="/compare/stitch" class="text-violet-400 underline underline-offset-2 hover:text-violet-300">Stitch</a>, and{" "}
+        <a href="/compare/hevo" class="text-violet-400 underline underline-offset-2 hover:text-violet-300">Hevo</a>.
+        See the <a href="/docs/getting-started" class="text-violet-400 underline underline-offset-2 hover:text-violet-300">Getting Started guide</a> to build this pipeline in 5 minutes.
       </p>
       {deepDive && (
         <p class="mt-4 text-sm text-slate-400">
-          Want the long version? <a href={`/blog/${deepDive.slug}/`} class="text-violet-400 hover:underline">{deepDive.title}</a>{" "}
+          Want the long version? <a href={`/blog/${deepDive.slug}/`} class="text-violet-400 underline underline-offset-2 hover:text-violet-300">{deepDive.title}</a>{" "}
           walks through the same pipeline screen by screen.
         </p>
       )}
@@ -207,5 +208,6 @@ const withdrawnHalves = [useCase.sourceSlug, useCase.destinationSlug]
     </div>
   </section>
 
+  </main>
   <Footer />
 </Layout>

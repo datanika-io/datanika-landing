@@ -11,8 +11,16 @@ stack (Fivetran + dbt Cloud + Airflow).
 |--------|-----|
 | **Setup wall-clock** | Time from "I have credentials" to "first row lands in the destination" |
 | **Sync latency (p50/p95)** | Wall-clock time for a full 10M-row sync, measured over 5 runs |
-| **Incremental sync latency** | Time to sync 100k changed rows after the initial load |
+| **Incremental sync latency** | Time for dlt to sync 100k changed rows after the initial load (see the note below) |
 | **Monthly infra cost** | Actual infrastructure bill for running this workload continuously |
+
+> **This script measures dlt, not a Datanika upload.** `benchmark.py` calls dlt directly. Its
+> incremental runs keep one pipeline name, `bench_incr`, so dlt resumes its cursor from one run to
+> the next. A Datanika upload builds a new pipeline on every run, so its cursor does not carry over
+> and every run starts again from the beginning of the table
+> ([core#1404](https://github.com/datanika-io/datanika-core/issues/1404)). The incremental timings
+> are therefore not what an upload's second run takes. The full syncs measure the same library an
+> upload runs, not an upload.
 
 ## Prerequisites
 

@@ -1,2 +1,9 @@
 *.sh text eol=lf
 scripts/hooks/* text eol=lf
+
+# landing#628: a file that starts with #! checks out with LF on every platform. On a Windows
+# worktree with core.autocrlf=true a hashbang .mjs checked out as CRLF, vitest's transform
+# refused it, and the pre-push hook failed for every landing push. Guarded by
+# tests/shebang-files-check-out-lf.test.ts, which reads the attribute, not the bytes on disk.
+*.mjs text eol=lf
+*.py text eol=lf

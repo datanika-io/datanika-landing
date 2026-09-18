@@ -112,6 +112,7 @@ const comparisonSlugs = ["airbyte", "fivetran", "stitch", "hevo"];
   ogSlug={connector.slug}
 >
   <Navbar />
+  <main>
 
   <!-- Hero -->
   <section class="relative pt-32 pb-16 overflow-hidden">
@@ -385,7 +386,7 @@ const comparisonSlugs = ["airbyte", "fivetran", "stitch", "hevo"];
     <div class="max-w-4xl mx-auto px-6">
       <p class="text-sm text-slate-400">Evaluating alternatives? Compare Datanika with{" "}
         {comparisonSlugs.map((slug, i) => (
-          <>{i > 0 && ", "}<a href={`/compare/${slug}`} class="text-violet-400 hover:underline">{slug.charAt(0).toUpperCase() + slug.slice(1)}</a></>
+          <>{i > 0 && ", "}<a href={`/compare/${slug}`} class="text-violet-400 underline underline-offset-2 hover:text-violet-300">{slug.charAt(0).toUpperCase() + slug.slice(1)}</a></>
         ))}.
       </p>
     </div>
@@ -429,5 +430,6 @@ const comparisonSlugs = ["airbyte", "fivetran", "stitch", "hevo"];
     </div>
   </section>
 
+  </main>
   <Footer />
 </Layout>

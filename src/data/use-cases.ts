@@ -42,7 +42,7 @@ export const useCases: UseCase[] = [
       "Join user events with CRM data for cohort analysis",
     ],
     seoTitle: "PostgreSQL to BigQuery Pipeline | Datanika",
-    seoDescription: "Replicate PostgreSQL to BigQuery with automatic schema mapping, incremental loading, and built-in dbt transforms. No Kubernetes, no YAML. Start free today.",
+    seoDescription: "Replicate PostgreSQL to BigQuery with automatic schema mapping, scheduled loads, and built-in dbt transforms. No Kubernetes, no YAML. Start free today.",
     seoH1: "PostgreSQL to BigQuery",
   },
   {
@@ -69,7 +69,7 @@ export const useCases: UseCase[] = [
       "Prepare data for Snowflake data shares",
     ],
     seoTitle: "PostgreSQL to Snowflake Pipeline | Datanika",
-    seoDescription: "Replicate PostgreSQL to Snowflake with automatic schema mapping, incremental sync, and dbt transforms. Run heavy analytics without touching prod. Start free.",
+    seoDescription: "Replicate PostgreSQL to Snowflake with automatic schema mapping, scheduled loads, and dbt transforms. Run heavy analytics without touching prod. Start free.",
     seoH1: "PostgreSQL to Snowflake",
   },
   {
@@ -96,7 +96,7 @@ export const useCases: UseCase[] = [
       "Aggregate content engagement metrics",
     ],
     seoTitle: "MySQL to BigQuery Pipeline | Datanika",
-    seoDescription: "Replicate MySQL databases to BigQuery for analytics. Automatic schema mapping, incremental sync, built-in dbt transforms. No Kubernetes required. Start free.",
+    seoDescription: "Replicate MySQL databases to BigQuery for analytics. Automatic schema mapping, scheduled loads, built-in dbt transforms. No Kubernetes required. Start free.",
     seoH1: "MySQL to BigQuery",
   },
   {
@@ -269,14 +269,14 @@ export const useCases: UseCase[] = [
     destinationSlug: "snowflake",
     title: "S3 to Snowflake",
     description: "Load CSV, JSON, and Parquet files from Amazon S3 into Snowflake. Automate data lake to warehouse pipelines with scheduling.",
-    why: "Many teams land raw data in S3 as a data lake. Datanika bridges the gap from S3 to Snowflake, loading files automatically with schema detection and incremental file discovery.",
+    why: "Many teams land raw data in S3 as a data lake. Datanika bridges the gap from S3 to Snowflake, loading files automatically with schema detection: each run reads every file that matches.",
     steps: [
       "Add S3 as a source (bucket, AWS credentials, optional prefix filter)",
       "Add Snowflake as a destination",
       "Create an upload: S3 → Snowflake, selecting file format (CSV/JSON/Parquet)",
       "Run the upload — dlt discovers files, infers schema, and loads into Snowflake",
       "Write dbt models to clean and transform the loaded file data",
-      "Schedule daily loads to pick up new files automatically",
+      "Schedule daily loads: each run reads every matching file again, including new ones",
     ],
     transformExamples: [
       "Parse and clean partner data file exports",
@@ -285,7 +285,7 @@ export const useCases: UseCase[] = [
       "Validate and deduplicate file-based data loads",
     ],
     seoTitle: "S3 to Snowflake Pipeline | Datanika",
-    seoDescription: "Load CSV, JSON, and Parquet files from Amazon S3 into Snowflake. Incremental file discovery, dbt transforms, and scheduling built in. Start free today.",
+    seoDescription: "Load CSV, JSON, and Parquet files from Amazon S3 into Snowflake. Automatic schema detection, dbt transforms, and scheduling built in. Start free today.",
     seoH1: "S3 to Snowflake",
   },
   {
@@ -303,7 +303,7 @@ export const useCases: UseCase[] = [
       "Create an upload: select PostgreSQL as source, Redshift as destination, choose full database or specific tables",
       "Run the upload — dlt extracts the tables and loads them into Redshift with automatic schema mapping and type conversion",
       "Write dbt models for staging, intermediate, and mart layers with Redshift sort and dist keys",
-      "Schedule incremental syncs to keep Redshift current without full reloads",
+      "Schedule the upload with the merge write disposition and a primary key, so each run's full read updates rows instead of adding copies",
     ],
     transformExamples: [
       "Aggregate daily revenue and order metrics for BI dashboards",
@@ -312,7 +312,7 @@ export const useCases: UseCase[] = [
       "Materialize customer 360 tables joining app data with CRM sources",
     ],
     seoTitle: "PostgreSQL to Redshift Pipeline | Datanika",
-    seoDescription: "Replicate PostgreSQL to Amazon Redshift with automatic schema mapping, incremental loading, and built-in dbt transforms. No Kubernetes, no YAML. Start free today.",
+    seoDescription: "Replicate PostgreSQL to Amazon Redshift with automatic schema mapping, scheduled loads, and built-in dbt transforms. No Kubernetes, no YAML. Start free today.",
     seoH1: "PostgreSQL to Redshift",
   },
   {

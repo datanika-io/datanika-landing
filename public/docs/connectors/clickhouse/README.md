@@ -25,6 +25,9 @@ capture is a picture of hangs off `/models`. Measured below, filed as
 landing#395's `evidenced` count even though it has now been walked end to end; the metric counts the
 artifact, not the effort, and inflating it here would be the exact dishonesty §5 warns about.
 
+*(2026-09-17: the path can produce one now that core#1397 is in production, and the capture still has not been
+taken. See the dated note at the end of the walk.)*
+
 ### Where and on what this was walked (`SPEC_CONNECTOR_GUIDE_VERIFICATION.md` §2.4)
 
 | field | value |
@@ -128,6 +131,27 @@ needed a slot under the Free plan's ceiling of 5, and I soft-deleted **my own** 
 **and** name, with the other four live connections read back unchanged. Nothing outside this local stack was
 touched. Upload 4 consequently now reads `blocked` with *"Its connection was deleted — restore it to run
 again"*.
+
+### 2026-09-17 — Step 4 goes back to `/models`, and nobody has re-walked it
+
+Product removed Step 4's *"`/models` does not list what a ClickHouse load landed"* callout and sent the reader to
+`/models` and the Data preview again. That was the flip condition recorded on
+[core#1397](https://github.com/datanika-io/datanika-core/issues/1397). The fix is core `0ece16b` (*"Catalogue a
+ClickHouse upload under the database and the prefixed table name"*). It is on core `master` `da634df5`, whose
+production deploy (`deploy-pointer.yml` run 35228187079) completed `success`.
+
+**What the new text rests on:** Engineering's record on core#1397. Against a real
+`clickhouse/clickhouse-server:24.8.14.39`, through `run_upload`, with no patch on the load or the sync:
+- each table is catalogued as the connection's database plus the prefixed table name;
+- dlt's bookkeeping tables and the sentinel are not listed;
+- listed tables carry their columns.
+
+Engineering records all six of that issue's criteria as asserted, including the Data preview returning the rows that
+are in ClickHouse.
+
+**Still true, and still why this connector is outside landing#395's `evidenced` count:** there is no
+`04-first-run.png`. The capture is landing#618 (Growth), which is no longer blocked by core#1397. It waits for a walk
+stack. `verified_by` and `verified_date` are unchanged.
 
 ## Prior record (2026-07-19 / 2026-07-22), kept verbatim
 

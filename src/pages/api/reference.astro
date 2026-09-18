@@ -9,14 +9,14 @@ import ApiLayout from "../../layouts/ApiLayout.astro";
 
   <h2>Authentication</h2>
   <p>All API requests require an API key in the <code>Authorization</code> header:</p>
-  <pre><code set:html={`curl -H "Authorization: Bearer etf_your_api_key_here" \\
+  <pre tabindex="0"><code set:html={`curl -H "Authorization: Bearer etf_your_api_key_here" \\
      https://app.datanika.io/api/v1/...`} /></pre>
   <p>Create API keys in <strong>Settings &rarr; API Keys</strong>. See <a href="/api/keys">API Keys</a> for details.</p>
 
   <h2>Connections</h2>
 
   <h3>List connections</h3>
-  <pre><code set:html={`GET /api/v1/connections
+  <pre tabindex="0"><code set:html={`GET /api/v1/connections
 
 # Response
 {
@@ -37,7 +37,7 @@ import ApiLayout from "../../layouts/ApiLayout.astro";
 }`} /></pre>
 
   <h3>Get connection</h3>
-  <pre><code set:html={`GET /api/v1/connections/1
+  <pre tabindex="0"><code set:html={`GET /api/v1/connections/1
 
 # Response
 {
@@ -49,7 +49,7 @@ import ApiLayout from "../../layouts/ApiLayout.astro";
   <p>Connection credentials are never returned in API responses.</p>
 
   <h3>Create connection</h3>
-  <pre><code set:html={`POST /api/v1/connections
+  <pre tabindex="0"><code set:html={`POST /api/v1/connections
 Content-Type: application/json
 
 {
@@ -73,14 +73,14 @@ Content-Type: application/json
 }`} /></pre>
 
   <h3>Delete connection</h3>
-  <pre><code set:html={`DELETE /api/v1/connections/3
+  <pre tabindex="0"><code set:html={`DELETE /api/v1/connections/3
 
 # Response: 204 No Content`} /></pre>
 
   <h2>Uploads (Extract + Load)</h2>
 
   <h3>List uploads</h3>
-  <pre><code set:html={`GET /api/v1/uploads
+  <pre tabindex="0"><code set:html={`GET /api/v1/uploads
 
 # Response
 {
@@ -97,7 +97,7 @@ Content-Type: application/json
 }`} /></pre>
 
   <h3>Create upload</h3>
-  <pre><code set:html={`POST /api/v1/uploads
+  <pre tabindex="0"><code set:html={`POST /api/v1/uploads
 Content-Type: application/json
 
 {
@@ -123,7 +123,7 @@ Content-Type: application/json
   <h2>Pipelines (dbt Orchestration)</h2>
 
   <h3>List pipelines</h3>
-  <pre><code set:html={`GET /api/v1/pipelines
+  <pre tabindex="0"><code set:html={`GET /api/v1/pipelines
 
 # Response
 {
@@ -140,7 +140,7 @@ Content-Type: application/json
 }`} /></pre>
 
   <h3>Create pipeline</h3>
-  <pre><code set:html={`POST /api/v1/pipelines
+  <pre tabindex="0"><code set:html={`POST /api/v1/pipelines
 Content-Type: application/json
 
 {
@@ -162,7 +162,7 @@ Content-Type: application/json
   <h2>Transformations (dbt SQL Models)</h2>
 
   <h3>List transformations</h3>
-  <pre><code set:html={`GET /api/v1/transformations
+  <pre tabindex="0"><code set:html={`GET /api/v1/transformations
 
 # Response
 {
@@ -178,7 +178,7 @@ Content-Type: application/json
 }`} /></pre>
 
   <h3>Create transformation</h3>
-  <pre><code set:html={`POST /api/v1/transformations
+  <pre tabindex="0"><code set:html={`POST /api/v1/transformations
 Content-Type: application/json
 
 {
@@ -204,7 +204,7 @@ Content-Type: application/json
     to catch Jinja errors and broken <code>&#123;&#123; ref() &#125;&#125;</code> references
     before committing to a long-running pipeline run.
   </p>
-  <pre><code set:html={`POST /api/v1/transformations/5/compile
+  <pre tabindex="0"><code set:html={`POST /api/v1/transformations/5/compile
 
 # Success — 200 OK
 {
@@ -235,7 +235,7 @@ Content-Type: application/json
     compile, so the endpoint cannot execute arbitrary DDL or DML no matter what the
     transformation contains.
   </p>
-  <pre><code set:html={`POST /api/v1/transformations/5/preview
+  <pre tabindex="0"><code set:html={`POST /api/v1/transformations/5/preview
 Content-Type: application/json
 
 { "limit": 50 }
@@ -285,7 +285,7 @@ Content-Type: application/json
   <h2>Runs</h2>
 
   <h3>List runs</h3>
-  <pre><code set:html={`GET /api/v1/runs
+  <pre tabindex="0"><code set:html={`GET /api/v1/runs
 
 # Filter by status
 GET /api/v1/runs?status=running
@@ -309,7 +309,7 @@ GET /api/v1/runs?target_type=upload&target_id=1
 }`} /></pre>
 
   <h3>Get run details</h3>
-  <pre><code set:html={`GET /api/v1/runs/42
+  <pre tabindex="0"><code set:html={`GET /api/v1/runs/42
 
 # Response
 {
@@ -328,7 +328,7 @@ GET /api/v1/runs?target_type=upload&target_id=1
     Runs are triggered on the <strong>resource</strong>, not on the runs collection.
     There is no <code>POST /api/v1/runs</code>.
   </p>
-  <pre><code set:html={`POST /api/v1/pipelines/{id}/run          # scope: pipelines:write
+  <pre tabindex="0"><code set:html={`POST /api/v1/pipelines/{id}/run          # scope: pipelines:write
 POST /api/v1/uploads/{id}/run            # scope: uploads:write
 POST /api/v1/transformations/{id}/run    # scope: transformations:write
 
@@ -382,12 +382,12 @@ POST /api/v1/pipelines/1/run?wait=true&timeout=120
     When the same key is replayed, the original response is returned instead of performing the
     action again — so a retried CI job does not start a second run. Keys are cached for 24 hours.
   </p>
-  <pre><code set:html={`curl -X POST https://app.datanika.io/api/v1/pipelines/1/run \
+  <pre tabindex="0"><code set:html={`curl -X POST https://app.datanika.io/api/v1/pipelines/1/run \
   -H "Authorization: Bearer etf_..." \
   -H "Idempotency-Key: $GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"`} /></pre>
 
   <h3>Cancel a run</h3>
-  <pre><code set:html={`POST /api/v1/runs/{id}/cancel    # scope: runs:write
+  <pre tabindex="0"><code set:html={`POST /api/v1/runs/{id}/cancel    # scope: runs:write
 
 # Response: 200 OK with the updated run.
 # Response: 409 Conflict ("not_cancellable") if the run already finished.`} /></pre>
@@ -395,13 +395,13 @@ POST /api/v1/pipelines/1/run?wait=true&timeout=120
   <h2>Schedules</h2>
 
   <h3>List schedules</h3>
-  <pre><code set:html={`GET /api/v1/schedules`} /></pre>
+  <pre tabindex="0"><code set:html={`GET /api/v1/schedules`} /></pre>
 
   <h3>Get schedule</h3>
-  <pre><code set:html={`GET /api/v1/schedules/{id}`} /></pre>
+  <pre tabindex="0"><code set:html={`GET /api/v1/schedules/{id}`} /></pre>
 
   <h3>Create schedule</h3>
-  <pre><code set:html={`POST /api/v1/schedules
+  <pre tabindex="0"><code set:html={`POST /api/v1/schedules
 Content-Type: application/json
 
 {
@@ -414,21 +414,21 @@ Content-Type: application/json
 }`} /></pre>
 
   <h3>Update schedule</h3>
-  <pre><code set:html={`PUT /api/v1/schedules/{id}`} /></pre>
+  <pre tabindex="0"><code set:html={`PUT /api/v1/schedules/{id}`} /></pre>
 
   <h3>Delete schedule</h3>
-  <pre><code set:html={`DELETE /api/v1/schedules/{id}`} /></pre>
+  <pre tabindex="0"><code set:html={`DELETE /api/v1/schedules/{id}`} /></pre>
 
   <h2>Notification Channels</h2>
 
   <h3>List channels</h3>
-  <pre><code set:html={`GET /api/v1/notifications/channels`} /></pre>
+  <pre tabindex="0"><code set:html={`GET /api/v1/notifications/channels`} /></pre>
 
   <h3>Get channel</h3>
-  <pre><code set:html={`GET /api/v1/notifications/channels/{id}`} /></pre>
+  <pre tabindex="0"><code set:html={`GET /api/v1/notifications/channels/{id}`} /></pre>
 
   <h3>Create channel</h3>
-  <pre><code set:html={`POST /api/v1/notifications/channels
+  <pre tabindex="0"><code set:html={`POST /api/v1/notifications/channels
 Content-Type: application/json
 
 {
@@ -444,14 +444,14 @@ Content-Type: application/json
   <p>Events: <code>run.failed</code>, <code>run.success</code>, <code>quota.warning</code></p>
 
   <h3>Update channel</h3>
-  <pre><code set:html={`PUT /api/v1/notifications/channels/{id}`} /></pre>
+  <pre tabindex="0"><code set:html={`PUT /api/v1/notifications/channels/{id}`} /></pre>
 
   <h3>Delete channel</h3>
-  <pre><code set:html={`DELETE /api/v1/notifications/channels/{id}`} /></pre>
+  <pre tabindex="0"><code set:html={`DELETE /api/v1/notifications/channels/{id}`} /></pre>
 
   <h2>Import Configuration</h2>
   <p>Bulk-create connections, uploads, pipelines, and transformations from a JSON file. See <a href="/docs/ai-import">Backup & Import</a> for the full format specification.</p>
-  <pre><code set:html={`POST /api/v1/import
+  <pre tabindex="0"><code set:html={`POST /api/v1/import
 Content-Type: application/json
 
 # Body: same JSON format as the import file
@@ -510,7 +510,7 @@ Content-Type: application/json
 
   <h3>When rate limited</h3>
   <p>If you exceed the limit, you will receive a <code>429 Too Many Requests</code> response:</p>
-  <pre><code set:html={`HTTP/1.1 429 Too Many Requests
+  <pre tabindex="0"><code set:html={`HTTP/1.1 429 Too Many Requests
 Retry-After: 45
 X-RateLimit-Limit: 30
 X-RateLimit-Remaining: 0
@@ -522,7 +522,7 @@ X-RateLimit-Reset: 1711929600
   <p>The number in <code>X-RateLimit-Limit</code> and in the error message is your plan's limit — 30 above, because that response came from a Free-plan key.</p>
 
   <p>A per-second rejection looks almost the same, and the difference is the part worth reading:</p>
-  <pre><code set:html={`HTTP/1.1 429 Too Many Requests
+  <pre tabindex="0"><code set:html={`HTTP/1.1 429 Too Many Requests
 Retry-After: 1
 X-RateLimit-Limit: 300
 X-RateLimit-Remaining: 0
@@ -543,7 +543,7 @@ X-RateLimit-Reset: 1711929541
   </ul>
 
   <h2>Error Responses</h2>
-  <pre><code set:html={`{
+  <pre tabindex="0"><code set:html={`{
   "error": "Unauthorized",
   "detail": "Invalid or expired API key"
 }`} /></pre>
