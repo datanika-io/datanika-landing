@@ -72,7 +72,7 @@ Create a **dedicated read-only login** rather than reusing an existing account. 
 
 ![Adding SQL Server in Datanika](/docs/connectors/mssql/02-add-connection.png)
 
-> **TrustServerCertificate.** If your SQL Server uses a self-signed certificate and the connection test fails with a TLS/SSL error, the instance may require `TrustServerCertificate=yes` in the connection string. Datanika handles this automatically via `pymssql` defaults. If you still see errors, check that the SQL Server instance's TLS certificate is valid or that the `encrypt` setting matches your environment.
+> 🔒 **Reads are encrypted, but the server's certificate is not verified.** Datanika requires an encrypted connection when it reads from SQL Server, for **Test Connection** and for uploads. It does **not** verify the server's certificate, so a self-signed certificate, which is what SQL Server uses unless you install one, needs no setting. That keeps the data from being read in transit, but nothing confirms that the server at the other end is yours. It does not protect against someone on the network path between Datanika and SQL Server who can pose as your server.
 
 ### Step 3 — Configure the upload
 

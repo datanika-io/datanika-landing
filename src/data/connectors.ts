@@ -57,6 +57,9 @@ export const connectors: Connector[] = [
       { name: "user", description: "Username" },
       { name: "password", description: "Password (encrypted at rest)" },
     ],
+    limitations: [
+      "Connections are encrypted only when your server offers TLS, and the connection form has no setting that requires it. Against a server that does not offer TLS, the connection succeeds in plaintext and reports success. Where the connection is encrypted, the server's certificate is not verified, so nothing confirms that the server at the other end is yours.",
+    ],
     related: ["mysql", "bigquery", "snowflake", "redshift"],
     seoTitle: "PostgreSQL Data Pipeline | Datanika",
     seoDescription: "PostgreSQL data pipeline to replicate tables to BigQuery, Snowflake, or any warehouse. Schema mapping, dbt transforms, and scheduling built in. Start free.",
@@ -88,6 +91,7 @@ export const connectors: Connector[] = [
     limitations: [
       "Extract only — MySQL cannot receive data. Datanika does not offer a MySQL connection as a load destination, and creating an upload that names one — through the API, for example — is refused with a message saying Datanika can read from that connection but cannot load into it. The load library underneath, dlt, can write to MySQL through its generic SQLAlchemy destination; Datanika does not use that path, so no configuration makes it work. Tracked as core#865.",
       "Not available as a dbt transformation target. Pipelines and transformations run dbt, and no maintained dbt adapter for MySQL exists — the only one ever published was last released in April 2024 and pins dbt-core 1.7, which held back security updates across the rest of the stack. Extract from MySQL into a warehouse and transform there: PostgreSQL, SQL Server, ClickHouse, DuckDB, BigQuery, Snowflake and Redshift are all dbt targets. Tracked as core#825.",
+      "Connections are not encrypted, and the connection form has no setting that can ask for encryption. A MySQL server configured to require a secure transport cannot be connected to at all — it refuses the connection. Where it does connect, data moves between Datanika and MySQL in plaintext, so anyone able to observe the network path between the two can read it.",
     ],
     related: ["postgresql", "bigquery", "snowflake", "mssql"],
     seoTitle: "MySQL ETL Tool — Database Pipeline | Datanika",
@@ -114,7 +118,7 @@ export const connectors: Connector[] = [
       { name: "password", description: "Password (encrypted at rest)" },
     ],
     limitations: [
-      "As a destination, the server's certificate is not verified. Datanika loads into SQL Server through the open-source FreeTDS driver and requires an encrypted connection, which keeps the data from being read in transit. Nothing confirms that the server at the other end is yours, so it does not protect against someone on the network path who can pose as your server.",
+      "The server's certificate is not verified. Datanika connects to SQL Server through the open-source FreeTDS driver and requires an encrypted connection when it tests the connection, when it reads tables for an upload, and when it loads into it, which keeps that data from being read in transit. Nothing confirms that the server at the other end is yours, so it does not protect against someone on the network path who can pose as your server.",
     ],
     related: ["postgresql", "mysql", "synapse", "bigquery", "oracle"],
     seoTitle: "SQL Server ETL Tool — MSSQL Pipeline | Datanika",
@@ -166,6 +170,9 @@ export const connectors: Connector[] = [
       { name: "secure", description: "Use HTTPS (enable for ClickHouse Cloud and TLS instances) (optional)" },
       { name: "cluster_replication", description: "Enable cluster replication (ReplicatedMergeTree) (optional)" },
     ],
+    limitations: [
+      "Connections are plaintext unless you tick Use HTTPS (TLS) on the connection — both the HTTP port and the native TCP port derived from it. With TLS on, the server's certificate is verified against public certificate authorities and there is no field for a private or self-signed authority, so a self-hosted server using its own CA cannot be connected to over TLS.",
+    ],
     related: ["postgresql", "bigquery", "kafka", "snowflake"],
     seoTitle: "ClickHouse ETL — Analytics Ingestion | Datanika",
     seoDescription: "ClickHouse ETL tool to load data from PostgreSQL, Kafka, S3, and 30+ sources. Supports clustered ReplicatedMergeTree. dbt transforms built in. Start free.",
@@ -208,6 +215,9 @@ export const connectors: Connector[] = [
       { name: "user", description: "Username" },
       { name: "password", description: "Password (encrypted at rest)" },
       { name: "use_sid", description: "Connect by SID instead of service name (legacy single-instance Oracle) (optional)" },
+    ],
+    limitations: [
+      "Connections are not encrypted, and the connection form has no setting that can ask for encryption. Data moves between Datanika and Oracle in plaintext, so anyone able to observe the network path between the two can read it. If that matters for your deployment, run Datanika self-hosted inside the same private network as the database.",
     ],
     related: ["postgresql", "mysql", "mssql", "bigquery"],
     seoTitle: "Oracle ETL Tool — Data Pipeline | Datanika",
@@ -282,6 +292,9 @@ export const connectors: Connector[] = [
       { name: "database", description: "Database name" },
       { name: "user", description: "Username" },
       { name: "password", description: "Password (encrypted at rest)" },
+    ],
+    limitations: [
+      "The cluster's certificate is not verified. Datanika reaches Redshift through the PostgreSQL driver at its default settings, which encrypt when the endpoint offers TLS but do not check the certificate it presents, so nothing confirms that the endpoint is your cluster. This behaviour was measured against PostgreSQL rather than against a Redshift cluster.",
     ],
     related: ["bigquery", "snowflake", "s3", "postgresql"],
     seoTitle: "Redshift ETL Tool — AWS Data Pipeline | Datanika",

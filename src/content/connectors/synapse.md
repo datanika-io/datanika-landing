@@ -67,6 +67,8 @@ Create a dedicated user for Datanika with only the permissions it needs.
 
 ![Adding Synapse in Datanika](/docs/connectors/synapse/02-add-connection.png)
 
+> 🔒 **Test Connection is encrypted in the same way as loads**, and the server's certificate is not verified. See the note in Step 3.
+
 ## Step 3 — Use Synapse as a destination
 
 A destination is chosen per **upload**, at **`/uploads`** — not on the connection, and not on a pipeline page. There is no "Configure pipeline" button; `/pipelines` is the **dbt** builder, which is a different thing.

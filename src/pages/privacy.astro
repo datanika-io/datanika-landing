@@ -112,7 +112,25 @@ import Footer from "../components/Footer.astro";
         <h2>5. Data Storage and Security</h2>
         <ul>
           <li>The application and its database run on a server in Greece, in the European Union, operated by the hosting provider Pointer (pointer.gr).</li>
-          <li>All data in transit is encrypted via TLS. The credentials you enter for your own data sources (database passwords, API keys, service-account JSON) are encrypted at rest using Fernet symmetric encryption.</li>
+          <li>
+            <strong>In transit, to us.</strong> Connections to Datanika always use TLS. The web
+            application, its API and the remote MCP endpoint are served over TLS 1.2 or higher.
+          </li>
+          <li>
+            <strong>In transit, from us to your databases.</strong> Connections from Datanika out to
+            a database you host are encrypted only where the connector and your server support it,
+            and we do not yet verify your server's certificate. Some connectors negotiate TLS
+            whenever your server offers it, some encrypt only when you switch it on, and some cannot
+            encrypt at all. Where such a connection is encrypted, nothing currently confirms that the
+            server at the other end is yours. The position for every connector is published under
+            <a href="/trust#encryption-in-transit" class="text-violet-400 underline underline-offset-2 hover:text-violet-300">Encryption in transit</a>
+            on our Trust &amp; Security page, and we tighten it as fixes ship.
+          </li>
+          <li>
+            <strong>At rest.</strong> The credentials you enter for your own data sources (database
+            passwords, API keys, service-account JSON) are encrypted using Fernet symmetric
+            encryption.
+          </li>
           <li>Access to production systems is restricted to authorized personnel only.</li>
           <li>
             We take a database backup every night. Each backup is kept for 7 days on the
