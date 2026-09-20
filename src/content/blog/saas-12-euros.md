@@ -7,7 +7,7 @@ category: "business"
 tags: ["bootstrap", "infrastructure", "cost", "self-hosted", "indie-hacking"]
 ---
 
-> **Update — 3 September 2026.** This is the stack as it stood in **April 2026**, and the hosting line has since changed. Production moved off Hetzner in July 2026 and now runs on a VPS with **Pointer (`pointer.gr`), in Athens** — still one box, still Docker Compose, still the EU. So the Hetzner rows below, and the snapshot-retention row with them, are historical: €11.49 is Hetzner's price, not what we pay today. **What we pay today is €22.20 a month** for the Pointer Gold VPS — the figure on the renewal invoice dated 6 August 2026, covering 15 August to 15 September 2026. Everything else — the container layout, the free tiers, the reasoning about when this stops working — still holds.
+> **Update — 3 September 2026.** This is the stack as it stood in **April 2026**, and the hosting line has since changed. Production moved off Hetzner in July 2026 and now runs on a VPS with **Pointer (`pointer.gr`), in Athens** — still one box, still Docker Compose, still the EU. So **every mention of Hetzner below is historical** — the cost rows, the snapshot-retention row, the DNS table, and the paragraph about what happens if that data centre goes down: €11.49 is Hetzner's price, not what we pay today, and Nuremberg is not where your data is. **What we pay today is €22.20 a month** for the Pointer Gold VPS — the figure on the renewal invoice dated 6 August 2026, covering 15 August to 15 September 2026. Everything else — the container layout, the free tiers, the reasoning about when this stops working — still holds.
 >
 > The current provider, country and backup arrangement are listed on [our trust page](/trust/), and that page is the one to believe if it ever disagrees with this one.
 >
@@ -61,7 +61,7 @@ I'm being deliberate about saying "marginal cost" instead of "free". Free implie
 Three domains (datanika.io, datanika.cloud, datanika.pro) on Porkbun with Cloudflare DNS. Redirect rules handle the routing between them:
 
 - `datanika.io` → landing site on Aweb
-- `app.datanika.io` → SaaS app on Hetzner
+- `app.datanika.io` → SaaS app on Hetzner *(Pointer, in Athens, since July 2026 — see the update at the top)*
 - `datanika.cloud` → 301 redirects to `app.datanika.io` (and legal pages redirect to `datanika.io`)
 
 SSL via Cloudflare Origin Certificates on both servers. Full strict mode. Zero cost, zero maintenance.
