@@ -32,7 +32,24 @@ import { subprocessors } from "../data/subprocessors";
  * it is mid-change under core#1000, and a DPA is the wrong place to freeze it.
  */
 
-const LAST_UPDATED = "September 4, 2026";
+const LAST_UPDATED = "September 20, 2026";
+
+/**
+ * The date the sub-processor register was last RE-DERIVED — not the date this document
+ * last changed. Annex III's "current as of" is a claim about when we went and checked
+ * who receives data; `LAST_UPDATED` is a claim about when any sentence here moved.
+ *
+ * 🚨 They were the same constant until 2026-09-20, and that was a latent defect rather
+ * than a simplification: both Change log entries below were dated `{LAST_UPDATED}`, so
+ * the first edit to this page for any other reason would have silently re-dated two
+ * historical entries to the day of that edit — a change log that rewrites its own
+ * history. The entries now carry literal dates and this constant is separate.
+ *
+ * Only move this when you have actually re-run the derivation in
+ * `plans/growth/notes/LEGAL_PAGE_FACTS_2026-08-30.md`. Stamping today's date on a page
+ * you merely edited converts an open question into a false answer.
+ */
+const REGISTER_DERIVED = "September 4, 2026";
 
 // One constant, three consumers: the deletion sentence in §9, the backup sentence
 // in Annex II, and the figure /privacy and /trust already publish. Writing a
@@ -310,7 +327,8 @@ const BACKUP_LOCAL_DAYS = 7;
           absent it is absent from this list.
         </p>
         <ul class="mt-2">
-          <li><strong>In transit.</strong> TLS on every external connection. Internal services bind to loopback only.</li>
+          <li><strong>In transit, inbound.</strong> Connections to Datanika always use TLS: the web application, its API and the remote MCP endpoint are served over TLS 1.2 or higher. Internal services bind to loopback only.</li>
+          <li><strong>In transit, outbound to your systems.</strong> Connections from Datanika out to a database you host are encrypted only where the connector and your server support it, and we do not yet verify your server's certificate. Some connectors negotiate TLS whenever your server offers it, some encrypt only when you switch it on, and some cannot encrypt at all. Per the preamble to this Annex, this is stated as it operates rather than as we would like it to be: the position for every connector, and whether we measured it or reasoned it, is published under <a href="/trust#encryption-in-transit" class="text-violet-400 underline underline-offset-2 hover:text-violet-300">Encryption in transit</a> on our Trust &amp; Security page. We tighten those rows as fixes ship.</li>
           <li><strong>Credentials.</strong> Source and destination credentials you enter are encrypted at rest with Fernet. Account passwords are hashed with bcrypt and are never recoverable.</li>
           <li><strong>Tenant isolation.</strong> Every tenant-scoped table carries an organisation identifier and every query is filtered by it. dbt projects are per-tenant directories.</li>
           <li><strong>Backups.</strong> Nightly database and file-volume backups. The off-site copy is GPG-encrypted before it leaves the application host, and the backup host holds no decryption key. Retention: {BACKUP_LOCAL_DAYS} days locally, {BACKUP_OFFSITE_DAYS} days off-site.</li>
@@ -325,7 +343,7 @@ const BACKUP_LOCAL_DAYS = 7;
       <section>
         <h2>Annex III — Sub-processors</h2>
         <p>
-          Current as of {LAST_UPDATED}. Each row states where the recipient is established, which is
+          Current as of {REGISTER_DERIVED}. Each row states where the recipient is established, which is
           what determines whether a transfer leaves the EEA.
         </p>
         <p class="mt-2">
@@ -387,7 +405,22 @@ const BACKUP_LOCAL_DAYS = 7;
         <h2>Change log</h2>
         <ul>
           <li>
-            <strong>{LAST_UPDATED}</strong> — Annex III restated with one row per function rather
+            <strong>September 20, 2026</strong> — a measure in Annex II was withdrawn because it was
+            not true. It read <em>"In transit. TLS on every external connection."</em> Connections to
+            Datanika do all use TLS, but connections from Datanika out to a database you host are
+            encrypted only where that connector and your server support it, several are not encrypted
+            at all, and none of them verifies your server's certificate. Annex II now states both
+            directions separately, and the per-connector position is published under
+            <a href="/trust#encryption-in-transit" class="text-violet-400 underline underline-offset-2 hover:text-violet-300">Encryption
+            in transit</a> on our Trust &amp; Security page, each row marked as measured or reasoned.
+            The claim had been wrong since this document was first published, which is why it is
+            recorded here rather than quietly edited. No sub-processor was added or removed, and no
+            practice changed on this date. The same correction was made to §5 of our
+            <a href="/privacy" class="text-violet-400 underline underline-offset-2 hover:text-violet-300">Privacy Policy</a>, which
+            carried the same claim in different words.
+          </li>
+          <li>
+            <strong>September 4, 2026</strong> — Annex III restated with one row per function rather
             than one per recipient. <strong>No sub-processor was added or removed and no fact
             changed</strong>: recipients that perform several functions, which the previous rows
             described in a single sentence, now have one row each. This makes the distinction between
@@ -395,7 +428,7 @@ const BACKUP_LOCAL_DAYS = 7;
             GitHub sign-in — visible in the table rather than only inside a sentence.
           </li>
           <li>
-            <strong>{LAST_UPDATED}</strong> — First publication. Sub-processor annex derived from
+            <strong>September 4, 2026</strong> — First publication. Sub-processor annex derived from
             measurement rather than from our earlier notes; Google, GitHub and Telegram named for the
             first time, and Resend's onward use of Amazon Web Services disclosed. Cloudflare's entry
             records web analytics alongside its CDN, DNS and TLS functions — a function added to a

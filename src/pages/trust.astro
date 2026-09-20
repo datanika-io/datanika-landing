@@ -270,13 +270,22 @@ import Footer from "../components/Footer.astro";
                 <td class="py-3">
                   TLS 1.2+ enforced. Cloudflare Origin Certificate for the backend. HSTS enabled.
                   Apache 2.4 is the reverse proxy on the application server; this marketing site is
-                  served by nginx.
+                  served by nginx. This row is about traffic <em>to</em> Datanika. Traffic from
+                  Datanika out to a database you host is a different question, answered per
+                  connector in
+                  <a href="#encryption-in-transit" class="text-violet-400 underline underline-offset-2 hover:text-violet-300">Encryption in transit</a>.
                 </td>
               </tr>
               <tr class="border-b border-slate-800/50">
                 <td class="py-3 pr-4 font-medium text-white">Database</td>
                 <td class="py-3 pr-4">PostgreSQL 16</td>
-                <td class="py-3">Encrypted connections. Nightly automated backups, kept 7 days locally and 30 days off-site.</td>
+                <td class="py-3">
+                  Runs on the application host itself and is not published to the network —
+                  the measure stated in Annex II of our
+                  <a href="/dpa" class="text-violet-400 underline underline-offset-2 hover:text-violet-300">DPA</a> as
+                  <em>"internal services bind to loopback only"</em>. Nightly automated
+                  backups, kept 7 days locally and 30 days off-site.
+                </td>
               </tr>
               <tr class="border-b border-slate-800/50">
                 <td class="py-3 pr-4 font-medium text-white">Transactional email</td>
@@ -303,6 +312,158 @@ import Footer from "../components/Footer.astro";
             </tbody>
           </table>
         </div>
+      </section>
+
+      <!-- Encryption in transit -->
+      <section id="encryption-in-transit">
+        <h2>Encryption in transit</h2>
+
+        <p>
+          Connections to Datanika always use TLS. Connections from Datanika out to a database you
+          host are encrypted only where the connector and your server support it, and we do not yet
+          verify your server's certificate.
+        </p>
+
+        <p class="mt-3 text-sm text-slate-400">
+          Those are two different questions and we used to answer only the first. Until 2026-09-20
+          this page's sibling documents said that all data in transit was encrypted, which was not
+          true of the second. The table below is the honest answer, per connector, and it is the one
+          to quote in a security review. We tighten these rows as fixes ship rather than restating
+          them — SQL Server and Synapse moved from the first column to the third this way.
+        </p>
+
+        <div class="mt-5 overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-slate-800">
+                <th class="text-left py-3 pr-4 text-slate-400 font-medium">Connector</th>
+                <th class="text-left py-3 pr-4 text-slate-400 font-medium">Connection from Datanika</th>
+                <th class="text-left py-3 pr-4 text-slate-400 font-medium">Your server's certificate</th>
+                <th class="text-left py-3 text-slate-400 font-medium">How we know</th>
+              </tr>
+            </thead>
+            <tbody class="text-slate-300">
+              <tr class="border-b border-slate-800/50">
+                <td class="py-3 pr-4 font-medium text-white">PostgreSQL</td>
+                <td class="py-3 pr-4">
+                  Encrypted when your server offers TLS. Against a server that does not, the
+                  connection succeeds in plaintext and reports success. The connection form has no
+                  setting that requires encryption.
+                </td>
+                <td class="py-3 pr-4">Not verified</td>
+                <td class="py-3">Measured</td>
+              </tr>
+              <tr class="border-b border-slate-800/50">
+                <td class="py-3 pr-4 font-medium text-white">Amazon Redshift</td>
+                <td class="py-3 pr-4">
+                  Reached with the same PostgreSQL driver and the same defaults as the row above.
+                </td>
+                <td class="py-3 pr-4">Not verified</td>
+                <td class="py-3">
+                  Reasoned. Measured against PostgreSQL, not against a Redshift cluster.
+                </td>
+              </tr>
+              <tr class="border-b border-slate-800/50">
+                <td class="py-3 pr-4 font-medium text-white">MySQL</td>
+                <td class="py-3 pr-4">
+                  Not encrypted. A server that <em>requires</em> TLS cannot be connected to at all,
+                  and the connection form has no setting that can ask for it.
+                </td>
+                <td class="py-3 pr-4">—</td>
+                <td class="py-3">Measured</td>
+              </tr>
+              <tr class="border-b border-slate-800/50">
+                <td class="py-3 pr-4 font-medium text-white">Oracle</td>
+                <td class="py-3 pr-4">
+                  Not encrypted, and the connection form has no setting that can ask for it.
+                </td>
+                <td class="py-3 pr-4">—</td>
+                <td class="py-3">Measured</td>
+              </tr>
+              <tr class="border-b border-slate-800/50">
+                <td class="py-3 pr-4 font-medium text-white">SQL Server</td>
+                <td class="py-3 pr-4">
+                  Encrypted. The driver configuration we ship requires it, in both directions.
+                </td>
+                <td class="py-3 pr-4">Not verified</td>
+                <td class="py-3">Measured</td>
+              </tr>
+              <tr class="border-b border-slate-800/50">
+                <td class="py-3 pr-4 font-medium text-white">Azure Synapse</td>
+                <td class="py-3 pr-4">
+                  Encrypted, through the same driver as SQL Server. Synapse requires encryption at
+                  its end as well.
+                </td>
+                <td class="py-3 pr-4">Not verified</td>
+                <td class="py-3">
+                  Reasoned. Measured against SQL Server, not against a Synapse workspace.
+                </td>
+              </tr>
+              <tr class="border-b border-slate-800/50">
+                <td class="py-3 pr-4 font-medium text-white">ClickHouse</td>
+                <td class="py-3 pr-4">
+                  Plaintext unless you tick <strong class="text-slate-300">Use HTTPS (TLS)</strong>
+                  on the connection. This is the one connector where encryption is your choice.
+                </td>
+                <td class="py-3 pr-4">
+                  Verified against public certificate authorities when TLS is on. There is no field
+                  for a private or self-signed authority, so a server using one cannot be connected
+                  to over TLS.
+                </td>
+                <td class="py-3">Measured</td>
+              </tr>
+              <tr class="border-b border-slate-800/50">
+                <td class="py-3 pr-4 font-medium text-white">MongoDB</td>
+                <td class="py-3 pr-4">
+                  Not encrypted. The connection form carries no TLS control, so a deployment that
+                  requires TLS — Atlas, Cosmos DB's Mongo API, a self-hosted
+                  <code class="text-violet-400">requireTLS</code> — cannot be connected to at all.
+                </td>
+                <td class="py-3 pr-4">—</td>
+                <td class="py-3">Measured</td>
+              </tr>
+              <tr class="border-b border-slate-800/50">
+                <td class="py-3 pr-4 font-medium text-white">BigQuery, Snowflake, Databricks</td>
+                <td class="py-3 pr-4">
+                  HTTPS, through each vendor's own client library. Datanika passes no transport
+                  options to any of the three.
+                </td>
+                <td class="py-3 pr-4">Verified, by those libraries' own defaults</td>
+                <td class="py-3">
+                  <strong class="text-slate-300">Reasoned</strong>, from the client libraries we
+                  install. We have not measured these three against the live services.
+                </td>
+              </tr>
+              <tr>
+                <td class="py-3 pr-4 font-medium text-white">DuckDB, SQLite</td>
+                <td class="py-3 pr-4">No network connection — a local file.</td>
+                <td class="py-3 pr-4">—</td>
+                <td class="py-3">—</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="mt-4 text-sm text-slate-400">
+          <strong class="text-slate-300">What "not verified" costs you.</strong> Encryption without
+          certificate verification keeps the data from being read by someone watching the network.
+          It does not prove that the machine answering is yours, so it does not defend against
+          someone on the network path who can pose as your server. Verification is not added for
+          the self-hosted databases above because it would refuse every self-signed certificate,
+          which is the default on a great many on-premises servers — so it is a change that has to
+          arrive with a way for you to supply your own certificate authority, not before it.
+        </p>
+
+        <p class="mt-3 text-sm text-slate-400">
+          <strong class="text-slate-300">Scope.</strong> The table covers the connections a pipeline
+          opens to extract and to load. Transformations run through dbt's own adapters and open
+          their own connections; those were not measured separately. Kafka is not a database and is
+          not in the table: its transport is set per connection and is documented on
+          <a href="/docs/connectors/kafka" class="text-violet-400 underline underline-offset-2 hover:text-violet-300">the Kafka page</a>.
+          Nothing here was measured against a hosted service — the measurements were taken against
+          servers we stood up for the purpose, and the rows that rely on a vendor's behaviour rather
+          than on our own reading say so.
+        </p>
       </section>
 
       <!-- Subprocessors -->
@@ -391,6 +552,23 @@ import Footer from "../components/Footer.astro";
         <div class="mt-6 rounded-lg border border-slate-800 bg-slate-900/50 p-5">
           <h3 class="text-sm font-medium text-white mb-2">Change log</h3>
           <ul class="text-sm text-slate-400 space-y-1">
+            <li>
+              <strong class="text-slate-300">2026-09-20</strong> — a security claim was withdrawn
+              because it was not true, and no company was added or removed.
+              <a href="/privacy" class="text-violet-400 underline underline-offset-2 hover:text-violet-300">Privacy</a> said
+              <em>"All data in transit is encrypted via TLS"</em>, and Annex II of our
+              <a href="/dpa" class="text-violet-400 underline underline-offset-2 hover:text-violet-300">Data Processing Addendum</a>
+              said <em>"TLS on every external connection"</em>. Both had been wrong since those
+              pages were written. Connections <em>to</em> Datanika do all use TLS; connections
+              <em>from</em> Datanika out to a database you host are encrypted only where that
+              connector and your server support it, several are not encrypted at all, and none of
+              them verifies your server's certificate. The per-connector position is now published
+              in <a href="#encryption-in-transit" class="text-violet-400 underline underline-offset-2 hover:text-violet-300">Encryption
+              in transit</a> above, with each row marked as measured or reasoned. No practice
+              changed on this date — what changed is that we describe it accurately. Two of the
+              connectors in that table, SQL Server and Synapse, were corrected in the product first
+              and that correction is live.
+            </li>
             <li>
               <strong class="text-slate-300">2026-09-10</strong> — two recipients were added to
               this table, and no practice changed. <strong class="text-slate-300">Google LLC</strong>
