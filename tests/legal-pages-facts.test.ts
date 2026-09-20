@@ -144,6 +144,38 @@ const SHARED_FACTS: Array<{ label: string; needle: RegExp; derive: string }> = [
       "/app/datanika/ui/pages/settings.py   # rendered at settings.py:372",
   },
   {
+    /**
+     * 🚨 The transport-encryption representation (landing#636, founder-approved 2026-09-20).
+     *
+     * `/privacy` §5 said "All data in transit is encrypted via TLS" and `/dpa` Annex II said
+     * "TLS on every external connection". Both had been false since those pages were written.
+     * QA measured every database connector through the product's own code paths, reading each
+     * session from the SERVER's side: MySQL and Oracle never encrypt, ClickHouse and MongoDB
+     * are plaintext by default, PostgreSQL encrypts only when the server offers it, and NO
+     * self-hosted database connection verifies the server's certificate.
+     * `plans/security/DB_CONNECTOR_TLS_2026-09-17.md`.
+     *
+     * ⚠️ Pinned as the PRESENCE of the honest statement, never as the absence of the old one.
+     * A ban on the old sentence is satisfied by the /trust change-log entry that retracts it —
+     * WORKFLOW_RULES §4, and the reason the two RETIRED entries below need ALLOWED budgets.
+     *
+     * 🔑 FLIP CONDITION, so this guard does not end up enforcing yesterday's product. The
+     * sentence stays true while ANY connector cannot encrypt or cannot verify. It becomes an
+     * understatement only when every connector both encrypts and verifies — at which point
+     * this assertion SHOULD go red, and the correct response is to repoint it at the new
+     * position and rewrite the /trust table, never to widen the regex. The table on
+     * /trust#encryption-in-transit is the artifact that records where we are.
+     */
+    label: "both directions of transport encryption are stated, and not conflated",
+    needle:
+      /Connections to Datanika always use TLS[\s\S]{0,400}?encrypted only where the connector and your server support it[\s\S]{0,120}?do not yet verify your server's certificate/,
+    derive:
+      "plans/security/DB_CONNECTOR_TLS_2026-09-17.md — QA drove every connector through " +
+      "ConnectionService.test_connection_verdict and DltRunnerService, and read each session " +
+      "from the server (pg_stat_ssl, Ssl_version, encrypt_option, mongod's log, the ClickHouse " +
+      "listener). Re-run that before weakening this sentence.",
+  },
+  {
     label: "off-site backup host Aweb is disclosed as a sub-processor",
     needle: /Aweb/,
     derive: "grep -n 'REMOTE=' plans/infra/scripts/backup-offsite.sh  # -> root@185.226.65.96",
@@ -180,6 +212,21 @@ const RETIRED: Array<{ term: string; why: string }> = [
       "account deletion shipped and is rendered from settings.py; `erase_user` hard-deletes "
       + "the person and soft-deletes the record. The page understated the product.",
   },
+  {
+    term: "All data in transit is encrypted via TLS",
+    why:
+      "/privacy §5's claim, false since the page was written. Connections TO Datanika are "
+      + "TLS; connections FROM Datanika to a customer-hosted database are encrypted only "
+      + "where that connector and that server support it, and none of them verifies the "
+      + "server's certificate (landing#636, plans/security/DB_CONNECTOR_TLS_2026-09-17.md).",
+  },
+  {
+    term: "TLS on every external connection",
+    why:
+      "/dpa Annex II's claim, and the worse of the two because that Annex's own preamble "
+      + "says nothing in it is aspirational. Same measurement as above. Banned on /privacy "
+      + "and /trust so it cannot migrate here from the document it was removed from.",
+  },
 ];
 
 const ALLOWED: Allowed[] = [
@@ -209,6 +256,23 @@ const ALLOWED: Allowed[] = [
     reason:
       "The Change log records that the Google Workspace email row was replaced by Resend. " +
       "Same reason as above: this is a statement about a correction, not a live claim.",
+  },
+  {
+    page: "trust",
+    term: "All data in transit is encrypted via TLS",
+    count: 1,
+    reason:
+      "The 2026-09-20 Change log entry quotes the sentence it retracts. A change log that " +
+      "cannot name what it withdrew tells a reader nothing, and quietly deleting a security " +
+      "claim is exactly what the /trust change log exists to prevent.",
+  },
+  {
+    page: "trust",
+    term: "TLS on every external connection",
+    count: 1,
+    reason:
+      "Same entry, quoting /dpa Annex II's wording alongside /privacy's. Both are named " +
+      "because a reader who saw either document needs to find their sentence here.",
   },
 ];
 
@@ -279,6 +343,81 @@ describe("legal pages: the two pages must not contradict each other", () => {
           `window from the code, do not restore this number from memory.`,
       ).toBe(false);
     }
+  });
+
+  /**
+   * The per-connector transport table is what makes the corrected sentence checkable.
+   * `/privacy` and `/dpa` both point a reader at `#encryption-in-transit`, so a promise
+   * routed to an anchor that does not exist is still a promise (GROWTH_RULES: *check the
+   * escape hatch has an action*).
+   *
+   * ⚠️ Scoped to the TABLE, not to the page and not to `<main>`. Three earlier guards on
+   * these files were satisfied by prose *about* the artifact — most recently the /trust
+   * change-log entry announcing the very row a guard was checking. The change log for this
+   * correction names several of these connectors, so a page-level needle would go green
+   * with the whole table deleted.
+   */
+  const transportTable = () => {
+    const start = trust.indexOf('<section id="encryption-in-transit">');
+    expect(start, "the #encryption-in-transit anchor is gone from /trust, and /privacy " +
+      "plus /dpa both link to it").toBeGreaterThan(-1);
+    const end = trust.indexOf("</section>", start);
+    expect(end, "unterminated #encryption-in-transit section").toBeGreaterThan(start);
+    const section = trust.slice(start, end);
+    const tables = [...section.matchAll(/<table[\s\S]*?<\/table>/g)];
+    // Control: the table is located by being the only one in the section. Two means a
+    // later edit added one and this assertion silently started reading the wrong one.
+    expect(tables.length, "expected exactly one table in #encryption-in-transit").toBe(1);
+    return tables[0][0];
+  };
+
+  it("publishes a per-connector transport position for every database connector family", () => {
+    const table = transportTable();
+    for (const name of [
+      "PostgreSQL", "Amazon Redshift", "MySQL", "Oracle", "SQL Server",
+      "Azure Synapse", "ClickHouse", "MongoDB", "DuckDB",
+    ]) {
+      expect(
+        table.includes(name),
+        `${name} has no row in the /trust transport table. /privacy and /dpa both tell a ` +
+          `reader that "the position for every connector is published" there.`,
+      ).toBe(true);
+    }
+  });
+
+  /**
+   * 🚨 The one cell that must not be overstated in EITHER direction.
+   *
+   * BigQuery, Snowflake and Databricks were **reasoned** from the client libraries in the
+   * image, offline, with no network — not measured. Writing "verified HTTPS" flat implies a
+   * measurement nobody took; writing nothing implies they are unencrypted. Both are wrong,
+   * and the honest cell says HTTPS *and* says it is reasoned.
+   */
+  it("labels the hosted-warehouse row as reasoned, and does not imply it is unencrypted", () => {
+    const table = transportTable();
+    const rows = [...table.matchAll(/<tr[\s\S]*?<\/tr>/g)].map((m) => m[0]);
+    const hosted = rows.filter((r) => r.includes("BigQuery, Snowflake, Databricks"));
+    expect(hosted.length, "expected exactly one hosted-warehouse row").toBe(1);
+    expect(
+      /Reasoned/.test(hosted[0]),
+      "the BigQuery/Snowflake/Databricks row no longer says its basis is reasoned. It was " +
+        "derived from the installed client libraries offline; no session to those services " +
+        "was ever measured. Do not upgrade this to a measurement without taking one.",
+    ).toBe(true);
+    expect(
+      /HTTPS/.test(hosted[0]),
+      "the BigQuery/Snowflake/Databricks row no longer says the transport is HTTPS. " +
+        "Removing it leaves them grouped with the plaintext connectors, which is the " +
+        "opposite overstatement and equally false.",
+    ).toBe(true);
+  });
+
+  it("/privacy sends the reader to the table rather than restating it", () => {
+    expect(
+      /\/trust#encryption-in-transit/.test(privacy),
+      "/privacy no longer links to the per-connector table. It must not restate the rows " +
+        "either — a second hand-maintained copy of these facts is a drift generator.",
+    ).toBe(true);
   });
 
   it("keeps /privacy and /trust agreeing that TLS terminates on Apache, not nginx", () => {
@@ -450,6 +589,55 @@ describe("positive control", () => {
     );
     for (const { term } of RETIRED.filter((r) => ["Hetzner", "Nuremberg"].includes(r.term))) {
       expect(countOf(preFix, term), `matcher for "${term}" is inert`).toBeGreaterThan(0);
+    }
+  });
+
+  /**
+   * The transport correction's controls. Both halves, in the same test file:
+   * the retired matchers must FIRE on the real pre-fix sentences, and the affirmative
+   * needle must NOT be satisfied by them. One without the other is how a control comes
+   * to pass by gutting its own guard.
+   *
+   * These are not synthetic — they are the exact lines `/privacy` and `/dpa` carried
+   * until 2026-09-20, copied from the revision this correction replaced.
+   */
+  const PRE_FIX_PRIVACY = squash(
+    "<li>All data in transit is encrypted via TLS. The credentials you enter for your own " +
+      "data sources (database passwords, API keys, service-account JSON) are encrypted at " +
+      "rest using Fernet symmetric encryption.</li>",
+  );
+  const PRE_FIX_DPA = squash(
+    "<li><strong>In transit.</strong> TLS on every external connection. Internal services " +
+      "bind to loopback only.</li>",
+  );
+
+  it("the transport matchers fire on the real pre-fix sentences", () => {
+    expect(
+      countOf(PRE_FIX_PRIVACY, "All data in transit is encrypted via TLS"),
+      "the /privacy transport matcher is inert",
+    ).toBeGreaterThan(0);
+    expect(
+      countOf(PRE_FIX_DPA, "TLS on every external connection"),
+      "the /dpa Annex II transport matcher is inert",
+    ).toBeGreaterThan(0);
+  });
+
+  it("the corrected-statement needle is NOT satisfied by the pre-fix copy", () => {
+    // The half that can fail in the direction of the conclusion. A presence assertion
+    // proves nothing unless the needle can tell the corrected page from the broken one.
+    const fact = SHARED_FACTS.find((f) =>
+      f.label.startsWith("both directions of transport encryption"),
+    );
+    expect(fact, "the transport SHARED_FACT was renamed or removed").toBeDefined();
+    for (const [what, text] of [
+      ["/privacy", PRE_FIX_PRIVACY],
+      ["/dpa Annex II", PRE_FIX_DPA],
+    ] as const) {
+      expect(
+        fact!.needle.test(text),
+        `the corrected-statement needle matches ${what}'s PRE-FIX text, so it cannot ` +
+          `distinguish the correction from the claim it replaced.`,
+      ).toBe(false);
     }
   });
 });
