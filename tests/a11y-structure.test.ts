@@ -123,6 +123,35 @@ function mainProblems(html: string): string[] {
   return problems;
 }
 
+/**
+ * landing#641: a table header cell with no text.
+ *
+ * axe reports `empty-table-header` as minor, and it is a best-practice rule rather than a
+ * WCAG 2.1 AA failure — but on a comparison table the first column IS the row header, so a
+ * screen reader announcing it as nothing loses the one label that says what is being
+ * compared. The fix is one word per table.
+ *
+ * Counted over `dist/` rather than over the pages a sweep happened to sample, which is
+ * landing#620's own lesson: its 26-page sample put links marked by colour alone on 15
+ * pages, and the whole build had 994 of them on 150.
+ *
+ * A `<th>` whose label is supplied by `aria-label` is fine — the cell has an accessible
+ * name even though it renders no text.
+ */
+function emptyHeaders(html: string): string[] {
+  const out: string[] = [];
+  for (const m of html.matchAll(/<th\b([^>]*)>([\s\S]*?)<\/th>/gi)) {
+    if (/\saria-label=["'][^"']+["']/.test(m[1])) continue;
+    const text = m[2]
+      .replace(/<[^>]*>/g, " ")
+      .replace(/&nbsp;/gi, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (text === "") out.push(`<th${m[1]}></th>`.slice(0, 60));
+  }
+  return out;
+}
+
 // --------------------------------------------------------------------- pages
 
 function walkHtml(dir: string, out: string[] = []): string[] {
@@ -200,6 +229,18 @@ describe("every built page has the structure assistive technology relies on (lan
     expect(mainProblems('<main><nav aria-label="Main"></nav></main><footer></footer>')).toEqual(["the site navbar is inside <main>"]);
     expect(mainProblems('<nav aria-label="Main"></nav><main><footer></footer></main>')).toEqual(["the footer is inside <main>"]);
     expect(mainProblems("<main></main><main></main>")).toEqual(["2 <main>"]);
+
+    // landing#641: the real markup from /docs/mcp-server before this change, and after it.
+    expect(emptyHeaders("<tr><th></th><th>Hosted — one click</th><th>Local — stdio</th></tr>")).toHaveLength(1);
+    expect(emptyHeaders("<tr><th>Aspect</th><th>Hosted — one click</th><th>Local — stdio</th></tr>")).toEqual([]);
+    // What markdown renders for a `| | Old | New |` header row, and for the fixed one.
+    expect(emptyHeaders('<tr><th scope="col">  </th><th scope="col">Old</th></tr>')).toHaveLength(1);
+    expect(emptyHeaders('<tr><th scope="col">Plan</th><th scope="col">Old</th></tr>')).toEqual([]);
+    // A label inside markup still counts; a whitespace entity does not.
+    expect(emptyHeaders("<tr><th><strong>Plan</strong></th></tr>")).toEqual([]);
+    expect(emptyHeaders("<tr><th>&nbsp;</th></tr>")).toHaveLength(1);
+    // An aria-label gives the cell a name without rendering text.
+    expect(emptyHeaders('<tr><th aria-label="Plan"></th></tr>')).toEqual([]);
   });
 
   it("every page has exactly one <main>, with the navbar and footer outside it", () => {
@@ -233,5 +274,21 @@ describe("every built page has the structure assistive technology relies on (lan
   it("every <pre> can be reached with the keyboard", () => {
     const found = pages.map(([page, html]): [string, string[]] => [page, unfocusablePres(html)]);
     expect(found.filter(([, p]) => p.length).length, summarize(found)).toBe(0);
+  });
+
+  it("every table header cell has a label", () => {
+    const found = pages.map(([page, html]): [string, string[]] => [page, emptyHeaders(html)]);
+    expect(found.filter(([, p]) => p.length).length, summarize(found)).toBe(0);
+  });
+
+  /**
+   * Anti-vacuity for the assertion above. Every other checker here fires on dozens of pages,
+   * so a broken walk shows up immediately. This one is expected to find nothing, which is
+   * exactly the shape that passes when the regex is dead — so pin that `<th>` elements are
+   * read at all.
+   */
+  it("reads a real population of table headers (anti-vacuity)", () => {
+    const ths = pages.reduce((n, [, html]) => n + (html.match(/<th\b/gi) ?? []).length, 0);
+    expect(ths, "too few <th> elements read for the empty-header check to mean anything").toBeGreaterThan(100);
   });
 });
