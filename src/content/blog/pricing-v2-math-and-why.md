@@ -16,7 +16,7 @@ We don't have ten of those customers yet. We don't have *one* of them yet. Which
 
 ## What changed
 
-| | Old | New |
+| Plan | Old | New |
 |---|---|---|
 | **Free** | 500 runs, no volume cap | **10 GB processed/mo** + 500 runs |
 | **Pro** ($79/mo) | 15,000 runs, no volume cap | **100 GB processed/mo**, **$0.50/extra GB**, 15,000 runs |

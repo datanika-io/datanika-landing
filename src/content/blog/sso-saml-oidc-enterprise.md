@@ -16,7 +16,7 @@ Datanika supports **SAML 2.0** and **OIDC** single sign-on, configured per organ
 
 Both protocols land in the same place: a verified email address, a Datanika user, and a membership in your organization.
 
-| | SAML 2.0 | OIDC |
+| Aspect | SAML 2.0 | OIDC |
 |---|---|---|
 | Typical IdPs | Okta, Azure AD / Entra, ADFS, OneLogin | Google Workspace, Auth0, Keycloak, Okta |
 | What you configure | IdP entity ID, SSO URL, signing certificate (or a metadata URL) | Issuer URL, client ID, client secret |
