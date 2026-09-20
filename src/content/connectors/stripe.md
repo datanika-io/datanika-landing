@@ -125,7 +125,7 @@ Schedules live on their own page and reference the upload **by name**.
 
 ### Rate limited by Stripe (`Too many requests`)
 **Cause.** Stripe enforces a default rate limit of ~100 read requests/second in live mode (lower in test mode). Large backfills against busy accounts can briefly hit it.
-**Fix.** dlt's Stripe source retries with backoff automatically — most rate-limit errors are invisible. If you see persistent failures, split the pipeline into two: one for bulk historical resources (`charges`, `invoices`) on a slow cadence, one for lightweight resources (`customers`, `products`) on a fast cadence.
+**Fix.** Datanika reads Stripe through dlt's generic REST client, and configures no rate-limit handling of its own — so how a burst is handled is that client's default behaviour, not anything tuned for Stripe. If you see persistent failures, split the pipeline into two: one for bulk historical resources (`charges`, `invoices`) on a slow cadence, one for lightweight resources (`customers`, `products`) on a fast cadence.
 
 ## Related
 
