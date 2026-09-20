@@ -114,7 +114,7 @@ export const connectors: Connector[] = [
       { name: "password", description: "Password (encrypted at rest)" },
     ],
     limitations: [
-      "As a destination, the server's certificate is not verified. Datanika loads into SQL Server through the open-source FreeTDS driver and requires an encrypted connection, which keeps the data from being read in transit. Nothing confirms that the server at the other end is yours, so it does not protect against someone on the network path who can pose as your server.",
+      "The server's certificate is not verified. Datanika connects to SQL Server through the open-source FreeTDS driver and requires an encrypted connection when it tests the connection, when it reads tables for an upload, and when it loads into it, which keeps that data from being read in transit. Nothing confirms that the server at the other end is yours, so it does not protect against someone on the network path who can pose as your server.",
     ],
     related: ["postgresql", "mysql", "synapse", "bigquery", "oracle"],
     seoTitle: "SQL Server ETL Tool — MSSQL Pipeline | Datanika",
