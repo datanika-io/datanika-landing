@@ -162,6 +162,7 @@ later walk of Steps 2 to 4 to the record.
 - **The refusal Step 1 describes.** A spec whose only GETs are a templated path and a path whose response is a
   single object was refused at save, and no connection was created. The form showed:
   `Invalid config: This spec has no endpoint the connector can load: Skipped templated endpoint /users/{id} — detail endpoints need a parent (P3).; Skipped GET /status — no array/collection JSON response schema.`
+  ⚠️ **That is the message as it rendered on `ba7289b`, kept verbatim because this section is evidence.** It changed on `master` on 2026-09-22 ([core#1416](https://github.com/datanika-io/datanika-core/issues/1416)) — do not copy it into a test or a guide.
 - **Steps 3 and 4.** Destination connection **2** `walkwarehouse` (postgres, a database in the stack's own
   Postgres), source connection **3** `fakerestapi`, upload **1** `fakerestapiwalk` on the structured form with
   *Use raw JSON config* unticked. The upload landed as `draft` and stored `{"mode": "full_database"}`, with no
@@ -190,8 +191,10 @@ above; `authors` returns a list of random length on every request, as on 2026-09
 #### Found on this walk
 
 - The refusal message lists an auth warning as if it were a reason, and shows internal phase labels and a doubled
-  `.;` → [core#1416](https://github.com/datanika-io/datanika-core/issues/1416). The guide quotes the OAuth2 warning
-  with its `in P1`, so that sentence changes when the fix reaches `master`.
+  `.;` → [core#1416](https://github.com/datanika-io/datanika-core/issues/1416). ✅ **Fixed, and on `master` as of
+  2026-09-22.** The refusal now lists only the reasons endpoints did not load, the phase labels are gone, and the
+  guide sentence above has been updated to match. ⚠️ **The message quoted under *What happened* is deliberately
+  left as it was seen on `ba7289b`** — that section is a capture, and editing it would falsify the record.
 - `OpenAPI Spec *` is marked, and the form refuses it blank, but its textarea has no `required` attribute. Recorded on
   [core#1311](https://github.com/datanika-io/datanika-core/issues/1311).
 
