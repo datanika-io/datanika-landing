@@ -464,6 +464,19 @@ import Footer from "../components/Footer.astro";
           servers we stood up for the purpose, and the rows that rely on a vendor's behaviour rather
           than on our own reading say so.
         </p>
+
+        <p class="mt-3 text-sm text-slate-400">
+          <strong class="text-slate-300">Datanika's own database.</strong> Everything above is about
+          connections to databases <em>you</em> host. Our own PostgreSQL is a separate question, and
+          we would rather answer it here than in a security review: connections between the Datanika
+          application and its own database are
+          <strong class="text-slate-300">not TLS-encrypted</strong>. That database is not reachable
+          from outside the server, and this traffic never leaves the host. The application
+          authenticates to it with a hashed password
+          (<code class="text-violet-400">scram-sha-256</code>), so no credential is sent in the clear
+          even though the session is not. We will not describe this connection as encrypted until it
+          is.
+        </p>
       </section>
 
       <!-- Subprocessors -->
@@ -552,6 +565,20 @@ import Footer from "../components/Footer.astro";
         <div class="mt-6 rounded-lg border border-slate-800 bg-slate-900/50 p-5">
           <h3 class="text-sm font-medium text-white mb-2">Change log</h3>
           <ul class="text-sm text-slate-400 space-y-1">
+            <li>
+              <strong class="text-slate-300">2026-09-21</strong> — we now state that connections
+              between our application and <strong class="text-slate-300">our own database</strong>
+              are not encrypted, in
+              <a href="#encryption-in-transit" class="text-violet-400 underline underline-offset-2 hover:text-violet-300">Encryption
+              in transit</a> above. No company was added or removed and no practice changed. The
+              correction on 2026-09-20 below removed a row from the Infrastructure table that had
+              described that connection as encrypted, which left the page silent on it; silence was
+              not a false statement, but a reader comparing the two sections would reasonably have
+              asked. We measured it rather than reasoned it — the server has TLS disabled, so no
+              client setting could produce an encrypted session — and we are publishing the answer
+              even though it is not the flattering one. What protects that traffic is that it never
+              leaves the host, not encryption, and the page now says which.
+            </li>
             <li>
               <strong class="text-slate-300">2026-09-20</strong> — a security claim was withdrawn
               because it was not true, and no company was added or removed.
