@@ -221,6 +221,15 @@ const RETIRED: Array<{ term: string; why: string }> = [
       + "server's certificate (landing#636, plans/security/DB_CONNECTOR_TLS_2026-09-17.md).",
   },
   {
+    term: "Encrypted connections",
+    why:
+      "the Infrastructure table's row for OUR OWN PostgreSQL (landing#636, landing#647). Infra "
+      + "measured `SHOW ssl` = `off` on production and staging, with pg_stat_ssl false on 11 of "
+      + "11 backends. The row was removed rather than corrected and the honest position is now "
+      + "published under #encryption-in-transit. No allowance: the change log describes the "
+      + "removal without quoting the phrase, deliberately, so this ban stays satisfiable.",
+  },
+  {
     term: "TLS on every external connection",
     why:
       "/dpa Annex II's claim, and the worse of the two because that Annex's own preamble "
@@ -417,6 +426,68 @@ describe("legal pages: the two pages must not contradict each other", () => {
       /\/trust#encryption-in-transit/.test(privacy),
       "/privacy no longer links to the per-connector table. It must not restate the rows " +
         "either — a second hand-maintained copy of these facts is a drift generator.",
+    ).toBe(true);
+  });
+
+  /**
+   * landing#647, founder-approved 2026-09-21 ("yes, publish").
+   *
+   * `/trust` used to claim "Encrypted connections" about OUR OWN PostgreSQL. That was removed in
+   * landing#636 because Growth could not derive it; Infra then measured it and the answer is that
+   * the server has TLS **disabled** — `SHOW ssl` reads `off` on production and staging, and
+   * `pg_stat_ssl` is false on 11 of 11 client backends with 11 rows as the control
+   * (`plans/security/OWN_POSTGRES_TLS_2026-09-20.md`). So the page now says so.
+   *
+   * 🚨 The standing bar, and it is the reason this assertion is shaped as a PRESENCE check:
+   * **do not write "encrypted" about this connection in any form until `SHOW ssl` reads `on`.**
+   * Pinning the words "not TLS-encrypted" means that flipping the claim deletes the `not` and
+   * turns this red; an absence check for the word "encrypted" would be satisfied both by a correct
+   * page and by one that simply stopped discussing it.
+   *
+   * ⚠️ The second clause is a RULING, not a paraphrase. An earlier draft said the database
+   * "listens on 127.0.0.1 only". `docker-compose.yml` publishes it as `127.0.0.1:5432:5432`, which
+   * restricts **Docker's host publication** to loopback — the container still listens on all
+   * interfaces inside its network. On a shared box those are different claims, and the imprecise
+   * one hides that a local process can reach the port. Publish only what the measurement supports.
+   */
+  const ownDatabaseParagraph = () => {
+    const marker = "Datanika's own database.";
+    const at = trust.indexOf(marker);
+    expect(at, "/trust no longer carries the own-database transport paragraph (landing#647)")
+      .toBeGreaterThan(-1);
+    expect(
+      trust.indexOf(marker, at + 1),
+      "the own-database marker appears more than once, so this assertion no longer names one " +
+        "paragraph and a green says nothing about which",
+    ).toBe(-1);
+    const end = trust.indexOf("</p>", at);
+    expect(end, "unterminated own-database paragraph").toBeGreaterThan(at);
+    return trust.slice(at, end);
+  };
+
+  it("/trust states that our own database connection is not encrypted", () => {
+    const p = ownDatabaseParagraph();
+    expect(
+      /not TLS-encrypted/.test(p),
+      "The own-database paragraph no longer says the connection is NOT TLS-encrypted. Do not " +
+        "write 'encrypted' here in any form until `SHOW ssl` reads `on` — re-derive with:\n" +
+        "  docker exec datanika-postgres psql -U datanika -d datanika -t -A -c 'SHOW ssl;'",
+    ).toBe(true);
+  });
+
+  it("/trust claims only the reachability the measurement supports", () => {
+    const p = ownDatabaseParagraph();
+    expect(
+      /not reachable from outside the server/.test(p),
+      "The own-database paragraph lost the reachability clause. It must claim 'not reachable " +
+        "from outside the server' — NOT 'listens on 127.0.0.1 only', which the compose file does " +
+        "not support: `127.0.0.1:5432:5432` restricts Docker's host publication, not the " +
+        "container's listen address, and on a shared box that difference is the whole point.",
+    ).toBe(true);
+    expect(
+      /never leaves the host/.test(p),
+      "The own-database paragraph lost the clause naming what actually protects this traffic. " +
+        "Without it the page states a negative and offers the reader nothing in its place.",
     ).toBe(true);
   });
 
