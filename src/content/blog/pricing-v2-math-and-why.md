@@ -24,6 +24,8 @@ We don't have ten of those customers yet. We don't have *one* of them yet. Which
 
 Seats, connections, and schedules stay the same. SSO stays on Enterprise. The tiers haven't moved; the meter has.
 
+Every GB on this page — and every number derived from one below — is the **binary** GB our meter counts: **1,073,741,824 bytes (2<sup>30</sup>)**, which is 7.4% more data than the decimal GB most warehouse consoles report. Worth knowing before you check our arithmetic against your own, because counting in decimal makes your usage look larger than we meter it.
+
 ## Why "volume" was missing
 
 Because we shipped v1 with Paddle's default-shape subscription plans — a flat monthly fee plus a secondary usage meter (model runs). That captured the obvious cost driver (orchestration, scheduler CPU, log storage) but ignored the expensive one (the actual bytes that hit disk, get normalized, get re-read by dbt, and get written to the destination).
@@ -42,7 +44,7 @@ Now scale it to the same customer adding three more pipelines: a Stripe export, 
 
 Scale once more to a customer with a real data footprint — 1 TB/mo across 8 pipelines — and we're spending $120+ on a $79 subscription. That's the bill that convinced us the pricing was wrong.
 
-If you're processing more than **740 GB/mo**, Enterprise's $0.25/GB rate saves you more than the subscription difference. The [pricing calculator](/why-cheaper/) auto-picks the cheaper tier for you — no mental math required.
+If you're processing more than **740 GB/mo** — binary GB, as above; about 795 GB as a warehouse console counts them — Enterprise's $0.25/GB rate saves you more than the subscription difference. The [pricing calculator](/why-cheaper/) auto-picks the cheaper tier for you — no mental math required.
 
 ## Why GB and not MAR
 
