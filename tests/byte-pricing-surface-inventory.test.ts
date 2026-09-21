@@ -595,12 +595,36 @@ describe("the published terms are the terms the plan catalogue holds", () => {
      * arithmetic, not only on the page defining the rate.
      *
      * A floor, not a pin: adding the sentence to more pages must never go red.
-     * The wider gap — the disclosure reaches 2 of the 11 routes that publish a
-     * per-byte rate — is recorded on landing#403, not asserted here.
+     *
+     * 🚦 **The floor was raised from 2 routes to 3 on 2026-09-21 (landing#396), and
+     * the decision behind it is on that issue.** The question it settles is not
+     * "how many pages carry the sentence" but "which pages does a reader COMPUTE
+     * on" — measured, not assumed:
+     *
+     *   - `/pricing` defines the rate, `/why-cheaper` computes a personalised
+     *     figure. Both already carried it.
+     *   - **`/features/volume-pricing` is the third, and was the sharpest miss.**
+     *     It works a dollar example ("$45/mo overage"), publishes the formula
+     *     `ceil(metered GB − included GB) × rate`, and headed a panel **"A unit
+     *     you can check"** whose text invited the reader to *"count it yourself"*
+     *     — while never saying which gigabyte. A page whose entire argument for
+     *     GB-over-MAR is countability has to say what the unit is.
+     *   - The four `/compare/*` pages were considered and **deliberately left
+     *     out**: they set our `$0.79 / GB` beside a competitor's `~$38 / GB`, a
+     *     48x gap in which 7.4% changes no decision, and they already disclose
+     *     that the competitor figure is derived rather than quoted.
+     *   - Dated `/blog/` posts are historical records. The *wrong* definition is
+     *     already banned on every route by `overage-unit-claims.test.ts`.
+     *
+     * ⚠️ **The old docstring said "2 of the 11 routes"; measured over `dist/` on
+     * 2026-09-21 it is 15.** Counted here so the next reader is not working from
+     * a stale denominator: 15 routes publish a per-byte rate — 7 evergreen
+     * (`/`, `/blog`, the four `/compare/*`, `/features/volume-pricing`) and
+     * 6 dated posts, plus the 2 that already disclosed.
      */
     const expected = GIB.toLocaleString("en-US"); // "1,073,741,824"
     const pages = new Map(builtRoutes().map((r) => [r.route, r.text]));
-    for (const route of ["/pricing", "/why-cheaper"]) {
+    for (const route of ["/pricing", "/why-cheaper", "/features/volume-pricing"]) {
       expect(
         pages.get(route),
         `${route} publishes a per-GB rate without saying that a GB is ` +

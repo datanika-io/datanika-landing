@@ -93,7 +93,7 @@ const faq = [
   },
   {
     q: "How do I work out what a pipeline will cost?",
-    a: "Multiply, then round up. The rate is published — $0.50/GB on Pro, $0.25/GB on Enterprise — and the meter counts post-normalization output bytes, so a source you can size is a bill you can size. The formula is overage = ceil(metered GB − included GB) × rate, applied once to the whole billing period rather than to each run. The calculator at /why-cheaper/ does the arithmetic for a whole month. To be clear about what we do not do: the app does not display a per-run cost forecast today.",
+    a: "Multiply, then round up. The rate is published — $0.50/GB on Pro, $0.25/GB on Enterprise — and the meter counts post-normalization output bytes, so a source you can size is a bill you can size. A GB here is 1,073,741,824 bytes (2^30), the binary GB our meter counts, which is 7.4% more data than the decimal GB most warehouse consoles report. The formula is overage = ceil(metered GB − included GB) × rate, applied once to the whole billing period rather than to each run. The calculator at /why-cheaper/ does the arithmetic for a whole month. To be clear about what we do not do: the app does not display a per-run cost forecast today.",
   },
   {
     q: "How does this compare to Fivetran's MAR pricing?",
@@ -282,6 +282,13 @@ const faq = [
             A gigabyte is something you can count yourself, and the rate is published — $0.50/GB on Pro, $0.25/GB on
             Enterprise, against the same post-normalization output bytes as the worked example above. MAR is the opposite
             kind of unit: it is defined and counted by the vendor, so the invoice is the first place you get to see it.
+          </p>
+          <p class="text-sm text-slate-400 mt-3">
+            So you can check it against the same number we do:
+            <strong class="text-slate-300">a GB here is 1,073,741,824 bytes (2<sup>30</sup>)</strong> — the binary
+            GB our meter counts, 7.4% more data than the decimal GB most warehouse consoles report. Counting in
+            decimal makes your usage look larger than we meter it, so it understates your headroom and overstates
+            your bill, never the other way round.
           </p>
         </div>
       </div>
