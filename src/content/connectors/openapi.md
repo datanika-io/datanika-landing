@@ -116,7 +116,7 @@ Three consequences worth stating plainly:
 
 - 🚨 **If the spec declares no `securitySchemes` at all, your API key is silently dropped.** The connection saves cleanly and the first run gets a `401`. Nothing warns you at save time. If you know the API needs auth and the spec does not describe it, use the [REST API connector](/docs/connectors/rest-api) instead — its **Extra Headers** field lets you set the header yourself.
 - **Only the first declared scheme is used.** A spec offering both bearer and API-key auth gets whichever appears first; there is no picker.
-- **OAuth2 is not supported.** The parse records the warning *"OAuth2 scheme '&lt;name&gt;' is not supported **in P1** — supply a static token."* (the words *in P1* are part of the shipped string — search for them if you are grepping logs). If the API only does OAuth2 authorization-code flows, mint a long-lived token out of band and check whether the API also accepts it as a bearer token.
+- **OAuth2 is not supported.** The parse records the warning *"OAuth2 scheme '&lt;name&gt;' is not supported — supply a static token"*. ⚠️ **It is deliberately absent from the save-time refusal** — since [core#1416](https://github.com/datanika-io/datanika-core/issues/1416) that message lists only the reasons endpoints could not be loaded, and an unsupported auth scheme is not one of them. If the API only does OAuth2 authorization-code flows, mint a long-lived token out of band and check whether the API also accepts it as a bearer token.
 
 ### What is inferred, and what that means
 
