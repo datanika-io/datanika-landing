@@ -124,7 +124,7 @@ const notCheaperCases = [
 
 const pageTitle = "Fivetran Alternative with GB Pricing — MAR-Free ETL Calculator | Datanika";
 const pageDescription =
-  "Fivetran MAR alternative: Datanika uses GB-based ETL pricing instead of Monthly Active Rows. ELT mode ships even less to our meter — rows billing replaced by honest per-GB overage. Side-by-side calculator at 1 GB, 100 GB, 1 TB.";
+  "Fivetran MAR alternative: Datanika uses GB-based ETL pricing instead of Monthly Active Rows — rows billing replaced by honest per-GB overage. Side-by-side calculator at 1 GB, 100 GB, 1 TB.";
 ---
 
 <Layout
@@ -293,44 +293,25 @@ const pageDescription =
     </div>
   </section>
 
-  <!-- Pick ELT, pay even less -->
+  <!-- What the meter counts -->
   <section class="py-16">
     <div class="max-w-5xl mx-auto px-6">
       <div class="rounded-2xl border border-violet-500/30 bg-gradient-to-br from-violet-500/5 to-cyan-500/5 backdrop-blur p-8 md:p-12">
-        <h2 class="text-3xl font-bold text-white mb-4">Pick ELT, pay even less</h2>
+        <h2 class="text-3xl font-bold text-white mb-4">What the meter counts</h2>
         <p class="text-slate-300 mb-6 leading-relaxed">
-          Our meter reads what hits our disk. In <strong class="text-white">ETL mode</strong> (the dlt path), your data is normalized on our side — a 1 GB JSON export becomes ~3 GB of flat tables. The meter counts 3 GB.
-        </p>
-        <p class="text-slate-300 mb-6 leading-relaxed">
-          In <strong class="text-white">ELT mode</strong> (the dbt path with our new IR layer), your data is streamed as compressed parquet directly to your warehouse's raw schema and normalized there with SQL. A 1 GB JSON export becomes ~0.8 GB of parquet on the wire. The meter counts 0.8 GB.
-        </p>
-        <p class="text-slate-300 mb-6 leading-relaxed">
-          Same source. Same data. <strong class="text-violet-300">3.75× lower bill.</strong>
+          Our meter reads what an upload writes, after normalization. A 1 GB JSON export flattens into ~3 GB of tables, so the meter counts ~3 GB. dbt model and transformation runs add nothing to it: each one counts as a model run, not as bytes.
         </p>
 
-        <div class="grid md:grid-cols-2 gap-4 mt-8">
-          <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-5">
-            <p class="text-xs uppercase tracking-widest text-slate-400 mb-2">ETL mode</p>
-            <p class="text-sm text-slate-300 leading-relaxed">
-              1 GB HubSpot JSON → ~3 GB of normalized tables.<br />
-              Past Pro's 100 GB: <span class="text-white font-mono">3 GB × $0.50/GB</span> per nightly run — <span class="text-white font-mono">$45/mo</span> across 30.
-            </p>
-          </div>
-          <div class="rounded-xl border border-violet-500/50 bg-slate-950/60 p-5">
-            <p class="text-xs uppercase tracking-widest text-violet-400 mb-2">ELT mode</p>
-            <p class="text-sm text-slate-300 leading-relaxed">
-              1 GB HubSpot JSON → ~0.8 GB of parquet on the wire.<br />
-              Past Pro's 100 GB: <span class="text-white font-mono">0.8 GB × $0.50/GB</span> per nightly run — <span class="text-white font-mono">$12/mo</span> across 30.
-            </p>
-          </div>
+        <div class="rounded-xl border border-slate-800 bg-slate-950/60 p-5 mt-8">
+          <p class="text-xs uppercase tracking-widest text-slate-400 mb-2">Worked example</p>
+          <p class="text-sm text-slate-300 leading-relaxed">
+            1 GB HubSpot JSON → ~3 GB of normalized tables.<br />
+            Past Pro's 100 GB: <span class="text-white font-mono">3 GB × $0.50/GB</span> per nightly run — <span class="text-white font-mono">$45/mo</span> across 30.
+          </p>
         </div>
 
         <p class="text-xs text-slate-400 mt-4 leading-relaxed">
-          Overage is not charged per run. We total your metered volume for the billing cycle, subtract your plan's included allowance, round the remainder up to the next whole GB, and bill that once at the end of the cycle. The per-run figures above are that monthly total broken down — useful for sizing a pipeline, not a line on your invoice.
-        </p>
-
-        <p class="text-xs text-slate-400 mt-6 leading-relaxed">
-          The mode selector lives on every pipeline — it's the first switch in the UI when you create a new one. Existing pipelines can flip modes with a migrate button. See <a href="/blog/real-cost-modern-data-stack" class="text-violet-400 underline hover:text-violet-300">the dedicated post</a> on when to pick which mode.
+          Overage is not charged per run. We total your metered volume for the billing cycle, subtract your plan's included allowance, round the remainder up to the next whole GB, and bill that once at the end of the cycle. The per-run figure above is that monthly total broken down — useful for sizing a pipeline, not a line on your invoice.
         </p>
       </div>
     </div>
@@ -430,37 +411,11 @@ const pageDescription =
     </div>
   </section>
 
-  <!-- Real-world performance -->
-  <section class="py-16 border-t border-slate-800">
-    <div class="max-w-4xl mx-auto px-6">
-      <h2 class="text-2xl font-bold text-center mb-3">The ELT speedup is measured, not theoretical</h2>
-      <p class="text-slate-400 text-center max-w-2xl mx-auto mb-8 text-sm">
-        Before Datanika, the founding team ran production pipelines on the same DLT + Arrow architecture.
-      </p>
-      <div class="grid sm:grid-cols-2 gap-6">
-        <div class="rounded-xl bg-slate-800/50 border border-slate-700 p-6 text-center">
-          <p class="text-3xl font-extrabold text-emerald-400 mb-1">5.8x</p>
-          <p class="text-sm text-slate-300 mb-2">faster on 54M MySQL rows</p>
-          <p class="text-xs text-slate-400">17 min (Arrow) vs 99 min (legacy)</p>
-        </div>
-        <div class="rounded-xl bg-slate-800/50 border border-slate-700 p-6 text-center">
-          <p class="text-3xl font-extrabold text-emerald-400 mb-1">3.5x</p>
-          <p class="text-sm text-slate-300 mb-2">faster on 8.6M MongoDB docs</p>
-          <p class="text-xs text-slate-400">4 min (Arrow) vs 23.5 min (JSON)</p>
-        </div>
-      </div>
-      <p class="text-xs text-slate-400 mt-4 text-center">
-        Arrow mode skips JSON normalization — fewer bytes through our infrastructure, lower bill at the same per-GB rate.
-        <a href="/blog/dlt-arrow-5x-faster-pipeline/" class="text-emerald-400 underline underline-offset-2 hover:text-emerald-300">Read the technical deep-dive</a>.
-      </p>
-    </div>
-  </section>
-
   <!-- Volume pricing cross-link -->
   <section class="py-8 border-t border-slate-800">
     <div class="max-w-4xl mx-auto px-6 text-center">
       <a href="/features/volume-pricing/" class="text-emerald-400 underline underline-offset-2 hover:text-emerald-300 text-sm">
-        How volume-based pricing works — tier breakdown, ETL vs ELT metering, FAQ →
+        How volume-based pricing works — tier breakdown, what the meter counts, FAQ →
       </a>
     </div>
   </section>

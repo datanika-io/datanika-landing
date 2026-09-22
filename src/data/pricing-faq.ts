@@ -12,12 +12,11 @@
  * All answers are ≤200 characters for rich-snippet eligibility.
  * Order matters: highest-objection questions come first.
  *
- * DRAFT — Pricing V2 rewrite per SPEC_PRICING_V2.md §6.3. Lives on branch
- * 182-pricing-v2-copy-draft through P1–P4 and merges at P5 cutover day.
- * New V2 entries occupy positions 1–5 (post-pivot highest-objection), and
- * the V1 run-based entries (#1 Free, #5 Enterprise, #6 connectors) are
- * rewritten to the GB shape. Three entries are preserved verbatim: self-host,
- * annual discount, change plans.
+ * Live since the V2 cutover (2026-04-20); the "DRAFT, merges at P5" marker
+ * that stood here was stale for five months. Every answer is a claim in the
+ * `FAQPage` JSON-LD as well as on the page, so bind each one to what the
+ * product does — landing#656 removed three that described an ETL/ELT mode no
+ * user can select and a dbt "scan" the meter never records.
  */
 
 import { availableConnectors } from "./connectors";
@@ -44,14 +43,17 @@ export const pricingFaq: FAQItem[] = [
       "Free is hard-capped on both dimensions — 10 GB and 500 model runs. Pro and Enterprise bill overage at $0.50/GB and $0.25/GB at the end of the cycle, and block on neither.",
   },
   {
+    // landing#656. This said "yes — we meter the scan". Only `run.upload_completed`
+    // carries bytes; the model and transformation completions carry none, and
+    // cloud records them as model runs (`model_runs += count`).
     question: "Does a dbt model re-run count as new volume?",
     answer:
-      "Yes — re-running a dbt model re-scans the underlying tables and we meter the scan. ELT mode pushes that work to your warehouse, so most dbt re-runs on ELT pipelines don't add GB.",
+      "No. Only uploads, the extract-and-load step, are metered in bytes, so a dbt re-run adds no GB. Each model it runs counts as one model run, which Free caps at 500 a month.",
   },
   {
     question: "How do you meter \"processed\" — by input or output?",
     answer:
-      "Output, after normalization. A 1 GB JSON export becomes ~3 GB of flat tables on ETL; we meter the 3 GB. ELT mode streams compressed parquet, so the same source meters ~0.8 GB.",
+      "Output, after normalization: the bytes an upload writes. A 1 GB JSON export that becomes ~3 GB of flat tables is metered as 3 GB.",
   },
   {
     question: "How does this compare to Fivetran's MAR pricing?",
@@ -130,11 +132,6 @@ export const pricingFaq: FAQItem[] = [
     question: "What is the difference between a GB and a row?",
     answer:
       "A row is one record; a GB is 1,073,741,824 bytes (2^30) — the binary GB our meter counts, so it is 7.4% more data than a decimal GB. A row can be 100 bytes or 10 KB depending on schema width.",
-  },
-  {
-    question: "Why is ELT cheaper than ETL in your metering?",
-    answer:
-      "ELT streams compressed parquet to your warehouse — the meter counts ~0.8 GB for the same source that reads 3 GB on ETL. Same rate, fewer billable bytes. See /features/volume-pricing.",
   },
 ];
 

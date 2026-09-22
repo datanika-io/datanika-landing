@@ -20,8 +20,14 @@ function escapeRegex(s: string): string {
 // ---------------------------------------------------------------------------
 
 describe("pricing-faq source data", () => {
-  it("has exactly 17 entries (V2 shape: 5 GB + 7 V1 rewritten + 5 GA4 migration/explainer)", () => {
-    expect(pricingFaq.length).toBe(17);
+  /**
+   * A change detector, deliberately: every FAQ answer is also a `FAQPage` JSON-LD claim, so no
+   * entry should appear or disappear without a PR that says why. Update the number in that PR.
+   * 17 → 16 on 2026-09-22 (landing#656): "Why is ELT cheaper than ETL in your metering?" went,
+   * because no user can select an ELT mode.
+   */
+  it("has exactly 16 entries — a removal or addition is a decision, made in the PR that changes it", () => {
+    expect(pricingFaq.length).toBe(16);
   });
 
   it("every answer is <= 200 characters (rich-snippet budget)", () => {
@@ -55,7 +61,9 @@ describe("buildFaqPageJsonLd", () => {
     };
     expect(ld["@context"]).toBe("https://schema.org");
     expect(ld["@type"]).toBe("FAQPage");
-    expect(ld.mainEntity.length).toBe(17);
+    // The invariant is that the structured data mirrors the data file, question for question —
+    // not a count typed here, which went stale the first time an entry was removed.
+    expect(ld.mainEntity.map((q) => q.name)).toEqual(pricingFaq.map((i) => i.question));
     for (const q of ld.mainEntity) {
       expect(q["@type"]).toBe("Question");
       expect(q.acceptedAnswer["@type"]).toBe("Answer");
