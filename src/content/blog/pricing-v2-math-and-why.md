@@ -1,7 +1,8 @@
 ---
 title: "We're Adding a Volume Dimension to Our Pricing. Here's the Math, and Here's Why."
-description: "Our v1 pricing had a hole big enough to lose money on the first real customer. We're closing it before that customer arrives. Here's the volume math, the mode trade-off, and what you actually pay per GB."
+description: "Our v1 pricing had a hole big enough to lose money on the first real customer. We're closing it before that customer arrives. Here's the volume math, what the meter counts, and what you actually pay per GB."
 date: 2026-04-20
+updatedDate: 2026-09-22
 publishedAt: 2026-04-20
 author: "Datanika Team"
 category: "business"
@@ -62,23 +63,15 @@ That's what we mean by "you pay for bytes, not tables."
 
 We count **output bytes after normalization** — the amplified number, not the raw input. We do this because the amplified number is what our infrastructure actually touches, and pretending otherwise creates a gap between the sticker and the bill.
 
-Worked example: you have a 1 GB HubSpot JSON export. Our ingestion flattens nested objects into a wide table — that's ~3 GB of post-normalization data. A dbt model aggregates the 3 GB to a 100 MB summary. Total: **3.1 GB counted against your quota**, not 1 GB.
+Worked example: you have a 1 GB HubSpot JSON export. Our ingestion flattens nested objects into a wide table — that's ~3 GB of post-normalization data, and **~3 GB is what counts against your quota**, not 1 GB. A dbt model that aggregates it to a 100 MB summary adds nothing to that: only uploads are metered in bytes, and a model run counts as a model run.
 
 The reason we publish the amplification rather than hiding it is that it makes the bill something you can work out in advance yourself. A gigabyte is a unit you can count; the rate is on the pricing page; the multiplication is yours. MAR is the opposite kind of unit — it is defined and counted by the vendor, so the invoice is the first place you get to see it.
 
-## Pick ELT, pay less
+## What a month costs
 
-Here's the lever we care about most.
+The meter reads *what an upload wrote*: your data is normalized on our side, so a 1 GB JSON export becomes ~3 GB of flat tables and the meter counts ~3 GB.
 
-The meter reads *what hit our disk*. If you're in **ETL mode** (the dlt path), your data gets normalized on our side — a 1 GB JSON export becomes ~3 GB of flat tables. The meter counts 3 GB.
-
-If you're in **ELT mode** (the dbt path with our new IR layer), your data gets streamed as compressed parquet directly to your warehouse's raw schema and normalized *there* with SQL. A 1 GB JSON export becomes ~0.8 GB of parquet on the wire. The meter counts 0.8 GB.
-
-**Same source. Same data. 3.75× lower bill.**
-
-At $0.50/GB overage (Pro), each nightly ETL run past your included 100 GB adds 3 GB to the month's metered volume — $1.50 worth. The ELT run adds 0.8 GB, or $0.40 worth. Over 30 nightly runs that's 90 GB against 24 GB: **$45 versus $12**. (Overage is totalled once per billing cycle and rounded up to the next whole GB, so those per-run figures are the monthly bill decomposed — not a charge you're billed run by run.)
-
-The mode selector is on every pipeline. We're not hiding this — it's the first switch in the UI when you create a new pipeline. Existing pipelines can flip modes with a migrate button. We've written a [dedicated post about when to pick which mode](/blog/real-cost-modern-data-stack/) — the short version: ELT is the streaming-first default, ETL is for destinations that don't support parquet writes well (almost nobody in 2026).
+At $0.50/GB overage (Pro), each nightly run past your included 100 GB adds 3 GB to the month's metered volume — $1.50 worth. Over 30 nightly runs that's 90 GB: **$45**. (Overage is totalled once per billing cycle and rounded up to the next whole GB, so that per-run figure is the monthly bill decomposed — not a charge you're billed run by run.)
 
 ## What stays
 
@@ -104,7 +97,7 @@ If you've been evaluating Datanika on the v1 pricing page and waiting to decide:
 
 ## The numbers, measured
 
-On a standard Hetzner CPX32 (4 vCPU, 8 GB RAM, €13/mo), Datanika processes **17,704 rows/second** on a 10.1M-row Postgres → DuckDB pipeline — full extract, normalize, load — with a p95 of 571s across 3 runs (569.9s, 570.5s, 571.4s). Full benchmark log and methodology in [Datanika vs. the Modern Data Stack](/blog/datanika-vs-modern-data-stack/).
+On a standard Hetzner CPX32 (4 vCPU, 8 GB RAM, €13/mo), dlt — the library a Datanika upload runs — processed **17,704 rows/second** on a 10.1M-row Postgres → DuckDB pipeline, full extract, normalize and load, with a p95 of 571s across 3 runs (569.9s, 570.5s, 571.4s). The benchmark script calls dlt directly rather than going through a Datanika upload, so it measures the library, not the product. Full benchmark log and methodology in [Datanika vs. the Modern Data Stack](/blog/datanika-vs-modern-data-stack/).
 
 The [/why-cheaper/](/why-cheaper/) calculator lets you drag a slider from 1 GB to 10 TB and see the cost side-by-side with Fivetran Starter and Datanika auto-picking the cheaper of Pro-with-overage vs Enterprise-flat.
 
@@ -115,3 +108,5 @@ The [/why-cheaper/](/why-cheaper/) calculator lets you drag a slider from 1 GB t
 ---
 
 *Correction, 2026-08-31.* An earlier version of this post said Pro and Enterprise pipelines show a pre-run `predicted_bytes` estimate, derived from a moving average of the last five runs, before you click "Run." That was written from the pricing spec rather than from the product: the estimate is not computed today, on any plan. The paragraph has been replaced with what the meter actually does. Tracked in [landing#375](https://github.com/datanika-io/datanika-landing/issues/375).
+
+*Correction, 2026-09-22.* Three more passages described something other than the product. The post had a section titled "Pick ELT, pay less". That section said every pipeline has an ETL/ELT mode selector, and that ELT is metered at ~0.8 GB where ETL is metered at ~3 GB. No pipeline can be switched to ELT: the app shows no mode selector, and nothing saves a mode, so every run takes the normalizing path described above. The worked example also counted a dbt model's 100 MB against your quota. It does not: only uploads are metered in bytes. And the benchmark was credited to Datanika when it measured dlt called directly by a script. All three passages now say what the product does. Tracked in [landing#656](https://github.com/datanika-io/datanika-landing/issues/656).
