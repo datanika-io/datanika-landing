@@ -2,7 +2,7 @@
 title: "How to Build a Stripe Revenue Dashboard with dbt"
 description: "Stripe's dashboard can't do MRR, churn, or LTV the way you need. Here's how to pipe Stripe into your warehouse and model revenue metrics with dbt, step by step."
 date: 2026-07-20
-updatedDate: 2026-08-31
+updatedDate: 2026-09-22
 author: "Datanika Team"
 category: "tutorial"
 tags: ["tutorial", "stripe", "dbt", "revenue", "mrr", "analytics"]
@@ -303,7 +303,7 @@ Because the logic lives in dbt, not in Metabase, every tile shares one definitio
 
 ## What it costs
 
-Datanika meters **bytes processed**, not rows or connectors. The [Free plan](/pricing/) includes **10 GB/month**. Pro is **$79/mo with 100 GB included** and **$0.50/GB** beyond that. A Stripe account's daily refresh is small — Stripe objects are narrow JSON — so for most teams the bill here is the subscription, not the volume. Check your own numbers in the **Plan Usage** panel on the **Dashboard** rather than trusting that sentence.
+Datanika meters **bytes processed**, not rows or connectors. The [Free plan](/pricing/) includes **10 GB/month**. Pro is **$79/mo with 100 GB included** and **$0.50/GB** beyond that. A Stripe account's daily refresh is small — Stripe objects are narrow JSON — so for most teams the bill here is the subscription, not the volume. Don't take that on trust, and don't look for the answer in the app: its **Plan Usage** panel counts model runs, not bytes. Size it from your data instead — the meter counts what an upload writes after normalization.
 
 Compare that to [Fivetran](/compare/fivetran/), which counts each Stripe object as monthly active rows and adds a per-connection minimum — the exact pricing model this whole tutorial routes around.
 
@@ -317,3 +317,5 @@ Compare that to [Fivetran](/compare/fivetran/), which counts each Stripe object 
 Stripe gives you the payments. dbt gives you the metrics. Datanika is the ten-minute bridge between them.
 
 [Start free at app.datanika.io](https://app.datanika.io/)
+
+*Correction, 2026-09-22.* The cost section told you to check your byte usage in the dashboard's Plan Usage panel. That panel counts model runs, not bytes, and no screen in the app shows your byte count today, so the section now says to size it from your data. Tracked in [datanika-core#1513](https://github.com/datanika-io/datanika-core/issues/1513).
