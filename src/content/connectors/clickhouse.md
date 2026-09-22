@@ -4,8 +4,8 @@ description: "Step-by-step guide to set up ClickHouse as a destination in Datani
 source: "clickhouse"
 source_name: "ClickHouse"
 category: "database"
-verified_by: "growth-ui"
-verified_date: "2026-09-16"
+verified_by: "product-ui"
+verified_date: "2026-09-22"
 related_use_cases:
   - "kafka-to-clickhouse"
 related_comparisons:
@@ -129,6 +129,8 @@ A destination is chosen per **upload**, at **`/uploads`** — not on the connect
    SELECT name FROM system.tables WHERE database = 'raw_data' ORDER BY name;
    SELECT count() FROM raw_data.`<upload>___<table>`;
    ```
+
+![The Model Detail page of the sellers table from the first run into ClickHouse, listed under the connection's raw_data database, with a Data preview of its 50 rows](/docs/connectors/clickhouse/04-first-run.png)
 
 ## Step 5 — Schedule it
 
