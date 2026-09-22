@@ -1,5 +1,9 @@
 ---
 import ApiLayout from "../../layouts/ApiLayout.astro";
+
+// "Cancel a run" — datanika-core#657, SPEC_RUN_CANCELLATION D3a: the same two sentences as
+// /docs/runs and the in-app Cancel dialog, held word for word by tests/cancellation-wording.test.ts.
+// Kept here rather than in an HTML comment, which would be served to visitors.
 ---
 
 <ApiLayout title="API Reference">
@@ -391,6 +395,16 @@ POST /api/v1/pipelines/1/run?wait=true&timeout=120
 
 # Response: 200 OK with the updated run.
 # Response: 409 Conflict ("not_cancellable") if the run already finished.`} /></pre>
+  <p>
+    <strong>A run that has not started its work yet stops before anything is read or written. Work
+    already in progress cannot be interrupted: it runs to the end, and the run is then marked
+    cancelled. Data already written to your destination stays there, so re-running an upload that
+    appends loads those rows again.</strong>
+  </p>
+  <p>
+    <strong>You are billed for what was processed before the run stopped.</strong> So cancelling and
+    re-triggering a run that is already working runs the job twice, and bills for both.
+  </p>
 
   <h2>Schedules</h2>
 
