@@ -616,6 +616,19 @@ describe("the published terms are the terms the plan catalogue holds", () => {
      *   - Dated `/blog/` posts are historical records. The *wrong* definition is
      *     already banned on every route by `overage-unit-claims.test.ts`.
      *
+     * 🆕 **Raised again to 4 on 2026-09-21, and the exception proves the criterion
+     * rather than weakening it.** `/blog/pricing-v2-math-and-why` is a dated post,
+     * and dated posts are excluded above — but this one publishes a **decision
+     * threshold**: *"if you're processing more than 740 GB/mo, Enterprise's
+     * $0.25/GB rate saves you more than the subscription difference."* A reader
+     * measuring **decimal** GB in a warehouse console crosses 740 at 707 GiB and
+     * switches tier early, on our number. 740 GiB is ~795 decimal GB.
+     *
+     * ⚠️ **It is in because it publishes a threshold a reader acts on, NOT because
+     * it is a blog post.** The other five dated posts state terms and compute
+     * nothing, and they stay out. If a future post does arithmetic a reader will
+     * reproduce, it belongs here too — the test is the behaviour, not the folder.
+     *
      * ⚠️ **The old docstring said "2 of the 11 routes"; measured over `dist/` on
      * 2026-09-21 it is 15.** Counted here so the next reader is not working from
      * a stale denominator: 15 routes publish a per-byte rate — 7 evergreen
@@ -624,7 +637,12 @@ describe("the published terms are the terms the plan catalogue holds", () => {
      */
     const expected = GIB.toLocaleString("en-US"); // "1,073,741,824"
     const pages = new Map(builtRoutes().map((r) => [r.route, r.text]));
-    for (const route of ["/pricing", "/why-cheaper", "/features/volume-pricing"]) {
+    for (const route of [
+      "/pricing",
+      "/why-cheaper",
+      "/features/volume-pricing",
+      "/blog/pricing-v2-math-and-why",
+    ]) {
       expect(
         pages.get(route),
         `${route} publishes a per-GB rate without saying that a GB is ` +
