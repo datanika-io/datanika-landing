@@ -2,7 +2,7 @@
 title: "How We Built a 5.8x Faster Data Pipeline with DLT + Arrow"
 description: "We ran DLT three ways on 54M MySQL rows: legacy custom operators (99 min), DLT+JSON (174 min), DLT+Arrow (17 min). Here's the architecture, the numbers, and the file_max_bytes war story."
 date: 2026-04-16
-updatedDate: 2026-04-16
+updatedDate: 2026-09-22
 author: "Datanika Team"
 category: "engineering"
 tags: ["dlt", "arrow", "performance", "benchmark", "etl", "elt", "open-source"]
@@ -82,26 +82,22 @@ The gotcha: the environment variable must use the `DATA_WRITER__` prefix, not `N
 
 ## Why this matters for Datanika
 
-This architecture is what powers Datanika's [ELT mode](/features/volume-pricing/) — the one that reads 3-5x fewer billable bytes for the same source data.
+Datanika runs dlt, so the trade-off this post measured sits under every upload.
 
-When you select ELT mode on a Datanika pipeline, the data flows as compressed Parquet directly to your warehouse, bypassing our normalization layer. The meter counts post-compression bytes, not post-normalization bytes. A 1 GB JSON export that would read as 3 GB on ETL mode reads as ~0.8 GB on ELT.
+There is no ELT mode to switch a Datanika pipeline to. Every upload runs through dlt's normalize step on our side, and the [meter](/features/volume-pricing/) counts what that step writes: a 1 GB JSON export that becomes ~3 GB of flat tables is metered as ~3 GB.
 
-That difference is the same architectural split we measured at Whisk:
-
-- **ETL** = fetch rows as dicts, normalize through JSON, write JSONL, convert to Parquet. Our infrastructure does the work, we meter the amplified volume.
-- **ELT** = fetch as Arrow tables, write Parquet directly, stream to destination. The warehouse does the normalization in SQL. Less work on our side, fewer bytes metered, lower bill.
-
-On our [CPX32 benchmark](/blog/datanika-vs-modern-data-stack/) (10.1M rows, Postgres to DuckDB), the full pipeline — extract, normalize, load — completes in 571 seconds at 17,704 rows/s. That throughput is built on the same Arrow-first data path we proved at production scale.
+Our [CPX32 benchmark](/blog/datanika-vs-modern-data-stack/) (10.1M rows, Postgres to DuckDB) is not an Arrow number either. Its script calls dlt with the default backend, not Arrow, and completes the full extract, normalize and load in 571 seconds at 17,704 rows/s. It measures dlt called directly, not a Datanika upload.
 
 ## Key takeaways
 
 1. **DLT's JSON normalization is the bottleneck, not the source fetch.** Switching to Arrow skips it entirely.
 2. **Arrow mode requires explicit file splitting.** Without `DATA_WRITER__FILE_MAX_BYTES`, you'll build multi-GB files that timeout on upload.
 3. **The speedup is not from Arrow being faster at reading** — it's from eliminating the dict-to-JSON-to-Parquet conversion chain.
-4. **The same architecture that made our pipelines 5.8x faster is what makes "Pick ELT, pay less" work** — compressed Parquet streaming means fewer bytes through our infrastructure, which means a lower bill at the same overage rate.
 
 If you're running dlt at scale and haven't tried Arrow mode yet, the performance gain is significant and the migration is straightforward — set `use_arrow: True` in your source config and add the `DATA_WRITER__FILE_MAX_BYTES` env var.
 
 ---
 
 *Datanika is an open-source data pipeline platform built on dlt + dbt-core. [Start free](https://app.datanika.io/) with 10 GB/mo, [self-host it](/docs/self-hosting/), or [read about our volume-based pricing](/features/volume-pricing/).*
+
+*Correction, 2026-09-22.* An earlier version of this post said this architecture powers a Datanika "ELT mode" you can select on a pipeline, metered at ~0.8 GB where ETL is metered at ~3 GB. There is no such mode to select: the app shows no mode selector and nothing saves a mode, so every upload runs the normalizing path. The post also said the CPX32 benchmark was built on this Arrow path, but that script uses dlt's default backend. The "Why this matters for Datanika" section has been rewritten to say what the product does, and a fourth takeaway that repeated the claim is gone. Tracked in [landing#656](https://github.com/datanika-io/datanika-landing/issues/656).

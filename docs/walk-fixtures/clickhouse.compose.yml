@@ -1,0 +1,65 @@
+# A ClickHouse server for walking src/content/connectors/clickhouse.md against a local stack
+# (docs/specs/SPEC_CONNECTOR_GUIDE_VERIFICATION.md §2.4). datanika-examples ships MySQL, MSSQL and
+# MongoDB and no ClickHouse, so Tier 1's "a docker compose up away" premise does not cover this
+# connector and the destination has to be stood up by the walk.
+#
+# Written by Growth for the 2026-09-16 walk (landing#605) and promoted here by Product for the
+# 2026-09-22 walk (landing#618), because the only copy lived in a scratch directory nothing keeps.
+# The decisions below were each learned by being misled; re-deriving them costs a walk.
+#
+# Usage, from this repository, once your core worktree's stack is up (core
+# `scripts/worktree-stack.sh up ...` creates the network this joins):
+#
+#   WALK_PROJECT=wt-<dept>-ch WALK_NETWORK=wt-<dept>_default \
+#   WALK_CH_HTTP_PORT=<free port in your band> WALK_CH_NATIVE_PORT=<free port in your band> \
+#   docker compose -f docs/walk-fixtures/clickhouse.compose.yml up -d
+#
+# EVERY variable is required and fails the render when unset. A default would be a project, a
+# network or a port that belongs to some other department's stack -- and the project matters most:
+# without it compose would name the project after this directory, so two walkers would share one,
+# and the second `up` would recreate the first walker's server under them. Ask the OS which ports
+# your band can bind at run time (Windows reserves ranges that move between reboots, core#1481);
+# never copy the ones a previous walk used.
+#
+# The app reaches this server as host `clickhouse` (the service name, which compose registers as an
+# alias on the joined network), on 8123 over HTTP and 9000 over the native protocol. Only the
+# walker's own stack resolves that name.
+#
+# Tear down with the same variables set: `docker compose -f docs/walk-fixtures/clickhouse.compose.yml down`.
+name: ${WALK_PROJECT:?set WALK_PROJECT to a project name of your own, e.g. wt-product-ch}
+
+services:
+  clickhouse:
+    # Pinned to the 24.8 line because that is what core's own test for core#1364 ran against
+    # (24.8.14.39). An unpinned :latest would make the walk unreproducible.
+    image: clickhouse/clickhouse-server:24.8
+    container_name: ${WALK_PROJECT:?set WALK_PROJECT}-clickhouse
+    # NO CLICKHOUSE_USER / CLICKHOUSE_DB / CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT, deliberately.
+    # Setting them made the entrypoint create `datanika_loader` WITH access management and replace
+    # `default` -- so the guide's Step 1 could not run as written, and worse, a user the guide
+    # presents as least-privilege could create databases and read system.users.
+    # A FIXTURE THAT PRE-CREATES THE THING THE GUIDE TELLS YOU TO CREATE CANNOT TEST THE GUIDE.
+    # With these unset, `default` is the admin (no password) and Step 1 creates raw_data and
+    # datanika_loader itself, which is what a reader following the page actually does.
+    ports:
+      # BOTH ports are published on purpose. A ClickHouse destination dials the HTTP port AND the
+      # native TCP port (core#1364), so the walk has to be able to reach each one separately from
+      # the host to tell which half a failure is in.
+      - "127.0.0.1:${WALK_CH_HTTP_PORT:?set WALK_CH_HTTP_PORT to a free port in your band}:8123"
+      - "127.0.0.1:${WALK_CH_NATIVE_PORT:?set WALK_CH_NATIVE_PORT to a free port in your band}:9000"
+    networks:
+      - walk
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8123/ping || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+networks:
+  walk:
+    external: true
+    name: ${WALK_NETWORK:?set WALK_NETWORK to your stack's network, e.g. wt-product_default}

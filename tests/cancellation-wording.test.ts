@@ -1,0 +1,77 @@
+import { describe, it, expect } from "vitest";
+import { readFileSync, existsSync } from "fs";
+import { resolve } from "path";
+
+/**
+ * What cancelling a run does must read the same on every page that says it (datanika-core#657).
+ *
+ * `SPEC_RUN_CANCELLATION` AC10 and AC12 put two sentences on three surfaces — the in-app Cancel
+ * dialog, the API's cancel response, and the docs — *worded the same*. Core keeps the wording once,
+ * in `datanika/services/run_cancellation.py` (`CANCEL_EFFECT`, `CANCEL_BILLING`), and its own
+ * suite holds the dialog and the API to it. This repository cannot import that file, so the text
+ * is restated ONCE below and both docs pages are held to it.
+ *
+ * 🔑 These are the 2a sentences, not the spec's original D3 (spec D3a). D3 described a mid-flight
+ * stop — "cancelling stops further loading" — which core cannot do: a run already inside its engine
+ * call runs to the end. The page used to say the opposite in the pessimistic direction ("it does not
+ * stop the work yet"), which stopped being true on 2026-09-17 for a run that has not started.
+ *
+ * ⚠️ A cross-file agreement test, like `wait-contract-agreement.test.ts`: it cannot see production
+ * or core. If core's wording changes, change it there first, then here — this test failing on the
+ * landing side is the reminder, not the source of truth.
+ *
+ * Read from the BUILT pages, so a sentence that only survives inside an HTML comment does not count.
+ */
+
+const EFFECT =
+  "A run that has not started its work yet stops before anything is read or written. " +
+  "Work already in progress cannot be interrupted: it runs to the end, and the run is then " +
+  "marked cancelled. Data already written to your destination stays there, so re-running an " +
+  "upload that appends loads those rows again.";
+
+const BILLING = "You are billed for what was processed before the run stopped.";
+
+const DIST = resolve(__dirname, "../dist");
+
+/** Visible text of an HTML string: comments, scripts and tags removed, whitespace collapsed. */
+function textOf(html: string): string {
+  return html
+    .replace(/<!--[\s\S]*?-->/g, " ")
+    .replace(/<script[\s\S]*?<\/script>/g, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, " ")
+    .replace(/ ([.,:;])/g, "$1");
+}
+
+function visibleText(page: string): string {
+  const file = resolve(DIST, page);
+  if (!existsSync(file)) throw new Error(`Built file not found: ${file}`);
+  return textOf(readFileSync(file, "utf-8"));
+}
+
+const PAGES = ["docs/runs/index.html", "api/reference/index.html"];
+
+describe("what cancelling does is worded the same on every page that says it", () => {
+  it.each(PAGES)("%s carries the effect sentence word for word", (page) => {
+    expect(visibleText(page)).toContain(EFFECT);
+  });
+
+  it.each(PAGES)("%s carries the billing sentence word for word", (page) => {
+    expect(visibleText(page)).toContain(BILLING);
+  });
+
+  it("the agent page says a run already working is not interrupted", () => {
+    expect(visibleText("docs/ai-agents/index.html")).toContain(
+      "Cancelling does not interrupt work already in progress",
+    );
+  });
+
+  it("control: a sentence that survives only in a comment does not count", () => {
+    // The anti-vacuity half, run through the SAME helper the page tests use. If `textOf` stopped
+    // removing comments, the page tests would be satisfied by the explanatory comments beside the
+    // sentences rather than by the sentences a reader sees.
+    expect(textOf(`<p>shown</p><!-- ${EFFECT} -->`)).not.toContain(EFFECT);
+    expect(textOf(`<p><strong>${EFFECT}</strong></p>`)).toContain(EFFECT);
+  });
+});

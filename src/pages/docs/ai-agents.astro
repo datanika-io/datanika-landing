@@ -143,7 +143,7 @@ Content-Type: application/json
   <ul>
     <li><strong>Compile before preview</strong> — <code>POST /compile</code> is cheap (no warehouse call). Always compile first to catch Jinja errors.</li>
     <li><strong>Use <code>?wait=true</code></strong> on run triggers instead of polling <code>GET /runs/{'{'}id{'}'}</code> in a loop. Default timeout 120s, max 300s.</li>
-    <li><strong>Don't cancel and re-trigger a run that looks stuck.</strong> Cancelling does not stop the work yet, so a re-trigger runs the target a second time beside the first — and an upload that appends loads its rows twice. Read <code>GET /runs/{'{'}id{'}'}</code> and <code>GET /runs/{'{'}id{'}'}/logs</code> first; see <a href="/docs/runs">Stopping a run</a>.</li>
+    <li><strong>Don't cancel and re-trigger a run that looks stuck.</strong> Cancelling does not interrupt work already in progress, so a re-trigger runs the target a second time beside the first — and an upload that appends loads its rows twice. Read <code>GET /runs/{'{'}id{'}'}</code> and <code>GET /runs/{'{'}id{'}'}/logs</code> first; see <a href="/docs/runs">Stopping a run</a>.</li>
     <li><strong>Introspect before building</strong> — list source tables and columns before writing the upload config. Don't guess table names.</li>
   </ul>
 
