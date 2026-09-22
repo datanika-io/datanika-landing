@@ -1,5 +1,22 @@
 ---
 import DocsLayout from "../../layouts/DocsLayout.astro";
+
+// "Stopping a run" — datanika-core#657, SPEC_RUN_CANCELLATION D3a. Kept up here, not in an HTML
+// comment, because a template comment is served to visitors (tests/compliance-claims.test.ts).
+//
+// The two bold sentences in that section are the product's own words, and they must stay word for
+// word the same as the in-app Cancel dialog and the API's cancel response: core keeps them in
+// datanika/services/run_cancellation.py, and tests/cancellation-wording.test.ts holds this page and
+// /api/reference to them. Change them in core first.
+//
+// Read against core master on 2026-09-22: a run cancelled before its engine starts never runs and
+// records 0 rows (the pre-flight checkpoint, in production since 2026-09-17); a run already inside
+// its engine call is not interrupted and still ends cancelled. The sentences change on the day core
+// can interrupt an engine call (the spec's §7.2 "2b").
+//
+// Still true until the core promotion that carries them, and to be edited then: "Today this is
+// API-only" (the Cancel button is core PR #1510), and the absence of a `cancelling` status row
+// (core PR #1504). Do not restore "costs less" until a cancelled run measurably processes less.
 ---
 
 <DocsLayout title="Runs & Monitoring">
@@ -77,20 +94,21 @@ Rows loaded: 15,832</code></pre>
     to cancel.
   </p>
 
-  <h3>What cancelling does today, and what it does not do</h3>
-  <!-- datanika-core#657 and datanika-landing#586. Read against core master ada0987 on 2026-09-15: cancel_run
-       sets the status, nothing under datanika/tasks/ checks it, and cloud bills a cancelled run for what it
-       processed. When core ships a real stop, SPEC_RUN_CANCELLATION D1-D3 give the sentences this section
-       should carry then. Do not restore "costs less" until a cancelled run measurably processes less. -->
+  <h3>What cancelling does, and what it does not do</h3>
+  <p>
+    <strong>A run that has not started its work yet stops before anything is read or written. Work
+    already in progress cannot be interrupted: it runs to the end, and the run is then marked
+    cancelled. Data already written to your destination stays there, so re-running an upload that
+    appends loads those rows again.</strong>
+  </p>
+  <p>
+    <strong>You are billed for what was processed before the run stopped.</strong> For a run whose work
+    had already started, that is all of it.
+  </p>
   <ul>
     <li>
-      <strong>It does not stop the work yet.</strong> The request marks the run <code>cancelled</code>,
-      but the worker does not check for that: the extract and the load carry on to the end, and your
-      destination receives the full load.
-    </li>
-    <li>
-      <strong>You are billed for everything the run processed</strong> — which, because the work is not
-      stopped, is all of it. Cancelling does not reduce the bill.
+      <strong>A run cancelled before it started</strong> records <strong>0</strong> rows and no start
+      time, and its log says the engine never ran.
     </li>
     <li>
       <strong>Nothing is rolled back.</strong> Rows written to your destination stay there, and the run's
@@ -99,8 +117,9 @@ Rows loaded: 15,832</code></pre>
     </li>
   </ul>
   <p>
-    In short: <strong>today, cancelling changes a run's status, not what the run does.</strong> To keep a
-    run from happening, stop it from starting: pause or delete its schedule before it fires.
+    In short: <strong>cancelling keeps a waiting run from starting; it does not stop one that is already
+    working.</strong> To keep a scheduled run from happening at all, pause or delete its schedule before it
+    fires.
   </p>
 
   <h2>Error Handling & Retries</h2>
