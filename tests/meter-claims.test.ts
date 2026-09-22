@@ -11,8 +11,10 @@ import { resolve, sep } from "path";
  * - **"Pick ELT, pay less."** The pricing pages and three `/pricing` FAQ answers (all in the
  *   `FAQPage` JSON-LD) described a per-pipeline ETL/ELT selector, a migrate button, and ELT
  *   metered at ~0.8 GB against ETL's ~3 GB. The served `/pipelines` chunk on app.datanika.io
- *   references **0** of the selector's 16 `pipelines.mode_*` keys and 33 of the form's
- *   unconditional ones (`datanika_dual_mode_ux_enabled` defaults `False`). Even with the flag
+ *   references **0** of the selector's 14 `pipelines.mode_*` keys and 33 of the form's 53
+ *   `pipelines.*` keys (`datanika_dual_mode_ux_enabled` defaults `False`); re-read on a second
+ *   build the same day, same result, with `plans/growth/scripts/app_bundle_keys.py`. This said
+ *   "16" when it was written, counted by eye; 14 is counted from `en.json`. Even with the flag
  *   on, nothing writes a mode: the upload and pipeline services never pass one, and their
  *   update allowlists exclude it, so every row is `ETL`.
  * - **"We meter the scan"** / **"3.1 GB counted"**. Only `run.upload_completed` carries

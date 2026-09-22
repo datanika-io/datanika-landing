@@ -941,3 +941,31 @@ symptom over `dist/` before fixing the page you were shown"* to the rules that n
 **Your own handoff's "not started" is a claim too.** #527 was carried as "open, not started" while
 its fix had shipped weeks earlier, on `main` and armed. The rule *open ≠ undone* covers the file you
 wrote yourself. Re-read the issue and `git log` before starting work that a note says is undone.
+
+## Reading what the app renders (2026-09-22)
+
+**A claim about a flag-gated control is read from the served bundle, not from the flag.** "Pick
+ELT, pay less" sold a per-pipeline ETL/ELT selector for five months (#656). The selector sits
+behind `datanika_dual_mode_ux_enabled`. That setting defaults `False` and lives in a `.env.docker`
+the deploy preserves, so no diff ever showed it off. Reflex resolves
+`component() if settings.flag else rx.fragment()` when it compiles a page. So the JavaScript
+app.datanika.io serves records which branch was taken, and anyone can read it without SSH or a
+login. `plans/growth/scripts/app_bundle_keys.py` reports which i18n keys a route's own chunk
+references. Three controls make its zero a reading:
+- the form's unconditional keys must be there (33 of 53);
+- a fabricated key must be absent;
+- the shared `esm-*` bundle must hold the whole dictionary (761 of 761), which is also why a key
+  found in that bundle proves nothing about any page.
+
+**A visible control is not a working feature.** Had the selector been compiled in, the claim would
+still have been false: neither service writes a mode, so every row is `ETL`. Copy about what a
+control *does* needs its writer, not its widget. Grep for the assignment, not the component.
+
+**Count a list; do not read its length off the screen.** I published "16 mode keys" in an issue,
+a PR, a commit and a guard docstring. `en.json` holds 14. The conclusion survived, and it survived
+by luck, because the error was in the part nobody checks: a number inside the explanation.
+
+**An explanation's number is still a number.** The "707 GiB" in #652's reasoning was never
+published. It sat in a guard docstring, and it was wrong: the reading is 740 x 10^9 / 2^30 = 689,
+and no formula reproduces 707. The fix was to make the post's own threshold computed in that guard,
+so the next derivation starts from arithmetic that runs.
