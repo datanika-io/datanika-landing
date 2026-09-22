@@ -329,6 +329,17 @@ const ROOT = resolve(__dirname, "..");
 const DIST = resolve(ROOT, "dist");
 
 /** Every built page as `{ route, text }`, tags and scripts stripped. */
+/** A built page's text the way a browser shows it: tags to a space, entities decoded, whitespace collapsed. */
+function pageText(html: string): string {
+  return html
+    .replace(/<script[\s\S]*?<\/script>/g, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&#36;/g, "$")
+    .replace(/&nbsp;|&#160;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/\s+/g, " ");
+}
+
 function builtRoutes(): { route: string; text: string }[] {
   const out: { route: string; text: string }[] = [];
   const walk = (dir: string) => {
@@ -338,14 +349,7 @@ function builtRoutes(): { route: string; text: string }[] {
       else if (entry === "index.html") {
         const rel = p.slice(DIST.length + 1).split(sep).join("/");
         const route = "/" + rel.replace(/index\.html$/, "").replace(/\/$/, "");
-        const text = readFileSync(p, "utf-8")
-          .replace(/<script[\s\S]*?<\/script>/g, " ")
-          .replace(/<[^>]+>/g, " ")
-          .replace(/&#36;/g, "$")
-          .replace(/&nbsp;|&#160;/g, " ")
-          .replace(/&amp;/g, "&")
-          .replace(/\s+/g, " ");
-        out.push({ route, text });
+        out.push({ route, text: pageText(readFileSync(p, "utf-8")) });
       }
     }
   };
@@ -620,9 +624,17 @@ describe("the published terms are the terms the plan catalogue holds", () => {
      * rather than weakening it.** `/blog/pricing-v2-math-and-why` is a dated post,
      * and dated posts are excluded above — but this one publishes a **decision
      * threshold**: *"if you're processing more than 740 GB/mo, Enterprise's
-     * $0.25/GB rate saves you more than the subscription difference."* A reader
-     * measuring **decimal** GB in a warehouse console crosses 740 at 707 GiB and
-     * switches tier early, on our number. 740 GiB is ~795 decimal GB.
+     * $0.25/GB rate saves you more than the subscription difference."* 740 GiB is
+     * ~795 decimal GB, so a reader measuring **decimal** GB in a warehouse console
+     * reads "740" when our meter says **689 GiB** (740 x 10^9 / 2^30) and switches
+     * tier ~51 GiB early, on our number. Switching there costs **$25/mo**: Pro at
+     * 689 GiB is $79 + ceil(589.2) x $0.50 = $374, against Enterprise's $399.
+     * The allowances do not move it — the reader compares a console reading with
+     * our published number, so it is a straight unit conversion; redoing the whole
+     * break-even in decimal units gives 740 decimal GB, the same reading.
+     * ⚠️ Corrected 2026-09-22 (landing#396): this said "707 GiB", and #652's body
+     * "$16" from it. No formula reproduces 707; the test below computes the
+     * threshold from `PRODUCT` so the next number here is not taken on trust.
      *
      * ⚠️ **It is in because it publishes a threshold a reader acts on, NOT because
      * it is a blog post.** The other five dated posts state terms and compute
@@ -651,6 +663,54 @@ describe("the published terms are the terms the plan catalogue holds", () => {
           "number is a different bill.",
       ).toContain(expected);
     }
+  });
+
+  it("the math post's break-even is the one the catalogue produces, in both units it prints", () => {
+    /**
+     * `/blog/pricing-v2-math-and-why` publishes a decision threshold — *"more than
+     * 740 GB/mo"*, and *"about 795 GB as a warehouse console counts them"* — and
+     * both numbers were typed. They derive from four catalogue values, so they are
+     * computed here from `PRODUCT`: a tier edit goes red instead of leaving a
+     * threshold a reader acts on silently wrong (GROWTH_RULES: *bind a number to
+     * the fact it derives from*).
+     *
+     * If this goes red after a deliberate tier change: the post is a dated record,
+     * so add a dated correction beside the threshold rather than editing the
+     * number in place.
+     */
+    const pro = PRODUCT.Pro;
+    const ent = PRODUCT.Enterprise;
+    const proRate = pro.overageCentsPerGib as number;
+    // Pro's bill at V GiB is base + ceil(V - included) x rate; Enterprise is flat up to its allowance.
+    const crossoverGib =
+      pro.bytesIncluded / GIB + (ent.baseCentsPerMonth - pro.baseCentsPerMonth) / proRate;
+
+    // The preconditions the arithmetic silently depends on, asserted rather than assumed.
+    expect(Number.isInteger(crossoverGib), "ceil would move a fractional crossover").toBe(true);
+    expect(
+      crossoverGib * GIB,
+      "the crossover must sit inside Enterprise's allowance, where Enterprise is flat",
+    ).toBeLessThanOrEqual(ent.bytesIncluded);
+    const bill = (tier: PlanFacts, gib: number) =>
+      tier.baseCentsPerMonth +
+      Math.ceil(Math.max(0, gib - tier.bytesIncluded / GIB)) * (tier.overageCentsPerGib ?? 0);
+    expect(bill(pro, crossoverGib), "the two tiers tie at the crossover").toBe(
+      bill(ent, crossoverGib),
+    );
+    expect(bill(pro, crossoverGib + 1), "past it, Enterprise is cheaper").toBeGreaterThan(
+      bill(ent, crossoverGib + 1),
+    );
+
+    const decimalGb = Math.round((crossoverGib * GIB) / 1e9);
+    const text = pageText(
+      readFileSync(resolve(DIST, "blog/pricing-v2-math-and-why/index.html"), "utf-8"),
+    );
+    expect(text, "the post publishes the crossover in the unit the biller counts").toContain(
+      `more than ${crossoverGib} GB/mo`,
+    );
+    expect(text, "the post gives the same threshold in decimal GB").toContain(
+      `about ${decimalGb} GB`,
+    );
   });
 
   it("does not describe an unenforced run allowance as something that stops runs", () => {
