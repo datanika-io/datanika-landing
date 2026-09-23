@@ -81,6 +81,10 @@ Extract-load is configured at **`/uploads`**, not on the connection. There is no
 >
 > ⚠️ **Self-hosting a tagged release? `v0.1.3` and every earlier release still stop at the first page**, and the run still goes green — see *Exactly 10 rows landed, on a self-hosted release* under Troubleshooting. Datanika Cloud, builds from `master`, and releases after `v0.1.3` follow the cursor. Either way, step 4's check stands: a green run says the load finished, not that it moved everything.
 
+> **An endpoint that returns no records creates no table, and that is not a failed load.** Every endpoint is ticked by default, so finding fewer tables than boxes is normal: all of them were fetched, and dlt creates a table only for a resource that actually yields rows. On a new or lightly-used account that is the common case.
+>
+> Tell the two apart before assuming a bug: a table that is **missing** means that endpoint returned no records; a table that **exists but is short** means rows were dropped. Checking the count in Stripe itself is the fastest way to settle it.
+
 ## Step 5 — Schedule it
 
 Schedules live on their own page and reference the upload **by name**.
