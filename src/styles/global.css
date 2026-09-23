@@ -65,9 +65,13 @@ body {
    every point of it. The label is therefore dark. See tests/cta-contrast.test.ts,
    which samples the interpolation; axe cannot check this at all.
 
-   #0a0a0f is a literal on purpose, not var(--color-dark-bg): Tailwind v4 drops
-   unused @theme variables from the build, and an unresolved var() falls back to
-   the INHERITED colour -- body's #e2e8f0 -- which is this bug again, silently. */
+   The colour below must stay a LITERAL. Do not convert it to the matching @theme
+   token: Tailwind drops unused theme variables from the build, and an unresolved
+   var() falls back to the INHERITED colour -- body's near-white -- which is this
+   bug again, with a green build and nothing red. Pinned by that test.
+
+   This comment deliberately does not spell the token's name. Tailwind scans
+   project files, so naming it here is what makes it exist. */
 .btn-primary {
   background: linear-gradient(135deg, #8b5cf6, #06b6d4);
   color: #0a0a0f;

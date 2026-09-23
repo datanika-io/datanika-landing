@@ -176,6 +176,39 @@ describe("text on a gradient clears WCAG AA at every point", () => {
     expect(fixed.ratio).toBeCloseTo(4.66, 1);
   });
 
+  it("the label colour is a literal, never a theme variable", () => {
+    /**
+     * 🚨 This assertion exists because the comment that used to carry it RESURRECTED
+     * THE THING IT WARNED ABOUT.
+     *
+     * Tailwind emits an @theme variable only where it sees the variable used, and it
+     * scans project files. All three of this site's dark-surface theme tokens are
+     * measurably ABSENT from the stylesheet production serves — 0 occurrences each,
+     * against `--color-violet-500` at 1 in the same bytes as the control — and that
+     * absence is why the fix uses a literal. Then the CSS comment explaining the
+     * absence spelled the token out, and the next build emitted it. The explanation
+     * falsified itself, quietly: anyone who then "tidied" the literal into that
+     * variable would have found it working, right up until someone deleted the
+     * now-pointless comment and the label silently inherited body's near-white.
+     *
+     * ⚠️ Which is why no file in this repo writes that token's name out, this
+     * docstring included. Naming it is what makes it exist.
+     *
+     * So the safety no longer rests on whether the token exists. It rests here: a
+     * label on a gradient must resolve without a lookup that anything can drop.
+     * Same family as the recorded Tailwind trap where a class name written inside a
+     * test compiled the very CSS that test asserted on.
+     */
+    for (const r of painted) {
+      expect(
+        r.color,
+        `${r.selector} labels a gradient with "${r.color}". A var() here can be ` +
+          `tree-shaken, and an unresolved var() inherits — on this site that is ` +
+          `near-white on a light gradient, i.e. landing#665 again with a green build.`
+      ).toMatch(/^#[0-9a-fA-F]{3,8}$/);
+    }
+  });
+
   it("every gradient stop in a text-painting rule is parseable", () => {
     for (const r of painted) {
       // Not a skip. An unreadable stop is a rule this guard cannot judge, and a rule
