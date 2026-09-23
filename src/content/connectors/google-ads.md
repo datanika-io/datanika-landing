@@ -111,6 +111,10 @@ The query is yours to replace. Any valid [GAQL](https://developers.google.com/go
 3. When it finishes, open **Models** (`/models`) and browse the landed table. The upload lands it in a schema **named after the upload** — `googleadsdailysync` creates schema `googleadsdailysync` in the destination. dlt also creates its own `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables in that schema, but **Models does not list them** — seeing only your own tables there is correct, not a partial load. There is no target-schema field to choose.
 4. Spot-check the row count against the Google Ads UI. **Verify in the destination rather than trusting the status badge** — a green run means the load finished, not that it moved what you expected.
 
+> **A query that returns no rows creates no table, and that is not a failed run.** Because Google Ads is one query landing one table, an empty result leaves the schema with **no table at all** — which looks far more like a broken load than it is. The default query carries `WHERE segments.date DURING LAST_30_DAYS`, so an account that is new, paused, or had no spend in that window returns nothing and lands nothing.
+>
+> Check the query in the Google Ads UI before assuming a bug, and widen the date range or drop the `WHERE` clause to tell an empty result apart from a broken one.
+
 ## Step 6 — Schedule it
 
 Schedules live on their own page and reference the upload **by name**.

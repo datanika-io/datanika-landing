@@ -91,6 +91,10 @@ Extract-load is configured at **`/uploads`**, not on the connection. There is no
 
 > **The `Rows` figure is not your product count, and the gap is large.** Every product carries nested `variants`, `images` and `options`, and dlt gives each nested array its own table — so ticking `products` alone yields `products`, `products__variants`, `products__images`, `products__options` and `products__options__values`. A real run of this guide reported **109 rows** for a store holding **17 products and 3 customers**: 17 products + 26 variants + 18 images + 17 options + 26 option values + 3 customers + 2 addresses. Reconcile against the individual tables in **Models**, never against the run total — a store whose product count looks multiplied has loaded correctly.
 
+> **An endpoint that returns no records creates no table, and that is not a failed load.** Every endpoint is ticked by default, so finding fewer tables than boxes is normal: all of them were fetched, and dlt creates a table only for a resource that actually yields rows. On a new or lightly-used account that is the common case.
+>
+> Tell the two apart before assuming a bug: a table that is **missing** means that endpoint returned no records; a table that **exists but is short** means rows were dropped. Checking the count in Shopify itself is the fastest way to settle it.
+
 ## Step 5 — Schedule it
 
 Schedules live on their own page and reference the upload **by name**.
