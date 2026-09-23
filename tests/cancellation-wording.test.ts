@@ -23,11 +23,16 @@ import { resolve } from "path";
  * Read from the BUILT pages, so a sentence that only survives inside an HTML comment does not count.
  */
 
+// ⚠️ The last clause names NO object, and putting one back is a regression (core#657 spec D3b,
+// Product 2026-09-23). This text is shown for every run, and core's `Run.target_type` is
+// `upload | transformation | pipeline` — it used to say "re-running an UPLOAD that appends", so
+// two of the three read an example about an object they are not running, and a dbt user could
+// read the upload-specific clause as an exemption when an `incremental` model appends too.
 const EFFECT =
   "A run that has not started its work yet stops before anything is read or written. " +
   "Work already in progress cannot be interrupted: it runs to the end, and the run is then " +
-  "marked cancelled. Data already written to your destination stays there, so re-running an " +
-  "upload that appends loads those rows again.";
+  "marked cancelled. Data already written to your destination stays there, so a re-run that " +
+  "appends loads those rows again.";
 
 const BILLING = "You are billed for what was processed before the run stopped.";
 

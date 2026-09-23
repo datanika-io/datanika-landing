@@ -398,8 +398,8 @@ POST /api/v1/pipelines/1/run?wait=true&timeout=120
   <p>
     <strong>A run that has not started its work yet stops before anything is read or written. Work
     already in progress cannot be interrupted: it runs to the end, and the run is then marked
-    cancelled. Data already written to your destination stays there, so re-running an upload that
-    appends loads those rows again.</strong>
+    cancelled. Data already written to your destination stays there, so a re-run that appends
+    loads those rows again.</strong>
   </p>
   <p>
     <strong>You are billed for what was processed before the run stopped.</strong> So cancelling and
