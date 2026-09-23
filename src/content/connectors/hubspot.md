@@ -5,7 +5,7 @@ source: "hubspot"
 source_name: "HubSpot"
 category: "saas"
 verified_by: "product-ui"
-verified_date: "2026-07-19"
+verified_date: "2026-09-23"
 related_use_cases:
   - "hubspot-to-snowflake"
 related_comparisons:
@@ -69,6 +69,14 @@ Extract-load is configured at **`/uploads`**, not on the connection. There is no
 2. Watch **`/runs`**. The run shows a status badge, start and finish timestamps and a **Rows** count; the **Logs** icon on the row opens the detail.
 3. When it finishes, open **Models** (`/models`) and browse the landed tables. The upload lands them in a schema **named after the upload** — `hubspotdailysync` creates schema `hubspotdailysync` in the destination. dlt also creates its own `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables in that schema, but **Models does not list them** — seeing only your own tables there is correct, not a partial load. There is no target-schema field to choose.
 4. Spot-check the row count against the source. **Verify in the destination rather than trusting the status badge** — a green run means the load finished, not that it moved what you expected.
+
+Open the landed table from **Models** and click **Load first 100 rows**. That runs a live `SELECT` against your destination, so what you see is the warehouse rather than a status badge:
+
+![The Data preview on the landed contacts table, showing HubSpot contacts read live from the destination warehouse](/docs/connectors/hubspot/04-first-run.png)
+
+> **An endpoint that has no records creates no table, and that is not a failed load.** All three endpoints are ticked by default, so it is normal to tick three and find **one** table in the destination. In the run above, `contacts` returned 2 records while `companies` and `deals` each returned 0 — all three were fetched, and dlt creates a table only for a resource that yields rows.
+>
+> Tell the two apart before assuming a bug: a table that is **missing** means that endpoint had no records; a table that **exists but is short** means records were dropped. Checking the count in HubSpot itself is the fastest way to settle it.
 
 ## Step 5 — Schedule it
 
