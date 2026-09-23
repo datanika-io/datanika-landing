@@ -10,6 +10,15 @@ Referenced from `src/content/connectors/s3.md` (source-only connector).
 
 ## Verification
 
+<!-- evidence: blocked core#863 -->
+
+<!-- ^ landing#671. The machine-readable half of the paragraph below, for
+     `scripts/connector-evidence-report.mjs`: this guide is out of §5's `reachable` denominator.
+     The prose is the record and stays authoritative; the marker is what a script can read, and
+     it must cite an issue for the same reason §2.3 requires one — an exception nobody can follow
+     up is indistinguishable from neglect. The report REFUSES to print a number if this marker
+     and `verified_by: verification-blocked` ever disagree, rather than preferring one of them. -->
+
 > **`verified_date` is `null`, permanently, and that is a correction rather than a regression.**
 > Recorded 2026-09-11 under `docs/specs/SPEC_CONNECTOR_GUIDE_VERIFICATION.md` (Product, 2026-09-10),
 > which defines *verified* as **a named person having completed a real connection and a run** using
