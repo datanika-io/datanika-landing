@@ -80,3 +80,55 @@ describe("what cancelling does is worded the same on every page that says it", (
     expect(textOf(`<p><strong>${EFFECT}</strong></p>`)).toContain(EFFECT);
   });
 });
+
+/**
+ * The in-app Cancel control shipped (datanika-core#1504 + #1510, on core `master`), and these
+ * pages described a product that no longer exists: "Today this is API-only. There is no Stop
+ * button in the app yet."
+ *
+ * 🔑 Asserted as the PRESENCE of what is true, never the absence of the sentence that was wrong
+ * (`WORKFLOW_RULES` §4). "The page must not say API-only" is satisfied by deleting the section,
+ * and it would go red on a correct page that explained why it *used* to be API-only.
+ *
+ * Every string below was read from core `master` rather than from a handoff: `i18n/en.json`
+ * (`runs.cancel_title`, `runs.cancel_confirm`, `runs.cancel_keep`, `runs.stopping`) and
+ * `datanika/ui/pages/runs.py` (`AuthState.can_edit` gates the affordance; the dialog names the
+ * run as `#<id>  <target name>`).
+ *
+ * ⚠️ Same limitation as the block above and it is the point: this cannot see core or production.
+ * If the control changes, change it in core first and then here.
+ */
+describe("the docs describe the Cancel control that actually shipped", () => {
+  const RUNS = () => visibleText("docs/runs/index.html");
+
+  it("the statuses table carries cancelling, not just cancelled", () => {
+    // `cancelling` appears in prose on this page already, so a bare substring match would have
+    // passed before the row existed. Require the row's own description.
+    expect(RUNS()).toContain("A stop was requested");
+    expect(RUNS()).toContain("cancelled");
+  });
+
+  it.each(["Stop this run?", "Stop this run", "Keep running", "Stopping…"])(
+    "/docs/runs names the control's own words: %s",
+    (phrase) => {
+      expect(RUNS()).toContain(phrase);
+    },
+  );
+
+  it("/docs/runs says who may stop a run, and that the app can do it", () => {
+    expect(RUNS()).toContain("Runs");
+    expect(RUNS()).toMatch(/editor/i);
+  });
+
+  it("/api/reference says the cancel response carries a notice", () => {
+    expect(visibleText("api/reference/index.html")).toContain("notice");
+  });
+
+  it("control: these phrases are not already in an unrelated page", () => {
+    // Guards against a match that would pass anywhere. `Stopping…` carries a real ellipsis
+    // (U+2026); a page written with three dots would silently fail to match, and this is where
+    // that shows up rather than in a confusing page assertion.
+    expect("Stopping...").not.toContain("Stopping…");
+    expect(visibleText("docs/getting-started/index.html")).not.toContain("Stop this run?");
+  });
+});
