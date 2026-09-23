@@ -61,15 +61,32 @@ body {
   background-clip: text;
 }
 
+/* The brand gradient is light at BOTH ends, so a white label fails WCAG AA at
+   every point of it. The label is therefore dark. See tests/cta-contrast.test.ts,
+   which samples the interpolation; axe cannot check this at all.
+
+   #0a0a0f is a literal on purpose, not var(--color-dark-bg): Tailwind v4 drops
+   unused @theme variables from the build, and an unresolved var() falls back to
+   the INHERITED colour -- body's #e2e8f0 -- which is this bug again, silently. */
 .btn-primary {
   background: linear-gradient(135deg, #8b5cf6, #06b6d4);
-  color: white;
+  color: #0a0a0f;
   padding: 0.75rem 2rem;
   border-radius: 0.5rem;
   font-weight: 600;
   transition: opacity 0.2s, transform 0.2s;
   display: inline-block;
   text-decoration: none;
+}
+
+/* Pill badges ("Most Popular", step numbers). Same gradient and same dark label
+   as .btn-primary so there is one brand gradient rather than two: these used
+   Tailwind's `from-violet-500 to-cyan-400`, whose v4 violet is #8d54ff -- 9/255
+   away from the #8b5cf6 written above. Badge text is text-xs, so it needs the
+   full 4.5:1 with no large-text exemption. */
+.badge-gradient {
+  background: linear-gradient(to right, #8b5cf6, #06b6d4);
+  color: #0a0a0f;
 }
 
 .btn-primary:hover {
