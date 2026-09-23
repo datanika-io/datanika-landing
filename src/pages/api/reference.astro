@@ -393,8 +393,24 @@ POST /api/v1/pipelines/1/run?wait=true&timeout=120
   <h3>Cancel a run</h3>
   <pre tabindex="0"><code set:html={`POST /api/v1/runs/{id}/cancel    # scope: runs:write
 
-# Response: 200 OK with the updated run.
+# Response: 200 OK — the updated run, plus a "notice" saying what stopping does.
+#
+# "status" tells you WHICH of the two happened, and they are different outcomes:
+#   "cancelled"  — the run had not started its work. Nothing was read or written.
+#   "cancelling" — the run was already working. It is still working, and becomes
+#                  "cancelled" when the work it is doing ends. Poll GET /runs/{id}.
+{
+  "id": 43,
+  "status": "cancelling",
+  "notice": "A run that has not started its work yet stops before anything is read or written. ...",
+  ...
+}
+
 # Response: 409 Conflict ("not_cancellable") if the run already finished.`} /></pre>
+  <p>
+    Treat <code>200</code> as <em>the stop was accepted</em>, never as <em>the run has stopped</em>.
+    Only <code>status: "cancelled"</code> means no further work will happen.
+  </p>
   <p>
     <strong>A run that has not started its work yet stops before anything is read or written. Work
     already in progress cannot be interrupted: it runs to the end, and the run is then marked

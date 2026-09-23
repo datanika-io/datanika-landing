@@ -14,9 +14,17 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
 // its engine call is not interrupted and still ends cancelled. The sentences change on the day core
 // can interrupt an engine call (the spec's §7.2 "2b").
 //
-// Still true until the core promotion that carries them, and to be edited then: "Today this is
-// API-only" (the Cancel button is core PR #1510), and the absence of a `cancelling` status row
-// (core PR #1504). Do not restore "costs less" until a cancelled run measurably processes less.
+// ✅ Done 2026-09-23: the two things this comment used to defer are shipped and described here.
+// "Today this is API-only" is gone (the Cancel control, core PR #1510) and the statuses table
+// carries `cancelling` (core PR #1504) — both verified on core `master`, not on `dev`, because
+// this page describes production. The control's own words (Stop this run? / Stop this run /
+// Keep running / Stopping…) are core's `i18n/en.json`, and `tests/cancellation-wording.test.ts`
+// holds this page to them.
+//
+// 🚨 STILL IN FORCE: do not restore "cancelling early costs less". A cancelled run is billed for
+// what it processed, and for a run already inside its engine call that is all of it. That
+// sentence becomes true only when a cancel can interrupt an engine call — the same §7.2 "2b"
+// condition as the two bold sentences above.
 ---
 
 <DocsLayout title="Runs & Monitoring">
@@ -48,6 +56,7 @@ import DocsLayout from "../../layouts/DocsLayout.astro";
       <tr><td><code>running</code></td><td>Execution is in progress</td></tr>
       <tr><td><code>success</code></td><td>Run completed without errors</td></tr>
       <tr><td><code>failed</code></td><td>Run encountered an error</td></tr>
+      <tr><td><code>cancelling</code></td><td>A stop was requested; work already in progress is running to its end</td></tr>
       <tr><td><code>cancelled</code></td><td>Run was manually cancelled</td></tr>
     </tbody>
   </table>
@@ -77,21 +86,45 @@ Rows loaded: 15,832</code></pre>
     <li>Use the <strong>Target type</strong> filter to narrow down to uploads, transformations, or pipelines</li>
     <li>Click on a run row to expand <strong>Logs</strong> — logs stream in real-time for running jobs</li>
     <li>For failed runs, check the <strong>Error</strong> column for a summary and the logs for the full stack trace</li>
+    <li>To stop a run that is still <code>pending</code> or <code>running</code>, click <strong>Cancel</strong> on its row and confirm — see <a href="#stopping-a-run">Stopping a run</a></li>
     <li>To re-run a failed job, go back to the source (upload/transformation/pipeline) and click <strong>Run</strong></li>
   </ol>
 
-  <h2>Stopping a run</h2>
+  <h2 id="stopping-a-run">Stopping a run</h2>
   <p>
-    You can cancel a run that is <code>pending</code> or <code>running</code>:
+    You can stop a run that is <code>pending</code> or <code>running</code>, from the app or over the
+    API. A run that has already finished returns <code>409</code> — there is nothing left to cancel.
   </p>
+
+  <h3>From the Runs page</h3>
+  <p>
+    Open <strong>Runs</strong> in the sidebar. A row that can still be stopped carries a
+    <strong>Cancel</strong> button. <strong>Editors and above</strong> see it; viewers do not.
+  </p>
+  <ol class="list-decimal pl-6 space-y-2">
+    <li>Click <strong>Cancel</strong> on the run's row.</li>
+    <li>
+      A confirmation opens, titled <strong>Stop this run?</strong>. It names the run by id and
+      target so you can check you have the right one, and states what stopping does.
+    </li>
+    <li>Choose <strong>Stop this run</strong> to go ahead, or <strong>Keep running</strong> to back out.</li>
+    <li>
+      The row then shows a <strong>Stopping…</strong> badge. A run that had not started its work
+      becomes <code>cancelled</code> immediately; one already working stays
+      <code>cancelling</code> until the work it is doing ends.
+    </li>
+  </ol>
+
+  <h3>Over the API</h3>
   <pre tabindex="0"><code>POST /api/v1/runs/&#123;id&#125;/cancel</code></pre>
   <!-- `&#123;id&#125;` rather than literal braces: Astro parses `{...}` in markup as a JS
        expression, so `{id}` fails the build with `id is not defined` — and would render a
        variable's VALUE instead of the path parameter if one happened to be in scope. -->
   <p>
-    <strong>Today this is API-only.</strong> There is no Stop button in the app yet, so cancelling a run
-    needs an API key. A run that has already finished returns <code>409</code> — there is nothing left
-    to cancel.
+    The <code>200</code> response is the updated run plus a <code>notice</code> field carrying the
+    same sentences the app shows. Its <code>status</code> is <code>cancelled</code> for a run that
+    had not started, or <code>cancelling</code> for one still working. See
+    <a href="/api/reference">the API reference</a>.
   </p>
 
   <h3>What cancelling does, and what it does not do</h3>
