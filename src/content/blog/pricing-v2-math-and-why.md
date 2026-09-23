@@ -99,7 +99,7 @@ If you've been evaluating Datanika on the v1 pricing page and waiting to decide:
 
 On a standard Hetzner CPX32 (4 vCPU, 8 GB RAM, €13/mo), dlt — the library a Datanika upload runs — processed **17,704 rows/second** on a 10.1M-row Postgres → DuckDB pipeline, full extract, normalize and load, with a p95 of 571s across 3 runs (569.9s, 570.5s, 571.4s). The benchmark script calls dlt directly rather than going through a Datanika upload, so it measures the library, not the product. Full benchmark log and methodology in [Datanika vs. the Modern Data Stack](/blog/datanika-vs-modern-data-stack/).
 
-The [/why-cheaper/](/why-cheaper/) calculator lets you drag a slider from 1 GB to 10 TB and see the cost side-by-side with Fivetran Starter and Datanika auto-picking the cheaper of Pro-with-overage vs Enterprise-flat.
+The [/why-cheaper/](/why-cheaper/) calculator lets you drag a slider from 1 GB to 10 TB and see the cost side-by-side with Fivetran Starter, with Datanika auto-picking the cheapest tier: Free up to 10 GB, then Pro-with-overage or Enterprise-flat, whichever costs less.
 
 ---
 
