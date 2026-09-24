@@ -122,14 +122,28 @@ const QUALIFIER =
 /**
  * The two qualifiers core#1513 retired. Both were true until the 2026-09-24 deploy and are false
  * now, so they belong only inside a dated note.
+ *
+ * ⚠️ **Tense-tolerant on purpose.** The dated notes put the claim in the past — *"that panel
+ * counted model runs"* — and a present-tense-only matcher would read those notes as clean, which
+ * would make the control below report zero and the absence test vacuous. The licence to say this
+ * comes from the note's date, not from its grammar.
  */
-const RETIRED = /counts model runs, not bytes|no screen in the app shows (?:your |a )?byte count/i;
+const RETIRED =
+  /count(?:s|ed) model runs, not bytes|no screen in the app show(?:s|ed) (?:your |a )?byte count/i;
+
+/** The original unqualified instruction, live until 2026-09-22 — what this guard was built for. */
+const DEFECT_COPY = [
+  "Check Usage for your own figures.",
+  "Check your own numbers in the dashboard's Plan Usage panel.",
+];
 
 /** Exactly as published from 2026-09-22 until this flip — the population that must now be refused. */
 const RETIRED_COPY = [
   "Don't take that on trust, and don't look for the answer in the app: its Plan Usage panel " +
-    "counts model runs, not bytes. Size it from your data instead.",
-  "That card counts model runs, not bytes, and no screen in the app shows a byte count today.",
+    "counts model runs, not bytes. Size it from your data instead — the meter counts what an " +
+    "upload writes after normalization.",
+  "Don't look for the answer in the app: its Plan Usage panel counts model runs, not bytes. " +
+    "Size it from your data instead — the meter counts what an upload writes after normalization.",
 ];
 
 /** Exactly as published by this change — the population that must now be accepted. */
@@ -148,9 +162,15 @@ describe("copy about the in-app byte figure (landing#688, datanika-core#1513)", 
     expect(builtPages().length).toBeGreaterThan(100);
   });
 
-  it("the matchers answer the retired and the restored copy DIFFERENTLY", () => {
-    // Driving a guard with one population only proves it can say something. Both populations,
+  it("the matchers answer all three generations of this copy DIFFERENTLY", () => {
+    // Driving a guard with one population only proves it can say something. Three populations,
     // answered differently, is what proves it discriminates (coordinator rule 10).
+    for (const s of DEFECT_COPY) {
+      // The original defect: names the screen, qualifies nothing, and asserts nothing retired.
+      expect(SCREEN_MENTION.test(s), `defect copy not selected: ${s}`).toBe(true);
+      expect(QUALIFIER.test(s), `defect copy wrongly reads as qualified: ${s}`).toBe(false);
+      expect(RETIRED.test(s), `defect copy wrongly reads as a retired claim: ${s}`).toBe(false);
+    }
     for (const s of RETIRED_COPY) {
       expect(SCREEN_MENTION.test(s), `retired copy not selected: ${s}`).toBe(true);
       expect(QUALIFIER.test(s), `retired copy wrongly reads as qualified: ${s}`).toBe(false);
