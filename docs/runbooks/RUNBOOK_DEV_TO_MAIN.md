@@ -85,14 +85,32 @@ commit subject read `refs #672`, and the **source PR's title** read `Closes #672
 ```bash
 for C in $(gh api repos/datanika-io/datanika-landing/compare/main...dev --jq '.commits[].sha'); do
   gh api "repos/datanika-io/datanika-landing/commits/$C/pulls" \
-    --jq '.[] | "\(.sha[0:8]) PR #\(.number) [\(.state)] base=\(.base.ref) :: \(.title)"'
-done
+    --jq '.[] | select(.merged_at != null and .base.ref == "dev") | "PR #\(.number) :: \(.title)"'
+done | sort -u
 ```
 
 🚨 **`commits/{sha}/pulls` also returns OPEN PRs whose branch merely CONTAINS the commit.** In the
 round-16 core promotion it named one unrelated open PR against six of eight commits, which would have
 read as a batch six commits larger than it was. **The source PR is the merged one, based on `dev`,
-that put the commit there.** Filter on `state == MERGED` and `base.ref == "dev"`.
+that put the commit there** — which is what the `select(...)` above expresses.
+
+🔴 **Do NOT filter on `state == "MERGED"` here, which this section told you to do until
+2026-09-24 ([landing#701]).** That is **GraphQL's vocabulary applied to a REST endpoint**: this
+response's `state` is lowercase `"open"` / `"closed"` and has no `MERGED` value at all, so the
+documented filter matched nothing and printed **zero source PRs for a six-commit batch**.
+
+⚠️ **That zero reads exactly like *"this batch carries no closing declarations"*, which is a cue to
+stop looking.** The real answer was four source PRs, one declaring `Closes #688`. `state == "MERGED"`
+*is* correct against GraphQL's `PullRequestState`, and both vocabularies are in daily use here —
+which is why the wrong one reads as right.
+
+**Read the raw shape once, so the selector is a reading rather than a guess:**
+
+```bash
+gh api "repos/datanika-io/datanika-landing/commits/$C/pulls" \
+  --jq '.[] | {number, state, merged_at, base: .base.ref}'
+# -> {"number":690,"state":"closed","merged_at":"2026-09-24T13:00:54Z","base":"dev"}
+```
 
 ---
 
@@ -218,3 +236,4 @@ agreeing with each other but **cannot see production**, so it will not tell you 
 Re-derivation procedure: `plans/growth/notes/LEGAL_PAGE_FACTS_2026-08-30.md`.
 
 [landing#493]: https://github.com/datanika-io/datanika-landing/issues/493
+[landing#701]: https://github.com/datanika-io/datanika-landing/issues/701
