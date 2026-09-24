@@ -108,8 +108,17 @@ function builtPages(): Page[] {
   return out.sort((a, b) => a.route.localeCompare(b.route));
 }
 
-/** The app's usage screen, named in a context where a reader is sizing bytes. */
-const SCREEN_MENTION = /\bPlan Usage\b|\bcheck\s+(?:\*\*)?Usage(?:\*\*)?\b|\busage card\b/i;
+/**
+ * The app's usage screen, named in a context where a reader is sizing bytes. Both branches are
+ * fed a real published sample by the control below — an alternation branch nothing exercises is a
+ * dead pattern, and a dead pattern contributes a zero that reads like safety.
+ *
+ * ⚠️ **`Plan Usage` is the app's own label, and it is not ours to reword.** The first draft of
+ * this change called it "the dashboard's usage card"; `phantom-nav-instructions.test.ts` refused
+ * it, correctly — that file exists to stop us naming surfaces that do not exist, and renaming a
+ * real one is the same defect written politely.
+ */
+const SCREEN_MENTION = /\bPlan Usage\b|\bcheck\s+(?:\*\*)?Usage(?:\*\*)?\b/i;
 
 /**
  * The qualifier the screen's data condition requires. Two spellings, so a rewording of one sentence
@@ -148,12 +157,12 @@ const RETIRED_COPY = [
 
 /** Exactly as published by this change — the population that must now be accepted. */
 const RESTORED_COPY = [
-  "Don't take that on trust: since 2026-09-24 the dashboard's usage card carries a bytes " +
+  "Don't take that on trust: since 2026-09-24 the dashboard's Plan Usage panel carries a bytes " +
     "processed dimension against your plan's included volume. It appears once a pipeline has " +
     "written volume data, so there is nothing to read there before your first run.",
-  "Since 2026-09-24 the dashboard's usage card carries a bytes processed dimension against your " +
-    "plan's included volume; it appears once a pipeline has written volume data, so there is " +
-    "nothing to read there before your first run.",
+  "Since 2026-09-24 the dashboard's Plan Usage panel carries a bytes processed dimension against " +
+    "your plan's included volume; it appears once a pipeline has written volume data, so there " +
+    "is nothing to read there before your first run.",
 ];
 
 describe("copy about the in-app byte figure (landing#688, datanika-core#1513)", () => {

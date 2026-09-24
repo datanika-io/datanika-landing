@@ -336,7 +336,7 @@ Sorted by revenue, because the ten unmatched customers who pay you the most are 
 3. The models above under **Transformations**, then schedule the transform to depend on **both** uploads — a 360 built from a fresh Stripe and yesterday's HubSpot is a 360 that disagrees with itself. See the [scheduling guide](/docs/scheduling/).
 4. Point a dashboard at `customer_360` and `customer_identity_coverage`. Put the coverage number on the dashboard, not in a runbook. A match rate nobody looks at drifts.
 
-Datanika meters **bytes processed**; both of these are narrow JSON sources and the [Free plan](/pricing/) includes 10 GB/month. Since 2026-09-24 the dashboard's usage card carries a **bytes processed** dimension against your plan's included volume ([datanika-core#1513](https://github.com/datanika-io/datanika-core/issues/1513)); it appears once a pipeline has written volume data, so there is nothing to read there before your first run. Size the first estimate from your own data — the meter counts what an upload writes after normalization.
+Datanika meters **bytes processed**; both of these are narrow JSON sources and the [Free plan](/pricing/) includes 10 GB/month. Since 2026-09-24 the dashboard's **Plan Usage** panel carries a **bytes processed** dimension against your plan's included volume ([datanika-core#1513](https://github.com/datanika-io/datanika-core/issues/1513)); it appears once a pipeline has written volume data, so there is nothing to read there before your first run. Size the first estimate from your own data — the meter counts what an upload writes after normalization.
 
 ## Next steps
 
