@@ -405,6 +405,14 @@ const comparisonSlugs = ["airbyte", "fivetran", "stitch", "hevo"];
             >
               <p class="font-semibold text-white">{rc.name}</p>
               <p class="text-xs text-slate-400 mt-1">{rc.category}</p>
+              {/* A related card is a suggestion to go and connect that thing, so it inherits the
+                  withdrawal the same way the pipeline pills do (landing#680). Six connector pages
+                  list the withdrawn `s3` here; without this they read as an invitation. */}
+              {rc.withdrawn && (
+                <p
+                  class="text-[0.7rem] font-semibold uppercase tracking-wide text-amber-300 mt-1"
+                  data-availability="withdrawn">Unavailable</p>
+              )}
             </a>
           ))}
         </div>
