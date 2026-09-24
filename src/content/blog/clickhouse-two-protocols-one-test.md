@@ -1,8 +1,8 @@
 ---
 title: "ClickHouse Speaks Two Protocols. Your Connection Test Speaks One."
 description: "A green Test Connection to ClickHouse proves the HTTP interface works. A load also dials the native TCP port and reads INFORMATION_SCHEMA — two things the test never touches. Here is what each failure looks like and how to tell them apart."
-date: 2026-09-26
-publishedAt: 2026-09-26
+date: 2026-09-27
+publishedAt: 2026-09-27
 author: "Datanika Team"
 category: "tutorial"
 tags: ["tutorial", "clickhouse", "destinations", "troubleshooting", "elt"]

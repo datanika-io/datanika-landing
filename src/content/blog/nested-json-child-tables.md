@@ -1,8 +1,8 @@
 ---
 title: "109 Rows for 17 Products: What Happens to Nested JSON When You Load an API"
 description: "A Shopify upload reported 109 rows for a store with 17 products and 3 customers, and every one of them was real. Lists inside API records become tables of their own. Here is how to read that count, and how to join the tables back."
-date: 2026-10-09
-publishedAt: 2026-10-09
+date: 2026-10-15
+publishedAt: 2026-10-15
 author: "Datanika Team"
 category: "tutorial"
 tags: ["tutorial", "shopify", "dlt", "nested-data", "dbt"]
