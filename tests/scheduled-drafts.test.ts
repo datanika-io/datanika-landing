@@ -157,6 +157,20 @@ const scheduledPosts = [
   { file: "sqlite-duckdb-parquet-two-containers.md", date: "2026-10-29", publishedAt: "2026-10-29", category: "tutorial", titleContains: "Can't See the File" },
   { file: "google-ads-facebook-ads-ga4-credentials.md", date: "2026-10-31", publishedAt: "2026-10-31", category: "tutorial", titleContains: "Three Credential Models" },
   { file: "jira-notion-zendesk-current-state-not-history.md", date: "2026-11-02", publishedAt: "2026-11-02", category: "product", titleContains: "Current State, Not History" },
+  // Growth 2026-09-24 (landing#675): the last two addressable connector subjects.
+  // blog_mix.py had `kafka, openapi, s3, salesforce` as the subject of no post;
+  // these two take it to `s3, salesforce`, and neither of those is writable —
+  // `s3` is withdrawn in core and must not be marketed, and `salesforce`'s own
+  // setup guide instructs two fields the shipped schema does not have
+  // (landing#698), so a post would have become the fiction's second surface.
+  //
+  // APPENDED at 11-04 / 11-06 rather than interleaved, for the reason the
+  // 2026-09-24 correction three blocks above spells out: inserting reorders the
+  // sequence, and both the blog-mix floor and the inter-post link order are
+  // properties of the sequence rather than of the dates. 11-02 -> 11-04 -> 11-06
+  // keeps the strict 2-day cadence the guard below now enforces.
+  { file: "kafka-credentials-on-the-connection.md", date: "2026-11-04", publishedAt: "2026-11-04", category: "tutorial", titleContains: "Kafka Password Does Not Go" },
+  { file: "openapi-spec-what-it-must-declare.md", date: "2026-11-06", publishedAt: "2026-11-06", category: "tutorial", titleContains: "If the Spec Declares Three Things" },
 ];
 
 const publishedScheduledPosts = [
