@@ -1,8 +1,8 @@
 ---
 title: "SQL Server and Azure Synapse: the Connection Is Encrypted, the Certificate Is Not Verified"
 description: "Datanika requires an encrypted session to SQL Server and Azure Synapse in both directions, and does not verify the server's certificate. Those are two different guarantees, and a vendor that gives you one checkmark for both is not telling you which you got."
-date: 2026-10-02
-publishedAt: 2026-10-02
+date: 2026-10-05
+publishedAt: 2026-10-05
 author: "Datanika Team"
 category: "product"
 tags: ["product", "mssql", "synapse", "security", "transport-encryption"]

@@ -1,8 +1,8 @@
 ---
 title: "Test Connection Has Three Answers, and \"Not Tested\" Is One of Them"
 description: "Green means your source answered. Red means it did not, and the message carries the driver's own reason. Gray means Datanika did not try, and says why. What the button does for each kind of connector, and what a green result cannot tell you."
-date: 2026-10-13
-publishedAt: 2026-10-13
+date: 2026-10-19
+publishedAt: 2026-10-19
 author: "Datanika Team"
 category: "product"
 tags: ["product", "connections", "troubleshooting", "data-pipelines"]

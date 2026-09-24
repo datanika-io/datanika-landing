@@ -94,16 +94,16 @@ const scheduledPosts = [
   // posts after it shift +2. Cadence unchanged: one post every two days.
   // Link order between scheduled posts is enforced by tests/blog-link-order.test.ts,
   // because a future-dated post is absent from dist/ and no build-time check sees it.
-  { file: "tar-deploy-never-deletes.md", date: "2026-10-01", publishedAt: "2026-10-01", category: "engineering", titleContains: "Still Running in Production" },
+  { file: "tar-deploy-never-deletes.md", date: "2026-10-03", publishedAt: "2026-10-03", category: "engineering", titleContains: "Still Running in Production" },
   { file: "loud-bug-silent-fix.md", date: "2026-09-25", publishedAt: "2026-09-25", category: "engineering", titleContains: "Is Loud, 0" },
-  { file: "stale-beliefs-across-a-boundary.md", date: "2026-09-29", publishedAt: "2026-09-29", category: "engineering", titleContains: "Two Stale Beliefs" },
-  { file: "broken-probe-better-story.md", date: "2026-10-03", publishedAt: "2026-10-03", category: "engineering", titleContains: "Broken Probe" },
-  { file: "rules-with-no-disposal-step.md", date: "2026-10-05", publishedAt: "2026-10-05", category: "engineering", titleContains: "556 Files" },
-  { file: "check-with-one-answer.md", date: "2026-10-07", publishedAt: "2026-10-07", category: "engineering", titleContains: "Nothing To Do" },
-  { file: "cron-declared-vs-honoured.md", date: "2026-10-11", publishedAt: "2026-10-11", category: "engineering", titleContains: "07:29" },
-  { file: "correct-measurement-wrong-criterion.md", date: "2026-10-15", publishedAt: "2026-10-15", category: "engineering", titleContains: "Nineteen Published Files" },
-  { file: "field-that-looks-like-a-control.md", date: "2026-10-19", publishedAt: "2026-10-19", category: "engineering", titleContains: "More Wrong One Field Became" },
-  { file: "no-dbt-adapter-for-mysql.md", date: "2026-09-27", publishedAt: "2026-09-27", category: "tutorial", titleContains: "dbt Adapter for MySQL" },
+  { file: "stale-beliefs-across-a-boundary.md", date: "2026-10-01", publishedAt: "2026-10-01", category: "engineering", titleContains: "Two Stale Beliefs" },
+  { file: "broken-probe-better-story.md", date: "2026-10-07", publishedAt: "2026-10-07", category: "engineering", titleContains: "Broken Probe" },
+  { file: "rules-with-no-disposal-step.md", date: "2026-10-09", publishedAt: "2026-10-09", category: "engineering", titleContains: "556 Files" },
+  { file: "check-with-one-answer.md", date: "2026-10-11", publishedAt: "2026-10-11", category: "engineering", titleContains: "Nothing To Do" },
+  { file: "cron-declared-vs-honoured.md", date: "2026-10-17", publishedAt: "2026-10-17", category: "engineering", titleContains: "07:29" },
+  { file: "correct-measurement-wrong-criterion.md", date: "2026-10-21", publishedAt: "2026-10-21", category: "engineering", titleContains: "Nineteen Published Files" },
+  { file: "field-that-looks-like-a-control.md", date: "2026-10-25", publishedAt: "2026-10-25", category: "engineering", titleContains: "More Wrong One Field Became" },
+  { file: "no-dbt-adapter-for-mysql.md", date: "2026-09-29", publishedAt: "2026-09-29", category: "tutorial", titleContains: "dbt Adapter for MySQL" },
 
   // Growth rebalance 2026-09-11 (landing#564): the queue was 14/15 `engineering`,
   // which breaches the stated blog-mix floor (3 non-engineering in the last 10
@@ -115,17 +115,17 @@ const scheduledPosts = [
   // filtered them out of static paths — none has ever been a crawlable URL.
   { file: "google-sheets-share-step.md", date: "2026-09-19", publishedAt: "2026-09-19", category: "tutorial", titleContains: "Share Step" },
   { file: "airtable-linked-records.md", date: "2026-09-23", publishedAt: "2026-09-23", category: "tutorial", titleContains: "Record IDs" },
-  { file: "subtraction-is-not-a-proof.md", date: "2026-10-21", publishedAt: "2026-10-21", category: "engineering", titleContains: "Subtraction Is Not a Proof" },
+  { file: "subtraction-is-not-a-proof.md", date: "2026-10-27", publishedAt: "2026-10-27", category: "engineering", titleContains: "Subtraction Is Not a Proof" },
   // Growth 2026-09-15 (landing#564): the first residual non-engineering post takes
   // 10-09, the last slot that still holds the blog-mix floor. The four engineering
   // posts after it each move +2. Two more non-engineering posts were still needed,
   // at or before the slots then dated 10-13 and 10-17.
-  { file: "nested-json-child-tables.md", date: "2026-10-09", publishedAt: "2026-10-09", category: "tutorial", titleContains: "109 Rows for 17 Products" },
+  { file: "nested-json-child-tables.md", date: "2026-10-15", publishedAt: "2026-10-15", category: "tutorial", titleContains: "109 Rows for 17 Products" },
   // Growth 2026-09-15 (landing#564), later the same day: those two posts take 10-13 and 10-17.
   // The engineering posts they displace move to 10-15, 10-19 and 10-21, and blog_mix.py then
   // reports no breach through the end of the queue.
-  { file: "test-connection-three-answers.md", date: "2026-10-13", publishedAt: "2026-10-13", category: "product", titleContains: "Three Answers" },
-  { file: "mysql-to-postgres-four-checks.md", date: "2026-10-17", publishedAt: "2026-10-17", category: "tutorial", titleContains: "Four Checks" },
+  { file: "test-connection-three-answers.md", date: "2026-10-19", publishedAt: "2026-10-19", category: "product", titleContains: "Three Answers" },
+  { file: "mysql-to-postgres-four-checks.md", date: "2026-10-23", publishedAt: "2026-10-23", category: "tutorial", titleContains: "Four Checks" },
   // Growth 2026-09-23 (landing#675): three connector posts, filling gaps in the
   // existing rhythm rather than displacing anything. blog_mix.py measured 19 of 37
   // connector guides as the subject of no post, and the floor holding at exactly 3
@@ -133,9 +133,29 @@ const scheduledPosts = [
   // mssql, synapse, snowflake, redshift, databricks) take coverage to 13 of 37 and
   // lift the projected floor to 4-5 from 09-27 onward. All three are
   // non-engineering, which is why filling the gap and raising the margin are one act.
-  { file: "clickhouse-two-protocols-one-test.md", date: "2026-09-26", publishedAt: "2026-09-26", category: "tutorial", titleContains: "Two Protocols" },
-  { file: "sql-server-synapse-encrypted-not-verified.md", date: "2026-10-02", publishedAt: "2026-10-02", category: "product", titleContains: "Certificate Is Not Verified" },
-  { file: "snowflake-redshift-databricks-load-vs-transform.md", date: "2026-10-08", publishedAt: "2026-10-08", category: "product", titleContains: "Transforming Inside It" },
+  //
+  // 🔴 CORRECTED 2026-09-24 (Growth, landing#675). "Filling gaps in the existing
+  // rhythm" IS the thing the founder's 2026-08-30 decision forbids: those three
+  // posts went into the intervening days, which put SIX pairs of consecutive
+  // publish dates into the queue. The 2026-09-11 rebalance six comment-blocks
+  // above had got this right and said so in as many words — "rebalancing had to
+  // move dates rather than fill the intervening days" — so the rule was not just
+  // recorded, it was recorded in this file, twelve days earlier, by this
+  // department. Nothing went red because until today nothing read the SPACING;
+  // the guard below now does. The whole future queue has been re-gridded onto a
+  // strict 2-day cadence with its ORDER PRESERVED, which is why the blog-mix
+  // projection is unchanged: that floor is a property of the sequence, not of
+  // the dates. Measured after the change — 0 gaps under 2 days, first breach none.
+  { file: "clickhouse-two-protocols-one-test.md", date: "2026-09-27", publishedAt: "2026-09-27", category: "tutorial", titleContains: "Two Protocols" },
+  { file: "sql-server-synapse-encrypted-not-verified.md", date: "2026-10-05", publishedAt: "2026-10-05", category: "product", titleContains: "Certificate Is Not Verified" },
+  { file: "snowflake-redshift-databricks-load-vs-transform.md", date: "2026-10-13", publishedAt: "2026-10-13", category: "product", titleContains: "Transforming Inside It" },
+  // Growth 2026-09-24 (landing#675): two more connector posts, taking coverage
+  // from 13 to 7 of 37 uncovered. Appended at the end of the re-gridded queue
+  // rather than interleaved, deliberately: inserting would reorder the sequence,
+  // and inter-post links are ordered by publish date (blog-link-order.test.ts).
+  // Appending is the only placement that cannot disturb either that or the floor.
+  { file: "sqlite-duckdb-parquet-two-containers.md", date: "2026-10-29", publishedAt: "2026-10-29", category: "tutorial", titleContains: "Can't See the File" },
+  { file: "google-ads-facebook-ads-ga4-credentials.md", date: "2026-10-31", publishedAt: "2026-10-31", category: "tutorial", titleContains: "Three Credential Models" },
 ];
 
 const publishedScheduledPosts = [
@@ -298,5 +318,91 @@ describe("every future-dated post is covered by this file", () => {
     // nothing while reading as coverage.
     const missing = scheduledPosts.map((p) => p.file).filter((f) => !ALL.includes(f));
     expect(missing, `listed in scheduledPosts but not on disk: ${missing.join(", ")}`).toEqual([]);
+  });
+});
+
+/**
+ * 🚨 The founder's publishing cadence was enforced by NOTHING until 2026-09-24.
+ *
+ * Decision, 2026-08-30: **at most one post every two days.** It was taken after
+ * four posts landed on a single day, because agents produce in bursts and
+ * readers do not.
+ *
+ * For three weeks that rule lived only in comments in this file — and on
+ * 2026-09-23 the department that wrote those comments put three posts into the
+ * intervening days, creating six pairs of consecutive publish dates. Every
+ * build stayed green, because the existing assertions read each post's date in
+ * isolation and nothing ever compared two of them. The 2026-09-11 rebalance had
+ * refused to do exactly this and said why, twelve comment-lines further up.
+ *
+ * 🔑 A rule recorded in prose beside the data it governs is not a guard. It
+ * reads like one, which is worse than being absent: the comment is what made
+ * the next author believe the constraint was being looked after.
+ *
+ * Scope is deliberately the FUTURE-dated queue — the part still editable.
+ * The archive violates this freely (nine posts share 2026-04-10, from before
+ * the decision existed), and retro-grading history would make the guard red on
+ * a tree nobody can legally change, which is how a guard gets deleted.
+ *
+ * The date is read from each post's own frontmatter rather than from
+ * `scheduledPosts`, because the frontmatter is what the build actually obeys.
+ */
+describe("publishing cadence: at most one post every two days", () => {
+  const MIN_GAP_DAYS = 2; // founder decision, 2026-08-30
+  const DAY_MS = 86_400_000;
+
+  /** Smallest gap, in days, between consecutive dates. Infinity for < 2 dates. */
+  function minGapDays(isoDates: string[]): number {
+    const t = isoDates.map((d) => Date.parse(`${d}T00:00:00Z`)).sort((a, b) => a - b);
+    let min = Infinity;
+    for (let i = 1; i < t.length; i++) min = Math.min(min, (t[i] - t[i - 1]) / DAY_MS);
+    return min;
+  }
+
+  // 🔑 SENSITIVITY CONTROL, and it is the whole reason this file can be trusted.
+  // Rule 26: an instrument that cannot see part of its population reports that
+  // part as clean. A green cadence assertion below is worthless unless the
+  // function it calls has been shown returning a number that would fail it.
+  it("minGapDays can SEE a violation (and does not invent one)", () => {
+    expect(minGapDays(["2026-09-25", "2026-09-26"])).toBe(1); // consecutive
+    expect(minGapDays(["2026-09-25", "2026-09-25"])).toBe(0); // same day
+    expect(minGapDays(["2026-09-26", "2026-09-25"])).toBe(1); // unsorted input
+    expect(minGapDays(["2026-09-25", "2026-09-27", "2026-09-29"])).toBe(2); // compliant
+    expect(minGapDays(["2026-09-25"])).toBe(Infinity); // a single post cannot breach
+  });
+
+  const futureDates = readdirSync(BLOG_DIR)
+    .filter((f) => f.endsWith(".md"))
+    .map((f) => ({ file: f, publishedAt: readFrontmatter(f).publishedAt }))
+    .filter((p) => p.publishedAt && p.publishedAt > new Date().toISOString().slice(0, 10));
+
+  // ANTI-VACUITY. An empty or broken walk has a min gap of Infinity, which
+  // passes the assertion below while measuring nothing at all.
+  it("the future queue is non-trivial (guards a dead walk)", () => {
+    expect(futureDates.length).toBeGreaterThan(5);
+  });
+
+  it("no two scheduled posts publish less than two days apart", () => {
+    const dates = futureDates.map((p) => p.publishedAt!);
+    const byDate = [...futureDates].sort((a, b) => a.publishedAt!.localeCompare(b.publishedAt!));
+    const offenders: string[] = [];
+    for (let i = 1; i < byDate.length; i++) {
+      const gap = minGapDays([byDate[i - 1].publishedAt!, byDate[i].publishedAt!]);
+      if (gap < MIN_GAP_DAYS) {
+        offenders.push(
+          `  ${byDate[i - 1].publishedAt} ${byDate[i - 1].file}\n` +
+            `  ${byDate[i].publishedAt} ${byDate[i].file}   (gap ${gap}d)`,
+        );
+      }
+    }
+    expect(
+      offenders,
+      "Founder decision 2026-08-30: at most one post every two days. Move a date " +
+        "rather than filling the intervening day — and move the whole tail to keep " +
+        "the ORDER, because the blog-mix floor and the inter-post link order are " +
+        "properties of the sequence, not of the dates:\n" +
+        offenders.join("\n"),
+    ).toEqual([]);
+    expect(minGapDays(dates)).toBeGreaterThanOrEqual(MIN_GAP_DAYS);
   });
 });

@@ -1,8 +1,8 @@
 ---
 title: "Snowflake, Redshift, Databricks: Loading Into a Warehouse Is Not the Same as Transforming Inside It"
 description: "Datanika loads into more destinations than it can build dbt models in. Snowflake and Redshift are both; Databricks and Synapse are load-only. Here is why the two lists differ, and how to check which one your warehouse is on before you commit to a stack."
-date: 2026-10-08
-publishedAt: 2026-10-08
+date: 2026-10-13
+publishedAt: 2026-10-13
 author: "Datanika Team"
 category: "product"
 tags: ["product", "snowflake", "redshift", "databricks", "synapse", "dbt"]
