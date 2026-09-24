@@ -4,8 +4,8 @@ description: "Load a CSV file into your warehouse with Datanika — drag it into
 source: "csv"
 source_name: "CSV"
 category: "file"
-verified_by: "product-ui"
-verified_date: "2026-08-31"
+verified_by: "qa-ui"
+verified_date: "2026-09-24"
 related_use_cases: []
 related_comparisons:
   - "airbyte"
