@@ -28,7 +28,80 @@ Referenced from `src/content/connectors/csv.md` (source-only file connector).
 
 ## Verification
 
-`verified_by: product-ui` / `verified_date: 2026-08-31`.
+`verified_by: qa-ui` / `verified_date: 2026-09-24`.
+
+**2026-09-24 (QA, landing#385 tier 1) — the first walk of this guide by QA, end to end, on a local
+stack.** Every numbered step of `csv.md` was followed literally and the rows were read back **in the
+destination**, twice, by two independent instruments.
+
+Spec `SPEC_CONNECTOR_GUIDE_VERIFICATION` §2.4 fields:
+
+| field | value |
+|---|---|
+| **Environment** | `local stack` — isolated worktree stack, compose project `wt-qa`, one origin at `127.0.0.1:13100` |
+| **Core revision** | `8a1c21c731bb9e492b47029b0515cfd327a2bb93` · `git merge-base --is-ancestor <sha> origin/master` → **rc=0**. Negative control: core `origin/dev` against the same base → **rc=1**, so the check discriminates |
+| **Cloud revision** | `995a8c5099e4350a01cbb5c1c3c26407efb9d23c` · cloud edition (the default of `build-from-worktree.sh`); ancestor of cloud `origin/master` rc=0, cloud `dev` control rc=1 |
+| **Configuration** | **self-hosted defaults.** §2.4 scopes *DuckDB as a destination* to self-hosting, and this walk used it. **One deviation, and it is the guide's own instruction:** `duckdb.md` Step 1 requires a volume mounted into *both* the web and worker containers, so `duckdb_data:/var/datanika/duckdb` was added to `app` and `celery`. That edit is **not committed** — it is what a self-hoster is told to do, not what ships (core#793) |
+| **Guide revision** | `4bbd713760788685b89d237c3c844ca140750588` (2026-09-17). `csv.md` is byte-identical on landing `dev` and `main`, so the text followed is the published text |
+| **Not exercised** | egress-IP allowlisting (no walk on record exercises it — §2.4) · the **Or enter file path** branch as a *load* (its Test Connection verdict was exercised as a control; the load through that branch is the 2026-07-22 entry below) · the drag-and-drop zone (the file picker was used instead) · the schedule actually **firing** (created Active at `0 3 * * *` and confirmed in the table; not waited for) · notification delivery (the Settings section was confirmed to exist, no channel configured) |
+
+**What was created and run.** Org *QA Walk's Org*, seeded 14-row CSV (`example.com` addresses only —
+`PRODUCT_RULES` §4, and its data half: a destination preview renders whatever the source held).
+Connection **4** `q3signupsexport` (csv, via the **Upload File** widget) · destination connection **3**
+`analyticswarehouse` (duckdb, `/var/datanika/duckdb/analytics.duckdb`) · upload **2** `q3signups` ·
+run **1** `success`, **14 rows**, 1.5 s · catalog entry `/models/1` · schedule **2**, `0 3 * * *`, UTC,
+Active.
+
+**The destination, checked twice and not by the pipeline's own report** (`QA_RULES` §16):
+
+1. The guide's own Step 3.4 — **Data preview** on `/models/1` returned `Rows: 14` with real values
+   across `signup_id, company, contact_email, country, plan, seats, signed_up_on, mrr_usd` plus
+   `_dlt_load_id` / `_dlt_id`. **File contents, not a file listing** (core#492 stays fixed).
+2. An independent `SELECT` against the DuckDB file **from inside the worker container**, where the load
+   actually ran: `q3signups.q3_signups` → `COUNT = 14`, and `SUM(mrr_usd) = 47845.5`, which **matches
+   the source file exactly**. A row count alone would not have caught truncation or a type-inference
+   failure; the sum does. Negative control: `select … from q3signups.no_such_table` **raises**
+   `CatalogException` rather than returning empty, so the reading above is a measurement.
+
+That second read also settles `duckdb.md` Step 1 end to end: the load ran in the **worker** and the
+preview ran in the **web app**, and both saw the same 1,323,008-byte file. Step 1's own probe passed
+with a control — the worker can see `/var/datanika/duckdb/.probe` and **cannot** see the app's
+`/tmp/.notshared`.
+
+**Guide claims confirmed live, so a later reader need not re-derive them:** the New Connection form is
+already rendered · the CSV form has exactly three inputs plus the raw-JSON escape hatch · Connection
+Name and Upload name both strip non-alphanumerics **as you type** (`q3-signups-export` →
+`q3signupsexport`) · the **Upload File** button really opens the OS file picker · connection rows offer
+Test / Edit / Copy / Delete only · Load Mode, Write Disposition, Source schema and Table names are
+visible with no source selected and **disappear** once the CSV source is chosen · **File Format**,
+**Delimiter (CSV)** and **Encoding** render beneath the destination picker · source entries read
+`4 — q3signupsexport (csv)` · the upload lands `draft` · the schema is named after the upload and the
+table after the file stem (`q3-signups.csv` → `q3_signups`) · the schedule form takes a real five-field
+cron, defaults to UTC, and lands **Active** with **Pause** · Settings carries **Notifications**.
+
+🔴 **One delta, filed as [landing#691] (S3):** Step 1 sub-step 4 — *"Click **Test Connection**"* — is
+written as unconditional but only applies to the **Or enter file path** branch. On the **Upload File**
+branch, which the guide lists first, it answers *"Set the bucket URL or path first — there is nothing
+to test yet"*. **Attributed with a control rather than assumed:** the same button on the path branch
+(`/app/uploaded_files`) returned *"No files matched `*.csv` under `/app/uploaded_files`. The run would
+have completed with zero rows. The directory exists but holds nothing matching that pattern."* — which
+is exactly what Step 4 promises and what core#493 shipped. **The product is right; the prose is
+unscoped.**
+
+⚠️ **One prediction of mine was wrong and is recorded because the correction is the point:** seeing
+both a **Choose File** and an **Upload File** button, I expected the guide's *"click the **Upload
+File** button and pick it from the OS file picker"* to be a defect. It is not — clicking **Upload
+File** opens the picker. **Tested before filing**, which is this issue's own rule (*do not correct the
+guide from the code*) pointed at my own inference.
+
+[landing#691]: https://github.com/datanika-io/datanika-landing/issues/691
+
+---
+
+### Earlier entries
+
+`verified_by: product-ui` / `verified_date: 2026-08-31` — superseded by the entry above, kept as the
+dated record it was.
 
 **2026-08-31 (Step 3 recapture, plus two guide defects the run exposed)** — driven end-to-end on production in the **prod-verify** org: connection **29** `q3signupsexport` (a 14-row CSV put through the app's **Upload File** widget), destination connection **28** `docswarehouse`, upload **13** `q3signups`, run **11** `success` / 14 rows / 4.1 s, catalog entry `/models/7`. Confirmed in the destination with `psql` on the box — `docs_warehouse.q3signups.q3_signups` holds 14 rows whose columns are `signup_id, company, contact_email, country, plan, seats, signed_up_on, mrr_usd`, i.e. **file contents, not a file listing**.
 
