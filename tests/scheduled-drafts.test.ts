@@ -156,6 +156,7 @@ const scheduledPosts = [
   // Appending is the only placement that cannot disturb either that or the floor.
   { file: "sqlite-duckdb-parquet-two-containers.md", date: "2026-10-29", publishedAt: "2026-10-29", category: "tutorial", titleContains: "Can't See the File" },
   { file: "google-ads-facebook-ads-ga4-credentials.md", date: "2026-10-31", publishedAt: "2026-10-31", category: "tutorial", titleContains: "Three Credential Models" },
+  { file: "jira-notion-zendesk-current-state-not-history.md", date: "2026-11-02", publishedAt: "2026-11-02", category: "product", titleContains: "Current State, Not History" },
 ];
 
 const publishedScheduledPosts = [
