@@ -1,8 +1,8 @@
 ---
 title: "Copying a MySQL Database into PostgreSQL, and Four Checks That Prove It Arrived"
 description: "One run moved a small MySQL database into PostgreSQL: four tables and 7,182 rows. A matching row count is where checking starts, not where it ends. Here are the four checks we ran, in SQL you can copy, and the grant detail that spares you a maintenance chore."
-date: 2026-10-17
-publishedAt: 2026-10-17
+date: 2026-10-23
+publishedAt: 2026-10-23
 author: "Datanika Team"
 category: "tutorial"
 tags: ["tutorial", "mysql", "postgresql", "data-validation", "elt"]

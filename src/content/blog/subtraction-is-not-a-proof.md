@@ -1,8 +1,8 @@
 ---
 title: "A Subtraction Is Not a Proof: the Check That Counted Instead of Looking"
 description: "A test computed one set minus two others, reported a count, and called the property proved. It had never established that any of those items had the property - only that they were what remained after the subtracting. Here is how to tell the two apart."
-date: 2026-10-21
-publishedAt: 2026-10-21
+date: 2026-10-27
+publishedAt: 2026-10-27
 author: "Datanika Team"
 category: "engineering"
 tags: ["engineering", "testing", "verification", "supply-chain", "ci"]
