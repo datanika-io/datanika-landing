@@ -493,14 +493,39 @@ Content-Type: application/json
   "transformations": [...]
 }
 
-# Response
+# 201 Created - the ids of what was created, never counts
 {
-  "connections_imported": 2,
-  "uploads_imported": 3,
-  "pipelines_imported": 1,
-  "transformations_imported": 4,
-  "skipped": 0
+  "created": {
+    "connections": [1, 2],
+    "uploads": [3, 4, 5],
+    "pipelines": [6],
+    "transformations": [7, 8, 9, 10]
+  }
+}
+
+# 400 Bad Request - the payload failed validation, and NOTHING was created
+{
+  "errors": [
+    {"code": "MISSING_FIELD", "message": "uploads[0]: name is required"}
+  ]
 }`} /></pre>
+  <p>All four keys are always present under <code>created</code>; a section you did not send comes back as an empty array. The values are the ids of the new objects, in payload order. There are no <em>_imported</em> counts and no <code>skipped</code> key, because the import is <strong>atomic</strong> — either every object in the payload is created, or none is and you get the <code>400</code> above.</p>
+  <p>Two other refusals use a <em>different</em> envelope, and a client has to branch on both:</p>
+  <pre tabindex="0"><code set:html={`# 400 - malformed or wrong version. Note "error" SINGULAR: an object, not a list.
+{
+  "error": {"code": 400, "message": "version 2 is required"}
+}
+
+# 403 - the API key lacks a write scope for something in the payload.
+# required_scopes names every scope it is missing, so you do not discover them one at a time.
+{
+  "error": {
+    "code": "insufficient_scope",
+    "message": "This import creates resources the API key has no write scope for.",
+    "required_scopes": ["uploads:write", "pipelines:write"]
+  }
+}`} /></pre>
+  <p><code>POST /api/v1/pipelines/yaml</code> takes the same structure as YAML and returns the identical <code>created</code> envelope and the identical <code>errors</code> list. Its one extra failure mode is an unparseable document, which returns <code>400</code> with a YAML parse error message.</p>
 
   <h2 id="rate-limits">Rate Limits</h2>
   <p>API requests are counted per API key in a fixed 60-second window. The limit depends on your plan:</p>
