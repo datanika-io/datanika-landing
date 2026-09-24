@@ -1,0 +1,69 @@
+---
+/**
+ * The "Popular Pipelines" pill row on the comparison pages.
+ *
+ * ## Why this is a component and not three hand-written anchors (landing#680 AC2)
+ *
+ * A pill is a **promise about two connectors**, so it inherits their availability. Every compare
+ * page used to hand-write the hrefs and the labels, which put them outside the derived mechanism
+ * that already protects `/connectors/`, `/connectors/<slug>`, `/use-cases/<slug>` and
+ * `/docs/connections`. `/compare/fivetran` therefore marketed **S3 → Snowflake** with no
+ * availability marker of any kind — on the one surface where we are least entitled to overpromise,
+ * because the reader came from a competitor comparison. The destination page self-marks correctly,
+ * so the reader learned it was unavailable only *after* the click.
+ *
+ * Deleting the third pill would have fixed the instance and left the class: the next withdrawal
+ * reintroduces it on whichever compare page happens to name it. So the availability is **derived
+ * from `connectors.ts`**, the way `use-cases/[slug].astro` already derives its banner, and the
+ * label is derived from `use-cases.ts` rather than retyped — a hand-typed label is a second copy
+ * of a fact, and the copy that rots is always the second one.
+ *
+ * ## The unknown-slug throw is deliberate
+ *
+ * A typo'd slug would otherwise render a pill that 404s, silently, on a page whose whole job is to
+ * win a comparison. Failing the build is the cheap direction.
+ */
+import { useCases } from "../data/use-cases";
+import { connectors } from "../data/connectors";
+
+interface Props {
+  /** Use-case slugs, in display order. */
+  slugs: string[];
+}
+
+const { slugs } = Astro.props;
+
+const pills = slugs.map((slug) => {
+  const uc = useCases.find((u) => u.slug === slug);
+  if (!uc) {
+    throw new Error(
+      `UseCasePills: no use case "${slug}" in src/data/use-cases.ts. A pill that names a ` +
+        "slug we do not publish renders a 404 on a comparison page.",
+    );
+  }
+  const withdrawn = [uc.sourceSlug, uc.destinationSlug]
+    .map((s) => connectors.find((c) => c.slug === s))
+    .some((c) => Boolean(c?.withdrawn));
+  return { slug, label: `${uc.source} → ${uc.destination}`, withdrawn };
+});
+---
+
+<div class="flex flex-wrap gap-3 mb-6">
+  {pills.map((p) => (
+    <a
+      href={`/use-cases/${p.slug}`}
+      class={`text-sm px-3 py-1.5 rounded-full border transition-colors hover:text-white ${
+        p.withdrawn
+          ? "border-amber-500/40 text-slate-400 hover:border-amber-400/70"
+          : "border-slate-800 text-slate-400 hover:border-violet-500/50"
+      }`}
+    >
+      {p.label}
+      {p.withdrawn && (
+        <span
+          class="ml-2 text-[0.7rem] font-semibold uppercase tracking-wide text-amber-300"
+          data-availability="withdrawn">Unavailable</span>
+      )}
+    </a>
+  ))}
+</div>

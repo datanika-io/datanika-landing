@@ -175,7 +175,7 @@ export const connectors: Connector[] = [
     ],
     related: ["postgresql", "bigquery", "kafka", "snowflake"],
     seoTitle: "ClickHouse ETL — Analytics Ingestion | Datanika",
-    seoDescription: "ClickHouse ETL tool to load data from PostgreSQL, Kafka, S3, and 30+ sources. Supports clustered ReplicatedMergeTree. dbt transforms built in. Start free.",
+    seoDescription: "ClickHouse ETL tool to load data from PostgreSQL, Kafka, MySQL, and 30+ sources. Supports clustered ReplicatedMergeTree. dbt transforms built in. Start free.",
     seoH1: "ClickHouse ETL",
   },
   {
@@ -279,7 +279,7 @@ export const connectors: Connector[] = [
     name: "Amazon Redshift",
     category: "Cloud Warehouse",
     direction: "destination",
-    description: "Connect to Amazon Redshift as a destination. Ideal for AWS-centric data stacks, with S3 staging for fast bulk loads.",
+    description: "Connect to Amazon Redshift as a destination. Ideal for AWS-centric data stacks, with dbt transforms and scheduling in the same app.",
     useCases: [
       "Centralize AWS data in Redshift",
       "Load S3 data into Redshift via dlt",
@@ -298,7 +298,7 @@ export const connectors: Connector[] = [
     ],
     related: ["bigquery", "snowflake", "s3", "postgresql"],
     seoTitle: "Redshift ETL Tool — AWS Data Pipeline | Datanika",
-    seoDescription: "Redshift ETL tool to load data from PostgreSQL, S3, Stripe, and 30+ other sources into Amazon Redshift. dbt transforms and scheduling built in. Start free.",
+    seoDescription: "Redshift ETL tool to load data from PostgreSQL, MySQL, Stripe, and 30+ other sources into Amazon Redshift. dbt transforms and scheduling built in. Start free.",
     seoH1: "Redshift ETL Tool",
   },
   {
@@ -323,7 +323,7 @@ export const connectors: Connector[] = [
     ],
     related: ["snowflake", "bigquery", "s3", "redshift"],
     seoTitle: "Databricks Data Ingestion | Datanika",
-    seoDescription: "Load data into Databricks Delta Lake from PostgreSQL, Stripe, S3, and 30+ sources. Schema mapping, monitoring and scheduling built in. Start free today.",
+    seoDescription: "Load data into Databricks Delta Lake from PostgreSQL, Stripe, MongoDB, and 30+ sources. Schema mapping, monitoring and scheduling built in. Start free today.",
     seoH1: "Databricks Data Ingestion",
   },
   {
