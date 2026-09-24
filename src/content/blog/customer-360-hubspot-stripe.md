@@ -336,7 +336,7 @@ Sorted by revenue, because the ten unmatched customers who pay you the most are 
 3. The models above under **Transformations**, then schedule the transform to depend on **both** uploads — a 360 built from a fresh Stripe and yesterday's HubSpot is a 360 that disagrees with itself. See the [scheduling guide](/docs/scheduling/).
 4. Point a dashboard at `customer_360` and `customer_identity_coverage`. Put the coverage number on the dashboard, not in a runbook. A match rate nobody looks at drifts.
 
-Datanika meters **bytes processed**; both of these are narrow JSON sources and the [Free plan](/pricing/) includes 10 GB/month. Don't look for the answer in the app: its **Plan Usage** panel counts model runs, not bytes. Size it from your data instead — the meter counts what an upload writes after normalization.
+Datanika meters **bytes processed**; both of these are narrow JSON sources and the [Free plan](/pricing/) includes 10 GB/month. Since 2026-09-24 the dashboard's **Plan Usage** panel carries a **bytes processed** dimension against your plan's included volume ([datanika-core#1513](https://github.com/datanika-io/datanika-core/issues/1513)); it appears once a pipeline has written volume data, so there is nothing to read there before your first run. Size the first estimate from your own data — the meter counts what an upload writes after normalization.
 
 ## Next steps
 
@@ -347,4 +347,6 @@ Datanika meters **bytes processed**; both of these are narrow JSON sources and t
 
 The join is the work. Measure it, publish the number, and hand the leftovers to a human.
 
-*Correction, 2026-09-23.* The cost line told you to check **Usage** for your own byte figures. That card counts model runs, not bytes, and no screen in the app shows a byte count today, so the line now says to size it from your data. The same sentence was corrected in [the Stripe revenue post](/blog/stripe-revenue-dashboard-dbt/) a day earlier; tracked in [datanika-core#1513](https://github.com/datanika-io/datanika-core/issues/1513).
+*Correction, 2026-09-23.* The cost line told you to check **Usage** for your own byte figures. That card counted model runs, not bytes, and at the time no screen in the app showed a byte count, so the line was changed to size it from your data instead. The same sentence was corrected in [the Stripe revenue post](/blog/stripe-revenue-dashboard-dbt/) a day earlier; tracked in [datanika-core#1513](https://github.com/datanika-io/datanika-core/issues/1513).
+
+*Update, 2026-09-24.* [datanika-core#1513](https://github.com/datanika-io/datanika-core/issues/1513) shipped, and the dashboard's usage card now carries a bytes-processed dimension — verified on the serving container across that day's deploy. The cost line names the screen again, together with the condition that makes the figure appear.
