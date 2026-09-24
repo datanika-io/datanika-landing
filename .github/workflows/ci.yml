@@ -81,6 +81,25 @@ jobs:
       - name: URL correspondence tests
         run: bash scripts/test-url-correspondence.sh
 
+      # landing#671. SPEC_CONNECTOR_GUIDE_VERIFICATION §6 row 2 names "the reporting script" as
+      # the witness for §5's `evidenced / reachable` figure, and there was none: the number was
+      # committed to on 2026-09-10, quoted in three places, and had drifted by eight when this
+      # landed. docs/QA_RULES.md §18 — a published target with no instrument is indistinguishable
+      # from a target being met, and there is no red state to notice.
+      #
+      # 🚨 A REPORT, NOT A GATE, and that is a decision rather than caution. §5 has a known
+      # ceiling — some sources cannot be walked without a paid vendor account — so a threshold
+      # here would make the cheapest path to green an assertion that nobody verified anything,
+      # which is the single outcome the spec exists to prevent.
+      #
+      # It can still fail, and only for one reason: it exits 2 when it cannot honestly measure
+      # (empty corpus, a class it never produced, a README marker citing no issue, or a README
+      # and `verified_by` disagreeing about whether a guide is walkable). A report that cannot
+      # fail at all is the thing being replaced. Classification logic is driven with its controls
+      # by tests/connector-evidence-report.test.ts in the `npm test` step above.
+      - name: Connector guide evidence report
+        run: node scripts/connector-evidence-report.mjs
+
       # landing#504. The pre-push hook decides whether a push gets the gate at
       # all, so a defect in it is invisible to every other check here — the
       # post-promotion resync was refused by a build of an unrelated working

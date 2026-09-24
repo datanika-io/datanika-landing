@@ -126,6 +126,16 @@ const scheduledPosts = [
   // reports no breach through the end of the queue.
   { file: "test-connection-three-answers.md", date: "2026-10-13", publishedAt: "2026-10-13", category: "product", titleContains: "Three Answers" },
   { file: "mysql-to-postgres-four-checks.md", date: "2026-10-17", publishedAt: "2026-10-17", category: "tutorial", titleContains: "Four Checks" },
+  // Growth 2026-09-23 (landing#675): three connector posts, filling gaps in the
+  // existing rhythm rather than displacing anything. blog_mix.py measured 19 of 37
+  // connector guides as the subject of no post, and the floor holding at exactly 3
+  // in every window 09-25 -> 10-21 — zero margin. These six subjects (clickhouse,
+  // mssql, synapse, snowflake, redshift, databricks) take coverage to 13 of 37 and
+  // lift the projected floor to 4-5 from 09-27 onward. All three are
+  // non-engineering, which is why filling the gap and raising the margin are one act.
+  { file: "clickhouse-two-protocols-one-test.md", date: "2026-09-26", publishedAt: "2026-09-26", category: "tutorial", titleContains: "Two Protocols" },
+  { file: "sql-server-synapse-encrypted-not-verified.md", date: "2026-10-02", publishedAt: "2026-10-02", category: "product", titleContains: "Certificate Is Not Verified" },
+  { file: "snowflake-redshift-databricks-load-vs-transform.md", date: "2026-10-08", publishedAt: "2026-10-08", category: "product", titleContains: "Transforming Inside It" },
 ];
 
 const publishedScheduledPosts = [

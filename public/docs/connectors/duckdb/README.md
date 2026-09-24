@@ -12,6 +12,16 @@ Referenced from `src/content/connectors/duckdb.md`.
 
 ## 🔴 Not yet captured — and it is blocked on a product defect, not on effort
 
+<!-- evidence: artifact-disowned core#793 -->
+
+<!-- ^ landing#671. `04-first-run.png` EXISTS here, so a script that counts files counts this
+     guide as evidenced — while the row above says in writing that the capture "still FAILS the
+     acceptance criterion". That over-count is the reason the naive predicate does not work, and
+     this marker is what lets `scripts/connector-evidence-report.mjs` read the objection the
+     README already makes. Remove it in the same change that recaptures the Data preview once
+     core#793 ships; the count rises by one at that moment and not before. -->
+
+
 `04-first-run.png` **could not be recaptured on 2026-08-31** with the other four guides, and the reason is worth more than the screenshot: **[core#793](https://github.com/datanika-io/datanika-core/issues/793)**.
 
 The guide's recommended path, `/var/datanika/duckdb/analytics.duckdb`, is on **no volume and in no container image**. Measured on prod that day: `datanika-app-b` and `datanika-celery` each mount exactly two shared volumes (`/app/dbt_projects`, `/app/uploaded_files`), neither is `/var/datanika`, and the string appears nowhere in `docker-compose.yml`. The load runs in the worker; the Data preview and SQL Editor run in the web app. Separate containers, nothing shared — so a green run and an empty catalog are the expected pair.
