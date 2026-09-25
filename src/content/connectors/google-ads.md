@@ -78,7 +78,7 @@ Datanika authenticates as **you**, using a standard OAuth user credential — no
 Extract-load is configured at **`/uploads`**, not on the connection. There is no "Configure pipeline" button — connection rows offer only Test / Edit / Copy / Delete, and `/pipelines` is the **dbt** builder, which is a different thing.
 
 1. Open **`/uploads`**. The **New Upload** form is rendered inline on the page.
-2. Fill in **Upload name** (letters and digits only — anything else is stripped as you type, so `googleads-daily-sync` becomes `googleadsdailysync`) and an optional **Description**.
+2. Fill in **Upload name** (letters, digits and spaces — anything else is stripped as you type, so `googleads-daily-sync` becomes `googleadsdailysync`) and an optional **Description**.
 3. Pick the **Source connection** and the **Destination connection** — the Google Ads connection from Step 3 is the source. Each picker opens a dialog listing entries as `16 — myconnection (postgres)`, i.e. id, name, type.
 4. Under **Select endpoints to load** you'll see a single checkbox: **`report`**. That is deliberate and it is the honest offer — Google Ads is a *query* API, not a set of collections. One GAQL query is one report is one table.
 5. Click **Create Upload**. It appears in the table below with status `draft`.
