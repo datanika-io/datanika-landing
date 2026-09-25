@@ -969,3 +969,58 @@ by luck, because the error was in the part nobody checks: a number inside the ex
 published. It sat in a guard docstring, and it was wrong: the reading is 740 x 10^9 / 2^30 = 689,
 and no formula reproduces 707. The fix was to make the post's own threshold computed in that guard,
 so the next derivation starts from arithmetic that runs.
+
+## Verifying a publish, and instruments that poison their own evidence (2026-09-25)
+
+🚨 **An instrument can create the condition it then measures, and a CDN is the cheapest way to
+do it.** A syndicated article's page returned **404 to every client** while the article was
+demonstrably live. Attribution, in the order that mattered: it was **not the request** — a
+five-day-old article returned 200 with byte-identical header sets, browser and API-ish alike; the
+article **was public** — its anonymous API record read 200 with a 56,729-character `body_html`
+carrying 11 `datanika.io` links, and the account's profile page listed the slug **4 times, the
+same count as the previous day's control article**, with a fabricated slug at 0; and the 404 was
+**cached at the edge** — `X-Cache: HIT, HIT`, `Via: … varnish`, `Age: 175` rising to 472 across
+two reads. The likely cause is the verification itself: fetching the URL ~90 seconds after
+publishing is a miss, and a miss is what gets cached.
+
+🔑 **So verify a fresh publish through the API record and the profile listing, not the article
+URL** — and if you must read the HTML, wait out the TTL. This is the inverse of the recorded
+*"a tool that makes state correct on the way to reading it cannot audit that state"*: here the
+tool made the state **wrong** on the way to reading it. ⛔ **Never re-publish on the strength of
+a 404.** The article exists; a second send creates a duplicate under the founder's real identity,
+and the cadence gate is not what stops you — it counts the day, not the document.
+
+🚨 **The cp1251 console breaks the line that REPORTS a finding, and in a publishing tool it
+aborts before the gate it looks like it failed.** Three scripts, one day. The costly one: a
+queue pre-scan printed `OK` for a post and **exited 1**, dying on an arrow in the post's title.
+All five content gates had passed. **That print loop runs before the cadence gate and before the
+POST**, so a real send would have aborted on the *report*, with a traceback that reads exactly
+like a gate refusal — and the exit status cannot tell *"this post is unpublishable"* from *"this
+console cannot print its title"*. A second script died at line 120 of 352, having swept nothing
+after it and reporting a partial result as a failure.
+
+🔑 **Transcode the reporting path; never the payload.** Titles, descriptions and bodies must
+reach the platform in full Unicode, and JSON escapes them on the way out — so sanitising the
+payload would be the wrong fix, and it is the one that suggests itself. ⚠️ **And the fix belongs
+in the script, not in `PYTHONIOENCODING` in the caller**: a caveat that depends on the caller
+exporting a variable is absent exactly when someone runs the script directly. Prose and
+docstrings are fine; `print()` is not.
+
+🚨 **A control that prints its own requirement and does not gate is a report, not a control.**
+The served-bundle reader printed `CONTROL positive: … (MUST be > 0)` and **returned 0 anyway**.
+Measured: a route matched a chunk holding **0 of 15** keys from the namespace it was asked
+about, so the subject line *"0 of 2 keys present"* was a statement about the **chunk match** and
+not about the page — and it read exactly like the absence it was being used to look for, which
+is the direction that misleads. The controls now exit 3 and name what is void. Verified in both
+directions in one run: the void case returns 3, a sound reading still returns 0. **Same family
+as a green workflow that reports rather than gates; printing the finding is not acting on it.**
+
+**Measure a tag's liveness before overriding it, and know that a saturating count is not a
+volume.** Our cross-poster carries a per-post tag override because one frontmatter tag had
+almost no following, and the obvious move was to assume the same of the next niche-looking tag.
+Measured instead, per tag: articles returned at `per_page=30` plus the newest publish date. All
+seven candidates returned 30 with a publish inside the last four days, and a **fabricated tag
+returned 0** — which is the control that makes the 30s readings rather than constants. The
+niche-looking tag was a live feed, so no override was added. ⚠️ **The 30 saturates at
+`per_page`**: it means *"at least 30"*, so the discriminating signals are the newest date and
+the fabricated tag, never the count.
