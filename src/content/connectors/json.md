@@ -78,7 +78,7 @@ JSON connections are almost always one file (or one directory) → one table. Ne
 The connection alone moves nothing — the thing that reads the JSON and writes it to your warehouse is an **upload**, and it lives on its own page rather than on the connection.
 
 1. Open **`/uploads`**. The **New Upload** form is rendered inline on the page.
-2. Fill in **Upload name** (letters and digits only — other characters are stripped as you type), an optional **Description**, the **Source connection** from Step 1, and the **Destination connection** to land in. **Batch size** defaults to 10,000 rows.
+2. Fill in **Upload name** (letters, digits and spaces — other characters are stripped as you type), an optional **Description**, the **Source connection** from Step 1, and the **Destination connection** to land in. **Batch size** defaults to 10,000 rows.
 3. Optionally set the **Schema Contract** — the **Tables** / **Columns** / **Data Type** dropdowns that decide whether a changed incoming shape evolves the destination or fails the run. This is the control that matters most for JSON, where upstream producers add fields without warning.
 4. Click **Create Upload**. It appears below with status `draft`.
 

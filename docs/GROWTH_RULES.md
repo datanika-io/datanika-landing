@@ -1024,3 +1024,92 @@ returned 0** — which is the control that makes the 30s readings rather than co
 niche-looking tag was a live feed, so no override was added. ⚠️ **The 30 saturates at
 `per_page`**: it means *"at least 30"*, so the discriminating signals are the newest date and
 the fabricated tag, never the count.
+
+## Verifying a publish, continued — the recheck that cleared, and a slug nobody minted (2026-09-25, later)
+
+✅ **The 404 above cleared on its own.** Re-read anonymously ~4 h after publishing: **200**,
+129,371 bytes, `Age: 0`, with a fabricated slug returning 404 and the profile returning 200 in the
+same run. The article was live at its own URL throughout and nothing was escalated. **The restraint
+is the part worth copying** — the session that found the 404 filed no `human-locked` issue on a
+sixteen-minute-old observation, and a speculative locker would have been stale inside four hours.
+
+⚠️ **Its recheck criterion was never reached, and the reading has to say so rather than round.**
+The criterion was *"if it still 404s more than ~24 h after publishing, it is NOT a TTL and the next
+hypothesis is a hold"*; only **4.1 h** had elapsed. **State the criterion in the reading, not only
+the result.** A criterion whose purpose is to license an escalation must be able to come out *"not
+yet answerable"*, or it will be read as answered.
+
+🚨 **And the diagnosis above can now be neither confirmed nor refuted, because the record names the
+symptom and not the URL string.** dev.to **mints its own slug** from the article title and appends
+a random suffix; the canonical slug is ours, not theirs. Measured in one run, all three anonymous:
+
+| path | status |
+|---|---|
+| the API record's own `url` field | **200** |
+| the canonical (landing) slug under the same account | **404** |
+| the minted slug **without** its random suffix | **404** |
+
+So a reading taken against either constructed path 404s *while the article is fully live* — and a
+cached 404 with a rising `Age` is what **both** stories produce, which is why the recorded evidence
+cannot separate them. 🔑 **Read the article URL out of the API record's `url` field; never construct
+it from the canonical slug** — and **record the URL string you fetched.** *"It 404s at its own URL"*
+is not a reading anyone can re-examine, including you next session.
+
+## The founder's cadence rulings are held by mechanisms — and were stated in no prose anywhere (2026-09-25)
+
+`plans/current_state.md` rule 32 asks which founder rulings are held by a **mechanism** and which
+only by prose. For cadence the answer is the **inverse gap**, and it is worth writing down because
+it reads like compliance from either end. Both halves are mechanised:
+
+| ruling | mechanism | how it refuses |
+|---|---|---|
+| at most one post every two days (founder, 2026-08-30) | `MIN_GAP_DAYS = 2` in `tests/scheduled-drafts.test.ts`, asserted on every consecutive future-dated pair, with an anti-vacuity control (an empty walk has a minimum gap of `Infinity` and would pass while measuring nothing) | `npm test`, run by CI's **`build`** job — the one required check on `dev` |
+| one dev.to send per UTC day | gate 6 in the cross-poster | `raise SystemExit`, not a print: refuses more than one slug in a run, refuses a UTC day that already carries a send, and **fails closed** when the account cannot be read |
+
+⚠️ **Neither ruling was stated in this file, or in any other prose an agent reads before planning,
+so the only way to learn it was to be refused by it.** That is not a broken guard — a constant
+carrying `// founder decision, 2026-08-30` beside a live assertion is the *right* shape, and the
+exact opposite of rule 32's comment-instead-of-a-guard. It is a **discoverability** gap, and its
+cost is whatever you had already planned when the refusal arrived. 🔑 **A mechanised rule still
+needs one line where an agent reads before planning. A rule discoverable only by violating it gets
+planned around once per session, forever.**
+
+## 🚨 Re-running the phrase list an issue hands you is NOT a re-measurement (2026-09-25)
+
+An issue asked me to confirm that a false claim appeared on no other legal surface, and named the
+population with two quoted phrases. I grepped for those two phrases across the whole repo, found the
+same **two** files the issue named, 0 on every other legal page, proved the pattern against a planted
+line, and wrote *"re-measured rather than relayed."*
+
+**The real population was four files.** Working from the *claim* instead of the phrase, a colleague
+found the same falsehood in two more places, in different words:
+
+| file | what it said | did my phrase list see it? |
+|---|---|---|
+| the legal page's table row | *"carries no TLS control"* | ✅ yes |
+| the setup guide | *"does not negotiate TLS yet"* | ✅ yes |
+| a blog post's live caveat | *"the driver negotiates **no TLS** — not 'TLS if the server offers it', none"* | ❌ **no** |
+| the connector catalogue's description **and** two `limitations` entries | *"TLS-required hosts such as MongoDB Atlas are not supported yet"* · *"No TLS yet"* · *"No `mongodb+srv://` support"* | ❌ **no** |
+
+🔑 **A phrase list that arrives inside an acceptance criterion is an instrument, and re-running
+someone else's instrument produces a matching number, not an independent one.** That is the worst
+shape available: it reads to every later reader as confirmation by a second party, when the two
+readings share the single thing that was wrong.
+
+⚠️ **The catalogue miss is the expensive one.** `src/data/connectors.ts` drives the connector landing
+page *and* its meta description, so the false claim was in indexed marketing copy and in a `<meta>`
+tag — not only in prose a user might skim.
+
+**The remedy, and it costs one extra command:**
+
+1. **Establish the honest denominator first** — every published file that mentions the *subject*
+   (`git grep -l -i mongodb -- src public` returned **33**), then narrow by *topic*
+   (`tls|ssl|srv|atlas|encrypt`), then read the survivors. Don't start from the wording.
+2. **Never report a population figure whose only support is the pattern you were given.** If you
+   reproduce someone's count with their pattern, say that is what you did.
+3. This is the project's *"count the instruction, not the phrase"* trap and rule 33 arriving
+   together, and neither was enough to stop it, because **a supplied phrase list feels like a
+   specification rather than like a measuring device.**
+
+⚠️ **And the corrected files will keep matching the old phrase**, because a retraction quotes what it
+retracts — so the follow-up sweep needs the *claim*, not the phrase, in that direction too.

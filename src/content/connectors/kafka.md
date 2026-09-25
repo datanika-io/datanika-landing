@@ -89,7 +89,7 @@ For the managed tiers this unblocks:
 Extract-load is configured at **`/uploads`**, not on the connection. There is no "Configure pipeline" button — connection rows offer only Test / Edit / Copy / Delete, and `/pipelines` is the **dbt** builder, which is a different thing.
 
 1. Open **`/uploads`**. The **New Upload** form is rendered inline on the page.
-2. Fill in **Upload name** (letters and digits only — anything else is stripped as you type, so `events-stream-load` becomes `eventsstreamload`) and an optional **Description**.
+2. Fill in **Upload name** (letters, digits and spaces — anything else is stripped as you type, so `events-stream-load` becomes `eventsstreamload`) and an optional **Description**.
 3. Pick the **Source connection** and the **Destination connection** — the Kafka connection from Step 2 is the source. Each picker opens a dialog listing entries as `16 — myconnection (postgres)`, i.e. id, name, type.
 4. Click **Create Upload**. It appears in the table below with status `draft`.
 

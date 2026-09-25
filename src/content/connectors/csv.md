@@ -49,7 +49,7 @@ A connection on its own moves nothing. The thing that actually reads the CSV and
 
 1. Open **`/uploads`**. As with connections, the **New Upload** form is already rendered on the page.
 2. Fill in:
-   - **Upload name** — same normalization as connection names: letters and digits only.
+   - **Upload name** — same normalization as connection names: letters, digits and spaces.
    - **Description** *(optional)* — worth writing, it's the only free text you get.
    - **Source connection** — pick the CSV connection from Step 1. Entries read `15 — customerscsv (csv)`, i.e. id, name, type.
    - **Destination connection** — the warehouse to land in. [DuckDB](/docs/connectors/duckdb) if you're following the zero-credentials path.

@@ -5,7 +5,7 @@ source: "hubspot"
 source_name: "HubSpot"
 category: "saas"
 verified_by: "product-ui"
-verified_date: "2026-09-23"
+verified_date: "2026-09-25"
 related_use_cases:
   - "hubspot-to-snowflake"
 related_comparisons:
@@ -52,10 +52,12 @@ HubSpot is the most common marketing + CRM source our users sync into their ware
 Extract-load is configured at **`/uploads`**, not on the connection. There is no "Configure pipeline" button — connection rows offer only Test / Edit / Copy / Delete, and `/pipelines` is the **dbt** builder, which is a different thing.
 
 1. Open **`/uploads`**. The **New Upload** form is rendered inline on the page.
-2. Fill in **Upload name** (letters and digits only — anything else is stripped as you type, so `hubspot-daily-sync` becomes `hubspotdailysync`) and an optional **Description**.
+2. Fill in **Upload name** and an optional **Description**. The name field keeps **letters, digits and spaces** and strips everything else *as you type*, so `hubspot-daily-sync` becomes `hubspotdailysync` — but `HubSpot Daily Sync` is kept exactly as typed. Both were measured on the shipped form.
 3. Pick the **Source connection** and the **Destination connection** — the HubSpot connection from Step 2 is the source. Each picker opens a dialog listing entries as `16 — myconnection (postgres)`, i.e. id, name, type.
 4. Because HubSpot is a SaaS source, the form shows **Select endpoints to load** — a checkbox per resource, **all ticked by default**. For HubSpot the list is `companies`, `contacts`, `deals`. Untick anything you do not want: each ticked endpoint becomes its own table in the destination, and unticked ones are not fetched at all — though unticking *every* box loads the full set rather than nothing.
 5. Click **Create Upload**. It appears in the table below with status `draft`.
+
+![The New Upload form configured for HubSpot, showing the companies, contacts and deals endpoint checkboxes all ticked](/docs/connectors/hubspot/03-configure-upload.png)
 
 > **There is no write disposition, load mode, source schema or table-name field for a SaaS source, and that is deliberate.** Those controls are rendered only when the source is a SQL database. The endpoint checkboxes are the equivalent control here.
 
@@ -67,7 +69,7 @@ Extract-load is configured at **`/uploads`**, not on the connection. There is no
 
 1. On the **`/uploads`** row for your upload, click **Run**. There is no "Run now" on a pipeline page — the trigger lives on the upload's own row.
 2. Watch **`/runs`**. The run shows a status badge, start and finish timestamps and a **Rows** count; the **Logs** icon on the row opens the detail.
-3. When it finishes, open **Models** (`/models`) and browse the landed tables. The upload lands them in a schema **named after the upload** — `hubspotdailysync` creates schema `hubspotdailysync` in the destination. dlt also creates its own `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables in that schema, but **Models does not list them** — seeing only your own tables there is correct, not a partial load. There is no target-schema field to choose.
+3. When it finishes, open **Models** (`/models`) and browse the landed tables. The upload lands them in a schema **derived from the upload's name**: spaces become underscores and the whole thing is lower-cased. So `hubspotdailysync` creates schema `hubspotdailysync`, and an upload named `HubSpot Daily Sync` creates schema `hubspot_daily_sync` — worth knowing, since the name field accepts spaces. dlt also creates its own `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables in that schema, but **Models does not list them** — seeing only your own tables there is correct, not a partial load. There is no target-schema field to choose.
 4. Spot-check the row count against the source. **Verify in the destination rather than trusting the status badge** — a green run means the load finished, not that it moved what you expected.
 
 Open the landed table from **Models** and click **Load first 100 rows**. That runs a live `SELECT` against your destination, so what you see is the warehouse rather than a status badge:
@@ -85,11 +87,13 @@ Schedules live on their own page and reference the upload **by name**.
 1. Open **`/schedules`**. The **New Schedule** form is rendered inline.
 2. Fill in:
    - **Target type** — `upload` (the dropdown also offers pipelines and transformations).
-   - **Target name** — the upload's name exactly as it was saved, e.g. `hubspotdailysync`.
+   - **Target name** — the upload's name exactly as it was saved, e.g. `hubspotdailysync`. The field suggests your existing target names as you type, so you can pick rather than retype; nothing validates a name you type past the suggestion, and a target that does not exist simply never fires.
    - **Cron expression** — a real five-field cron string. There is no cadence picker and no "manual only" option: leaving the upload unscheduled *is* manual-only. `0 * * * *` hourly, `0 */6 * * *` every six hours, `0 3 * * *` nightly at 03:00.
    - **Timezone** — defaults to `UTC`. The cron is evaluated in this zone, which matters for daily and weekly cadences.
 3. Click **Create Schedule**. The row lands as **Active**, with **Pause** available per row.
 4. Wire up failure alerts in **Settings → Notifications** so you hear about broken runs before your stakeholders do.
+
+![The New Schedule form targeting the hubspotdailysync upload with the cron expression 0 3 * * * in UTC](/docs/connectors/hubspot/05-schedule.png)
 
 **What a scheduled run does to your tables:** each run replaces the upload's tables with what that run fetched, so a schedule keeps one copy of each record instead of adding another. A record the API no longer returns is gone after the next run, and so are rows only an earlier run had loaded. To keep every run's rows, the upload needs an explicit `"write_disposition": "append"` in its raw JSON config.
 

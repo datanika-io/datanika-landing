@@ -74,7 +74,7 @@ Create a dedicated user for Datanika with only the permissions it needs.
 A destination is chosen per **upload**, at **`/uploads`** — not on the connection, and not on a pipeline page. There is no "Configure pipeline" button; `/pipelines` is the **dbt** builder, which is a different thing.
 
 1. Open **`/uploads`**. The **New Upload** form is rendered inline on the page.
-2. Fill in **Upload name** (letters and digits only — anything else is stripped as you type) and an optional **Description**.
+2. Fill in **Upload name** (letters, digits and spaces — anything else is stripped as you type) and an optional **Description**.
 3. Pick the **Source connection** you want to read from, and set the **Destination connection** to the Synapse connection from Step 2. Each picker opens a dialog listing entries as `17 — mywarehouse (synapse)`, i.e. id, name, type.
 4. **What else the form shows depends on the *source*, not on Synapse.** **Load Mode**, **Write Disposition**, **Source schema** and **Table names** appear only when the source is a SQL database; for a file, SaaS, MongoDB, Google Sheets, REST or Kafka source they are hidden and the load takes whatever shape the source produces. Synapse honours what it is handed either way.
 5. Click **Create Upload**. It appears in the table below with status `draft`.

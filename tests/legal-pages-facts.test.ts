@@ -421,6 +421,67 @@ describe("legal pages: the two pages must not contradict each other", () => {
     ).toBe(true);
   });
 
+  /**
+   * 🚨 landing#705. The row that told the largest segment of MongoDB users the product does
+   * not work for them, for a capability we had shipped 18 days earlier.
+   *
+   * The row read *"Not encrypted. The connection form carries no TLS control, so a deployment
+   * that requires TLS — Atlas, Cosmos DB's Mongo API, a self-hosted `requireTLS` — cannot be
+   * connected to at all."* Every clause of that was false. `mongodb_fields()` renders a
+   * **Use TLS** checkbox and a **Use DNS seed list (mongodb+srv)** checkbox, neither inside an
+   * `rx.cond`; `connection_state.py` persists `tls` and `srv`; and `build_connection_uri`
+   * emits `tls=true`. It reached core `master` in `36cb78ec` on **2026-09-02**.
+   *
+   * 🔑 Why an assertion rather than the note the guide used. The guide tied its retraction to
+   * **an issue's state** — *"this note comes out when core#626 closes"*. The code landed, the
+   * issue did not close, and the note stayed. A flip condition that depends on somebody
+   * closing an issue is not a flip condition; this file is the one that runs on every push.
+   *
+   * ⚠️ Deliberately NOT a ban on the old sentence. The change-log entry for this correction
+   * quotes it in order to retract it, so an absence check would be satisfied by the retraction
+   * and would red on the fix — WORKFLOW_RULES §4, and #705's own AC5 says so explicitly.
+   *
+   * 🔑 FLIP CONDITION, and it is a real one: this pins the *rendered label* of a control that
+   * lives in another repository. If Engineering renames or removes the checkbox, this goes red
+   * — and that red is correct, because the page would then be naming a control a user cannot
+   * find. **Repoint it at whatever the form offers instead; never widen the regex**, and never
+   * satisfy it by deleting the row (the previous assertion in this block requires MongoDB to
+   * have one, so the two hold each other).
+   *
+   * Re-derive rather than trusting this comment:
+   *   gh api "repos/datanika-io/datanika-core/contents/datanika/i18n/en.json?ref=master" \
+   *     -H "Accept: application/vnd.github.raw" | grep mongodb_tls
+   *   # -> "connections.mongodb_tls": "Use TLS"
+   */
+  it("the MongoDB row names the TLS control the form actually offers", () => {
+    const table = transportTable();
+    const rows = [...table.matchAll(/<tr[\s\S]*?<\/tr>/g)].map((m) => m[0]);
+    const mongo = rows.filter((r) => /MongoDB/.test(r));
+    // Control: located by being the only MongoDB row. Two means a later edit split it and
+    // this assertion silently started describing one half of the position.
+    expect(mongo.length, "expected exactly one MongoDB row in the transport table").toBe(1);
+
+    expect(
+      /Use TLS/.test(mongo[0]),
+      "the MongoDB row no longer names the form's `Use TLS` checkbox. That control shipped to " +
+        "production on 2026-09-02 (core 36cb78ec) and this page spent five days telling Atlas " +
+        "users it did not exist (landing#705). If the control has genuinely gone, rewrite the " +
+        "row and repoint this assertion — do not delete it.",
+    ).toBe(true);
+    expect(
+      /mongodb\+srv/.test(mongo[0]),
+      "the MongoDB row no longer names the DNS seed list (`mongodb+srv`) option. That is the " +
+        "connection string Atlas hands a user, and it forces TLS on — so it is the single most " +
+        "load-bearing fact in this row for the majority of MongoDB deployments.",
+    ).toBe(true);
+    expect(
+      /Measured/.test(mongo[0]),
+      "the MongoDB row lost its basis. Every row in this table says whether we measured it or " +
+        "reasoned it; a row with no basis is the shape the hosted-warehouse guard above exists " +
+        "to prevent, arriving on a different row.",
+    ).toBe(true);
+  });
+
   it("/privacy sends the reader to the table rather than restating it", () => {
     expect(
       /\/trust#encryption-in-transit/.test(privacy),

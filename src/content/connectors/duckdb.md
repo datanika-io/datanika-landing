@@ -73,7 +73,7 @@ DuckDB stores its entire database in a single file. You just need to decide wher
 DuckDB supports schemas just like a full warehouse — they're namespaces inside the file. What lands in them is an **upload**, configured on its own page rather than on the connection.
 
 1. Open **`/uploads`**. The **New Upload** form is rendered inline on the page.
-2. Fill in **Upload name** (letters and digits only — other characters are stripped as you type) and an optional **Description**.
+2. Fill in **Upload name** (letters, digits and spaces — other characters are stripped as you type) and an optional **Description**.
 3. Pick the **Source connection** you want to read from, and set the **Destination connection** to the DuckDB connection from Step 2. Entries read `14 — analyticswarehouse (duckdb)`, i.e. id, name, type.
 4. **Batch size** defaults to 10,000 rows. The **Schema Contract** dropdowns (**Tables** / **Columns** / **Data Type**) decide whether a changed incoming shape evolves the destination or fails the run.
 5. Click **Create Upload**. It appears below with status `draft`.

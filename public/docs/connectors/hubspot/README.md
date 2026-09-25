@@ -21,11 +21,58 @@ Referenced from `src/content/connectors/hubspot.md` (source-only SaaS connector)
 | Filename | Step | Notes |
 |---|---|---|
 | `02-add-connection.png` | Step 2 | The **New Connection** form with `hubspot` selected. Captured 2026-07-19 from a real `app.datanika.io` session in light theme (the app default for a new account). Demo values only; the API Key field renders masked. |
+| `03-configure-upload.png` | Step 3 | The **New Upload** form configured for a HubSpot source: name `hubspotdailysync`, source `6 — HubSpot Contacts Walk (hubspot)`, destination `7 — Local Postgres Destination (postgres)`, and the **Select endpoints to load** checkboxes `companies` / `contacts` / `deals` all ticked. The SQL-only controls (Load Mode, Write Disposition, Source schema, Table names) are **absent**, which is the point of the shot. Captured 2026-09-25. |
+| `05-schedule.png` | Step 5 | The **New Schedule** form filled for that upload: target type `upload`, target name `hubspotdailysync`, cron `0 3 * * *`, timezone `UTC`. **Deliberately not submitted** — an Active schedule fires real runs, and this shot's job is to show the four fields. |
 | `04-first-run.png` | Step 4 | The **Data preview** on `/models/10`, the model detail page for the landed `contacts` table: `Schema: hubspot_contacts_first_run`, `Origin: HubSpot Contacts First Run`, thirteen typed columns and **`Rows: 2`** with both rows shown. `Load first 100 rows` runs a live `SELECT` against the destination connection, so the image is evidence about the warehouse rather than about a status badge. Real HubSpot CRM API → Postgres load, captured 2026-09-23. **No credential on screen** (capture gate below). |
 
 ## Verification
 
-`verified_by: product-ui` / `verified_date: 2026-09-23`.
+`verified_by: product-ui` / `verified_date: 2026-09-25`.
+
+### 2026-09-25 — Steps 3 and 5, and one guide claim the walk refuted
+
+Driven on the isolated local stack (`wt-product`) against the **same org 7** the 2026-09-23 walk
+built, so both shots depict the connections that produced `04-first-run.png` rather than a staged
+set. Upload **4** `hubspotdailysync` was created for these two shots.
+
+**Image fidelity, measured rather than assumed.** The stack's image was rebuilt from the core
+worktree at `origin/dev` immediately before the capture, and afterwards every file under
+`datanika/ui/` and `datanika/i18n/` — **81 files** — was compared between the running container and
+`origin/dev`, CR-stripped on both sides: **zero content differences**, with a forced mismatch as the
+control. `git diff --name-only origin/master origin/dev -- datanika/ui datanika/i18n` was **empty**
+at capture time, so these shots are production's rendering and not a dev-only preview.
+⚠️ The first attempt at that comparison measured **line endings**, not content — the image carries
+CRLF from a Windows worktree while git blobs are LF, so a raw `sha256sum` reported *every* file as
+different. Strip CR on both sides or the instrument answers a different question.
+
+**🔴 A guide claim was wrong and the walk is what found it.** Step 3 said the upload name is
+*"letters and digits only — anything else is stripped as you type"*. Measured on the form:
+`hubspot-daily-sync` → `hubspotdailysync` (the example was right), but `HubSpot Daily Sync` is kept
+**verbatim**. The sanitiser is `UploadState.set_form_name`, `re.sub(r"[^a-zA-Z0-9 ]", "", value)` —
+**the space is inside the keep-class.** The corroborating artifact was already on the page: upload
+**3** is named `HubSpot Contacts First Run`, with spaces, created through this same form.
+*A rule and its example can disagree, and the example is the half that gets checked.*
+
+**Also found, and now in the guide:** the **Target name** field on `/schedules` offers a typeahead of
+existing target names. Its dropdown covered the Cron field in the first `05-schedule.png` attempt,
+which is why the shot asserts the cron input's box is inside the card before firing.
+
+**Capture gate (`docs/PRODUCT_RULES.md` §4 and §4a), run before each shot rather than after.**
+`/uploads`: 3 inputs, 0 credential-shaped and non-empty, no `type="password"` with a value.
+`/schedules`: 3 inputs, same result. The predicate was driven both ways in the same call — it fires
+on a synthetic `access_token` and stays silent on `Target name` — because a gate that matches nothing
+passes everything. **§4a, the data half:** neither page renders destination rows; `td` cells
+containing `@` were **0** on `/uploads` (6 cells) and the schedule page had no table at all. That
+matters here specifically: the 2026-09-23 shot on this same connector passed §4 cleanly while
+rendering every contact's email, which is what §4a was written for.
+
+**Claims confirmed, not merely assumed:** the endpoint checkboxes render `companies`/`contacts`/`deals`
+all `checked`; the SQL-only controls are absent for a SaaS source; each connection picker lists
+entries as `<id> — <name> (<type>)`; the destination picker offers only loadable types (postgres
+only, hubspot filtered out); a created upload lands as `draft`. **Not re-measured this round:** that a
+schedule "lands as Active" — the basis is code (`ScheduleState.is_active` defaults `True` and the
+create path passes `is_active: True`), not a UI observation, because submitting would have armed a
+real nightly run against the live HubSpot token.
 
 ### 2026-09-23 — Step 4, driven end to end
 

@@ -18,28 +18,32 @@ MongoDB is the most common NoSQL source our users sync into a relational warehou
 
 > **MongoDB is source-only.** You can extract data from MongoDB but can't use it as a destination in Datanika.
 
-> 🚫 **MongoDB Atlas does not work yet — read this before you start.** Datanika builds every MongoDB
-> URI as a plain `mongodb://` string with no transport options, so the driver negotiates **no TLS at
-> all**. Atlas requires TLS, so the connection fails during the handshake, before your credentials are
-> ever checked. There is also no `mongodb+srv://` support, so the seedlist hostname Atlas hands you
-> cannot be entered — the form takes **Host** and **Port** separately.
+> 🔐 **TLS and MongoDB Atlas — read this before you start.** The connection form carries two
+> checkboxes for transport: **Use DNS seed list (mongodb+srv)** and **Use TLS**.
 >
-> **The rule, so you can check your own deployment: if the server requires TLS, Datanika cannot
-> reach it yet.** Atlas always requires it. **Amazon DocumentDB** enables it by default — a cluster
-> works here only if someone has explicitly set the `tls` cluster parameter to `disabled`. **Azure
-> Cosmos DB's Mongo API** and any self-hosted `net.tls.mode: requireTLS` are out for the same reason.
-> Both gaps are tracked as [core#626](https://github.com/datanika-io/datanika-core/issues/626); this
-> note comes out when it closes. Nothing else on this page will help if TLS is required — the rest of
-> the guide assumes a deployment reachable without it.
+> - **Use TLS** adds `tls=true` to the connection URI. Tick it for any deployment that requires TLS
+>   on an ordinary `host:port` — a self-hosted `net.tls.mode: requireTLS`, or **Amazon DocumentDB**,
+>   which enables TLS by default.
+> - **Use DNS seed list (mongodb+srv)** switches the URI to the `mongodb+srv://` scheme. That is the
+>   single-hostname connection string **MongoDB Atlas** hands you. Ticking it **hides the Port field**
+>   — the SRV records supply the ports — and **forces TLS on**, so the TLS box goes checked and
+>   greyed out. That is the URI specification, not a Datanika choice.
+>
+> ⚠️ **The honest limit: we have not verified a completed handshake against a TLS-requiring host.**
+> What is measured is our side — ticking those boxes really does produce `mongodb+srv://…` and
+> `tls=true` on both the **Test Connection** path and the run path. Atlas, **Azure Cosmos DB's Mongo
+> API** and DocumentDB have not been connected end to end from Datanika. Treat them as untested here,
+> not as known-broken.
 
 ## Prerequisites
 
 - A **Datanika account** with permission to create connections (Admin or Editor role).
 - A **destination warehouse** already connected.
 - **MongoDB 4.0+** with a user that has `read` role on the target database.
-- A deployment that accepts **plaintext connections** — see the Atlas note above. TLS-required hosts
-  are not supported yet ([core#626](https://github.com/datanika-io/datanika-core/issues/626)).
-- Network reachability from Datanika to the MongoDB host (typically port `27017`).
+- Network reachability from Datanika to the MongoDB host (typically port `27017`, or whatever the
+  SRV records resolve to for a `mongodb+srv` deployment).
+- If your deployment requires TLS, know which shape it is: a seed-list hostname (Atlas) or an
+  ordinary host that happens to demand TLS. The note above says which box that maps to.
 
 ## Step 1 — Create credentials in MongoDB
 
@@ -63,7 +67,8 @@ MongoDB is the most common NoSQL source our users sync into a relational warehou
 ## Step 2 — Add the connection in Datanika
 
 1. In Datanika, open **`/connections`** and pick `mongodb` from the type dropdown at the top of the inline New Connection form.
-2. Fill in: **Connection Name**, **Host**, **Port** (default `27017`), **User**, **Password**, **Database**, and — only if you need it — **Authentication database**. Those six plus the name are the whole form for `mongodb`.
+2. Fill in: **Connection Name**, **Host**, **Port** (default `27017`), **User**, **Password**, **Database**, and — only if you need it — **Authentication database**. Below those sit two transport checkboxes, **Use DNS seed list (mongodb+srv)** and **Use TLS**, both unticked by default. That is the whole form for `mongodb`.
+   > **Tick Use DNS seed list for Atlas.** The Port field disappears when you do — a seed-list URI takes no port — and **Use TLS** goes checked and greyed out, because the `mongodb+srv` scheme implies TLS. For a non-Atlas host that still requires TLS, leave the seed-list box alone and tick **Use TLS** on its own. Leaving both unticked builds a plain `mongodb://` URI, which is what every earlier MongoDB connection in Datanika was and still is — the two keys are absent from those configs and the URI they produce is byte-identical.
 3. **Authentication database** is the database your *user* is defined in, which is a different thing from the database you are *reading*. Leave it empty and Datanika uses `admin` — which is where Step 1 creates the user, where `MONGO_INITDB_ROOT_USERNAME` creates it, and where managed providers create it. Background: [MongoDB `Authentication failed`](/blog/mongodb-authentication-failed-authsource/).
    > ⚠️ **If your user was created inside the target database rather than in `admin`, type that database's name into Authentication database.** Measured on the shipped form: with the field empty, such a user is refused with `Authentication failed` (code 18); with the field set to the database the user lives in, the same credentials connect. The setting is `auth_source` in the connection's JSON, and the **Use raw JSON** checkbox still sets it by hand — it is no longer the only way to reach it ([core#638](https://github.com/datanika-io/datanika-core/issues/638), which also tracks whether a config saved as raw JSON keeps the key through a structured-form save).
 4. Click **Test Connection**. It builds the URI exactly the way a run does, including `auth_source`, so its verdict now matches what a run will do ([core#625](https://github.com/datanika-io/datanika-core/issues/625), fixed).
@@ -76,7 +81,7 @@ MongoDB is the most common NoSQL source our users sync into a relational warehou
 Extract-load is configured at **`/uploads`**, not on the connection. There is no "Configure pipeline" button — connection rows offer only Test / Edit / Copy / Delete, and `/pipelines` is the **dbt** builder, which is a different thing.
 
 1. Open **`/uploads`**. The **New Upload** form is rendered inline on the page.
-2. Fill in **Upload name** (letters and digits only — anything else is stripped as you type, so `mongo-daily-sync` becomes `mongodailysync`) and an optional **Description**.
+2. Fill in **Upload name** (letters, digits and spaces — anything else is stripped as you type, so `mongo-daily-sync` becomes `mongodailysync`) and an optional **Description**.
 3. Pick the **Source connection** and the **Destination connection** — the MongoDB connection from Step 2 is the source. Each picker opens a dialog listing entries as `16 — myconnection (postgres)`, i.e. id, name, type.
 4. **Collection Names (optional, comma-separated)** — an input placeholdered `users, orders (leave empty for all collections)`. Name the collections you want, comma-separated. Leave it empty to load **every** collection in the database.
 5. Click **Create Upload**. It appears in the table below with status `draft`.
@@ -144,7 +149,7 @@ Full explanation of the underlying MongoDB behaviour: [MongoDB `Authentication f
 ### Connection hangs or times out
 **Fix.** Check firewall rules on port `27017` between Datanika and the MongoDB host, and confirm `mongod` is bound to an interface Datanika can reach rather than `127.0.0.1` (`net.bindIp` in `mongod.conf`).
 
-> **If the host requires TLS — Atlas, Cosmos DB's Mongo API, DocumentDB with its default `tls` setting, or a self-hosted `requireTLS` — stop here; an allowlist will not fix it.** Datanika does not negotiate TLS yet, so the connection cannot succeed no matter how the network is configured. See the note at the top of this guide; tracked as [core#626](https://github.com/datanika-io/datanika-core/issues/626). IP allowlisting is a step you would only reach *after* the transport worked.
+> **If the host requires TLS — Atlas, Cosmos DB's Mongo API, DocumentDB with its default `tls` setting, or a self-hosted `requireTLS` — check the transport boxes before you touch the firewall.** A TLS-requiring server drops a plaintext connection during the handshake, and that looks exactly like a blocked port. Tick **Use TLS** (or **Use DNS seed list** for Atlas) on the connection and test again; only then is an IP allowlist the thing left to fix. See the note at the top of this guide for which box maps to which deployment.
 
 ### Nested documents land as JSON strings instead of columns
 **Fix.** This shouldn't happen with dlt's default flattening. If it does, check that the `batch_size` config isn't set too low — very small batches can sometimes affect schema inference.
