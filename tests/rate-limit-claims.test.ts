@@ -1,6 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "fs";
-import { resolve } from "path";
+import { readFileSync, readdirSync, statSync } from "fs";
+// ⚠️ `join` is ALIASED on purpose. The `pacing rule` describe block below declares its own
+// `join` (an array-of-lines flattener), which shadows a bare `import { join }` inside that
+// block — the directory walk then calls the flattener on a string and dies with
+// `ls.join is not a function`. Measured, not guessed at: it is how this widening first ran.
+import { join as pathJoin, relative, resolve, sep } from "path";
+import { connectors } from "../src/data/connectors";
 
 /**
  * Every place we publish an API rate limit must publish the same one, and must
@@ -274,13 +279,227 @@ describe("the pacing rule is published, and the ceiling is not", () => {
     new RegExp(CEILING + "[^.]{0,30}[0-9]", "i").test(text) ||
     new RegExp("[0-9][^.]{0,30}" + CEILING, "i").test(text);
 
-  it.each(SURFACES)("%s does not print the per-second ceiling as a number", (path) => {
+  /**
+   * ## 🆕 A GUARD'S PATH SET IS ITS SCOPE, and this one's was FIVE FILES OUT OF 372
+   *
+   * (landing#712's round, 2026-09-25, Growth; scope independently confirmed by Infra.)
+   *
+   * `printsCeilingValue` reads like a site-wide ban on publishing a per-second rate
+   * figure. It was applied to `SURFACES` — the five API pages — so a `~50 req/s` or a
+   * `60 req/s` figure on `/pricing`, a comparison page, a connector guide or a new blog
+   * post was **unwatched**. That is why the API pages are clean; it was never why the
+   * site was. The ≥60 sweep that established the site-wide count cost **107 citations
+   * across eight populations** to do by hand
+   * (`plans/growth/notes/REQ_PER_S_PUBLIC_SURFACE_SWEEP_2026-09-25.md`), and a hand sweep
+   * is not a mechanism: it answers for the day it ran.
+   *
+   * 🔑 **Widened now precisely BECAUSE nothing public carries a rate figure today.** A
+   * guard that goes green on arrival cannot be argued down by whoever has to fix the red,
+   * and there is nothing to negotiate. Waiting until something does carry one is waiting
+   * until widening has a cost.
+   *
+   * ⚠️ **One ban, not two.** The predicate above is untouched; only the population under
+   * it grew. What is new is that the two legitimate ways to carry a per-second figure are
+   * now asserted as the PRESENCE of the thing that makes them legitimate
+   * (WORKFLOW_RULES §4) rather than left as paths the ban happens not to reach:
+   *
+   *   1. **attributed to a named third party** — the sentence says whose limit it is,
+   *   2. **quoted inside a dated correction** — the blockquote carve-out, unchanged.
+   *
+   * And a figure that really is ours may be published only in the one form the founder
+   * ruled on 2026-09-25 (*"публикуем измеренные ~50 и перестаём ссылаться на 60"*):
+   * **a floor of ~N req/s under neighbour load, measured on a stated date.** Never
+   * *"Datanika handles N req/s"* — prod, staging, the co-tenants and the load generator
+   * share one 4 vCPU box, so a capacity reading does not exist to be published.
+   */
+  /**
+   * Every TEXT file under the two published roots. Measured 2026-09-25 rather than
+   * assumed: `git ls-files -- src public` is **296** files, of which **222** match the
+   * extensions below and the remaining **74 are binary** — 68 PNG, 5 fonts, 1 ico. So
+   * this population is not a selection of the published tree, it is all of it that can
+   * be read as text.
+   *
+   * ⚠️ The 74 binaries are a real blind spot and are recorded as one, not inferred
+   * clean: raster text is not greppable and nobody has read the pixels
+   * (`plans/growth/notes/REQ_PER_S_PUBLIC_SURFACE_SWEEP_2026-09-25.md`, population 1
+   * of "could NOT search"). OG images are generated from page titles, which ARE in here.
+   */
+  const PUBLISHED_ROOTS = ["src", "public"] as const;
+  const PUBLISHED_EXT = /\.(astro|md|mdx|ts|tsx|json|html|txt|svg|css)$/i;
+  const SKIP_DIR = new Set(["node_modules", ".git", "dist", ".astro", "_archive"]);
+
+  const publishedSurfaces = (): string[] => {
+    const out: string[] = [];
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir)) {
+        if (SKIP_DIR.has(entry)) continue;
+        const abs = pathJoin(dir, entry);
+        if (statSync(abs).isDirectory()) walk(abs);
+        else if (PUBLISHED_EXT.test(entry)) out.push(relative(process.cwd(), abs).split(sep).join("/"));
+      }
+    };
+    for (const root of PUBLISHED_ROOTS) walk(resolve(process.cwd(), root));
+    return out.sort();
+  };
+
+  /**
+   * `connectors.ts` entries that name a FORMAT or a PROTOCOL rather than a company.
+   *
+   * 🚨 `REST API` is the one that matters and the reason this subtraction exists: **our
+   * own API is a REST API**, so leaving it in the vendor set would exempt "the REST API
+   * allows 60 requests per second" — the exact sentence this ban is for. Pinned by a
+   * control in the table below, because a subtraction nobody exercises is a subtraction
+   * somebody will undo.
+   */
+  const NOT_A_VENDOR = new Set(["REST API", "OpenAPI", "CSV", "JSON", "Parquet"]);
+
+  /**
+   * Third parties whose own rate limits we legitimately publish — Airtable's 5/s and
+   * Notion's 3/s are real, correct, and on connector pages and a blog post today.
+   *
+   * Derived from `src/data/connectors.ts`, never hand-typed: the expected value has to
+   * come from something this change cannot move, and a list maintained inside this file
+   * goes stale the first time a connector lands (WORKFLOW_RULES §4, third door).
+   */
+  const THIRD_PARTIES = connectors
+    .map((c) => c.name)
+    .filter((n) => !NOT_A_VENDOR.has(n));
+
+  const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+  /**
+   * Attribution is adjacency, not co-occurrence: `<Vendor> … enforces`, within one
+   * clause. Deliberately NOT "the sentence mentions a vendor and does not mention us" —
+   * that form reds on the correct sentence "Airtable enforces 5 requests per second, so
+   * we pace the extractor", and a guard that reds on correct copy gets deleted (§5a).
+   */
+  const ATTRIBUTES = /(enforces|limits|caps|allows|permits|throttles|restricts|imposes|rate[- ]limits)/;
+  const attributedToThirdParty = (sentence: string) =>
+    THIRD_PARTIES.some((v) =>
+      new RegExp(`\\b${escapeRe(v)}\\b[^,;]{0,40}?\\b${ATTRIBUTES.source}\\b`, "i").test(sentence),
+    );
+
+  /** The only shape in which a per-second figure of OURS may be published. */
+  const permittedOwnForm = (sentence: string) =>
+    /\bfloor\b/i.test(sentence) &&
+    /under neighbour load/i.test(sentence) &&
+    /measured 20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]/i.test(sentence);
+
+  type Verdict = "clean" | "attributed" | "permitted-form" | "violation";
+  const classify = (sentence: string): Verdict =>
+    !printsCeilingValue(sentence)
+      ? "clean"
+      : attributedToThirdParty(sentence)
+        ? "attributed"
+        : permittedOwnForm(sentence)
+          ? "permitted-form"
+          : "violation";
+
+  /**
+   * `[^.]` in CEILING already forbids a match crossing a sentence boundary, so splitting
+   * on `.` after the same flatten the narrow test used is equivalent at file level — and
+   * it is the granularity an exemption has to be decided at. Blockquotes are dropped
+   * first, so the dated-correction carve-out survives the widening intact.
+   */
+  const claimSentences = (path: string) =>
+    currentClaims(path)
+      .split(".")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+  /**
+   * 🔑 Nine controls, driven through the SAME classifier in the SAME run. A sweep that
+   * finds nothing over 300 files and a sweep whose classifier is broken print the same
+   * thing, and this table is the only difference between them.
+   */
+  const CONTROLS: Array<{ text: string; verdict: Verdict; why: string }> = [
+    { text: "Datanika sustains 60 req/s under neighbour load", verdict: "violation",
+      why: "the capacity claim the founder's ruling forbids outright" },
+    { text: "our API allows 10 requests per second", verdict: "violation",
+      why: "the per-second ceiling is an operational env var, not a published promise" },
+    { text: "the per-second ceiling is 10", verdict: "violation",
+      why: "naming the ceiling at all, in the words the page itself uses" },
+    { text: "the REST API allows 60 requests per second", verdict: "violation",
+      why: "NOT_A_VENDOR must keep our own API out of the attribution exemption" },
+    { text: "Airtable enforces 5 requests per second per base", verdict: "attributed",
+      why: "a third party's own limit, attributed in the copy — live on two pages today" },
+    { text: "Notion enforces 3 requests per second per integration", verdict: "attributed",
+      why: "the same, and the reason a bare widening would have gone red on arrival" },
+    { text: "Airtable enforces 5 requests per second per base, so we pace the extractor",
+      verdict: "attributed",
+      why: "attribution plus a first-person clause is still attribution — the false red this avoids" },
+    { text: "a floor of ~50 req/s under neighbour load, measured 2026-09-24", verdict: "permitted-form",
+      why: "the one permitted form, whole" },
+    { text: "a floor of ~50 req/s under neighbour load", verdict: "violation",
+      why: "the permitted form minus its date is an unsourced claim, and must not pass" },
+    { text: "the window is fixed and resets every minute", verdict: "clean",
+      why: "no figure next to a per-second unit: the ban must not fire on prose about the limiter" },
+  ];
+
+  it.each(CONTROLS)("control: $text -> $verdict", ({ text, verdict, why }) => {
+    expect(classify(text), why).toBe(verdict);
+  });
+
+  it("the swept population is the published tree, not a handful of pages", () => {
+    const files = publishedSurfaces();
+
+    // 🚨 Anti-vacuity: a walk that returns nothing reports the whole site clean, which is
+    // the exact failure this widening removes, and it must not be able to arrive twice by
+    // a different route.
+    //
+    // ⚠️ The floor is deliberately FAR below today's count (222 text files at
+    // 2026-09-25) and is NOT a snapshot of it. Pinning the real number would make this
+    // assertion fail every time a blog post ships — "assert the invariant, not today's
+    // instance" (WORKFLOW_RULES §5a), and a guard that reds on routine correct work is a
+    // guard someone deletes. What it catches is an empty walk or one that reached a
+    // single directory.
+    expect(files.length, "the published-surface walk found almost nothing").toBeGreaterThan(100);
+
+    // Both roots, so a walk that silently reached only one of them fails. `public/` holds
+    // the 36 connector guides; `src/` holds the pages, the blog and the data modules.
+    expect(files.some((f) => f.startsWith("src/")), "the walk never reached src/").toBe(true);
+    expect(files.some((f) => f.startsWith("public/")), "the walk never reached public/").toBe(true);
+
+    // The five files this ban used to cover must still be inside the wider population —
+    // widening a path set is worthless if it drops what it started with.
+    for (const s of SURFACES) {
+      expect(files, `${s} must still be inside the population this ban sweeps`).toContain(s);
+    }
+
+    // Derived coverage rather than a count: every connector we publish has a content page,
+    // and that set grows from connectors.ts, so this scales with the site instead of
+    // freezing a number. Connector pages are where third-party rate limits actually live.
+    for (const c of connectors) {
+      expect(
+        files,
+        `src/content/connectors/${c.slug}.md is published but outside the swept population`,
+      ).toContain(`src/content/connectors/${c.slug}.md`);
+    }
+  });
+
+  it("no published surface prints a per-second figure as ours", () => {
+    const violations: string[] = [];
+    let attributed = 0;
+    for (const path of publishedSurfaces()) {
+      for (const sentence of claimSentences(path)) {
+        const verdict = classify(sentence);
+        if (verdict === "attributed" || verdict === "permitted-form") attributed++;
+        if (verdict === "violation") violations.push(`${path}: "${sentence.slice(0, 160)}"`);
+      }
+    }
     expect(
-      printsCeilingValue(currentClaims(path)),
-      `${path} prints a value for the per-second ceiling — a promise we have not made. ` +
-        "It is an operational env var (load tests have moved it to 200), and core#705 may " +
-        "make it a plan dimension, at which point any constant here is false again.",
-    ).toBe(false);
+      violations,
+      "A per-second rate figure is published as ours. There are exactly three ways this " +
+        "passes: attribute it to the third party whose limit it is, quote it inside a dated " +
+        "`> **Corrected YYYY-MM-DD**` note, or — if it really is ours — publish the founder's " +
+        "form: a floor of ~N req/s under neighbour load, measured on a stated date. " +
+        "Never a capacity figure: prod, staging, the co-tenants and the generator share one " +
+        "4 vCPU box.\n" +
+        violations.join("\n"),
+    ).toEqual([]);
+    // The sweep must be looking at something. Three attributed third-party figures are
+    // live today; zero would mean the walk or the classifier stopped seeing them.
+    expect(attributed, "the sweep found no legitimate figure either — check the walk").toBeGreaterThan(0);
   });
 
   it("the announcement post's retired burst figures survive ONLY inside a dated correction", () => {
