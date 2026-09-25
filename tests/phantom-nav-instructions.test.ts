@@ -451,3 +451,140 @@ describe("the connector guides and their template name surfaces that exist", () 
     }
   });
 });
+
+/**
+ * 🔴 landing#724 — THE RULE DIRECTLY ABOVE WAS ENFORCED AGAINST `_template.md` AND NOTHING ELSE.
+ *
+ * The `does not teach a schema the reader cannot type` block requires `_template.md` to explain
+ * that the destination schema is **derived** from the upload's name, and forbids the unqualified
+ * "named after the upload" *instruction* there. landing#715 then swept the precise wording into
+ * **38 connector guides**. The blog was in no path set at all, and carried the unqualified claim
+ * in **5 posts with 0 in the precise form** — measured 2026-09-26, with a fabricated-phrase
+ * control matching 0 posts and a known-present control matching 7, so that zero is a reading
+ * about the corpus and not about the pattern.
+ *
+ * ## Why the blog is where this bites hardest, not merely where it was missed
+ *
+ * Two of the five teach the reader, **in the same post**, that a spaced upload name is kept
+ * verbatim — `google-sheets-share-step` says so sixteen lines above its own schema sentence.
+ * Core keeps spaces (`upload_state.py:103`, `re.sub(r"[^a-zA-Z0-9 ]", "", value)`) and then
+ * derives the schema with `to_snake_case = re.sub(r"\s+", "_", name.strip()).lower()`. So a
+ * reader who takes the post's own advice and types `Sheets Daily Sync` hunts for a schema of
+ * that name and finds `sheets_daily_sync`. Those posts were self-contradictory, not just terse.
+ *
+ * ## The population is a GLOB, deliberately
+ *
+ * `POSTS` at the top of this file is a two-entry enumeration, and an enumeration is a
+ * measurement with a timestamp on it: `airtable-linked-records` (published 2026-09-23) arrived
+ * after it was written and was invisible to it. This block globs the corpus, so the next post
+ * carrying the claim is caught on the day it lands rather than when somebody remembers a list.
+ *
+ * ## What this guard CANNOT see, stated so a green is not over-read
+ *
+ * It selects the claim in the two forms we actually write (`schema … named after the upload`,
+ * `schema … derived from the upload's name`). A post inventing a third phrasing — "the upload's
+ * name becomes the schema" — would escape selection and read as clean. The controls at the
+ * bottom pin the two known forms in both directions; they do not make the matcher exhaustive.
+ */
+describe("no blog post says the destination schema is copied from the upload's name", () => {
+  const BLOG_DIR = resolve(__dirname, "../src/content/blog");
+  const posts = readdirSync(BLOG_DIR)
+    .filter((f) => f.endsWith(".md"))
+    .sort();
+  const readPost = (name: string) => readFileSync(resolve(BLOG_DIR, name), "utf-8");
+
+  /**
+   * The CLAIM, not a phrase. Both verbs are matched on purpose: the fix rewrites
+   * "named after" to "derived from", and the requirement below has to keep applying
+   * afterwards — otherwise the guard retires itself the moment it is satisfied, which is
+   * WORKFLOW_RULES §5a's release-condition trap.
+   */
+  const CLAIMS_SCHEMA_FROM_NAME =
+    /schema\b[^.\n]{0,80}\b(?:named after|derived from)\b[^.\n]{0,40}\bupload\b/i;
+
+  /** Asserted as the PRESENCE of the two things core actually does, never as a word ban. */
+  const STATES_TRANSFORM = (text: string) =>
+    /underscore/i.test(text) && /lower-cas/i.test(text);
+
+  /**
+   * Scoped to the PARAGRAPH, not the file and not the line. Not the file, because the word
+   * "underscore" forty lines away would satisfy it. Not the line, because a claim that ever
+   * spans a wrap would slip through — the defect the coordinator hit twice on 2026-09-25.
+   */
+  const claimParagraphs = (text: string) =>
+    text.split(/\r?\n[ \t]*\r?\n/).filter((p) => CLAIMS_SCHEMA_FROM_NAME.test(p));
+
+  it("the corpus is the size this guard walks", () => {
+    // A tripwire against the glob silently matching nothing, not a target: every case
+    // below would vanish and the suite would still go green. 63 posts at landing#724.
+    expect(posts.length, `expected a populated blog corpus at ${BLOG_DIR}`).toBeGreaterThan(50);
+  });
+
+  const subjects = posts.filter((p) => CLAIMS_SCHEMA_FROM_NAME.test(readPost(p)));
+
+  it("the claim matcher still selects the posts that make the claim", () => {
+    // The other half of the anti-vacuity pair. A matcher that has stopped matching produces
+    // an empty `it.each`, and an empty `it.each` is indistinguishable from a clean corpus.
+    expect(
+      subjects.length,
+      "the schema-claim matcher selected NO post. Either every post stopped explaining " +
+        "where data lands — unlikely — or the matcher is broken. A zero here is a reading " +
+        "about the pattern until you have seen it select something.",
+    ).toBeGreaterThan(0);
+  });
+
+  it.each(subjects)("%s says HOW the schema is derived, not merely that it is", (post) => {
+    for (const para of claimParagraphs(readPost(post))) {
+      expect(
+        STATES_TRANSFORM(para),
+        `${post} ties the destination schema to the upload's name without stating the ` +
+          `transform. Core folds whitespace runs to single underscores and lower-cases the ` +
+          `result (to_snake_case), so \`Sheets Daily Sync\` lands in \`sheets_daily_sync\` — ` +
+          `and the upload-name field accepts spaces, so that is a name readers really type. ` +
+          `The paragraph must say both. landing#724.\n\n${para.slice(0, 220)}`,
+      ).toBe(true);
+    }
+  });
+
+  it("the matcher fires on the loose form and spares the precise one", () => {
+    // Both halves in one test, per WORKFLOW_RULES §4: a control that only ever passes on the
+    // corrected shape cannot tell you the pre-fix shape would have failed.
+    const loose = [
+      "The tables land in a schema **named after the upload**, so `airtabledailysync` creates schema `airtabledailysync`.",
+      "It lands them in a PostgreSQL schema named after the upload, here `onlinestoresync`, next to three bookkeeping tables of dlt's own.",
+      "Tables land in a schema **named after the upload**: an upload called `zendeskdailysync` creates the schema `zendeskdailysync`.",
+    ];
+    for (const sample of loose) {
+      expect(
+        CLAIMS_SCHEMA_FROM_NAME.test(sample),
+        `the matcher missed a loose claim: ${sample.slice(0, 80)}`,
+      ).toBe(true);
+      expect(
+        STATES_TRANSFORM(sample),
+        `a loose claim scored as stating the transform: ${sample.slice(0, 80)}`,
+      ).toBe(false);
+    }
+
+    const precise =
+      "Your tables land in a schema **derived from the upload's name**: whitespace runs " +
+      "become single underscores and the whole thing is lower-cased, so `Sheets Daily Sync` " +
+      "creates schema `sheets_daily_sync`.";
+    expect(CLAIMS_SCHEMA_FROM_NAME.test(precise), "the matcher stopped selecting the corrected form — it would then guard nothing after the fix").toBe(true);
+    expect(STATES_TRANSFORM(precise), "the corrected form does not satisfy the requirement").toBe(true);
+
+    // Unrelated uses of the word "schema" must NOT be selected, or the guard fails the build
+    // on copy that has nothing to do with upload naming.
+    const unrelated = [
+      "Replace `main.raw_data` with your catalog.schema.",
+      "- **Source schema** *(optional)* — the schema to read from on the source side.",
+      "GRANT USAGE ON SCHEMA raw_data TO datanika_loader;",
+      "declares all of them as dbt sources, under a source named after the upload's schema.",
+    ];
+    for (const sample of unrelated) {
+      expect(
+        CLAIMS_SCHEMA_FROM_NAME.test(sample),
+        `the matcher fires on unrelated schema copy: ${sample.slice(0, 80)}`,
+      ).toBe(false);
+    }
+  });
+});

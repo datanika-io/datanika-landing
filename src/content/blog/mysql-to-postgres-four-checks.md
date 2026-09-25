@@ -24,7 +24,7 @@ FLUSH PRIVILEGES;
 
 A grant on `online_store.*` is a database-level privilege, so it also covers tables created after you run it. We checked rather than assumed: a table added to `online_store` after the grant was readable by this user straight away, while a table in a database the grant does not name was refused. There is nothing to re-run when the schema grows.
 
-**The whole database in one upload.** With **Load Mode** `full_database` and **Table names** left blank, the upload reads every table the user can see. It lands them in a PostgreSQL schema named after the upload, here `onlinestoresync`, next to three bookkeeping tables of dlt's own (`_dlt_loads`, `_dlt_pipeline_state`, `_dlt_version`).
+**The whole database in one upload.** With **Load Mode** `full_database` and **Table names** left blank, the upload reads every table the user can see. It lands them in a PostgreSQL schema derived from the upload's name — whitespace runs become single underscores and the whole thing is lower-cased — here `onlinestoresync`, next to three bookkeeping tables of dlt's own (`_dlt_loads`, `_dlt_pipeline_state`, `_dlt_version`).
 
 **Write Disposition `append`, the default.** Keep that in mind for check 2.
 

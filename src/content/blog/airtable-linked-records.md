@@ -65,7 +65,7 @@ The remaining controls — **Batch size** (10000 by default) and the **Schema Co
 
 Click **Run** on the upload's row and watch `/runs` for the status badge, timestamps and **Rows** count.
 
-The tables land in a schema **named after the upload**, so `airtabledailysync` creates schema `airtabledailysync`. dlt's own `_dlt_loads`, `_dlt_pipeline_state` and `_dlt_version` tables are created there too but are not listed in **Models** — seeing only your own tables is correct.
+The tables land in a schema **derived from the upload's name** — whitespace runs become single underscores and the whole thing is lower-cased — so `airtabledailysync` creates schema `airtabledailysync`, and `Airtable Daily Sync` creates schema `airtable_daily_sync`. dlt's own `_dlt_loads`, `_dlt_pipeline_state` and `_dlt_version` tables are created there too but are not listed in **Models** — seeing only your own tables is correct.
 
 Spot-check the row count against the base. A green run means the load finished, not that it moved what you expected.
 
