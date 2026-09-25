@@ -39,7 +39,7 @@ Pipedrive personal API tokens authenticate as a specific user and inherit that u
 2. From the **type dropdown**, pick **`pipedrive`**.
 3. Fill in:
    - **Connection Name** — a label for this connection, e.g. `pipedrivesales`.
-   - **API Key** — paste the token from Step 1. (The field is labelled *API Key (optional)*, but Pipedrive needs it.) Stored encrypted at rest with Fernet.
+   - **API Key** — paste the token from Step 1. Stored encrypted at rest with Fernet.
 4. Click **Create Connection**.
 
 > **The token is all you need.** Datanika calls the global Pipedrive API host, so there's no company-domain field — the personal API token is already scoped to its own company.

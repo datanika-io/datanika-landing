@@ -40,12 +40,13 @@ A personal access token (PAT) authenticates as you and can read everything your 
 2. From the **type dropdown**, pick **`asana`**.
 3. Fill in:
    - **Connection Name** — a label for this connection, e.g. `asanaprojects`.
-   - **API Key** — paste the personal access token from Step 1. (The field is labelled *API Key (optional)*, but Asana needs it.) Stored encrypted at rest with Fernet.
+   - **API Key** — paste the personal access token from Step 1. Stored encrypted at rest with Fernet.
+   - **Workspace GID** *(optional)* — the workspace whose projects to load, e.g. `1210548032693177`. Leave it blank to load every project the token can reach. Asana shows the GID in the URL when you open a workspace's admin console; `workspaces` is also one of the tables this connector loads, so a first run without it tells you the GID for later.
 4. Click **Create Connection**.
 
-> **All accessible workspaces sync.** There's no workspace field — Datanika syncs every workspace the token can reach. To scope the sync, use a token from a user with access to only the workspaces you want.
+> **Workspace GID scopes `projects`, and only `projects`.** Blank is a working configuration, not an unfinished one: Datanika then loads every project the token can reach. Fill it in and `projects` is restricted to that workspace. It is deliberately **not** applied to `tasks` (see Step 3), and `workspaces`, `users` and `tags` are account-wide either way. To narrow the sync further, use a token from a user with access to only what you want.
 >
-> **Test Connection really checks this credential.** Clicking it sends one authenticated request to the Asana API (it reads your own user record). A revoked, mistyped or suspended credential comes back **red**, naming the status Asana returned — it is no longer styled as a pass. What it does not check is **scope**: a credential that passes here can still lack access to the specific workspace or project you name on the upload, and that surfaces on the first run.
+> **Test Connection really checks this credential.** Clicking it sends one authenticated request to the Asana API (it reads your own user record). A revoked, mistyped or suspended credential comes back **red**, naming the status Asana returned — it is no longer styled as a pass. What it does not check is **scope**: a credential that passes here can still lack access to the workspace you named above, or to the projects inside it, and that surfaces on the first run.
 
 ![Adding Asana in Datanika](/docs/connectors/asana/02-add-connection.png)
 
@@ -58,6 +59,8 @@ Extract-load is configured at **`/uploads`**, not on the connection. There is no
 3. Pick the **Source connection** and the **Destination connection** — the Asana connection from Step 2 is the source. Each picker opens a dialog listing entries as `16 — myconnection (postgres)`, i.e. id, name, type.
 4. Because Asana is a SaaS source, the form shows **Select endpoints to load** — a checkbox per resource, **all ticked by default**. For Asana the list is `projects`, `tags`, `tasks`, `users`, `workspaces`. Untick anything you do not want: each ticked endpoint becomes its own table in the destination, and unticked ones are not fetched at all — though unticking *every* box loads the full set rather than nothing.
 5. Click **Create Upload**. It appears in the table below with status `draft`.
+
+> **`tasks` is loaded per project, so a task that belongs to no project is not synced.** Asana has no "all tasks in a workspace" endpoint: `GET /tasks` is refused outright without a scope, and a workspace on its own is not a scope — it is still refused. Datanika therefore walks `projects` and fetches each project's tasks. A task sitting in no project has no route in and will be absent from the `tasks` table. That is Asana's API rather than a dropped row, so check for project-less tasks before reading a short `tasks` table as a bug.
 
 > **There is no write disposition, load mode, source schema or table-name field for a SaaS source, and that is deliberate.** Those controls are rendered only when the source is a SQL database. The endpoint checkboxes are the equivalent control here.
 
