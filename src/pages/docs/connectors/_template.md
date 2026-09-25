@@ -33,9 +33,14 @@ draft: false
       there. The only UI string reading "Catalog" is the Unity Catalog field on a
       Databricks connection, which is worse than nothing: the reader finds an unrelated
       form input on another page.)
-    * The destination schema is **named after the upload**. There is no target-schema
-      field, and `raw_<source>` is not typeable — upload names are validated
-      `^[a-zA-Z0-9 ]+$`.
+    * The destination schema is **derived from the upload's name** by `to_snake_case`:
+      whitespace runs become single underscores and the whole thing is lower-cased.
+      Do NOT write "named after the upload" unqualified — it was true of every
+      guide's example and wrong in general (landing#715).
+    * Upload names are validated `^[a-zA-Z0-9 ]+$` — letters, digits AND SPACES.
+      So `raw_stripe` is not typeable but `Raw Stripe` is, and it lands in
+      `raw_stripe`. Do NOT write "letters and digits only": that was false on 35
+      guides (landing#395).
     * dlt's `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` tables exist in the
       warehouse but `CatalogService` skips every `_dlt_*` table, so Models never lists
       them. Do not promise they appear — that tells the reader to read a correct result
@@ -117,12 +122,12 @@ Walk the reader through creating the credentials/API key/service account in the 
 Extract-load is configured at **`/uploads`**, not on the connection. There is no "Configure pipeline" button — connection rows offer only Test / Edit / Copy / Delete, and `/pipelines` is the **dbt** builder, which is a different thing.
 
 1. Open **`/uploads`**. The **New Upload** form is rendered inline on the page.
-2. Fill in **Upload name** (letters and digits only — anything else is stripped as you type, so `<source>-daily-sync` becomes `<source>dailysync`) and an optional **Description**.
+2. Fill in **Upload name** (letters, digits and spaces — anything else is stripped as you type, so `<source>-daily-sync` becomes `<source>dailysync`, while `<Source> Daily Sync` is kept verbatim) and an optional **Description**.
 3. Pick the **Source connection** and the **Destination connection**. Each picker opens a dialog listing entries as `16 — myconnection (postgres)`, i.e. id, name, type.
 4. `<For a SaaS/API source: the form shows **Select endpoints to load** — a checkbox per resource, all ticked by default. For <Source> the list is `<endpoints>`. For a SQL source: the write disposition, load mode, source schema and table-name controls are rendered here instead.>`
 5. Click **Create Upload**. It appears in the table below with status `draft`.
 
-> **The destination schema is named after the upload, and there is no field to change it.** An upload called `<source>dailysync` creates schema `<source>dailysync`. If you want a `raw_`-prefixed schema, name the upload **`Raw <Source>`** — the space is legal and becomes the underscore.
+> **The destination schema is derived from the upload's name, and there is no field to change it.** Whitespace runs become single underscores and the whole thing is lower-cased. An upload called `<source>dailysync` creates schema `<source>dailysync`; one called `<Source> Daily Sync` creates schema `<source>_daily_sync`. So if you want a `raw_`-prefixed schema, name the upload **`Raw <Source>`** — the space is legal and becomes the underscore.
 
 ![Configuring the <Source> upload](/docs/connectors/<source-slug>/03-configure-upload.png)
 

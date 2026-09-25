@@ -91,7 +91,7 @@ DuckDB supports schemas just like a full warehouse — they're namespaces inside
 
 ![The /runs table after a load into DuckDB — a run status, which is not the same thing as data having arrived](/docs/connectors/duckdb/04-first-run.png)
 
-3. When the run finishes, open **Models** (`/models`) and browse the landed tables. Each lands in a schema **named after the upload**, and you can see column counts and last-run status directly in the Data Catalog, no SQL required.
+3. When the run finishes, open **Models** (`/models`) and browse the landed tables. Each lands in a schema **derived from the upload's name** — spaces become underscores and the whole thing is lower-cased, so an upload named `Sales Daily Load` lands in schema `sales_daily_load` — and you can see column counts and last-run status directly in the Data Catalog, no SQL required.
 4. **Open a table and click `Load first 100 rows`.** The **Data preview** on the model detail page runs a live `SELECT` against the DuckDB file, so it is the cheapest proof that data actually arrived. **For DuckDB this step is doing double duty**: because the web app and the worker are separate containers, an empty or missing preview after a green run is the symptom of a file only the worker can see — go back to Step 1's probe.
 5. For a deeper inspection without leaving Datanika, open **SQL Editor**, point it at the DuckDB connection, and run `SHOW ALL TABLES;` or `SELECT count(*) FROM <upload_name>.<table>;`. If you'd rather drive DuckDB from outside Datanika, run the Python engine that's already in the container:
    ```bash
