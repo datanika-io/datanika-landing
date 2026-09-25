@@ -4,8 +4,8 @@ description: "Upload JSON and JSON Lines files into your warehouse with Datanika
 source: "json"
 source_name: "JSON"
 category: "file"
-verified_by: "product-ui"
-verified_date: "2026-08-31"
+verified_by: "qa-ui"
+verified_date: "2026-09-25"
 related_use_cases: []
 related_comparisons:
   - "airbyte"
@@ -29,9 +29,11 @@ JSON is the format your APIs already speak, your logs already emit, and your Saa
 ## Step 1a — Upload a file through the UI (the common case)
 
 1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page.
-2. From the **type dropdown**, pick `json` (under the **File** category).
+2. From the **type dropdown**, pick `json`. ⚠️ **There are no categories** — the picker is one flat, searchable list of every connector type, so type `json` into its **Search…** box rather than looking for a *File* heading.
 3. **Connection Name** — give it a label, e.g. `apilogs202604` or `segmentexportq1`. **The field strips anything that isn't a letter or a digit as you type**, so `api-logs-2026-04` becomes `apilogs202604`. Type the name you want to end up with.
 4. In the **Upload File** section, drag your `.json` / `.jsonl` / `.ndjson` file into the upload area, or click the **Upload File** button to browse. (There's no in-form preview — the file is parsed when the pipeline runs.)
+
+   🚨 **A `.jsonl` or `.ndjson` file will NOT appear in the browse dialog.** The picker's filter lists only `.csv`, `.json` and `.parquet`, so your file is simply absent with no error to explain it — tracked as [core#1604](https://github.com/datanika-io/datanika-core/issues/1604). **Until that ships, either rename your file to `.json`** (the reader detects JSON Lines from the content, not the extension, so nothing else changes) **or use the file-path route in Step 1b**, which has no such filter.
 5. Click **Test Connection**, then **Create Connection**.
 
 ![Adding the JSON connection in Datanika](/docs/connectors/json/02-add-connection.png)

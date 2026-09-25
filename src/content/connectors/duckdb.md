@@ -4,8 +4,8 @@ description: "Set up DuckDB as an embedded analytical warehouse in Datanika — 
 source: "duckdb"
 source_name: "DuckDB"
 category: "database"
-verified_by: "product-ui"
-verified_date: "2026-08-31"
+verified_by: "qa-ui"
+verified_date: "2026-09-25"
 related_use_cases: []
 related_comparisons:
   - "airbyte"
@@ -66,7 +66,9 @@ DuckDB stores its entire database in a single file. You just need to decide wher
 
 ![Adding the DuckDB connection in Datanika](/docs/connectors/duckdb/02-add-connection.png)
 
-> **"File not found"?** On self-hosted, the parent directory must exist *before* you hit Test connection. DuckDB creates the `.duckdb` file, but it does not create parent directories. Mounting the volume from Step 1 creates the directory for you; if you skipped that, this is the error it produces.
+> 🚨 **Test Connection is RED for a brand-new DuckDB destination, and that is expected.** It reports `No database at '<path>'. Check the path, or create the file first.` — because the `.duckdb` file does not exist until the first run creates it. **Create Connection succeeds anyway**, which is why Step 2 sends you there and not to Test Connection. Come back and test it *after* your first run, when it will pass.
+>
+> ⚠️ **So do not read that message as a path problem.** It says the same thing whether your volume is mounted correctly or not, so it cannot tell you which you have — Step 1's two-container probe is the check that can. A genuinely missing **parent directory** produces `IO Error: Cannot open file ...: No such file or directory` on the *run*, not on the test; DuckDB creates the file but never the directories above it, and mounting the volume from Step 1 creates the directory for you.
 
 ## Step 3 — Point a load at it
 
@@ -93,7 +95,9 @@ DuckDB supports schemas just like a full warehouse — they're namespaces inside
 
 3. When the run finishes, open **Models** (`/models`) and browse the landed tables. Each lands in a schema **named after the upload**, and you can see column counts and last-run status directly in the Data Catalog, no SQL required.
 4. **Open a table and click `Load first 100 rows`.** The **Data preview** on the model detail page runs a live `SELECT` against the DuckDB file, so it is the cheapest proof that data actually arrived. **For DuckDB this step is doing double duty**: because the web app and the worker are separate containers, an empty or missing preview after a green run is the symptom of a file only the worker can see — go back to Step 1's probe.
-5. For a deeper inspection without leaving Datanika, open **SQL Editor**, point it at the DuckDB connection, and run `SHOW ALL TABLES;` or `SELECT count(*) FROM <upload_name>.<table>;`. If you'd rather drive DuckDB from outside Datanika, run the Python engine that's already in the container:
+
+![The Data preview on the model detail page, showing the rows that actually landed in the DuckDB file](/docs/connectors/duckdb/05-data-preview.png)
+5. For a deeper inspection without leaving Datanika, use the **SQL Editor** — ⚠️ **it is a field inside the New Transformation form on `/transformations`, not a page of its own.** There is no SQL Editor in the sidebar and no `/sql-editor` route (it 404s). Open **`/transformations`**, set **Destination Connection** to your DuckDB connection, type into **SQL**, and use **Preview SQL** / **Preview Result** to run something like `SHOW ALL TABLES;` or `SELECT count(*) FROM <upload_name>.<table>;` without creating the transformation. If you'd rather drive DuckDB from outside Datanika, run the Python engine that's already in the container:
    ```bash
    docker exec -it datanika-celery /app/.venv/bin/python -c \
      "import duckdb; con = duckdb.connect('/var/datanika/duckdb/analytics.duckdb', read_only=True); print(con.execute('SHOW ALL TABLES').fetchall())"
