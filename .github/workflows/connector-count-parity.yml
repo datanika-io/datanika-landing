@@ -170,7 +170,11 @@ jobs:
             --jq '.content' | base64 -d > /tmp/connection_schemas.py
           test -s /tmp/connection_schemas.py
 
-      - name: Compare documented fields against the form
+      # NOT "against the form" — this compares against the schema core PUBLISHES
+      # (`/api/v1/meta/connection-types`). The form is
+      # `datanika/ui/components/connection_config_fields.py` and the two disagree for
+      # 13 of 37 types (core#662). See scripts/check-config-field-parity.py's docstring.
+      - name: Compare documented fields against the published schema
         id: check
         run: |
           set +e
@@ -198,15 +202,17 @@ jobs:
           fi
 
           {
-            echo '`src/data/connectors.ts` documents config fields that do not match the shipped form.'
+            echo '`src/data/connectors.ts` documents config fields that do not match the schema core publishes.'
             echo
-            echo 'Each `/connectors/<slug>/` page renders its `configFields` as the Configuration table, so a wrong name sends a reader looking for a field that is not in the form.'
+            echo 'Each `/connectors/<slug>/` page renders its `configFields` as the Configuration table, so a wrong name sends a reader looking for a field that is not there.'
             echo
             echo '```'
             cat /tmp/fields.txt
             echo '```'
             echo
-            echo 'Fix by reading names off `datanika/services/connection_schemas.py` at core `master`. Reproduce locally:'
+            echo '🚨 **Establish which side is wrong before editing this page.** This check compares against `datanika/services/connection_schemas.py`, which is the **published discovery document** — not the Reflex form. The form is `datanika/ui/components/connection_config_fields.py`, and the two disagree for **13 of 37** connector types (core#662). For `salesforce`, `shopify`, `bigquery` and `kafka` the **schema** is the wrong side, so copying it onto the page would document a field no user can see. If the schema is wrong, fix it in core.'
+            echo
+            echo 'Otherwise, correct names off `datanika/services/connection_schemas.py` at core `master`. Reproduce locally:'
             echo
             echo '```bash'
             echo "gh api \"repos/datanika-io/datanika-core/contents/datanika/services/connection_schemas.py?ref=master\" \\"
@@ -219,7 +225,7 @@ jobs:
           } > /tmp/fields-issue.md
 
           gh issue create \
-            --title "Connector config field drift: connectors.ts does not match the shipped form" \
+            --title "Connector config field drift: connectors.ts does not match the published schema" \
             --body-file /tmp/fields-issue.md
           exit 1
 
