@@ -41,7 +41,7 @@ Every Freshdesk agent has a personal API key. Authentication is HTTP Basic: the 
 3. Fill in:
    - **Connection Name** — a label for this connection, e.g. `freshdesksupport`.
    - **Freshdesk Domain** — just the subdomain, not the full URL. If your Freshdesk is at `acme.freshdesk.com`, enter `acme`.
-   - **API Key** — paste the key from Step 1. (The field is labelled *API Key (optional)*, but Freshdesk needs it.) Stored encrypted at rest with Fernet.
+   - **API Key** — paste the key from Step 1. Stored encrypted at rest with Fernet.
 4. Click **Create Connection**.
 
 > **Test Connection really checks this credential.** Clicking it sends one authenticated request to the Freshdesk API (it reads your own agent record). A revoked, mistyped or suspended credential comes back **red**, naming the status Freshdesk returned — it is no longer styled as a pass. What it does not check is **scope**: a credential that passes here can still lack access to the specific tickets or contacts you name on the upload, and that surfaces on the first run.
