@@ -72,7 +72,7 @@ Hit **Run** on the upload's row. There is no "Run now" on a pipeline page; the t
 
 If the share step went wrong, this is where you find out.
 
-When it finishes, open **Models** (`/models`). Your tables land in a schema **named after the upload** — `sheetsdailysync` creates schema `sheetsdailysync`. dlt also writes its own `_dlt_loads`, `_dlt_pipeline_state` and `_dlt_version` bookkeeping tables into that schema, and Models does not list them; seeing only your own tables there is correct, not a partial load. There is no target-schema field to choose.
+When it finishes, open **Models** (`/models`). Your tables land in a schema **derived from the upload's name**: whitespace runs become single underscores and the whole thing is lower-cased. So `sheetsdailysync` creates schema `sheetsdailysync`, while `Sheets Daily Sync` — the name this post told you is kept verbatim — creates schema `sheets_daily_sync`. dlt also writes its own `_dlt_loads`, `_dlt_pipeline_state` and `_dlt_version` bookkeeping tables into that schema, and Models does not list them; seeing only your own tables there is correct, not a partial load. There is no target-schema field to choose.
 
 Then do the thing the badge cannot do for you: **spot-check the row count against the sheet.** A green run means the load finished. It does not mean it moved what you expected — an empty tab and a tab you forgot to share are very different problems that can produce the same colour.
 

@@ -53,7 +53,7 @@ A variant finds its product through `_dlt_parent_id = products._dlt_id`, and an 
 
 ## Joining it back in a transformation
 
-After a successful upload, Datanika reads the tables that actually landed and declares **all of them** as dbt sources, under a source named after the upload's schema. The schema, in turn, is named after the upload, so an upload called `shopifydailysync` puts every nested table one `source()` away from a transformation:
+After a successful upload, Datanika reads the tables that actually landed and declares **all of them** as dbt sources, under a source named after the upload's schema. The schema, in turn, is derived from the upload's name — whitespace runs become single underscores and the whole thing is lower-cased — so an upload called `shopifydailysync` puts every nested table one `source()` away from a transformation:
 
 ```sql
 select

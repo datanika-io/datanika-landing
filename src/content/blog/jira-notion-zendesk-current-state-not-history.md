@@ -32,7 +32,7 @@ Each ticked endpoint becomes its own table in the destination. Two things about 
 
 **A SaaS source has no write-disposition, load-mode, source-schema or table-name field**, and that is deliberate: those controls are rendered only when the source is a SQL database. The endpoint checkboxes are the equivalent control here. What every upload does carry, regardless of source, is a **Batch size** (default 10000) and the optional **Schema Contract** dropdowns — **Tables**, **Columns**, **Data Type** — which decide whether an incoming shape that has changed evolves the destination or fails the run.
 
-Tables land in a schema **named after the upload**: an upload called `zendeskdailysync` creates the schema `zendeskdailysync`. There is no target-schema field to choose, so the upload's name is a modelling decision, not a label.
+Tables land in a schema **derived from the upload's name** — whitespace runs become single underscores and the whole thing is lower-cased — so an upload called `zendeskdailysync` creates the schema `zendeskdailysync`, and one called `Zendesk Daily Sync` creates `zendesk_daily_sync`. There is no target-schema field to choose, so the upload's name is a modelling decision, not a label.
 
 ## The sentence that decides everything downstream
 
