@@ -35,7 +35,7 @@
  * `<blockquote>` — and pins the match count at exactly one.
  */
 import { describe, it, expect } from "vitest";
-import { readFileSync, existsSync } from "fs";
+import { readFileSync, existsSync, readdirSync } from "fs";
 import { resolve } from "path";
 
 const ROOT = resolve(__dirname, "..");
@@ -296,5 +296,138 @@ describe("the Kafka guide describes the auth the connector actually performs (#4
     for (const key of AUTH_KEYS) {
       expect(md, `src/content/connectors/kafka.md does not name ${key}`).toContain(key);
     }
+  });
+});
+
+/**
+ * 🚨 EVERYTHING ABOVE IS SCOPED TO ONE PAGE. The fiction's whole history is that
+ * it moves between surfaces.
+ *
+ * Re-read the history at the top of this file: the same advice shipped in
+ * `connectors.ts`, in core's schema, and then in the setup guide — three
+ * surfaces, and closing the issue about one of them is what created the next.
+ * Every assertion above reads `dist/docs/connectors/kafka/index.html` and
+ * `src/content/connectors/kafka.md`. **A blog post is invisible to all of them.**
+ *
+ * That is `GROWTH_RULES`' recorded rule — *a guard's scope is a path set as much
+ * as a phrasing* — which was earned when `legal-pages-facts.test.ts` held two
+ * pages consistent while two blog posts described production as running on a
+ * host it had left six weeks earlier, and both were then syndicated to dev.to.
+ *
+ * Added 2026-09-24 with the first Kafka blog post (landing#675). Writing that
+ * post is exactly the event this guard has to survive: a fifth surface, authored
+ * by someone who has read the guide and is summarising it from memory.
+ *
+ * ## Why the source markdown and not `dist/`
+ *
+ * A future-dated post is excluded from the build **entirely** — no page, no
+ * sitemap entry, no RSS row (`src/utils/blog-visibility.ts`). So a `dist/` sweep
+ * over the blog corpus reads clean on every scheduled post by *measuring
+ * nothing*, and it would go red only on the day the post publishes, from the
+ * daily rebuild, which does not run this suite. The one population that most
+ * needs checking is the one `dist/` cannot see.
+ *
+ * The markdown is therefore the right artifact here, and the Shiki concern that
+ * shaped the assertions above does not apply to it: a fence in markdown is still
+ * `{"security_protocol": "SASL_SSL"}`, quote and colon adjacent.
+ *
+ * ## Scope, stated rather than implied
+ *
+ * The two markdown content collections a reader can reach: `src/content/blog`
+ * and `src/content/connectors`. Membership is **derived by walking the
+ * directories**, so a post added tomorrow is covered without anyone editing this
+ * file — the property `scheduled-drafts.test.ts` had to learn the hard way when
+ * three future-dated posts sat in the tree covered by no test at all.
+ */
+describe("no content surface instructs Kafka broker auth through the pipeline config", () => {
+  const COLLECTIONS = ["src/content/blog", "src/content/connectors"] as const;
+
+  interface Source {
+    file: string;
+    text: string;
+  }
+
+  function collect(rel: string): Source[] {
+    const dir = resolve(ROOT, rel);
+    return readdirSync(dir)
+      .filter((f) => f.endsWith(".md"))
+      .map((f) => ({ file: `${rel}/${f}`, text: readFileSync(resolve(dir, f), "utf-8") }));
+  }
+
+  /** The function under test. The controls below drive THIS, not a copy of it. */
+  function offendersIn(sources: Source[]): string[] {
+    const hits: string[] = [];
+    for (const s of sources) {
+      for (const b of BANNED_INSTRUCTION) {
+        if (b.re.test(s.text)) hits.push(`${s.file} — ${b.name}`);
+      }
+    }
+    return hits;
+  }
+
+  const blog = collect(COLLECTIONS[0]);
+  const guides = collect(COLLECTIONS[1]);
+  const all = [...blog, ...guides];
+
+  // ANTI-VACUITY. A walk that returns nothing produces an empty offender list,
+  // which is byte-identical to a clean corpus.
+  it("both collections are non-trivial (guards a dead walk)", () => {
+    expect(blog.length, "src/content/blog looks empty").toBeGreaterThan(40);
+    expect(guides.length, "src/content/connectors looks empty").toBeGreaterThan(30);
+  });
+
+  // 🔑 SENSITIVITY, driven through `offendersIn` itself. Rule 26: an instrument
+  // that cannot see part of its population reports that part as clean. Each ban
+  // is fed its own sample AS A FILE, so this exercises the walk, the loop and the
+  // regex together — not just the pattern, which the control at the top of this
+  // file already covers and which stayed green through a real dead ban once.
+  it("offendersIn SEES a violation in every banned shape", () => {
+    for (const b of BANNED_INSTRUCTION) {
+      const hits = offendersIn([{ file: "synthetic.md", text: `Some prose. ${b.sample}` }]);
+      expect(hits, `offendersIn is blind to: ${b.name}`).not.toEqual([]);
+    }
+  });
+
+  // 🔑 AND ITS OTHER HALF — a guard that refuses everything is not discriminating.
+  // The honest copy MUST be able to name these keys in order to say where they
+  // go; my own post's reference table does. If this ever fails, a ban above has
+  // become a token ban and will red-light the next correct page.
+  it("offendersIn does NOT fire on the honest prose form", () => {
+    const honest = [
+      "Set the `security_protocol` field on the connection, not in the pipeline config.",
+      "| SASL Password | `sasl_plain_password` | the matching secret — stored encrypted |",
+      "The four keys `security_protocol`, `sasl_mechanism`, `sasl_plain_username` and " +
+        "`sasl_plain_password` live on the connection.",
+    ];
+    for (const text of honest) {
+      expect(offendersIn([{ file: "synthetic.md", text }]), `fired on honest copy: ${text}`).toEqual(
+        [],
+      );
+    }
+  });
+
+  it("no blog post or connector guide carries a Kafka auth payload", () => {
+    const hits = offendersIn(all);
+    expect(
+      hits,
+      "A content surface is instructing Kafka broker authentication through `dlt_config`. The " +
+        "runner refuses those keys there by name, because `Upload.dlt_config` is a plain JSON " +
+        "column with no encryption and no redaction — so the convenient path is the one that " +
+        "writes a broker password into every backup in clear text. This has now been written " +
+        `four times in five months; do not make it five.\nFound:\n  ${hits.join("\n  ")}`,
+    ).toEqual([]);
+  });
+
+  // FALSE-POSITIVE CONTROL over the real corpus, not a synthetic string: the
+  // keys must still be NAMED somewhere a reader can reach. A corpus that stopped
+  // discussing Kafka authentication altogether would pass the assertion above
+  // while being strictly worse for a Confluent user than the original defect.
+  it("the corpus still names the auth keys in prose", () => {
+    const naming = all.filter((s) => /security_protocol/.test(s.text)).map((s) => s.file);
+    expect(
+      naming.length,
+      "nothing under src/content names security_protocol — either the guide lost its " +
+        "reference table, or the bans have drifted off the JSON payload form",
+    ).toBeGreaterThan(0);
   });
 });
