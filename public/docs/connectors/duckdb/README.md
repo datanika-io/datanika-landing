@@ -8,21 +8,26 @@ Referenced from `src/content/connectors/duckdb.md`.
 |---|---|---|
 | `02-add-connection.png` | Step 2 | The **New Connection** form with `duckdb` selected. Captured 2026-07-18 from a real `app.datanika.io` session in light theme (the app default for a new account). Path only — no secrets in this form. |
 | `03-configure-upload.png` | Step 3 | The **New Upload** form at `/uploads` with a real DuckDB destination selected (`14 — analyticswarehouse (duckdb)`). Captured 2026-07-22. Shared with the CSV guide — it is the same screen and the same real upload, shown here for the destination side. |
+| `05-data-preview.png` | Step 4 | ✅ **The Data preview, and it is the artifact this README has been waiting for since 2026-08-31.** `Rows: 7` with the seven real rows rendered **in the web app**, against `/var/datanika/duckdb/analytics.duckdb` — which is the discriminating proof, because the load runs in the worker and the preview reads from `app`. Captured 2026-09-25 from a **local stack** (see Verification below). No credentials on this screen. |
 | `04-first-run.png` | Step 4 | 🔴 **Still the `/runs` table, and it still FAILS the acceptance criterion.** A real CSV → DuckDB load on production (run 6, `success`, 12 rows, 2026-07-22), but a run status is not evidence that data arrived — see [landing#395](https://github.com/datanika-io/datanika-landing/issues/395). Its alt text now says what it is instead of implying more. **No longer shared with the CSV guide**: csv's was recaptured 2026-08-31 and the two images (previously byte-identical, `md5 622189bd…`) now differ. This one was deliberately left alone rather than handed a picture of a load DuckDB did not do. |
 
-## 🔴 Not yet captured — and it is blocked on a product defect, not on effort
+## ✅ RESOLVED 2026-09-25 — the Data preview is captured, on a local stack
 
-<!-- evidence: artifact-disowned core#793 -->
+**The `artifact-disowned` marker is removed in this change**, and the reason it could be removed is a
+decision rather than a shipped fix. The marker's own instruction said *"remove it in the same change
+that recaptures the Data preview **once core#793 ships**"* — but that sentence was written on
+2026-08-31, and `SPEC_CONNECTOR_GUIDE_VERIFICATION` **§2.4 was decided 2026-09-15**, after it. §2.4
+puts a local-stack walk on the same footing as production and names *"DuckDB as a destination"*
+explicitly as a step scoped to self-hosting. **So the condition that lifts the objection is no longer
+"core#793 ships" — it is "the Data preview has been seen holding the rows", and it now has.**
 
-<!-- ^ landing#671. `04-first-run.png` EXISTS here, so a script that counts files counts this
-     guide as evidenced — while the row above says in writing that the capture "still FAILS the
-     acceptance criterion". That over-count is the reason the naive predicate does not work, and
-     this marker is what lets `scripts/connector-evidence-report.mjs` read the objection the
-     README already makes. Remove it in the same change that recaptures the Data preview once
-     core#793 ships; the count rises by one at that moment and not before. -->
+🔑 **[core#793] stays OPEN and is not weakened by this.** It is about what the **stock
+`docker-compose.yml` ships**: there is still no `/var/datanika` volume in it, so a self-hoster who
+skips Step 1 still gets a green run and an empty catalog. This walk is in fact the first measurement
+of Step 1's remedy — adding the guide's own volume stanza verbatim makes the documented path work
+end to end. What was blocked was the *capture*, not the product.
 
-
-`04-first-run.png` **could not be recaptured on 2026-08-31** with the other four guides, and the reason is worth more than the screenshot: **[core#793](https://github.com/datanika-io/datanika-core/issues/793)**.
+The measurement that made the objection in the first place still stands and is worth keeping:
 
 The guide's recommended path, `/var/datanika/duckdb/analytics.duckdb`, is on **no volume and in no container image**. Measured on prod that day: `datanika-app-b` and `datanika-celery` each mount exactly two shared volumes (`/app/dbt_projects`, `/app/uploaded_files`), neither is `/var/datanika`, and the string appears nowhere in `docker-compose.yml`. The load runs in the worker; the Data preview and SQL Editor run in the web app. Separate containers, nothing shared — so a green run and an empty catalog are the expected pair.
 
@@ -30,11 +35,35 @@ The guide's recommended path, `/var/datanika/duckdb/analytics.duckdb`, is on **n
 
 A second, smaller blocker: creating a sixth connection in the prod-verify org returns **"Connection limit reached (5 on Free plan)"** — the cloud quota hook working as designed. No connection was deleted to get around it; the five in that org are cited as provenance by four guides that shipped the same day, and deleting production connections by hand is the operation that caused a past incident.
 
-**Capture this once [core#793] ships**, against the path the guide then recommends — and make it the **Data preview**, not `/runs`.
+✅ **Done 2026-09-25 — as `05-data-preview.png`, and it is the Data preview rather than `/runs`,** which is what that instruction asked for. It was captured against the path the guide recommends (`/var/datanika/duckdb/analytics.duckdb`) with the guide's own Step 1 volume stanza added, on a local stack — not on production, where the stanza is still absent. **`04-first-run.png` is deliberately left as it is**: it remains an honest picture of a `/runs` row, and its own table entry says so.
+
+⚠️ **The paragraph above this one is a 2026-08-31 PRODUCTION reading and is still accurate about production.** Nothing in this round changed the box. Do not read the resolution as "the stock path now works out of the box" — it does not, and [core#793] is where that is tracked.
 
 ## Verification
 
-`verified_by: product-ui` / `verified_date: 2026-08-31`.
+`verified_by: qa-ui` / `verified_date: 2026-09-25`.
+
+**2026-09-25 (QA) — walked end to end on a local stack; Steps 1–4 verified, rows read back in the destination.** The §2.4 record:
+
+| field | value |
+|---|---|
+| **Environment** | `local stack` (compose project `wt-qa`, one-origin proxy on `127.0.0.1:13100`) |
+| **Core revision** | `04c822477d2dc4cc8b9f02e69db99c53f6a6219f` — `git merge-base --is-ancestor HEAD origin/master` → **yes**, and `master...dev` read `identical` at the time, so the walked tree is what production serves |
+| **Cloud revision** | `2a6a0e42e4304856b322d8131d39f84e2a055f87` (cloud `master`), **cloud edition** — the default of `scripts/build-from-worktree.sh` |
+| **Configuration** | `self-hosted defaults`, which is what §2.4 prescribes for this guide. `DATANIKA_ALLOW_LOCAL_FILE_PATHS` at its code default `True`; production sets it `false`, which is consistent with this flow being Cloud-refused per the guide's own core#793 note |
+| **Guide revision** | landing `9bac0f0b36c2434fb5908022424750215c908138` — the text followed, before this change's corrections |
+| **Deviation** | container names are `wt-qa-app` / `wt-qa-celery` rather than `datanika-app` / `datanika-celery`. The guide is right for a stock self-hosted compose; the rename is `worktree-stack.sh`'s port/name isolation |
+| **Not exercised** | **Step 5 (schedule)** — not re-walked this round; it was corrected against the real form on 2026-07-22 and nothing since has touched it. **Egress-IP allowlisting** — only Datanika Cloud's network can exercise it, and no walk on record ever has |
+
+What was actually verified, each with its evidence:
+
+1. **Step 1's volume stanza is correct and sufficient.** Added verbatim, then the guide's own two-container probe passed **both** directions (app→celery and celery→app). 🔑 **With a negative control that holds**: a file written to `/var/datanika/NOT-SHARED.probe` in `app` is **not** visible in `celery`, so `/var/datanika` itself is image-local and only the mounted subdirectory is shared — the probe discriminates rather than passing on a coincidence. A positive control on the already-shared `/app/uploaded_files` proved the probe could observe sharing at all before any of that was believed.
+2. **Step 2's form matches exactly** — two fields, `Connection Name *` and `Database Path *`, placeholder `/data/warehouse.duckdb`. Both **Create Connection** and **Test Connection** render. Typing `duckdb-analytics` yielded `duckdbanalytics`, so the normalization sentence is accurate.
+3. 🔴 **Step 2's "File not found?" note was WRONG and is rewritten.** Test Connection on a brand-new DuckDB destination returns `No database at '<path>'. Check the path, or create the file first.` **with the parent directory present and correctly shared.** The old note attributed that message to a missing parent directory, so a reader who had done Step 1 properly would have gone hunting for a mount problem that did not exist. The message cannot distinguish the two cases; Step 1's probe is what can. **Create Connection succeeds anyway** — connection id 8 was created straight after the red test.
+4. **Step 3's upload form matches**, including the picker entry format: `8 — duckdbanalytics (duckdb)`, i.e. id, name, type. ✅ **And the source-dependence claim is verified rather than repeated**: with a **JSON** source selected, **Load Mode** and **Write Disposition** are absent from the DOM; they are present before a source is chosen.
+5. **Step 4 is the acceptance criterion and it is met.** Run 2 on upload 4: `SUCCESS`, `rows_loaded=7`, `bytes_processed=1107`, `catalog_sync_verdict=catalogued`. Then, **not trusting the run row**, the rows were read out of the destination with the guide's own command in **both** containers: `analytics.duckdb` holds `apieventstoduckdb.json` with **7 rows**, and the file is byte-identical in size (1 323 008) from `app` and from `celery`. `/models` showed the table with `10` columns and `success`, in a schema named after the upload. The **Data preview** rendered `Rows: 7` with the real values. Types survived exactly as documented: `BIGINT`, `VARCHAR`, `DOUBLE`, `BOOLEAN`, `TIMESTAMP WITH TIME ZONE`.
+6. **The guide's `/app/.venv/bin/python` warning is correct, with its control fired**: the system interpreter answers `ModuleNotFoundError: No module named 'duckdb'`, exactly the symptom the guide predicts.
+7. 🔴 **Step 4 point 5's "open SQL Editor" was a phantom page and is rewritten.** There is no SQL Editor in the sidebar (11 nav links, none of them) and `/sql-editor` renders `404 - Not Found`. **The SQL Editor is a field inside the New Transformation form on `/transformations`**, beside **Destination Connection**, **Preview SQL** and **Preview Result** — which is the real way to run an ad-hoc query. ⚠️ **Do not re-derive this from an HTTP status**: every path under the Reflex SPA answers **200**, including a deliberately absent one, so the status code cannot answer the question and my own control caught that before it became a finding.
 
 **2026-08-31 (Step 1 and Step 4 corrected, no new screenshot)** — the guide told the reader to `mkdir` in `datanika-app` (Step 1) and then read the file from `datanika-celery` (Step 4), with nothing shared between the two, so following it verbatim cannot work. Step 1 now ships the volume stanza and a two-container probe that fails loudly at the point the mistake is made; Step 4 now sends the reader to the **Data preview** and explains that for DuckDB an empty preview after a green run is the signature of exactly that mistake. The durability sentence was the guide's only mention of volumes and framed them as optional backup hygiene — **durability was the lesser half; reachability by both processes is the part that decides whether the product appears to work at all.**
 

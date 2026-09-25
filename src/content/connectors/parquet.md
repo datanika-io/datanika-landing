@@ -29,9 +29,11 @@ Apache Parquet is the "production-grade CSV" — a columnar file format with str
 ## Step 1a — Upload a file through the UI (the common case)
 
 1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page.
-2. From the **type dropdown**, pick `parquet` (under the **File** category).
+2. From the **type dropdown**, pick `parquet`. ⚠️ **There are no categories** — the picker is one flat, searchable list of every connector type, so type `parquet` into its **Search…** box rather than looking for a *File* heading.
 3. **Connection Name** — give it a label, e.g. `sparkexports202604` or `dbtsnapshotcustomers`. **The field strips anything that isn't a letter or a digit as you type**, so `spark-exports-2026-04` becomes `sparkexports202604`. Type the name you want to end up with.
 4. In the **Upload File** section, drag your `.parquet` file into the upload area, or click the **Upload File** button to browse. (There's no in-form preview — the file is read when the pipeline runs.)
+
+   ⚠️ **A `.parq` file will NOT appear in the browse dialog** — the picker's filter lists `.parquet` but not `.parq`, so the rare extension is absent with no error to explain it ([core#1604](https://github.com/datanika-io/datanika-core/issues/1604)). Rename it to `.parquet`, or use the file-path route below.
 5. Click **Test Connection**, then **Create Connection**.
 
 ![Adding the Parquet connection in Datanika](/docs/connectors/parquet/02-add-connection.png)
