@@ -415,12 +415,25 @@ import Footer from "../components/Footer.astro";
               <tr class="border-b border-slate-800/50">
                 <td class="py-3 pr-4 font-medium text-white">MongoDB</td>
                 <td class="py-3 pr-4">
-                  Not encrypted. The connection form carries no TLS control, so a deployment that
-                  requires TLS — Atlas, Cosmos DB's Mongo API, a self-hosted
-                  <code class="text-violet-400">requireTLS</code> — cannot be connected to at all.
+                  Plaintext unless you ask for TLS, and the connection form lets you ask.
+                  <strong class="text-slate-300">Use TLS</strong> sets it;
+                  <strong class="text-slate-300">Use DNS seed list (mongodb+srv)</strong> — the kind
+                  of connection string Atlas hands you — turns it on and holds it on. A deployment
+                  that requires TLS (Atlas, Cosmos DB's Mongo API, a self-hosted
+                  <code class="text-violet-400">requireTLS</code>) needs one of the two ticked. A
+                  connection saved before these controls existed carries neither setting and stays
+                  plaintext until you open it and tick one.
                 </td>
-                <td class="py-3 pr-4">—</td>
-                <td class="py-3">Measured</td>
+                <td class="py-3 pr-4">
+                  Verified against public certificate authorities when TLS is on. There is no field
+                  for a private or self-signed authority, so a server using one is refused rather
+                  than quietly downgraded.
+                </td>
+                <td class="py-3">
+                  Measured, against a MongoDB server we stood up. The certificate check was measured
+                  by being refused, so no encrypted session has been completed against a certificate
+                  we trust — Atlas included.
+                </td>
               </tr>
               <tr class="border-b border-slate-800/50">
                 <td class="py-3 pr-4 font-medium text-white">BigQuery, Snowflake, Databricks</td>
@@ -565,6 +578,24 @@ import Footer from "../components/Footer.astro";
         <div class="mt-6 rounded-lg border border-slate-800 bg-slate-900/50 p-5">
           <h3 class="text-sm font-medium text-white mb-2">Change log</h3>
           <ul class="text-sm text-slate-400 space-y-1">
+            <li>
+              <strong class="text-slate-300">2026-09-25</strong> — a claim about our own product was
+              corrected in our favour, and no company was added or removed. The
+              <strong class="text-slate-300">MongoDB</strong> row in
+              <a href="#encryption-in-transit" class="text-violet-400 underline underline-offset-2 hover:text-violet-300">Encryption
+              in transit</a> above said the connection form carried no TLS control, and therefore
+              that a deployment requiring TLS could not be connected to at all. That was false. The
+              controls reached production on <strong class="text-slate-300">2026-09-02</strong>: the
+              form carries a <em>Use TLS</em> checkbox and a <em>Use DNS seed list
+              (mongodb+srv)</em> checkbox, and the connection is opened with
+              <code class="text-violet-400">tls=true</code> when either is set. The row had been
+              wrong here from the day this table was first published, 2026-09-20, and it was wrong
+              against our own measurement of 2026-09-17 rather than for want of one — that
+              measurement recorded the control and this page did not. No practice changed on this
+              date. We still have not connected to Atlas or to any other hosted MongoDB, so the
+              corrected row does not promise that it works: it says what the product sends, and what
+              we have and have not measured.
+            </li>
             <li>
               <strong class="text-slate-300">2026-09-21</strong> — we now state that connections
               between our application and <strong class="text-slate-300">our own database</strong>
