@@ -60,11 +60,6 @@ function imageRefs(body: string): string[] {
 /** `/docs/connectors/x/y.png` is served from `public/docs/connectors/x/y.png`. */
 const publicPathFor = (ref: string) => resolve(PUBLIC_DIR, ref.replace(/^\//, ""));
 
-const hasFirstRunFile = (slug: string) =>
-  existsSync(resolve(PUBLIC_DIR, "docs/connectors", slug, "04-first-run.png"));
-
-const hasFirstRunRef = (name: string) => imageRefs(readGuide(name)).some((r) => r.endsWith("/04-first-run.png"));
-
 describe("connector guide screenshots (landing#395)", () => {
   it("the corpus is the size this guard was derived against", () => {
     // A tripwire, not a target. If the directory moves or the glob stops matching, every
@@ -90,42 +85,79 @@ describe("connector guide screenshots (landing#395)", () => {
     ).toEqual([]);
   });
 
-  // ── Property 2 — the first-run capture and its reference move together. ──
-  it.each(guides)("%s: the first-run capture and its reference agree", (guide) => {
+  // ── The step captures this guard covers. ──
+  //
+  // 🆕 2026-09-25 (landing#395). This used to watch `04-first-run.png` ALONE, and the issue it
+  // serves tracks five step captures. So `03-configure-upload.png` and `05-schedule.png` could be
+  // deleted, or captured and never referenced, and nothing anywhere went red — the two properties
+  // below were already written generically enough to cover them and simply were not pointed at them.
+  // *An instrument that cannot see part of its population reports that part as clean.*
+  //
+  // `01-credentials.png` is deliberately absent: it means screenshotting a vendor's own admin
+  // console, which #395 rules out as a policy rather than tracks as a gap. `02-add-connection.png`
+  // is 36/36 and is guarded by `connector-coverage-guard.test.ts`.
+  const STEP_CAPTURES = [
+    // 🔒 Floors, measured off disk on 2026-09-25. Raise as captures land; never lower one without
+    // saying why in the same commit.
+    { file: "03-configure-upload.png", floor: 11, what: "the upload form" },
+    { file: "04-first-run.png", floor: 16, what: "data landing in the destination" },
+    { file: "05-schedule.png", floor: 3, what: "the schedule form" },
+  ];
+
+  const hasShotFile = (slug: string, file: string) =>
+    existsSync(resolve(PUBLIC_DIR, "docs/connectors", slug, file));
+  const hasShotRef = (guide: string, file: string) =>
+    imageRefs(readGuide(guide)).some((r) => r.endsWith(`/${file}`));
+
+  // ── Property 2 — a step capture and its reference move together, for every step. ──
+  it.each(
+    guides.flatMap((guide) => STEP_CAPTURES.map((c) => [guide, c.file] as const)),
+  )("%s: %s and its reference agree", (guide, file) => {
     const slug = slugOf(guide);
     expect(
-      hasFirstRunRef(guide),
-      hasFirstRunFile(slug)
-        ? `public/docs/connectors/${slug}/04-first-run.png exists but ${guide} never shows it — ` +
+      hasShotRef(guide, file),
+      hasShotFile(slug, file)
+        ? `public/docs/connectors/${slug}/${file} exists but ${guide} never shows it — ` +
           `the capture was taken and no reader can see it.`
-        : `${guide} references 04-first-run.png but no such file exists — a broken image.`,
-    ).toBe(hasFirstRunFile(slug));
+        : `${guide} references ${file} but no such file exists — a broken image.`,
+    ).toBe(hasShotFile(slug, file));
   });
 
-  // ── Property 3 — the ratchet. ──
-  it("the number of guides proving data landed does not go backwards", () => {
-    const covered = guides.filter((g) => hasFirstRunFile(slugOf(g))).map(slugOf);
+  // ── Property 3 — the ratchets. ──
+  it.each(STEP_CAPTURES)("the number of guides carrying $file does not go backwards", (c) => {
+    const covered = guides.filter((g) => hasShotFile(slugOf(g), c.file)).map(slugOf);
 
-    // 🔒 RATCHET. 15 as of 2026-09-22: clickhouse, csv, duckdb, json, kafka, mongodb, mssql, mysql,
-    // openapi, parquet, postgresql, rest-api, shopify, sqlite, stripe (8 on 2026-09-07; the openapi
-    // walk added one, landing#572, the mysql walk another, the mssql and mongodb walks two more, and
-    // the sqlite and kafka walks one each, landing#395). The clickhouse walk of 2026-09-16 added
-    // none, because /models could not list a ClickHouse destination's tables then (landing#604);
-    // the 2026-09-22 walk, on a stack carrying that fix (core#1397), took it (landing#618).
-    // **Raise this as captures land; never lower it.** It is one number
-    // rather than a hand-written list of covered connectors, because that list is derivable
-    // from disk and a hand-maintained copy of a derivable fact is what landing#508 was about.
-    // It is a floor, not a target — landing#395 is the work of raising it.
-    // It read 8 after the openapi walk while 9 captures existed, which let one capture go
-    // silently; raised to the count on disk, and it moves with each capture from here.
-    const FIRST_RUN_FLOOR = 15;
-
+    // 🔒 RATCHET. History for 04, kept because it is the one that has drifted twice:
+    // 15 as of 2026-09-22 (8 on 2026-09-07; the openapi walk added one, landing#572, the mysql walk
+    // another, the mssql and mongodb walks two more, and the sqlite and kafka walks one each). The
+    // clickhouse walk of 2026-09-16 added none, because /models could not list a ClickHouse
+    // destination's tables then (landing#604); the 2026-09-22 walk, on a stack carrying that fix
+    // (core#1397), took it (landing#618). **16 since the HubSpot walk of 2026-09-23 (landing#670),
+    // which took the capture and did not raise the floor** — the second time this number has lagged
+    // disk by one, after reading 8 while 9 captures existed. Re-derive it from disk when you touch
+    // it; the floor is a tripwire against deletion, not a record of how many exist.
+    //
+    // It is one number rather than a hand-written list of covered connectors, because that list is
+    // derivable from disk and a hand-maintained copy of a derivable fact is what landing#508 was
+    // about. It is a floor, not a target — landing#395 is the work of raising it.
     expect(
       covered.length,
-      `only ${covered.length} of ${guides.length} guides carry a first-run capture ` +
+      `only ${covered.length} of ${guides.length} guides carry ${c.file} (${c.what}) ` +
         `(${covered.join(", ")}). This is a ratchet: if a capture was deliberately removed, ` +
         `lower the floor in the same commit and say why.`,
-    ).toBeGreaterThanOrEqual(FIRST_RUN_FLOOR);
+    ).toBeGreaterThanOrEqual(c.floor);
+  });
+
+  it("the step-capture floors are not silently ahead of disk", () => {
+    // Anti-vacuity for the ratchet itself. A floor of 0 — or a `file` nobody ever writes — passes
+    // property 3 for every guide while watching nothing. Require each capture to exist somewhere.
+    for (const c of STEP_CAPTURES) {
+      expect(c.floor, `${c.file} has a floor of ${c.floor}, which watches nothing`).toBeGreaterThan(0);
+      const covered = guides.filter((g) => hasShotFile(slugOf(g), c.file)).length;
+      expect(covered, `${c.file}: floor ${c.floor} but ${covered} on disk`).toBeGreaterThanOrEqual(c.floor);
+    }
+    // The matcher must be able to say no: a capture name that cannot exist must score zero.
+    expect(guides.filter((g) => hasShotFile(slugOf(g), "99-no-such-capture.png")).length).toBe(0);
   });
 
   // ── The extractor's own negative controls, in-suite. ──
