@@ -56,7 +56,7 @@ Click **Create Connection** and go get one.
 
 Extract-load lives at **`/uploads`**, not on the connection. Connection rows offer Test / Edit / Copy / Delete and nothing else, and `/pipelines` is the **dbt** builder — a different thing entirely.
 
-Open `/uploads`, and note the first quirk while you type: **the upload name accepts letters and digits only**, and strips everything else as you type. `sheets-daily-sync` becomes `sheetsdailysync` in front of you. This matters more than it looks, because the schedule you create later references the upload **by name**, exactly as saved.
+Open `/uploads`, and note the first quirk while you type: **the upload name accepts letters, digits and spaces**, and strips everything else as you type. `sheets-daily-sync` becomes `sheetsdailysync` in front of you, while `Sheets Daily Sync` is kept verbatim. This matters more than it looks, because the schedule you create later references the upload **by name**, exactly as saved.
 
 Pick your source and destination connections — the pickers list entries as `16 — myconnection (postgres)`, so id, name, type — and then set:
 

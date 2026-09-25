@@ -47,7 +47,7 @@ Open **`/connections`** — the form is rendered on the page already — pick th
 
 ## Step 3 — Choosing endpoints, and the checkbox that does the opposite
 
-At **`/uploads`**, create the upload. The name field accepts letters and digits only and strips the rest as you type, so `airtable-daily-sync` becomes `airtabledailysync` — remember that, because the schedule references the upload by name, exactly as saved.
+At **`/uploads`**, create the upload. The name field accepts letters, digits and spaces, and strips the rest as you type, so `airtable-daily-sync` becomes `airtabledailysync` while `Airtable Daily Sync` is kept verbatim — remember that, because the schedule references the upload by name, exactly as saved.
 
 Because Airtable is a SaaS source, the form shows **Select endpoints to load** — a checkbox per resource, **all ticked by default**. Untick anything you do not want; each ticked endpoint becomes its own table in the destination, and unticked ones are not fetched at all.
 

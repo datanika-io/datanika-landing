@@ -59,13 +59,13 @@ A connection on its own moves nothing. The thing that actually reads the CSV and
 
 ![Configuring the CSV upload in Datanika](/docs/connectors/csv/03-configure-upload.png)
 
-> **There is no write disposition, target schema, or table picker for a CSV source, and that is deliberate.** Datanika hides the **Load Mode** and **Write Disposition** selectors for every non-SQL source — files (`csv`, `json`, `parquet`, `s3`), SaaS APIs, MongoDB, Google Sheets, REST and Kafka. Those controls only appear when the source is a SQL database. A CSV lands as one table named after the upload; if you need `replace` vs `merge` semantics, do it in a dbt model downstream.
+> **There is no write disposition, target schema, or table picker for a CSV source, and that is deliberate.** Datanika hides the **Load Mode** and **Write Disposition** selectors for every non-SQL source — files (`csv`, `json`, `parquet`, `s3`), SaaS APIs, MongoDB, Google Sheets, REST and Kafka. Those controls only appear when the source is a SQL database. A CSV lands as one table, in a schema derived from the upload's name (Step 3 covers both); if you need `replace` vs `merge` semantics, do it in a dbt model downstream.
 
 ## Step 3 — First run
 
 1. On the **`/uploads`** row for your upload, click **Run**.
 2. Watch **`/runs`**. CSV loads are usually **fast**: Datanika streams rows directly into the destination, so a 100k-row file typically lands in seconds and a 10M-row file in a few minutes.
-3. When the run finishes, open **Models** (`/models`) and browse the new table. It lands in a schema **named after the upload**. **The table's own name depends on which of Step 1's two inputs you used:**
+3. When the run finishes, open **Models** (`/models`) and browse the new table. It lands in a schema **derived from the upload's name** — spaces become underscores and the whole thing is lower-cased, so an upload named `Q3 Signups Load` lands in schema `q3_signups_load`. **The table's own name depends on which of Step 1's two inputs you used:**
    - **Upload File** — the table takes your file's name without its extension. `q3-signups.csv` lands as **`q3_signups`** (non-alphanumerics become underscores).
    - **Or enter file path** — the table is named **`csv`**, after the connector. The default pattern for a directory is `*.csv`, which matches many files rather than one, so there is no single filename to borrow.
    - Either way you can override it by setting `table_name` in the upload's **Use raw JSON config**.

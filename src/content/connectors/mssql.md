@@ -96,7 +96,7 @@ Extract-load is configured at **`/uploads`**, not on the connection. There is no
 
 1. On the **`/uploads`** row for your upload, click **Run**. There is no "Run now" on a pipeline page — the trigger lives on the upload's own row.
 2. Watch **`/runs`**. The run shows a status badge, start and finish timestamps and a **Rows** count; the **Logs** icon on the row opens the detail.
-3. When it finishes, open **Models** (`/models`) and browse the landed tables. The upload lands them in a schema **named after the upload** — `salesdailysync` creates schema `salesdailysync` in the destination. dlt also creates its own `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables in that schema, but **Models does not list them** — seeing only your own tables there is correct, not a partial load. There is no target-schema field to choose.
+3. When it finishes, open **Models** (`/models`) and browse the landed tables. The upload lands them in a schema **derived from the upload's name**: spaces become underscores and the whole thing is lower-cased. So `salesdailysync` creates schema `salesdailysync`, and an upload named `Sales Daily Sync` creates schema `sales_daily_sync` — worth knowing, since the name field accepts spaces. dlt also creates its own `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables in that schema, but **Models does not list them** — seeing only your own tables there is correct, not a partial load. There is no target-schema field to choose.
 4. Spot-check the row count against the source (`SELECT COUNT(*) FROM <schema>.<table>`). **Verify in the destination rather than trusting the status badge** — a green run means the load finished, not that it moved what you expected.
 
 ![The Data preview of a table loaded from SQL Server, after its first run in Datanika](/docs/connectors/mssql/04-first-run.png)
@@ -146,7 +146,7 @@ GRANT CREATE SCHEMA TO datanika_writer;
 
 1. Open **`/uploads`** and fill in the **New Upload** form, picking any source (e.g. Stripe, PostgreSQL, CSV).
 2. Set the **Destination connection** to the SQL Server connection.
-3. **You do not choose a target schema.** The upload lands in a schema **named after the upload** — an upload called `stripedailysync` creates schema `stripedailysync`. Datanika creates it if it doesn't exist, which is why the login needs `CREATE SCHEMA`.
+3. **You do not choose a target schema.** The upload lands in a schema **derived from the upload's name**: spaces become underscores and the whole thing is lower-cased. So an upload called `stripedailysync` creates schema `stripedailysync`, and one called `Stripe Daily Sync` creates schema `stripe_daily_sync`. Datanika creates it if it doesn't exist, which is why the login needs `CREATE SCHEMA`.
 4. **Write Disposition** is a single form-level dropdown (`append` / `replace` / `merge`), not a per-table setting — and it appears **only when the source is a SQL database**. For a SaaS, file, MongoDB, Google Sheets, REST or Kafka source it is hidden, and the load takes whatever shape the source produces. SQL Server honours what it is handed either way.
 5. Run and schedule as described in Steps 4–5 above.
 

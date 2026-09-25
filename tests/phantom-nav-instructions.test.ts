@@ -373,10 +373,39 @@ describe("the connector guides and their template name surfaces that exist", () 
         "_template.md still instructs a `raw_<source>` target schema. There is no " +
           "target-schema field, and the underscore form is not typeable.",
       ).toBe(false);
+      // 🔴 REPOINTED 2026-09-25 (landing#715). This asserted the PRESENCE of the
+      // string "named after the upload" — and the corrected template contains that
+      // string inside its own prohibition ("Do NOT write …"), so the old form passed
+      // on a template teaching EITHER thing. Measured: 367/367 green against the
+      // corrected file BEFORE this repoint. That is WORKFLOW_RULES §4's
+      // denial-satisfies-the-guard trap arriving through a POSITIVE assertion.
+      //
+      // The invariant is not a phrase. It is: the template must teach that the
+      // destination schema is DERIVED from the upload's name, because core's
+      // to_snake_case = re.sub(r"\s+", "_", name.strip()).lower() folds whitespace
+      // runs to single underscores and lower-cases the result.
+      for (const [re, why] of [
+        [/derived from the upload's name/i, "the schema is derived, not copied verbatim"],
+        [/lower-cas/i, "to_snake_case lower-cases the whole thing"],
+        [/underscore/i, "whitespace runs become single underscores"],
+      ] as const) {
+        expect(
+          re.test(tpl()),
+          `_template.md no longer explains that ${why} (${re}) — landing#715. This ` +
+            `file is copied into every new connector guide, so a terse claim here ` +
+            `regenerates into all of them.`,
+        ).toBe(true);
+      }
+      // …and the unqualified claim must not be INSTRUCTED. Count the instruction,
+      // not the phrase: any surviving occurrence has to sit on a "Do NOT" line.
+      const unqualified = tpl()
+        .split(/\r?\n/)
+        .filter((l) => /named after the upload/i.test(l) && !/Do NOT/i.test(l));
       expect(
-        /named after the upload/i.test(tpl()),
-        "_template.md no longer explains that the schema is named after the upload.",
-      ).toBe(true);
+        unqualified,
+        `_template.md instructs the unqualified "named after the upload" claim on ` +
+          `${unqualified.length} line(s): ${unqualified.join(" | ")}`,
+      ).toEqual([]);
     });
   });
 
