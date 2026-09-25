@@ -1024,3 +1024,52 @@ returned 0** — which is the control that makes the 30s readings rather than co
 niche-looking tag was a live feed, so no override was added. ⚠️ **The 30 saturates at
 `per_page`**: it means *"at least 30"*, so the discriminating signals are the newest date and
 the fabricated tag, never the count.
+
+## Verifying a publish, continued — the recheck that cleared, and a slug nobody minted (2026-09-25, later)
+
+✅ **The 404 above cleared on its own.** Re-read anonymously ~4 h after publishing: **200**,
+129,371 bytes, `Age: 0`, with a fabricated slug returning 404 and the profile returning 200 in the
+same run. The article was live at its own URL throughout and nothing was escalated. **The restraint
+is the part worth copying** — the session that found the 404 filed no `human-locked` issue on a
+sixteen-minute-old observation, and a speculative locker would have been stale inside four hours.
+
+⚠️ **Its recheck criterion was never reached, and the reading has to say so rather than round.**
+The criterion was *"if it still 404s more than ~24 h after publishing, it is NOT a TTL and the next
+hypothesis is a hold"*; only **4.1 h** had elapsed. **State the criterion in the reading, not only
+the result.** A criterion whose purpose is to license an escalation must be able to come out *"not
+yet answerable"*, or it will be read as answered.
+
+🚨 **And the diagnosis above can now be neither confirmed nor refuted, because the record names the
+symptom and not the URL string.** dev.to **mints its own slug** from the article title and appends
+a random suffix; the canonical slug is ours, not theirs. Measured in one run, all three anonymous:
+
+| path | status |
+|---|---|
+| the API record's own `url` field | **200** |
+| the canonical (landing) slug under the same account | **404** |
+| the minted slug **without** its random suffix | **404** |
+
+So a reading taken against either constructed path 404s *while the article is fully live* — and a
+cached 404 with a rising `Age` is what **both** stories produce, which is why the recorded evidence
+cannot separate them. 🔑 **Read the article URL out of the API record's `url` field; never construct
+it from the canonical slug** — and **record the URL string you fetched.** *"It 404s at its own URL"*
+is not a reading anyone can re-examine, including you next session.
+
+## The founder's cadence rulings are held by mechanisms — and were stated in no prose anywhere (2026-09-25)
+
+`plans/current_state.md` rule 32 asks which founder rulings are held by a **mechanism** and which
+only by prose. For cadence the answer is the **inverse gap**, and it is worth writing down because
+it reads like compliance from either end. Both halves are mechanised:
+
+| ruling | mechanism | how it refuses |
+|---|---|---|
+| at most one post every two days (founder, 2026-08-30) | `MIN_GAP_DAYS = 2` in `tests/scheduled-drafts.test.ts`, asserted on every consecutive future-dated pair, with an anti-vacuity control (an empty walk has a minimum gap of `Infinity` and would pass while measuring nothing) | `npm test`, run by CI's **`build`** job — the one required check on `dev` |
+| one dev.to send per UTC day | gate 6 in the cross-poster | `raise SystemExit`, not a print: refuses more than one slug in a run, refuses a UTC day that already carries a send, and **fails closed** when the account cannot be read |
+
+⚠️ **Neither ruling was stated in this file, or in any other prose an agent reads before planning,
+so the only way to learn it was to be refused by it.** That is not a broken guard — a constant
+carrying `// founder decision, 2026-08-30` beside a live assertion is the *right* shape, and the
+exact opposite of rule 32's comment-instead-of-a-guard. It is a **discoverability** gap, and its
+cost is whatever you had already planned when the refusal arrived. 🔑 **A mechanised rule still
+needs one line where an agent reads before planning. A rule discoverable only by violating it gets
+planned around once per session, forever.**
