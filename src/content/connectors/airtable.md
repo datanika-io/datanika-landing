@@ -44,7 +44,7 @@ Personal access tokens (PATs) replaced the legacy API key in 2024. They're scope
 2. From the **type dropdown** at the top of the form, pick `airtable`.
 3. Fill in:
    - **Connection Name** — a label you'll recognize, e.g. `airtable-crm` or `airtable-content-calendar`.
-   - **API Key (optional)** — paste the Airtable personal access token from Step 1 (`pat…`). Stored encrypted at rest with Fernet.
+   - **API Key** — paste the Airtable personal access token from Step 1 (`pat…`). Stored encrypted at rest with Fernet.
    - **Base ID** — the `app…` string from the Airtable URL of the base you want to sync.
 4. Click **Test Connection** — it really calls the Airtable API — then **Create Connection**.
 

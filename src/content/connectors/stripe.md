@@ -45,7 +45,7 @@ Create a **dedicated restricted key** instead of reusing your secret key. Restri
 2. From the **type dropdown** at the top of the form, pick `stripe`.
 3. Fill in the form:
    - **Connection Name** — a label you'll recognize later, e.g. `stripe-prod` or `stripe-test`.
-   - **API Key (optional)** — paste the restricted key from Step 1 (`rk_live_…` or `rk_test_…`). Stored encrypted at rest with Fernet.
+   - **API Key** — paste the restricted key from Step 1 (`rk_live_…` or `rk_test_…`). Stored encrypted at rest with Fernet.
 4. Click **Create Connection**.
 
 > **Test Connection really checks this credential.** Clicking it sends one authenticated request to the Stripe API (it lists a single customer). A revoked, mistyped or suspended key comes back **red**, naming the status Stripe returned — it is no longer styled as a pass. What it does not check is **scope**: a restricted key that passes here can still lack the permissions that the resources you name on the upload require, and that surfaces on the first run.

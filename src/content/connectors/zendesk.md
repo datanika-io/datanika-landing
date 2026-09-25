@@ -43,7 +43,7 @@ Zendesk API tokens authenticate as a specific user via email + token. Create a d
    - **Connection Name** — e.g. `zendesk-support` or `zendesk-prod`.
    - **Subdomain** — just the subdomain, not the full URL. If your Zendesk is at `acme.zendesk.com`, enter `acme`.
    - **Email** — the email of the Zendesk user whose permissions the API token inherits.
-   - **API Key (optional)** — paste the API token from Step 1. Stored encrypted at rest with Fernet.
+   - **API Key** — paste the API token from Step 1. Stored encrypted at rest with Fernet.
 4. Click **Test Connection** — it really calls the Zendesk API — then **Create Connection**.
 
 > **Test Connection really checks this credential.** Clicking it sends one authenticated request to the Zendesk API (it reads your own user record on the subdomain you gave). A revoked, mistyped or suspended credential comes back **red**, naming the status Zendesk returned — it is no longer styled as a pass. What it does not check is **scope**: a credential that passes here can still lack access to the specific tickets or users you name on the upload, and that surfaces on the first run.
