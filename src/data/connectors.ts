@@ -361,7 +361,7 @@ export const connectors: Connector[] = [
     name: "MongoDB",
     category: "NoSQL",
     direction: "source",
-    description: "Connect to MongoDB 4.0+ to extract collections as structured data. Works against self-hosted and self-managed deployments reachable over a plain connection; TLS-required hosts such as MongoDB Atlas are not supported yet.",
+    description: "Connect to MongoDB 4.0+ to extract collections as structured data. The connection form carries TLS and mongodb+srv (DNS seed list) options alongside host, port and credentials, so a deployment that requires an encrypted transport can be configured.",
     useCases: [
       "Extract MongoDB collections into a SQL warehouse for analytics",
       "Flatten nested document structures into tabular data",
@@ -375,10 +375,11 @@ export const connectors: Connector[] = [
       { name: "password", description: "Password (encrypted at rest)" },
       { name: "database", description: "Database name" },
       { name: "auth_source", description: "Authentication database — the database the user is defined in (default: admin). Rendered in the connection form as Authentication database, and settable in the raw JSON config as auth_source." },
+      { name: "srv", description: "Use a DNS seed list (mongodb+srv). Rendered in the connection form as Use DNS seed list (mongodb+srv). Switches the URI to the mongodb+srv scheme, hides the Port field because the SRV records supply the ports, and forces TLS on. This is the shape of connection string MongoDB Atlas issues." },
+      { name: "tls", description: "Connect over TLS. Rendered in the connection form as Use TLS, and adds tls=true to the URI. Checked and non-interactive while the seed-list option is on, because the mongodb+srv scheme implies TLS." },
     ],
     limitations: [
-      "No TLS yet, so any deployment that requires it is unreachable. Every URI is built as a plain mongodb:// string with no transport options, so the handshake fails before authentication. MongoDB Atlas always requires TLS and therefore never connects. Amazon DocumentDB enables it by default, so a cluster works only if its tls parameter was explicitly set to disabled. Azure Cosmos DB's Mongo API and any self-hosted net.tls.mode: requireTLS are out for the same reason. Tracked as core#626.",
-      "No mongodb+srv:// support, so an Atlas-style seedlist hostname cannot be entered. The form takes host and port separately. Tracked as core#626 alongside the TLS gap.",
+      "TLS and mongodb+srv are configurable but have not been verified end to end against a TLS-requiring host. What is measured is Datanika's side: ticking the form's transport boxes really does produce a mongodb+srv:// scheme and tls=true on both the Test Connection path and the run path. A completed handshake with MongoDB Atlas, Azure Cosmos DB's Mongo API or Amazon DocumentDB has not been observed from Datanika, so treat those as untested rather than as supported. Tracked as core#626.",
       "Authentication uses the admin database unless you say otherwise. If your MongoDB user is defined inside the database you are reading rather than in admin, set the connection form's Authentication database field to that database — measured on the shipped form, the same credentials are refused with it empty and connect with it set. The same setting is auth_source in the raw JSON config. What core#638 still tracks is whether a config saved as raw JSON keeps that key through a later structured-form save.",
     ],
     related: ["postgresql", "bigquery", "snowflake", "mysql"],

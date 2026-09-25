@@ -165,20 +165,37 @@ describe("MongoDB connector page — no template cross-links", () => {
 });
 
 // ---------------------------------------------------------------------------
-// MongoDB Atlas / TLS honesty guards (landing#308, core#626).
+// MongoDB transport (TLS / mongodb+srv) honesty guards (landing#308, landing#705,
+// core#626).
 //
-// The page previously said "Supports both MongoDB Atlas and self-hosted
-// instances" and documented a `connection_string` config field illustrated with
-// `mongodb+srv://...`. Neither is true: the shipped schema has no such field,
-// and every URI is built as a plain `mongodb://` string with no TLS, so Atlas
-// cannot connect at all (Engineering confirmed against pymongo 4.16.0 on
-// core#626). Documenting a path that cannot succeed is the same defect as the
-// pre-withdrawal Google Ads copy.
+// HISTORY, because this block twice asserted the instance instead of the
+// invariant and the second time it pinned a falsehood onto the public site.
 //
-// DELETE THIS BLOCK when core#626 closes and TLS/SRV actually ship — but only
-// then, and only after re-reading the connector against the shipped schema.
+// v1 (landing#308) was right: the page claimed "Supports both MongoDB Atlas and
+// self-hosted instances" and documented a `connection_string` field illustrated
+// with `mongodb+srv://...`, and neither existed. So the guards banned those.
+//
+// v2 is where it went wrong. The bans hardened into a requirement that every
+// MongoDB page *assert the absence of TLS* and cite an OPEN issue — this block's
+// own instruction was "DELETE THIS BLOCK when core#626 closes". core#626's code
+// shipped and the issue did not close, so the guards kept three public surfaces
+// telling Atlas users the product cannot connect to them at all, for a control
+// that is on the form. **A guard whose release condition is an issue's state is
+// a guard that pins whatever nobody got round to closing** (landing#705).
+//
+// v3, below, asserts the PRESENCE of what is true and is re-derivable from the
+// form rather than from an issue tracker. Measured on core `origin/master`:
+// `mongodb_fields()` renders `rx.checkbox` controls for `connections.mongodb_srv`
+// and `connections.mongodb_tls`, neither inside an `rx.cond`; TLS is checked and
+// `disabled` while SRV is on; `connection_state.py` writes `config["tls"]` and
+// `config["srv"]`; `mongodb_source.py` emits `mongodb+srv` and `tls=true`, and
+// both the Test Connection path and the run path use that builder.
+//
+// Re-derive before changing any of this — read the form, not an issue:
+//   gh api "repos/datanika-io/datanika-core/contents/datanika/ui/components/\
+//   connection_config_fields.py?ref=master" and read mongodb_fields().
 // ---------------------------------------------------------------------------
-describe("MongoDB connector page — Atlas is not claimed as supported", () => {
+describe("MongoDB connector page — transport is documented as it ships", () => {
   const mongo = connectors.find((c) => c.slug === "mongodb")!;
   let html: string;
   beforeAll(() => {
@@ -186,6 +203,8 @@ describe("MongoDB connector page — Atlas is not claimed as supported", () => {
   });
 
   it("does not claim Atlas support in the description", () => {
+    // Still an overclaim: the controls exist, a completed Atlas handshake has
+    // never been observed from Datanika. Configurable is not verified.
     expect(mongo.description).not.toMatch(/supports both mongodb atlas/i);
     expect(html).not.toMatch(/Supports both MongoDB Atlas/i);
   });
@@ -195,50 +214,70 @@ describe("MongoDB connector page — Atlas is not claimed as supported", () => {
     expect(names).not.toContain("connection_string");
   });
 
-  it("documents the six fields the shipped schema actually has", () => {
+  it("documents the eight config keys the shipped form actually reaches", () => {
     const names = mongo.configFields.map((f) => f.name).sort();
     expect(names).toEqual(
-      ["auth_source", "database", "host", "password", "port", "user"].sort(),
+      ["auth_source", "database", "host", "password", "port", "srv", "tls", "user"].sort(),
     );
   });
 
-  it("never shows a mongodb+srv:// string as something you can enter", () => {
-    // The scheme may only appear inside a limitation saying it is unsupported.
-    for (const f of mongo.configFields) {
-      expect(f.description).not.toContain("mongodb+srv");
-    }
+  it("names both transport controls as things the reader can switch on", () => {
+    // The inverse of v2's ban. `mongodb+srv` is now a control you tick, so the
+    // page must say so — and it must say which form control does it, because a
+    // key name with no control is the core#499 mistake this file keeps hitting.
+    const srv = mongo.configFields.find((f) => f.name === "srv")!;
+    const tls = mongo.configFields.find((f) => f.name === "tls")!;
+    expect(srv.description).toContain("mongodb+srv");
+    expect(srv.description).toContain("Use DNS seed list");
+    expect(tls.description).toContain("Use TLS");
+    // Anti-vacuity: the matcher must be able to say no.
+    expect("a description that names no control").not.toContain("Use TLS");
   });
 
-  it("renders the TLS/Atlas limitation on the page, citing core#626", () => {
-    expect(mongo.limitations ?? []).toEqual(
-      expect.arrayContaining([expect.stringContaining("core#626")]),
-    );
+  it("states the honest limit — configurable, not verified end to end", () => {
+    const limits = (mongo.limitations ?? []).join("\n");
+    expect(limits).toMatch(/not been verified end to end/i);
+    expect(limits).toContain("core#626");
     expect(html).toContain("Current limitations");
     expect(html).toMatch(/Atlas/);
     expect(html).toContain(
       "https://github.com/datanika-io/datanika-core/issues/626",
     );
+    // Anti-vacuity for the phrase that carries the whole claim.
+    expect("a limitation that overstates support").not.toMatch(
+      /not been verified end to end/i,
+    );
   });
 });
 
-describe("MongoDB setup guide + blog post carry the core#626 caveat", () => {
-  it("the setup guide gates Atlas before the first step", () => {
+describe("MongoDB setup guide + blog post describe the transport controls", () => {
+  it("the setup guide names both transport controls before the first step", () => {
     const md = readFileSync(
       resolve(__dirname, "../src/content/connectors/mongodb.md"),
       "utf-8",
     );
-    expect(md).toContain("core#626");
-    // The old troubleshooting line implied Atlas otherwise worked — an
-    // allowlist is a step you only reach after the transport succeeded.
+    // PRESENCE, not absence: a corrected page legitimately contains the words
+    // "TLS" and "Atlas" while retracting the old claim, so banning them would
+    // red-light the fix (WORKFLOW_RULES §4).
+    expect(md).toContain("Use DNS seed list (mongodb+srv)");
+    expect(md).toContain("Use TLS");
+    expect(md).toMatch(/not verified a completed handshake/i);
+    // The troubleshooting section must send the reader to the transport boxes
+    // before the firewall — a TLS-requiring server dropping a plaintext
+    // connection looks exactly like a blocked port.
+    expect(md).toMatch(/check the transport boxes before you touch the firewall/i);
     expect(md).not.toContain("MongoDB Atlas requires allowlisting IPs");
   });
 
-  it("the authSource post says the connector cannot reach Atlas", () => {
+  it("the authSource post carries a dated correction, not a rewrite", () => {
     const md = readFileSync(
       resolve(__dirname, "../src/content/blog/mongodb-authentication-failed-authsource.md"),
       "utf-8",
     );
-    expect(md).toContain("core#626");
+    // The post is a historical record; the convention here is an update note.
+    expect(md).toContain("core#638");
+    expect(md).toMatch(/\*\*Update, 25 September 2026\.\*\*/);
+    expect(md).toContain("Use DNS seed list (mongodb+srv)");
   });
 
   it("does not claim Atlas is blocked by a missing dependency", () => {

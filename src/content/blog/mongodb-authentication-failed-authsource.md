@@ -112,7 +112,11 @@ Both code paths agree on it now. The URI is assembled by one function that Test 
 
 Full walkthrough in the [MongoDB setup guide](/docs/connectors/mongodb/), and the connector's capabilities and limits are on the [MongoDB connector page](/connectors/mongodb/).
 
-> **Update, 15 September 2026.** Caveat 1 below is no longer true: the connection form now renders an **Authentication database** field, so a user defined outside `admin` can be configured without the raw-JSON escape hatch. Measured on the shipped form — the same credentials are refused with the field empty and connect with it set. [core#638](https://github.com/datanika-io/datanika-core/issues/638) stays open only for whether a config saved as raw JSON keeps the key through a later structured-form save. Caveat 2, about TLS and Atlas, is unchanged and still live. The original text follows as it was published.
+> **Update, 25 September 2026.** Caveat 2 below is no longer true either. The connection form now carries two transport checkboxes — **Use TLS**, which adds `tls=true` to the URI, and **Use DNS seed list (mongodb+srv)**, which switches to the `mongodb+srv://` scheme, hides the Port field and forces TLS on. Both reach the URI on the Test Connection path and the run path alike. So the seedlist hostname Atlas gives you *can* be entered, and a TLS-requiring server *can* be configured.
+>
+> One thing we will not claim: we have not completed a handshake against Atlas, Cosmos DB's Mongo API or DocumentDB from Datanika. Those are **untested**, not supported and not broken. The caveat below said something stronger and simpler than the truth, and it stayed on the page after the code that refuted it had shipped — because it tied its own retraction to an issue closing, and the issue did not close.
+>
+> **Update, 15 September 2026.** Caveat 1 below is no longer true: the connection form now renders an **Authentication database** field, so a user defined outside `admin` can be configured without the raw-JSON escape hatch. Measured on the shipped form — the same credentials are refused with the field empty and connect with it set. [core#638](https://github.com/datanika-io/datanika-core/issues/638) stays open only for whether a config saved as raw JSON keeps the key through a later structured-form save. The original text follows as it was published.
 >
 > **Two caveats we owe you, because both are live right now.**
 >
@@ -120,7 +124,7 @@ Full walkthrough in the [MongoDB setup guide](/docs/connectors/mongodb/), and th
 >
 > **2. If your MongoDB is Atlas, none of this reaches the auth step at all.** We build every URI as a plain `mongodb://` string with no transport options, so the driver negotiates **no TLS** — not "TLS if the server offers it", none. Atlas requires TLS, so the handshake fails first and `authSource` never gets a chance to be wrong. There is no `mongodb+srv://` support either, so the seedlist hostname Atlas gives you cannot be entered. The general rule is *any server that requires TLS*: Azure Cosmos DB's Mongo API, a self-hosted `net.tls.mode: requireTLS`, and Amazon DocumentDB unless its `tls` cluster parameter has been explicitly disabled. Tracked as [core#626](https://github.com/datanika-io/datanika-core/issues/626).
 >
-> The rule above is still the rule — it is a MongoDB rule, not a Datanika one, and it will save you the same afternoon in `mongosh`, in your application code, and in whatever else you point at that cluster. It is our *connector* that cannot reach Atlas yet, and we would rather say so on the page than let you find out at the first run.
+> The rule above is still the rule — it is a MongoDB rule, not a Datanika one, and it will save you the same afternoon in `mongosh`, in your application code, and in whatever else you point at that cluster. (The sentence that followed here said our connector could not reach Atlas. See the 25 September update at the top: the transport controls shipped, and this claim outlived them.)
 
 ## The general version
 
