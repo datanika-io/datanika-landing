@@ -1073,3 +1073,43 @@ exact opposite of rule 32's comment-instead-of-a-guard. It is a **discoverabilit
 cost is whatever you had already planned when the refusal arrived. 🔑 **A mechanised rule still
 needs one line where an agent reads before planning. A rule discoverable only by violating it gets
 planned around once per session, forever.**
+
+## 🚨 Re-running the phrase list an issue hands you is NOT a re-measurement (2026-09-25)
+
+An issue asked me to confirm that a false claim appeared on no other legal surface, and named the
+population with two quoted phrases. I grepped for those two phrases across the whole repo, found the
+same **two** files the issue named, 0 on every other legal page, proved the pattern against a planted
+line, and wrote *"re-measured rather than relayed."*
+
+**The real population was four files.** Working from the *claim* instead of the phrase, a colleague
+found the same falsehood in two more places, in different words:
+
+| file | what it said | did my phrase list see it? |
+|---|---|---|
+| the legal page's table row | *"carries no TLS control"* | ✅ yes |
+| the setup guide | *"does not negotiate TLS yet"* | ✅ yes |
+| a blog post's live caveat | *"the driver negotiates **no TLS** — not 'TLS if the server offers it', none"* | ❌ **no** |
+| the connector catalogue's description **and** two `limitations` entries | *"TLS-required hosts such as MongoDB Atlas are not supported yet"* · *"No TLS yet"* · *"No `mongodb+srv://` support"* | ❌ **no** |
+
+🔑 **A phrase list that arrives inside an acceptance criterion is an instrument, and re-running
+someone else's instrument produces a matching number, not an independent one.** That is the worst
+shape available: it reads to every later reader as confirmation by a second party, when the two
+readings share the single thing that was wrong.
+
+⚠️ **The catalogue miss is the expensive one.** `src/data/connectors.ts` drives the connector landing
+page *and* its meta description, so the false claim was in indexed marketing copy and in a `<meta>`
+tag — not only in prose a user might skim.
+
+**The remedy, and it costs one extra command:**
+
+1. **Establish the honest denominator first** — every published file that mentions the *subject*
+   (`git grep -l -i mongodb -- src public` returned **33**), then narrow by *topic*
+   (`tls|ssl|srv|atlas|encrypt`), then read the survivors. Don't start from the wording.
+2. **Never report a population figure whose only support is the pattern you were given.** If you
+   reproduce someone's count with their pattern, say that is what you did.
+3. This is the project's *"count the instruction, not the phrase"* trap and rule 33 arriving
+   together, and neither was enough to stop it, because **a supplied phrase list feels like a
+   specification rather than like a measuring device.**
+
+⚠️ **And the corrected files will keep matching the old phrase**, because a retraction quotes what it
+retracts — so the follow-up sweep needs the *claim*, not the phrase, in that direction too.
