@@ -67,7 +67,7 @@ Some public APIs (government data, open datasets) require no authentication at a
 Extract-load is configured at **`/uploads`**, not on the connection. There is no "Configure pipeline" button — connection rows offer only Test / Edit / Copy / Delete, and `/pipelines` is the **dbt** builder, which is a different thing.
 
 1. Open **`/uploads`**. The **New Upload** form is rendered inline on the page.
-2. Fill in **Upload name** (letters and digits only — anything else is stripped as you type, so `restapi-daily-sync` becomes `restapidailysync`) and an optional **Description**.
+2. Fill in **Upload name** (letters, digits and spaces — anything else is stripped as you type, so `restapi-daily-sync` becomes `restapidailysync`) and an optional **Description**.
 3. Pick the **Source connection** and the **Destination connection** — the REST API connection from Step 2 is the source. Each picker opens a dialog listing entries as `16 — myconnection (postgres)`, i.e. id, name, type.
 4. 🚨 **Tick **Use raw JSON config** and list your endpoints under `resources`.** This step is not optional for a REST API source — see the box below. A minimal one-endpoint config:
    ```json

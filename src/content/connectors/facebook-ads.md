@@ -60,7 +60,7 @@ Facebook's Marketing API uses access tokens scoped to specific ad accounts and p
 Extract-load is configured at **`/uploads`**, not on the connection. There is no "Configure pipeline" button — connection rows offer only Test / Edit / Copy / Delete, and `/pipelines` is the **dbt** builder, which is a different thing.
 
 1. Open **`/uploads`**. The **New Upload** form is rendered inline on the page.
-2. Fill in **Upload name** (letters and digits only — anything else is stripped as you type, so `facebookads-daily-sync` becomes `facebookadsdailysync`) and an optional **Description**.
+2. Fill in **Upload name** (letters, digits and spaces — anything else is stripped as you type, so `facebookads-daily-sync` becomes `facebookadsdailysync`) and an optional **Description**.
 3. Pick the **Source connection** and the **Destination connection** — the Facebook Ads connection from Step 2 is the source. Each picker opens a dialog listing entries as `16 — myconnection (postgres)`, i.e. id, name, type.
 4. Because Facebook Ads is a SaaS source, the form shows **Select endpoints to load** — a checkbox per resource, **all ticked by default**. For Facebook Ads the list is `campaigns`, `ad_sets`, `ads`, `creatives`. Untick anything you do not want: each ticked endpoint becomes its own table in the destination, and unticked ones are not fetched at all — though unticking *every* box loads the full set rather than nothing.
 

@@ -75,7 +75,7 @@ Create a **dedicated read-only role** rather than reusing an existing login. Thi
 Extract-load is configured at **`/uploads`**, not on the connection. There is no "Configure pipeline" button — connection rows offer only Test / Edit / Copy / Delete, and `/pipelines` is the **dbt** builder, which is a different thing.
 
 1. Open **`/uploads`**. The **New Upload** form is rendered inline on the page.
-2. Fill in **Upload name** (letters and digits only — anything else is stripped as you type, so `customer-orders` becomes `customerorders`) and an optional **Description**.
+2. Fill in **Upload name** (letters, digits and spaces — anything else is stripped as you type, so `customer-orders` becomes `customerorders`) and an optional **Description**.
 3. Pick the **Source connection** — the Postgres connection from Step 2 — and the **Destination connection**. Each picker opens a dialog listing entries as `16 — docssamplesdb (postgres)`, i.e. id, name, type.
 4. Because the source is a SQL database, you also get:
    - **Load Mode** — `full_database` (the default) or `single_table`.
