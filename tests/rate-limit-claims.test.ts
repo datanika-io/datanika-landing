@@ -311,6 +311,29 @@ describe("the pacing rule is published, and the ceiling is not", () => {
    * **a floor of ~N req/s under neighbour load, measured on a stated date.** Never
    * *"Datanika handles N req/s"* — prod, staging, the co-tenants and the load generator
    * share one 4 vCPU box, so a capacity reading does not exist to be published.
+   *
+   * ## Seen failing — five stages, 2026-09-25, restores checked by pre-mutation sha256
+   *
+   * | # | mutation | result |
+   * |---|---|---|
+   * | M0 | none | baseline green, 52/52 |
+   * | M1 | plant `Datanika sustains 60 req/s under neighbour load.` in `src/content/connectors/postgresql.md` — **not** one of the five | **RED**, and the message names that file |
+   * | M2 | the same plant, with the walk narrowed back to `SURFACES` | the sweep is **blind** to it — the plant appears nowhere in the output |
+   * | M3 | `NOT_A_VENDOR` emptied | the `REST API` control goes **RED** |
+   * | M4 | `PUBLISHED_ROOTS` emptied | the population test goes **RED** |
+   *
+   * 🔑 **M2 is the one that matters and is easy to leave out.** M1 alone proves the sweep
+   * works; it does not prove the *widening* is what caught the plant. M2 is the
+   * discriminator — and note its red/green says nothing, because it goes red anyway on
+   * the `attributed > 0` floor (the three live third-party figures sit on connector
+   * pages, which the narrowed population no longer contains). **The discriminator is
+   * whether the failure output names the planted file, not whether the test is red.**
+   *
+   * ⚠️ **The first run of that harness reported all four as UNCAUGHT and every one of
+   * them had fired.** The matcher compared vitest's titles for equality; vitest appends a
+   * duration (`… 117ms`) and truncates an interpolated `it.each` title
+   * (`control: 'the REST API allows 60 requests per s…' -> 'violation'`). *An uncaught
+   * mutation is a claim about the harness first.*
    */
   /**
    * Every TEXT file under the two published roots. Measured 2026-09-25 rather than
