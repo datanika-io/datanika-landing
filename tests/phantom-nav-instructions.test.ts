@@ -122,7 +122,144 @@ const PHANTOM_NAV: { re: RegExp; why: string }[] = [
     re: /(?:alongside|next to|beside) dlt'?s?(?: own)? `_dlt_loads`/i,
     why: "`CatalogService` filters out every `_dlt_*` table, so they never appear",
   },
+  // ────────────────────────────────────────────────────────────────────────────
+  // 🆕 WIDENED 2026-09-26 (QA, landing#385 walk). The two classes below were
+  // found by walking, and BOTH PASSED THIS FILE while it was green.
+  //
+  // 🔑 The reason is worth stating, because it is a property of the guard and not
+  // of the copy: every matcher above asks *"does this NAVIGATION TARGET exist?"*
+  // So a phantom **category** slips through — a category heading is neither a page
+  // nor a control, so there is no target to check — and so does a phantom **page
+  // named after a real control**, because the name resolves to something that
+  // genuinely exists, just not to a page. Two measured instances, both mine:
+  //
+  //   * `json.md` + `parquet.md`: *"pick the type under the **File** category"*.
+  //     There are no categories. Measured on core `master 04c82247`: the picker is
+  //     one flat list of **36** types with **zero** category headings (control:
+  //     the same DOM query found `parquet` and `duckdb` by name, so it could see).
+  //   * `duckdb.md` Step 4.5: *"open the **SQL Editor**"*. There is no SQL Editor
+  //     page, no sidebar entry and no `/sql-editor` route. It is a **field** in the
+  //     New Transformation form on `/transformations`.
+  //
+  // ⚠️ Both are shaped to the IMPERATIVE, for the reason at the top of this file:
+  // the corrected copy has to keep saying "File" and "SQL Editor" in order to deny
+  // them, and a matcher that cannot tell an instruction from a denial goes red on
+  // the fix. The denial control at the bottom now carries the real corrected
+  // sentences from all three guides.
+  {
+    re: /\b(?:under|in|inside|expand|within)\s+(?:the\s+)?\*{0,2}(?:File|Files|Database|Databases|SaaS|API|Warehouse)\*{0,2}\s+(?:category|categories|group|heading|section)\b/i,
+    why:
+      "the connector type picker has no categories at all — one flat list of 36 types. " +
+      "Say which neighbours it sits between, or tell the reader to scroll",
+  },
+  {
+    // A page-verb aimed at something that is not a page. Enumerated rather than
+    // general because only a human knows which names are pages — but the
+    // STRUCTURAL half of this class is closed generally by
+    // "every app route a guide names is a real route" further down, which is what
+    // catches the next one of these without anybody adding a line here.
+    re: /\b(?:open|go to|navigate to|visit|head to|click into)\s+(?:the\s+)?\*{0,2}SQL Editor/i,
+    why:
+      "there is no SQL Editor page, sidebar entry or `/sql-editor` route — it is the " +
+      "**SQL** field in the New Transformation form on `/transformations`",
+  },
 ];
+
+/**
+ * 🆕 The STRUCTURAL half of the phantom-page class (QA, 2026-09-26).
+ *
+ * The matcher above names one phantom page. This closes the class: **every
+ * in-app route a guide tells a reader to open must be a route the app serves.**
+ * `/sql-editor` would have been caught by this on the day it was written, with
+ * nobody adding a matcher.
+ *
+ * ⚠️ **Do NOT re-derive this list from HTTP status codes.** Every path under the
+ * Reflex SPA answers **200**, including a deliberately absent one, so a route
+ * probe by status manufactures phantoms and hides real ones in equal measure.
+ * The page `<title>` is what discriminates. (And `app._pages` read **0** from a
+ * `docker exec` interpreter on an app serving 11 nav links, so the route table is
+ * not the fallback either.)
+ *
+ * Re-derived 2026-09-26 by QA from the rendered sidebar of a real stack built
+ * from core `master 04c82247` — 10 nav links plus Settings — with the model
+ * detail route confirmed by following `/models` to `/models/3`.
+ */
+const APP_ROUTES = new Set([
+  "/",
+  "/connections",
+  "/uploads",
+  "/transformations",
+  "/pipelines",
+  "/models",
+  "/dag",
+  "/schedules",
+  "/runs",
+  "/audit-log",
+  "/settings",
+  "/login",
+  "/signup",
+  "/billing",
+]);
+
+/** Paths that belong to THIS site, not to the app. Not routes to validate here. */
+const SITE_PREFIXES = [
+  "/docs",
+  "/connectors",
+  "/compare",
+  "/templates",
+  "/blog",
+  "/use-cases",
+  "/pricing",
+  "/api",
+  "/og",
+  "/_astro",
+  "/terms",
+  "/privacy",
+  "/refund",
+  "/trust",
+  "/security",
+  "/about",
+  "/contact",
+  "/changelog",
+  "/roadmap",
+];
+
+/**
+ * Every path the guide tells the reader to **go to**, minus this site's own pages.
+ *
+ * 🔴 **Shaped to the navigation instruction, and the first version was not — it
+ * over-reported 9 to 1.** I first matched *every* backticked absolute path. Run
+ * across the corpus that flagged **9** paths of which **8 were correct**: the
+ * user's own API paths (`/v1`, `/v2` in `rest-api.md`), well-known spec locations
+ * (`/openapi.json`, `/swagger.json`, `/v3/api-docs`, `/openapi.yaml`), a Jira
+ * endpoint (`/rest/api/3/myself`) and a Databricks HTTP path
+ * (`/sql/1.0/warehouses/abc123`). None is a Datanika route and none claims to be.
+ *
+ * 🔑 **The 9th was `/sql-editor`, inside the sentence that DENIES it** — so the
+ * broad version was red on four correct guides *and* on the fix for the very
+ * defect it was written for. That is the trap at the top of this file, met while
+ * widening the file for it.
+ *
+ * The invariant is not "every path-shaped string is a route". It is **a path the
+ * reader is told to open must be a route the app serves.** Hence the nav verb.
+ */
+const NAV_TO_PATH =
+  /\b(?:open|opens|go to|goes to|navigate to|navigates to|visit|head to|return to|back to)\b[^\n`]{0,24}`(\/[A-Za-z0-9._\-/]*)`/gi;
+
+const appRoutesNamedIn = (body: string): string[] => {
+  const found = new Set<string>();
+  for (const m of body.matchAll(NAV_TO_PATH)) {
+    const raw = m[1];
+    const path = raw.length > 1 ? raw.replace(/\/$/, "") : raw;
+    if (SITE_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`))) continue;
+    // Container/host filesystem paths appear all over the self-hosting steps.
+    if (/^\/(var|opt|etc|usr|app|data|tmp|home|mnt|srv|proc|dev)(\/|$)/.test(path)) continue;
+    // `/models/3`, `/models/9` — a detail route under a real collection route.
+    const collection = path.replace(/\/\d+$/, "");
+    found.add(APP_ROUTES.has(collection) ? collection : path);
+  }
+  return [...found];
+};
 
 describe("the walkthrough posts do not send readers to surfaces that do not exist", () => {
   const CASES = POSTS.flatMap((post) =>
@@ -186,6 +323,12 @@ describe("the walkthrough posts do not send readers to surfaces that do not exis
       "check your Catalog and convert in staging if needed.",
       "Check your own numbers in **Usage** rather than trusting that sentence.",
       "and so on, alongside dlt's `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables.",
+      // 🆕 The two classes widened in 2026-09-26, quoted from the copy that shipped
+      // them. Both were live on datanika.io while this file was green.
+      "2. From the **type dropdown**, pick `parquet` — it's under the **File** category.",
+      "From the type dropdown, pick `json` (in the File category).",
+      "5. For a deeper inspection without leaving Datanika, open the **SQL Editor** and run `SHOW ALL TABLES;`.",
+      "Go to SQL Editor and run a count against the landed table.",
     ];
     for (const sample of retired) {
       expect(
@@ -201,6 +344,16 @@ describe("the walkthrough posts do not send readers to surfaces that do not exis
     const denials = [
       'On the **`/uploads`** row for your upload, click **Run**. There is no "Run now" on a pipeline page — the trigger lives on the upload\'s own row.',
       "the button is **Run**, and the trigger lives on the upload's own row, not on a pipeline page",
+      // 🆕 2026-09-26. These are the REAL corrected sentences now shipping in
+      // `json.md`, `parquet.md` and `duckdb.md`. They are in this list because a
+      // correction has to keep naming the thing it denies, and the two matchers
+      // added above would be worthless — worse, actively harmful — if they fired
+      // on the copy that fixes the defect. Checked as literals, not paraphrased:
+      // a paraphrase is a test of my memory of the fix rather than of the fix.
+      "⚠️ **There are no categories** — the picker is one flat list of all 36 connector types, so scroll to `parquet` rather than looking for a *File* heading. It sits between `json` and `rest_api`.",
+      "⚠️ **There are no categories** — the picker is one flat list of all 36 connector types, so scroll to `json` rather than looking for a *File* heading. It sits between `csv` and `parquet`.",
+      "5. For a deeper inspection without leaving Datanika, use the **SQL Editor** — ⚠️ **it is a field inside the New Transformation form on `/transformations`, not a page of its own.** There is no SQL Editor in the sidebar and no `/sql-editor` route (it 404s).",
+      "**Fix.** Run `CHECKPOINT;` followed by `VACUUM;` against the DuckDB connection — either from the **SQL** field in the New Transformation form on `/transformations` (see Step 4.5; there is no SQL Editor page), or from a dbt maintenance operation scheduled as its own pipeline.",
     ];
     for (const sample of denials) {
       expect(
@@ -269,6 +422,78 @@ describe("the connector guides and their template name surfaces that exist", () 
       phantom.re.test(readGuide(guide)),
       `${guide} matched ${phantom.re} — ${phantom.why}.`,
     ).toBe(false);
+  });
+
+  /**
+   * 🆕 The structural half of the phantom-page class (QA, 2026-09-26).
+   *
+   * The matchers above enumerate known phantoms; this needs no enumeration. It is
+   * the assertion that would have caught `/sql-editor` on the day it was written,
+   * and it catches the next one without anybody adding a matcher.
+   */
+  it.each(guides)("%s names only app routes that exist", (guide) => {
+    const named = appRoutesNamedIn(readGuide(guide));
+    const phantom = named.filter((r) => !APP_ROUTES.has(r));
+    expect(
+      phantom,
+      `${guide} sends the reader to ${phantom.join(", ")}, which the app does not serve. ` +
+        `If one of these IS real, add it to APP_ROUTES with the date and how you ` +
+        `established it — and NOT from an HTTP status: every path under the Reflex SPA ` +
+        `answers 200, including absent ones. The page <title> is what discriminates.`,
+    ).toEqual([]);
+  });
+
+  it("the route extractor is driven with BOTH populations", () => {
+    // 🚨 Anti-vacuity, and it needs both halves. An extractor that matched nothing
+    // would make the test above pass on every guide forever; one that matched
+    // everything would fail four correct guides. Both were real states of this
+    // code — see the comment on NAV_TO_PATH.
+    const shouldFlag = appRoutesNamedIn(
+      [
+        "For a deeper look, open `/sql-editor` and run a count.",
+        "When the run finishes, navigate to `/catalog` to browse the tables.",
+      ].join("\n"),
+    ).sort();
+    expect(shouldFlag, "the extractor cannot see a phantom it is told to open").toEqual([
+      "/catalog",
+      "/sql-editor",
+    ]);
+
+    const shouldNotFlag = appRoutesNamedIn(
+      [
+        // Real app routes, in nav context: found, and each one exists.
+        "In Datanika, open **`/connections`**. The New Connection form is rendered inline.",
+        "Open **`/uploads`**. The New Upload form is rendered inline.",
+        // Everything below is NOT a navigation instruction, and every one of these
+        // is a real sentence from the corpus that the first version of this
+        // extractor wrongly flagged.
+        "Common mistakes: missing `/v1` or `/v2` version prefix, trailing slash mismatch.",
+        "A well-known path on the API itself — `/openapi.json`, `/swagger.json`, `/v3/api-docs`, `/openapi.yaml`.",
+        "it reads your own user record via `/rest/api/3/myself`",
+        "**HTTP Path** — the SQL Warehouse or cluster HTTP path, e.g. `/sql/1.0/warehouses/abc123`.",
+        "There is no SQL Editor in the sidebar and no `/sql-editor` route (it 404s).",
+        "mount it at `/var/datanika/duckdb` inside the container",
+      ].join("\n"),
+    ).sort();
+    expect(
+      shouldNotFlag.filter((r) => !APP_ROUTES.has(r)),
+      "the extractor flagged something that is not a navigation instruction",
+    ).toEqual([]);
+    expect(shouldNotFlag, "the extractor stopped seeing real routes at all").toContain(
+      "/connections",
+    );
+  });
+
+  it("the corpus really does contain navigation instructions to find", () => {
+    // The population, printed as a count rather than asserted as a constant: if the
+    // nav-verb pattern ever stops matching, "0 guides name a route" reads exactly
+    // like "every guide is clean".
+    const withRoutes = guides.filter((g) => appRoutesNamedIn(readGuide(g)).length > 0);
+    expect(
+      withRoutes.length,
+      `only ${withRoutes.length} of ${guides.length} guides name any in-app route to open; ` +
+        `the nav-verb pattern has probably stopped matching`,
+    ).toBeGreaterThan(30);
   });
 
   // The positive half. Deleting a wrong instruction without naming the real
