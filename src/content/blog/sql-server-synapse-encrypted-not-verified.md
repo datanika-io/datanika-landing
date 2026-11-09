@@ -34,7 +34,7 @@ The practical consequence: treat the network path as part of your control surfac
 
 The [trust page](/trust) carries a per-connector table with a column most such tables do not have: **how we know**. The SQL Server and Synapse rows read the same in the first two columns and differ in the third.
 
-| | Connection | Certificate | Basis |
+| Connector | Connection | Certificate | Basis |
 | --- | --- | --- | --- |
 | SQL Server | Encrypted. The driver configuration we ship requires it, in both directions. | Not verified | **Measured** |
 | Azure Synapse | Encrypted, through the same driver as SQL Server. Synapse requires encryption at its end as well. | Not verified | **Reasoned.** Measured against SQL Server, not against a Synapse workspace. |

@@ -14,6 +14,24 @@ import { resolve } from "path";
 
 const BLOG_DIR = resolve(__dirname, "../src/content/blog");
 
+/**
+ * Strictly after `today` (`YYYY-MM-DD`, UTC). A date of today is visible in
+ * the build, not future.
+ *
+ * Anti-vacuity for the cadence assertion. `minGapDays` of an empty list is
+ * Infinity, which satisfies "at least two days apart" while measuring nothing.
+ * The previous check required the live future queue to contain more than five
+ * posts. That pinned the September 2026 backlog: on 2026-11-08 the last
+ * `publishedAt` was 2026-11-06, the queue was empty because it had drained,
+ * and this file failed Deploy Landing's test step — so the daily rebuild
+ * never published (landing#732). An empty queue is a drained schedule. A dead
+ * selector is what has to go red, on the planted dates below, which do not
+ * need the corpus to hold a backlog.
+ */
+function isFuturePublishDate(publishedAt: string | undefined, today: string): boolean {
+  return Boolean(publishedAt && publishedAt > today);
+}
+
 function readFrontmatter(filename: string): Record<string, string> {
   const file = resolve(BLOG_DIR, filename);
   expect(existsSync(file), `Missing: ${filename}`).toBe(true);
@@ -386,15 +404,22 @@ describe("publishing cadence: at most one post every two days", () => {
     expect(minGapDays(["2026-09-25"])).toBe(Infinity); // a single post cannot breach
   });
 
+  // Must call isFuturePublishDate. Inlining a different comparison leaves the
+  // planted-date test green while this walk measures something else.
+  const todayUtc = new Date().toISOString().slice(0, 10);
   const futureDates = readdirSync(BLOG_DIR)
     .filter((f) => f.endsWith(".md"))
     .map((f) => ({ file: f, publishedAt: readFrontmatter(f).publishedAt }))
-    .filter((p) => p.publishedAt && p.publishedAt > new Date().toISOString().slice(0, 10));
+    .filter((p) => isFuturePublishDate(p.publishedAt, todayUtc));
 
-  // ANTI-VACUITY. An empty or broken walk has a min gap of Infinity, which
-  // passes the assertion below while measuring nothing at all.
-  it("the future queue is non-trivial (guards a dead walk)", () => {
-    expect(futureDates.length).toBeGreaterThan(5);
+  it("the future-date selector sees a future date and rejects a past or same-day one", () => {
+    const today = "2026-11-09";
+    expect(isFuturePublishDate("2099-01-01", today)).toBe(true);
+    expect(isFuturePublishDate("2026-11-10", today)).toBe(true);
+    expect(isFuturePublishDate(today, today)).toBe(false);
+    expect(isFuturePublishDate("2026-11-06", today)).toBe(false);
+    expect(isFuturePublishDate(undefined, today)).toBe(false);
+    expect(isFuturePublishDate("", today)).toBe(false);
   });
 
   it("no two scheduled posts publish less than two days apart", () => {
