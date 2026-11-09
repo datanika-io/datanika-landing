@@ -4,8 +4,8 @@ description: "Upload Parquet files into your warehouse with Datanika — drag an
 source: "parquet"
 source_name: "Parquet"
 category: "file"
-verified_by: "product-ui"
-verified_date: "2026-08-31"
+verified_by: "qa-ui"
+verified_date: "2026-09-26"
 related_use_cases: []
 related_comparisons:
   - "airbyte"
@@ -29,11 +29,11 @@ Apache Parquet is the "production-grade CSV" — a columnar file format with str
 ## Step 1a — Upload a file through the UI (the common case)
 
 1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page.
-2. From the **type dropdown**, pick `parquet`. ⚠️ **There are no categories** — the picker is one flat, searchable list of every connector type, so type `parquet` into its **Search…** box rather than looking for a *File* heading.
+2. From the **type dropdown**, pick `parquet`. ⚠️ **There are no categories** — the picker is one flat list of all 36 connector types, so scroll to `parquet` rather than looking for a *File* heading. It sits between `json` and `rest_api`. ⚠️ **The popover has a `Search…` box and it currently does nothing** — typing in it leaves all 36 entries showing ([core#1613](https://github.com/datanika-io/datanika-core/issues/1613)). Scroll; don't type.
 3. **Connection Name** — give it a label, e.g. `sparkexports202604` or `dbtsnapshotcustomers`. **The field strips anything that isn't a letter or a digit as you type**, so `spark-exports-2026-04` becomes `sparkexports202604`. Type the name you want to end up with.
 4. In the **Upload File** section, drag your `.parquet` file into the upload area, or click the **Upload File** button to browse. (There's no in-form preview — the file is read when the pipeline runs.)
 
-   ⚠️ **A `.parq` file will NOT appear in the browse dialog** — the picker's filter lists `.parquet` but not `.parq`, so the rare extension is absent with no error to explain it ([core#1604](https://github.com/datanika-io/datanika-core/issues/1604)). Rename it to `.parquet`, or use the file-path route below.
+   ⚠️ **A `.parq` file will NOT appear in the browse dialog** — the picker's filter lists `.parquet` but not `.parq`, so the rare extension is absent with no error to explain it ([core#1604](https://github.com/datanika-io/datanika-core/issues/1604)). **Rename it to `.parquet`. That is the only remedy today** — the file-path route in Step 1b does not help, because it matches `*.parquet` inside the directory you give it, so a `.parq` file sitting there is skipped and the run simply lands fewer rows than you expected. Measured: a directory holding two `.parquet` files (11 rows between them) and one `.parq` file (2 rows) loaded **11**.
 5. Click **Test Connection**, then **Create Connection**.
 
 ![Adding the Parquet connection in Datanika](/docs/connectors/parquet/02-add-connection.png)
@@ -67,7 +67,11 @@ Use this for landing-zone patterns: a data lake, an hourly Spark export, a night
 3. In Datanika, open **`/connections`**, pick `parquet` from the type dropdown.
 4. Skip the file upload area. Below it, you'll see the **Or enter file path** input — enter the path to the **directory** inside the container:
    - **Or enter file path** — `/var/datanika/parquet-lake`. **A directory, not a file and not a glob.** Datanika matches `*.parquet` *inside* whatever you type, so a path ending in a filename or a pattern matches nothing.
-5. Click **Test Connection**. It really lists the directory now and reports the files it matched, so a path that does not exist or matches nothing comes back **red** rather than passing silently. It still does not read a footer or show you a schema — that happens on the load. ⚠️ **Read a green narrowly for a container path.** This button looks from the **web app**; the load reads from the **worker**. If you mounted the directory into `app` alone (Step 1), it tests green here and every run fails — the `docker exec datanika-celery ls` check in Step 1 is the one that answers that.
+5. Click **Test Connection**. It really lists the directory now, so a path that does not exist or matches nothing comes back **red** rather than passing silently, and the red text is genuinely useful — it names the pattern, the path and the consequence:
+
+   > `No files matched '*.parquet' under '/var/datanika/parquet-lake'. The run would have completed with zero rows. The directory exists but holds nothing matching that pattern.`
+
+   Point it at a *file* instead of a directory and it says so, and suggests the parent. ⚠️ **The green is much thinner than the red: it reads only `Connected — found files matching *.parquet`, with no count and no filenames.** So it tells you the pattern matched *something*, never how much — a typo that narrows a 200-file directory to one file looks identical to the directory you meant. It also does not read a footer or show you a schema; that happens on the load. ⚠️ **And read a green narrowly for a container path.** This button looks from the **web app**; the load reads from the **worker**. If you mounted the directory into `app` alone (Step 1), it tests green here and every run fails — the `docker exec datanika-celery ls` check in Step 1 is the one that answers that.
 6. Click **Create Connection**.
 
 > **Partition columns are preserved.** If your glob uses Hive-style partitioning (`year=2026/month=04/...`), Datanika extracts the partition values from the file path and lands them as extra columns in the destination table. You don't lose your partition keys by loading into a flat warehouse table.
@@ -79,9 +83,14 @@ Parquet config is the simplest of the three file formats because type inference 
 The connection alone moves nothing — the thing that reads the Parquet and writes it to your warehouse is an **upload**, and it lives on its own page rather than on the connection.
 
 1. Open **`/uploads`**. The **New Upload** form is rendered inline on the page.
-2. Fill in **Upload name** (letters, digits and spaces — other characters are stripped as you type), an optional **Description**, the **Source connection** from Step 1, and the **Destination connection** to land in. **Batch size** defaults to 10,000 rows.
-3. Optionally set the **Schema Contract** — the **Tables** / **Columns** / **Data Type** dropdowns that decide whether a changed incoming shape evolves the destination or fails the run.
-4. Click **Create Upload**. It appears below with status `draft`.
+2. Fill in **Upload name** (letters, digits and spaces — other characters are stripped as you type), an optional **Description**, the **Source connection** from Step 1, and the **Destination connection** to land in. Each connection entry reads `id — name (type)`, e.g. `12 — parquetlake (parquet)`.
+3. **Batch size** defaults to 10,000 rows. Three more fields appear for a file source, and two of them do not apply to Parquet:
+   - **File Format** — leave it at `auto (detect from type or extension)`.
+   - **Delimiter (CSV)** and **Encoding** — ⚠️ **ignore both.** Parquet is binary and columnar: it has no delimiter, and its strings are UTF-8 by specification. The form offers them to every file source rather than per format ([core#1614](https://github.com/datanika-io/datanika-core/issues/1614)); leaving them empty is correct and changes nothing.
+4. Optionally set the **Schema Contract** — the **Tables** / **Columns** / **Data Type** dropdowns that decide whether a changed incoming shape evolves the destination or fails the run.
+
+   ✅ **What you will *not* see, and should not go looking for: Load Mode and Write Disposition.** They are present before you pick a source and disappear the moment the source is a Parquet connection — see the note below.
+5. Click **Create Upload**. It appears below with status `draft`.
 
 > **There is no write disposition or target schema for a Parquet source.** Datanika hides the **Load Mode** and **Write Disposition** selectors for every non-SQL source — files (`csv`, `json`, `parquet`, `s3`), SaaS APIs, MongoDB, Google Sheets, REST and Kafka. They appear only when the source is a SQL database. If you need `replace` vs `merge` semantics for a Parquet drop, express it in a dbt model downstream.
 
@@ -97,7 +106,19 @@ The connection alone moves nothing — the thing that reads the Parquet and writ
 
 ![The Data preview on the landed service_uptime table, showing 13 rows read live from the destination warehouse](/docs/connectors/parquet/04-first-run.png)
 
+The same step through **Step 1b** instead, landing in DuckDB — note the table is named `parquet` rather than after a file, because the pattern matched two of them:
+
+![The Data preview on the parquet table in schema parqlake_load_7, showing Rows: 11 read live from the DuckDB file](/docs/connectors/parquet/05-data-preview.png)
+
 6. Spot-check by comparing `count(*)` against the Parquet footer's `num_rows` — they should match exactly, with no coercion losses. **Parquet is the format that best survives the trip**: because it carries a real schema, a `date32` column arrives as a `DATE` and a `double` as `DOUBLE PRECISION`. The same logical column exported to CSV arrives as text, since CSV carries no types at all.
+
+   ⚠️ **Verify that in the warehouse, not in the Columns list on this page.** The model page currently labels a DuckDB `DOUBLE` column as `FLOAT` ([core#1614](https://github.com/datanika-io/datanika-core/issues/1614)) — in DuckDB those are different types (4-byte vs 8-byte), so the one screen you would use to confirm fidelity is the one that under-reports it. Nothing is lost in the data; ask the destination:
+
+   ```bash
+   docker exec datanika-celery /app/.venv/bin/python -c \
+     "import duckdb; c = duckdb.connect('/var/datanika/duckdb/analytics.duckdb', read_only=True); \
+      print(c.execute(\"SELECT column_name, data_type FROM information_schema.columns WHERE table_name='parquet'\").fetchall())"
+   ```
 
 ## Step 4 — Schedule it (directory watchers only)
 

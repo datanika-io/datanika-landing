@@ -36,7 +36,7 @@ Meanwhile, on the other side of the boundary, the code that announces a complete
 
 So:
 
-| | believed |
+| side | believed |
 |---|---|
 | the billing side | *only successful runs are announced, so the status is trustworthy* |
 | the announcing side | *the status is a description of this branch, and this branch is the success branch* |

@@ -5,7 +5,7 @@ source: "json"
 source_name: "JSON"
 category: "file"
 verified_by: "qa-ui"
-verified_date: "2026-09-25"
+verified_date: "2026-09-26"
 related_use_cases: []
 related_comparisons:
   - "airbyte"
@@ -29,11 +29,13 @@ JSON is the format your APIs already speak, your logs already emit, and your Saa
 ## Step 1a — Upload a file through the UI (the common case)
 
 1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page.
-2. From the **type dropdown**, pick `json`. ⚠️ **There are no categories** — the picker is one flat, searchable list of every connector type, so type `json` into its **Search…** box rather than looking for a *File* heading.
+2. From the **type dropdown**, pick `json`. ⚠️ **There are no categories** — the picker is one flat list of all 36 connector types, so scroll to `json` rather than looking for a *File* heading. It sits between `csv` and `parquet`. ⚠️ **The popover has a `Search…` box and it currently does nothing** — typing in it leaves all 36 entries showing ([core#1613](https://github.com/datanika-io/datanika-core/issues/1613)). Scroll; don't type.
 3. **Connection Name** — give it a label, e.g. `apilogs202604` or `segmentexportq1`. **The field strips anything that isn't a letter or a digit as you type**, so `api-logs-2026-04` becomes `apilogs202604`. Type the name you want to end up with.
 4. In the **Upload File** section, drag your `.json` / `.jsonl` / `.ndjson` file into the upload area, or click the **Upload File** button to browse. (There's no in-form preview — the file is parsed when the pipeline runs.)
 
-   🚨 **A `.jsonl` or `.ndjson` file will NOT appear in the browse dialog.** The picker's filter lists only `.csv`, `.json` and `.parquet`, so your file is simply absent with no error to explain it — tracked as [core#1604](https://github.com/datanika-io/datanika-core/issues/1604). **Until that ships, either rename your file to `.json`** (the reader detects JSON Lines from the content, not the extension, so nothing else changes) **or use the file-path route in Step 1b**, which has no such filter.
+   🚨 **A `.jsonl` or `.ndjson` file will NOT appear in the browse dialog.** The picker's filter lists only `.csv`, `.json` and `.parquet`, so your file is simply absent with no error to explain it — tracked as [core#1604](https://github.com/datanika-io/datanika-core/issues/1604). **Until that ships, rename your file to `.json`.** The reader detects JSON Lines from the content, not the extension, so nothing else about the load changes.
+
+   🔴 **Do not reach for the file-path route in Step 1b instead — it has a filter too, and a quieter one.** That route matches `*.json` *inside* the directory you give it, so a `.jsonl` or `.ndjson` file sitting there is skipped. Measured: a directory holding one `.jsonl` file and nothing else tests **red** with `No files matched '*.json' under '<path>'. The run would have completed with zero rows. The directory exists but holds nothing matching that pattern.` The picker refuses your file visibly; the glob refuses it silently.
 5. Click **Test Connection**, then **Create Connection**.
 
 ![Adding the JSON connection in Datanika](/docs/connectors/json/02-add-connection.png)

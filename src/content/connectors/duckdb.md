@@ -133,7 +133,7 @@ DuckDB supports schemas just like a full warehouse — they're namespaces inside
 
 ### The file grows without bound after every run
 **Cause.** DuckDB doesn't automatically reclaim space from deleted rows — `replace` loads keep the old pages until you `CHECKPOINT` or `VACUUM`.
-**Fix.** Run `CHECKPOINT;` followed by `VACUUM;` against the DuckDB connection — either from Datanika's SQL Editor, or from a dbt maintenance operation scheduled as its own pipeline.
+**Fix.** Run `CHECKPOINT;` followed by `VACUUM;` against the DuckDB connection — either from the **SQL** field in the New Transformation form on `/transformations` (see Step 4.5; there is no SQL Editor page), or from a dbt maintenance operation scheduled as its own pipeline.
 
 ## Related
 
