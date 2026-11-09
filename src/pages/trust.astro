@@ -320,8 +320,10 @@ import Footer from "../components/Footer.astro";
 
         <p>
           Connections to Datanika always use TLS. Connections from Datanika out to a database you
-          host are encrypted only where the connector and your server support it, and we do not yet
-          verify your server's certificate.
+          host are encrypted only where the connector and your server support it, and whether we
+          check your server's certificate depends on the connector too: some check it against the
+          public certificate authorities and refuse a private or self-signed one, and some do not
+          check it at all. The table below says which, per connector.
         </p>
 
         <p class="mt-3 text-sm text-slate-400">
@@ -461,10 +463,13 @@ import Footer from "../components/Footer.astro";
           <strong class="text-slate-300">What "not verified" costs you.</strong> Encryption without
           certificate verification keeps the data from being read by someone watching the network.
           It does not prove that the machine answering is yours, so it does not defend against
-          someone on the network path who can pose as your server. Verification is not added for
-          the self-hosted databases above because it would refuse every self-signed certificate,
-          which is the default on a great many on-premises servers — so it is a change that has to
-          arrive with a way for you to supply your own certificate authority, not before it.
+          someone on the network path who can pose as your server. Where the table says
+          <em>Not verified</em>, verification has not been added because it would refuse every
+          self-signed certificate, which is the default on a great many on-premises servers — so on
+          those connectors it is a change that has to arrive with a way for you to supply your own
+          certificate authority, not before it. The rows that do verify show the other side of that
+          same trade: they check against the public certificate authorities and therefore refuse a
+          private or self-signed one outright, having no field for your own authority either.
         </p>
 
         <p class="mt-3 text-sm text-slate-400">
@@ -578,6 +583,26 @@ import Footer from "../components/Footer.astro";
         <div class="mt-6 rounded-lg border border-slate-800 bg-slate-900/50 p-5">
           <h3 class="text-sm font-medium text-white mb-2">Change log</h3>
           <ul class="text-sm text-slate-400 space-y-1">
+            <li>
+              <strong class="text-slate-300">2026-11-09</strong> — a claim about our own product was
+              corrected in our favour, and no company was added or removed. This page, our
+              <a href="/privacy" class="text-violet-400 underline underline-offset-2 hover:text-violet-300">Privacy Policy</a>
+              and Annex II of our
+              <a href="/dpa" class="text-violet-400 underline underline-offset-2 hover:text-violet-300">Data Processing Addendum</a>
+              each said that on connections out to a database you host we
+              <em>"do not yet verify your server's certificate"</em>. That was never true of every
+              connector. The table in
+              <a href="#encryption-in-transit" class="text-violet-400 underline underline-offset-2 hover:text-violet-300">Encryption
+              in transit</a> above has said since it was first published, 2026-09-20, that ClickHouse
+              checks the certificate against the public certificate authorities, and the MongoDB row
+              has said the same since 2026-09-25 — so the blanket sentence contradicted rows on
+              this very page, and the entry dated 2026-09-20 below repeated it. Those entries are
+              left as they were written rather than edited, because a change log that rewrites its
+              own history is worth less than one that records being wrong twice. All three pages now
+              state that the answer depends on the connector and send the reader here for which is
+              which. No practice changed on this date and no certificate check was added or removed;
+              what changed is that we stopped understating one.
+            </li>
             <li>
               <strong class="text-slate-300">2026-09-25</strong> — a claim about our own product was
               corrected in our favour, and no company was added or removed. The
