@@ -146,29 +146,40 @@ const SHARED_FACTS: Array<{ label: string; needle: RegExp; derive: string }> = [
   {
     /**
      * 🚨 The transport-encryption representation (landing#636, founder-approved 2026-09-20).
+     * The certificate-verification sentence was corrected on 2026-11-09 (landing#712, option 1).
      *
      * `/privacy` §5 said "All data in transit is encrypted via TLS" and `/dpa` Annex II said
      * "TLS on every external connection". Both had been false since those pages were written.
-     * QA measured every database connector through the product's own code paths, reading each
-     * session from the SERVER's side: MySQL and Oracle never encrypt, ClickHouse and MongoDB
-     * are plaintext by default, PostgreSQL encrypts only when the server offers it, and NO
-     * self-hosted database connection verifies the server's certificate.
-     * `plans/security/DB_CONNECTOR_TLS_2026-09-17.md`.
+     * QA measured every database connector through the product's own code paths
+     * (`plans/security/DB_CONNECTOR_TLS_2026-09-17.md`). Encryption and certificate
+     * verification are separate questions, and verification is not the same on every connector.
      *
      * ⚠️ Pinned as the PRESENCE of the honest statement, never as the absence of the old one.
-     * A ban on the old sentence is satisfied by the /trust change-log entry that retracts it —
-     * WORKFLOW_RULES §4, and the reason the two RETIRED entries below need ALLOWED budgets.
+     * The 2026-09-20 change-log entries on /trust and /dpa still say that none of those
+     * connections verifies the certificate, and the 2026-11-09 entries quote
+     * "do not yet verify your server's certificate" in order to retract it. A needle for the
+     * old phrase is satisfied by those entries. This one requires the per-connector sentence,
+     * which they do not contain. WORKFLOW_RULES §4.
      *
-     * 🔑 FLIP CONDITION, so this guard does not end up enforcing yesterday's product. The
-     * sentence stays true while ANY connector cannot encrypt or cannot verify. It becomes an
-     * understatement only when every connector both encrypts and verifies — at which point
-     * this assertion SHOULD go red, and the correct response is to repoint it at the new
-     * position and rewrite the /trust table, never to widen the regex. The table on
-     * /trust#encryption-in-transit is the artifact that records where we are.
+     * 🔑 FLIP CONDITION — dimension A, not B, and not the population of connectors.
+     * A is whether Datanika performs the certificate check. B is whether a verified session
+     * has been completed. This needle pins A. The table's third column ("Your server's
+     * certificate") carries A per row; its fourth ("How we know") carries B. The live
+     * sentences stay silent on B.
+     *
+     * The sentence goes red when its shape stops being per-connector. A blanket
+     * "we do not verify" or a blanket "we always verify" both drop "depends on the
+     * connector". It does not go red when another connector gains or loses a check: the
+     * sentence names no count, and the table is where the per-row answer lives. Do not
+     * widen the regex to keep a blanket sentence green, and do not edit the ClickHouse,
+     * MongoDB, or hosted-warehouse cells to satisfy it.
+     *
+     * `/dpa` is not in `PAGES`. The same needle is asserted against Annex II below, for
+     * this fact only.
      */
     label: "both directions of transport encryption are stated, and not conflated",
     needle:
-      /Connections to Datanika always use TLS[\s\S]{0,400}?encrypted only where the connector and your server support it[\s\S]{0,120}?do not yet verify your server's certificate/,
+      /Connections to Datanika always use TLS[\s\S]{0,500}?encrypted only where the connector and your server support it[\s\S]{0,280}?[Ww]hether we check your server's certificate depends on the connector[\s\S]{0,400}?public certificate authorities[\s\S]{0,160}?refus/,
     derive:
       "plans/security/DB_CONNECTOR_TLS_2026-09-17.md — QA drove every connector through " +
       "ConnectionService.test_connection_verdict and DltRunnerService, and read each session " +
@@ -487,6 +498,57 @@ describe("legal pages: the two pages must not contradict each other", () => {
       /\/trust#encryption-in-transit/.test(privacy),
       "/privacy no longer links to the per-connector table. It must not restate the rows " +
         "either — a second hand-maintained copy of these facts is a drift generator.",
+    ).toBe(true);
+  });
+
+  /**
+   * landing#712. The paragraph under the table used to say verification is not added for
+   * every self-hosted database above it. That universal contradicts the rows that do
+   * perform the check. Dimension A, per row: "Where the table says Not verified" is the
+   * population without the check, and "The rows that do verify" is the population that
+   * performs it. Restoring the universal contains neither, so it goes red. The sentence
+   * names no count and says nothing about whether a verified session has been completed.
+   */
+  it("states what an unverified row costs, per row rather than for every self-hosted database", () => {
+    const marker = 'What "not verified" costs you.';
+    const at = trust.indexOf(marker);
+    expect(at, "/trust lost the paragraph under the transport table (landing#712)").toBeGreaterThan(-1);
+    expect(
+      trust.indexOf(marker, at + 1),
+      "the not-verified marker appears twice, so this assertion no longer names one paragraph",
+    ).toBe(-1);
+    const end = trust.indexOf("</p>", at);
+    expect(end, "unterminated not-verified paragraph").toBeGreaterThan(at);
+    const paragraph = trust.slice(at, end);
+    expect(
+      /Where the table says\s*<em>Not verified<\/em>[\s\S]{0,600}?The rows that do verify[\s\S]{0,400}?public certificate authorities[\s\S]{0,80}?refus/.test(
+        paragraph,
+      ),
+      "The paragraph under the table no longer says verification is per row. A blanket " +
+        "'verification is not added for the self-hosted databases above' contradicts the rows " +
+        "that do check the certificate (landing#712). Repoint this when the shape stops being " +
+        "per-row; do not widen it, and do not edit the ClickHouse or MongoDB cells.",
+    ).toBe(true);
+  });
+
+  /**
+   * landing#712. `/dpa` is outside `PAGES`, so the shared-fact needle above cannot see
+   * Annex II. Scoped to this one sentence: the same dimension-A, per-connector shape.
+   * The September 20 change-log entry still says "none of them verifies" and must not
+   * be what makes this green — it does not contain the per-connector sentence.
+   */
+  it("/dpa Annex II states outbound certificate verification as per-connector", () => {
+    const dpa = squash(body(read(resolve(ROOT, "src/pages/dpa.astro"))));
+    const fact = SHARED_FACTS.find((f) =>
+      f.label.startsWith("both directions of transport encryption"),
+    );
+    expect(fact, "the transport-encryption shared fact was renamed or removed").toBeDefined();
+    expect(
+      fact!.needle.test(dpa),
+      "/dpa Annex II no longer states that whether we check your server's certificate depends " +
+        "on the connector. This fact is checked here, not by adding /dpa to PAGES (landing#712). " +
+        "The 2026-09-20 change-log entry still says none of them verifies; that entry must not " +
+        "be what satisfies this needle.",
     ).toBe(true);
   });
 
