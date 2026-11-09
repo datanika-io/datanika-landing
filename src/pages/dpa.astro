@@ -32,7 +32,7 @@ import { subprocessors } from "../data/subprocessors";
  * it is mid-change under core#1000, and a DPA is the wrong place to freeze it.
  */
 
-const LAST_UPDATED = "September 20, 2026";
+const LAST_UPDATED = "November 9, 2026";
 
 /**
  * The date the sub-processor register was last RE-DERIVED — not the date this document
@@ -328,7 +328,7 @@ const BACKUP_LOCAL_DAYS = 7;
         </p>
         <ul class="mt-2">
           <li><strong>In transit, inbound.</strong> Connections to Datanika always use TLS: the web application, its API and the remote MCP endpoint are served over TLS 1.2 or higher. Internal services bind to loopback only.</li>
-          <li><strong>In transit, outbound to your systems.</strong> Connections from Datanika out to a database you host are encrypted only where the connector and your server support it, and we do not yet verify your server's certificate. Some connectors negotiate TLS whenever your server offers it, some encrypt only when you switch it on, and some cannot encrypt at all. Per the preamble to this Annex, this is stated as it operates rather than as we would like it to be: the position for every connector, and whether we measured it or reasoned it, is published under <a href="/trust#encryption-in-transit" class="text-violet-400 underline underline-offset-2 hover:text-violet-300">Encryption in transit</a> on our Trust &amp; Security page. We tighten those rows as fixes ship.</li>
+          <li><strong>In transit, outbound to your systems.</strong> Connections from Datanika out to a database you host are encrypted only where the connector and your server support it, and whether we check your server's certificate depends on the connector as well. Some connectors negotiate TLS whenever your server offers it, some encrypt only when you switch it on, and some cannot encrypt at all; on some an encrypted connection is checked against the public certificate authorities and a server presenting a private or self-signed authority is refused, and on the rest the certificate is not checked at all. Per the preamble to this Annex, this is stated as it operates rather than as we would like it to be: the position for every connector, and whether we measured it or reasoned it, is published under <a href="/trust#encryption-in-transit" class="text-violet-400 underline underline-offset-2 hover:text-violet-300">Encryption in transit</a> on our Trust &amp; Security page. We tighten those rows as fixes ship.</li>
           <li><strong>Credentials.</strong> Source and destination credentials you enter are encrypted at rest with Fernet. Account passwords are hashed with bcrypt and are never recoverable.</li>
           <li><strong>Tenant isolation.</strong> Every tenant-scoped table carries an organisation identifier and every query is filtered by it. dbt projects are per-tenant directories.</li>
           <li><strong>Backups.</strong> Nightly database and file-volume backups. The off-site copy is GPG-encrypted before it leaves the application host, and the backup host holds no decryption key. Retention: {BACKUP_LOCAL_DAYS} days locally, {BACKUP_OFFSITE_DAYS} days off-site.</li>
@@ -404,6 +404,19 @@ const BACKUP_LOCAL_DAYS = 7;
       <section>
         <h2>Change log</h2>
         <ul>
+          <li>
+            <strong>November 9, 2026</strong> — a measure in Annex II was corrected in our own
+            favour, and no sub-processor was added or removed. It said that we
+            <em>"do not yet verify your server's certificate"</em> on outbound connections to a
+            database you host. That was never true of every connector. The per-connector position under
+            <a href="/trust#encryption-in-transit" class="text-violet-400 underline underline-offset-2 hover:text-violet-300">Encryption
+            in transit</a> has said since that table was first published, 2026-09-20, that ClickHouse
+            checks the certificate against the public certificate authorities, and the MongoDB row
+            has said the same since 2026-09-25, so the measure understated what we operate, which
+            the preamble to this Annex forbids in either direction. The September 20 entry below
+            repeated the same overstatement of our shortcomings and is left as written. No practice
+            changed on this date.
+          </li>
           <li>
             <strong>September 20, 2026</strong> — a measure in Annex II was withdrawn because it was
             not true. It read <em>"In transit. TLS on every external connection."</em> Connections to

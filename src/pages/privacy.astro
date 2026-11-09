@@ -118,11 +118,14 @@ import Footer from "../components/Footer.astro";
           </li>
           <li>
             <strong>In transit, from us to your databases.</strong> Connections from Datanika out to
-            a database you host are encrypted only where the connector and your server support it,
-            and we do not yet verify your server's certificate. Some connectors negotiate TLS
-            whenever your server offers it, some encrypt only when you switch it on, and some cannot
-            encrypt at all. Where such a connection is encrypted, nothing currently confirms that the
-            server at the other end is yours. The position for every connector is published under
+            a database you host are encrypted only where the connector and your server support it.
+            Some connectors negotiate TLS whenever your server offers it, some encrypt only when you
+            switch it on, and some cannot encrypt at all. Whether we check your server's certificate
+            depends on the connector as well: on some, an encrypted connection is checked against the
+            public certificate authorities and a server presenting a private or self-signed authority
+            is refused rather than connected to anyway; on the rest the certificate is not checked at
+            all, so nothing confirms that the server at the other end is yours. Which connector does
+            which is published under
             <a href="/trust#encryption-in-transit" class="text-violet-400 underline underline-offset-2 hover:text-violet-300">Encryption in transit</a>
             on our Trust &amp; Security page, and we tighten it as fixes ship.
           </li>
