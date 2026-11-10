@@ -33,9 +33,7 @@ JSON is the format your APIs already speak, your logs already emit, and your Saa
 3. **Connection Name** — give it a label, e.g. `apilogs202604` or `segmentexportq1`. **The field strips anything that isn't a letter or a digit as you type**, so `api-logs-2026-04` becomes `apilogs202604`. Type the name you want to end up with.
 4. In the **Upload File** section, drag your `.json` / `.jsonl` / `.ndjson` file into the upload area, or click the **Upload File** button to browse. (There's no in-form preview — the file is parsed when the pipeline runs.)
 
-   🚨 **A `.jsonl` or `.ndjson` file will NOT appear in the browse dialog.** The picker's filter lists only `.csv`, `.json` and `.parquet`, so your file is simply absent with no error to explain it — tracked as [core#1604](https://github.com/datanika-io/datanika-core/issues/1604). **Until that ships, rename your file to `.json`.** The reader detects JSON Lines from the content, not the extension, so nothing else about the load changes.
-
-   🔴 **Do not reach for the file-path route in Step 1b instead — it has a filter too, and a quieter one.** That route matches `*.json` *inside* the directory you give it, so a `.jsonl` or `.ndjson` file sitting there is skipped. Measured: a directory holding one `.jsonl` file and nothing else tests **red** with `No files matched '*.json' under '<path>'. The run would have completed with zero rows. The directory exists but holds nothing matching that pattern.` The picker refuses your file visibly; the glob refuses it silently.
+   The run loads the file you uploaded, by that file's own name. A `.jsonl` or `.ndjson` file is read; you do not set a file pattern for it, and the connection default `*.json` is not what selects it. A name that contains `*`, `?` or `[` is read as that name. The browse dialog includes `.jsonl` and `.ndjson`.
 5. Click **Test Connection**, then **Create Connection**.
 
 ![Adding the JSON connection in Datanika](/docs/connectors/json/02-add-connection.png)
@@ -69,7 +67,7 @@ The classic use case: an upstream job writes one `.jsonl` file per hour or per d
 3. In Datanika, open **`/connections`**, pick `json` from the type dropdown.
 4. Skip the file upload area. Below it, you'll see the **Or enter file path** input — enter the path to the **directory** inside the container:
    - **Or enter file path** — `/var/datanika/inbox-json`. **A directory, not a file and not a glob.** Datanika matches `*.json` *inside* whatever you type, so a path ending in a filename or a pattern matches nothing.
-   - ⚠️ **`.jsonl` files do not match the default pattern.** The default is `*.json`. If your drops are `.jsonl` or `.ndjson`, set **File Pattern** on the upload (S3) or `file_glob` in the upload's **Use raw JSON config** — otherwise the run fails with "no files matched". The *reader* handles JSON Lines fine; it's the file pattern that has to agree.
+   - ⚠️ **Directory drops of `.jsonl` still need a pattern.** This path's default is `*.json`. A file uploaded in Step 1a is loaded by its own name and is not this case. If the directory holds `.jsonl` or `.ndjson`, set **File Pattern** on the upload (S3) or `file_glob` in the upload's **Use raw JSON config** — otherwise the run reports `No files matched '*.json'`. The reader handles JSON Lines; this pattern has to name the files.
 5. Click **Test Connection**. It really lists the directory now and reports the files it matched, so a path that does not exist or matches nothing comes back **red** rather than passing silently. ⚠️ **Read a green narrowly for a container path.** This button looks from the **web app**; the load reads from the **worker**. If you mounted the directory into `app` alone (Step 1), it tests green here and every run fails — the `docker exec datanika-celery ls` check in Step 1 is the one that answers that.
 6. Click **Create Connection**.
 
