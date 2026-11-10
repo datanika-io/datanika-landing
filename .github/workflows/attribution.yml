@@ -1,0 +1,73 @@
+# Attribution trailers -- the pull-request body half of the founder's ruling.
+#
+# scripts/hooks/pre-push scans commit messages. A hook is handed a commit range, and a
+# pull-request body is not in one, so the hook cannot be this carrier.
+#
+# The body comes from the pull_request event through env:, never interpolated into run:.
+# A body is attacker-controlled text, and ${{ }} inside a shell script is a command-injection
+# sink. printf '%s' rather than echo: echo mangles a body that begins with -n or contains
+# backslashes.
+#
+# A blank body exits 2 ("this measured NOTHING") rather than 0. The step is handed the body,
+# so an empty read is indistinguishable from a clean body, and exit 0 there passes when the
+# check is broken.
+#
+# types includes edited. A body is rewritten after it is opened. This workflow never writes,
+# so edited cannot loop.
+#
+# This repo queues merges into dev. A merge_group payload has no pull request, so that event
+# scans the entry's commit range. A job that exits 0 there would pass without reading anything.
+name: Attribution
+
+on:
+  pull_request:
+    branches: [dev, main]
+    types: [opened, reopened, synchronize, edited]
+  merge_group:
+    types: [checks_requested]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: attribution-${{ github.event.pull_request.number || github.ref }}
+  # A pull_request verdict is recomputed on the next head. A merge_group verdict is not:
+  # cancelling it ejects the queue entry after the timeout with nothing red.
+  cancel-in-progress: ${{ github.event_name != 'merge_group' }}
+
+jobs:
+  attribution:
+    name: attribution
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          # 0, not 1: the merge_group step reads a commit range.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+
+      - name: Refuse an attribution trailer in the PR body
+        if: github.event_name == 'pull_request'
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          printf '%s' "$PR_BODY" | node scripts/check-attribution-trailers.mjs \
+            --stdin \
+            --artifact pr-body \
+            --label "PR #${PR_NUMBER} body" \
+            --context "attribution.yml"
+
+      - name: Refuse an attribution trailer in the queued commits
+        if: github.event_name == 'merge_group'
+        env:
+          BASE_SHA: ${{ github.event.merge_group.base_sha }}
+          HEAD_SHA: ${{ github.event.merge_group.head_sha }}
+        run: |
+          node scripts/check-attribution-trailers.mjs \
+            --range "${BASE_SHA}..${HEAD_SHA}" \
+            --artifact commit \
+            --context "attribution.yml (merge_group)"
