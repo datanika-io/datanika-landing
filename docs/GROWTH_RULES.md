@@ -154,8 +154,12 @@ Measure the smallest true member of the set first.
 returns 200. It does not prove the canonical *serves the text being syndicated* — landing `dev` runs
 ahead of `main`, so a post edited since the last promotion would publish under a `canonical_url`
 asserting two different documents are one. It bites hardest in the case you most want to syndicate: a
-post carrying a **correction**, published while the canonical still serves the false claim. Now gate 5
-in `devto_crosspost.py`, a `git diff` against `origin/main`, shown failing before it was trusted.
+post carrying a **correction**, published while the canonical still serves the false claim. Gate 5
+keeps the `git diff` against `origin/main` and also reads the served article
+(`scripts/devto_gate5.py`). The ref was measured green while the edge still served the
+pre-fix text (landing#727). The served half refuses when the article lacks a local
+sentence, when the cache-bust is not `cf-cache-status: MISS`, and when the canonical
+cannot be read.
 
 **A guard scoped to the document cannot see a row deleted from the table inside it.** The `/dpa`
 guard asserted that every sub-processor named on `/trust` also appears on `/dpa`, scoped to the
