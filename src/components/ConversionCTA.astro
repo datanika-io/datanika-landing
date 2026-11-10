@@ -27,10 +27,20 @@
 // event in the Goals report if that goal is CONFIGURED in site settings, which
 // needs Plausible admin. Shipping a new `plausibleEvent` name without creating
 // the goal first gives a fully instrumented-looking site, a green deploy, and a
-// report that never mentions it. Verified 2026-09-07 against the Stats API
-// (never the settings page): the site has exactly TWO goals — "Pricing: Start
-// free" and "Pricing: Contact sales". Create the goal, confirm it returns a row
-// from /api/v1/stats/breakdown?property=event:goal, and only then tag.
+// report that never mentions it. The Stats API is the check, not the settings
+// page. A name that is not a goal is refused ("is not configured"). A
+// configured goal that has been clicked returns a row from
+// /api/v1/stats/breakdown?property=event:goal.
+//
+// Measured 2026-11-11, before the call sites below were tagged. A 12-month
+// breakdown returned exactly two rows: "Pricing: Start free" (6 visitors) and
+// "Pricing: Contact sales" (2 visitors). "Signup: Start free" is not
+// configured. Every ConversionCTA therefore uses "Pricing: Start free", the
+// one signup goal that already returns a row. One name, because each extra
+// name is a goal somebody has to create by hand. The label still says
+// Pricing. The clicks now include every signup CTA, and the two "Try this
+// template" buttons, not only /pricing. Do not rename it until a new goal
+// returns a row.
 //
 // Any anchor can opt in without using this component - set
 // `data-plausible-event="Event Name"`. The selector is on the attribute, not on
