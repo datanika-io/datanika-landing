@@ -1,0 +1,75 @@
+name: Materialization dropdown parity
+
+# The docs name the Materialization options a reader can choose. The product
+# list is the rx.select bound to form_materialization in
+# datanika/ui/pages/transformations.py. The Materialization enum is a different
+# list: it still contains snapshot, and the select does not (landing#695).
+#
+# A PR check sees the docs against a copy of that select. The select itself
+# lives in datanika-core, so this cron is what notices when the dropdown
+# changes. Deliberately not a required check on dev: it reads another repo,
+# and a required check that fails for reasons unrelated to the PR blocks merges
+# on nothing. `master` is the SHA production runs.
+
+on:
+  schedule:
+    # Off :00 and :30. Those minutes are the ones GitHub delays.
+    - cron: "23 7 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  parity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Read the product dropdown from core master
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api "repos/datanika-io/datanika-core/contents/datanika/ui/pages/transformations.py?ref=master" \
+            --jq '.content' | base64 -d > /tmp/transformations.py
+          test -s /tmp/transformations.py
+
+      - name: Compare the docs to that dropdown
+        id: check
+        run: |
+          set +e
+          python scripts/check-materialization-dropdown.py \
+            --core /tmp/transformations.py \
+            --table src/pages/docs/transformations.astro \
+            --table src/pages/docs/transformations-guide.astro \
+            --choice src/pages/docs/transformations.astro > /tmp/materialization.txt 2>&1
+          echo "rc=$?" >> "$GITHUB_OUTPUT"
+          cat /tmp/materialization.txt
+
+      - name: File an issue on drift
+        if: steps.check.outputs.rc != '0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          existing=$(gh issue list --state open --search "in:title Materialization dropdown drift" \
+            --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            echo "Already tracked in #$existing; not filing again."
+            exit 0
+          fi
+          {
+            echo 'The materialization options named on `/docs/transformations` do not match the dropdown the product renders.'
+            echo
+            echo 'The dropdown is the `rx.select` bound to `form_materialization` in `datanika/ui/pages/transformations.py` on core `master`. The `Materialization` enum is a different list and is not this check.'
+            echo
+            echo '```'
+            cat /tmp/materialization.txt
+            echo '```'
+            echo
+            echo 'Filed automatically by `.github/workflows/materialization-dropdown-parity.yml`.'
+          } > /tmp/materialization-issue.md
+          gh issue create \
+            --title "Materialization dropdown drift: the docs and the product select disagree" \
+            --body-file /tmp/materialization-issue.md
+          exit 1
