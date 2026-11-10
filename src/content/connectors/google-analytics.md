@@ -70,6 +70,16 @@ Extract-load is configured at **`/uploads`**, not on the connection. There is no
 
 > **There is no write disposition, load mode, source schema or table-name field for a SaaS source, and that is deliberate.** Those controls are rendered only when the source is a SQL database. The endpoint checkboxes are the equivalent control here.
 
+### What a re-run does
+
+Left alone, the report is one row per day from `28daysAgo` through `today`: dimension `date`, metrics `sessions`, `totalUsers`, and `screenPageViews`. `dimensions`, `metrics`, `start_date`, and `end_date` in the upload's `dlt_config` change that report. The column names are those dimension and metric names.
+
+Each run merges on the dimensions. A row whose dimension values appear in the new window is updated. A row whose key is outside that window stays, so a day older than the new range is still in the table after the window moves forward.
+
+`replace` would delete the days the new window no longer covers. It is not how this report refreshes. The upload form stores `write_disposition` `append` together with `mode`. That pair is the form's untouched default, and the run does not use it, so the merge above is what a scheduled re-run does.
+
+An `append` or `replace` you set in the upload's raw JSON **without** `mode` is a choice. That run uses the disposition you sent.
+
 > **The endpoint list is a fixed default, not a live fetch.** It comes from Datanika's built-in map for Google Analytics rather than from your account, so it does not reflect custom objects. Anything outside the list needs the [REST API connector](/docs/connectors/rest-api).
 
 > **Batch size** (default 10000) and the optional **Schema Contract** dropdowns — **Tables** / **Columns** / **Data Type** — are on every upload regardless of source. The contract decides whether a changed incoming shape evolves the destination or fails the run.
