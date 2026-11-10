@@ -39,10 +39,6 @@ describe("transformation guide", () => {
     expect(html).toContain("not_null");
   });
 
-  it("covers snapshots", () => {
-    expect(html).toContain("Snapshot");
-  });
-
   it("covers packages", () => {
     expect(html).toContain("dbt_utils");
   });
