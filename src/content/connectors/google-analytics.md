@@ -51,7 +51,7 @@ Google Analytics is the highest-volume marketing source our users sync — landi
 3. Fill in the form:
    - **Connection Name** — e.g. `ga4-prod` or `ga4-marketing`.
    - **Property ID** — the GA4 property ID (numeric), e.g. `123456789`.
-   - **Service Account JSON (optional)** — paste the entire contents of the JSON key file from Step 1. Stored encrypted at rest with Fernet.
+   - **Service Account JSON** — paste the entire contents of the JSON key file from Step 1. Stored encrypted at rest with Fernet.
 4. Click **Create Connection**.
 
 > ⚠️ **Test Connection does not check this connection, and it will tell you so.** The credential is a service-account JSON that has to be exchanged for an OAuth token before anything can be called, and the **property grant is separate from the key being valid**. The button returns a neutral **not tested** verdict carrying that reason — deliberately neither green nor red, because reporting an unverified connection as working and reporting it as failed are the same lie told in opposite directions. **The first real verification is the first pipeline run** — and if the service account lacks Viewer access on the property, that run fails immediately with a clear permission error.
