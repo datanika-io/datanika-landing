@@ -4,8 +4,8 @@ description: "Step-by-step guide to sync Google Ads reporting into your warehous
 source: "google_ads"
 source_name: "Google Ads"
 category: "saas"
-verified_by: "product-ui"
-verified_date: "2026-08-29"
+verified_by: "draft-pending-verification"
+verified_date: null
 related_use_cases: []
 related_comparisons:
   - "airbyte"
