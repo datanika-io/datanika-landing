@@ -98,9 +98,25 @@ WHERE segments.date DURING LAST_30_DAYS
 
 Google returns each row nested (`campaign.id`, `metrics.clicks`), and Datanika flattens it to one column per leaf joined with `_` — so you get `campaign_id`, `campaign_name`, `segments_date`, `metrics_clicks`, `metrics_cost_micros`. Columns come from the rows Google actually returns, so a field it sends without being asked still lands rather than being dropped.
 
+### What a re-run does
+
+The default report merges on `campaign_id` and `segments_date`. A later run updates the rows whose key is in the new window and leaves every older day in the table. The default query is `LAST_30_DAYS`, so yesterday's run and today's run share most days, and those shared days are updated in place — including a conversion Google attributes after the first load.
+
+`replace` would delete the days the new window no longer covers. It is not how this report refreshes. The upload form stores `write_disposition` `append` together with `mode`. That pair is the form's untouched default, and the run does not use it, so the merge above is what a scheduled re-run does.
+
+An `append` or `replace` you set in the upload's raw JSON **without** `mode` is a choice. That run uses the disposition you sent.
+
 ### Running a different report
 
 The query is yours to replace. Any valid [GAQL](https://developers.google.com/google-ads/api/docs/query/overview) statement works — ad groups, keywords, search terms, assets, conversion actions. Set `query` in the upload's `dlt_config` to override the default, and `api_version` to pin a different Google Ads API major version.
+
+A custom query is text that, after stripping whitespace, is not exactly the default statement above. A missing `query`, or an empty one, is the default report.
+
+A custom query does not inherit `campaign_id` and `segments_date`. In the same JSON object, set `merge_config.report.primary_key` to the flattened column that identifies a row, or to a list of them (`campaign_id`, `segments_date` — not `campaign.id`). There is no new configuration field for this, and a top-level `primary_key` is not read.
+
+With that key, the report merges on it: a later window updates matching rows and leaves the others. A row with no value for a named key column — the column absent, null, or blank — fails the run and names that column. Those rows are not loaded.
+
+Without that key the run fails before any call to Google, including the token exchange. Nothing is written. The error names `merge_config.report.primary_key`. The window is not appended and the table is not replaced. `mode` does not waive the key. An `append` or `replace` sent without `mode` does not require the key; that run uses the disposition you sent. A disposition stored together with `mode` is the form's untouched default, not that choice.
 
 > **Pin the API version when Google sunsets one.** Google Ads carries the major version in the URL path, ships roughly four majors a year, and sunsets each about twelve months after release. Datanika targets **v25** by default. When that sunsets, `api_version` is a config change on a live connection rather than a wait for a release — and the error Datanika surfaces names the version Google rejected, so the cause is legible.
 
@@ -152,7 +168,7 @@ Schedules live on their own page and reference the upload **by name**.
 
 ### Conversion numbers don't match the Google Ads UI
 **Cause.** Google Ads attributes conversions over a lookback window (default 30 days), so recent days change retroactively as conversions are attributed.
-**Fix.** Keep re-pulling a trailing window — the default `LAST_30_DAYS` query does this — and treat the most recent days as provisional.
+**Fix.** Keep re-pulling a trailing window — the default `LAST_30_DAYS` query does this, and the re-run updates those days in place — and treat the most recent days as provisional.
 
 ### The run succeeds with zero rows
 **Cause.** Your GAQL `WHERE` clause matched nothing — a date range with no spend, or a filter on a campaign that doesn't exist.
