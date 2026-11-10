@@ -186,6 +186,59 @@ else
     echo "  SKIP  in-checkout fallback (git init unavailable)"
 fi
 
+echo "### 7 — same-second publishes keep KEEP, newest survives (landing#415)"
+# Case 4 sleeps so this file can gate `dev`. This case is the ordering bug
+# itself, and it has to fail on a publisher that still selects with `ls -1dt`.
+#
+# A fast loop on ext4 is the wrong demonstration: nanosecond mtimes make `ls -t`
+# correct, so the broken script stays green. The `date` on PATH freezes the
+# stamp, which is what makes the collision allocator recycle a freed base name.
+# The `ls` on PATH, and only the `ls -1dt` the publisher uses for the KEEP
+# cutoff, stamps every release directory to one second and then runs the real
+# `ls -1dt`. Tied mtimes are the condition the issue measured; the real binary
+# then tiebreaks by name. Both shims are on PATH only for these five publishes.
+#
+# Do not drop the `sleep 1` in case 4 because this case exists. That sleep is
+# what keeps the required check from going intermittently red on the other path.
+mkdir -p "$T/bin415"
+cat > "$T/bin415/date" << 'EOF'
+#!/usr/bin/env bash
+if [ "${1:-}" = "-u" ] && [ "${2:-}" = "+%Y%m%dT%H%M%SZ" ]; then
+    printf '%s\n' 20260101T000000Z
+    exit 0
+fi
+exec /bin/date "$@"
+EOF
+cat > "$T/bin415/ls" << 'EOF'
+#!/usr/bin/env bash
+# Equal mtimes, then the real ls. Newest-first is not what a name tiebreak
+# returns once the allocator has reused `<stamp>-<sha>`.
+if [ "${1:-}" = "-1dt" ]; then
+    shift
+    for d in "$@"; do
+        if [ -d "$d" ]; then
+            /bin/touch -d '2020-01-01 00:00:00' "$d" || exit 1
+        fi
+    done
+    exec /bin/ls -1dt "$@"
+fi
+exec /bin/ls "$@"
+EOF
+chmod +x "$T/bin415/date" "$T/bin415/ls"
+LIVE7="$T/live7"
+RELS7="$T/rel7"
+for i in 1 2 3 4 5; do
+    mkdist "$T/d7$i" "v$i"
+    PATH="$T/bin415:$PATH" SOURCE_SHA=abc1234 KEEP_RELEASES=2 \
+        bash "$SCRIPT" "$T/d7$i" "$LIVE7" "$RELS7" > "$T/log7$i" 2>&1
+    chk "publish v$i exits 0" "$?" "0"
+done
+chk "release count == KEEP" \
+    "$(find "$RELS7" -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')" "2"
+chk "live target still exists on disk" \
+    "$([ -d "$(readlink -f "$LIVE7")" ] && echo yes || echo no)" "yes"
+chk "serves the newest build" "$(cat "$LIVE7/index.html")" "<html><body>v5</body></html>"
+
 echo
 echo "==== publish-web-root: $pass passed, $fail failed ===="
 [ "$fail" -eq 0 ] || exit 1
