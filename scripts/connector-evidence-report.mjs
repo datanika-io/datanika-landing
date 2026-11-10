@@ -131,6 +131,20 @@ export function classifyGuide({ slug, readme, hasArtifact, verifiedBy }) {
     );
   }
 
+  // A named verifier is a claim that a walk happened. `draft-pending-verification` is
+  // the queue, and `verification-blocked` is the cross-check above. A missing README is
+  // still a guide — dropping it is how this claim printed as `[  --  ]` and exited 0.
+  const namedVerifier =
+    verifiedBy != null &&
+    verifiedBy !== "draft-pending-verification" &&
+    verifiedBy !== "verification-blocked";
+  if (readme === null && namedVerifier) {
+    disagreements.push(
+      `${slug}: verified_by is "${verifiedBy}" and there is no README. ` +
+        `A named verifier with no record asserts a walk nobody can inspect.`,
+    );
+  }
+
   if (kinds.has("artifact-disowned") && !hasArtifact) {
     disagreements.push(
       `${slug}: marked artifact-disowned, but there is no artifact to disown. Use ` +
@@ -196,8 +210,12 @@ export function report(corpus) {
   const withReadme = corpus.filter((g) => g.readme !== null);
   const conjuncts = {
     artifactHalfExcludes: corpus.filter((g) => !g.hasArtifact).length,
-    verificationSectionHalfExcludes: withReadme.filter((g) => !VERIFICATION_HEADING.test(g.readme))
-      .length,
+    // Population is guides, not the READMEs that happen to exist. A guide with no
+    // README has no verification section, and a denominator that drops it cannot
+    // see the one case that clause exists for (landing#707).
+    verificationSectionHalfExcludes: corpus.filter(
+      (g) => g.readme === null || !VERIFICATION_HEADING.test(g.readme),
+    ).length,
     readmesConsidered: withReadme.length,
     // ⚠️ Counted from the MARKER, not from the `why` sentence. Matching the prose I happen to
     // have written is the "count the phrase, not the instruction" trap (`QA_RULES` §7) inside
@@ -229,12 +247,22 @@ export function report(corpus) {
   return { rows, counts, conjuncts, blind };
 }
 
+/**
+ * `[  --  ]` means the guide claims nothing. A named verifier with no README is the
+ * opposite finding, so it must not reuse that token (landing#707).
+ */
+export function rowMarker(row) {
+  const missingRecord = row.disagreements.some((d) => d.includes("no README"));
+  if (missingRecord) return " norec ";
+  return { evidenced: "  ok  ", unevidenced: "  --  ", blocked: " blkd " }[row.cls];
+}
+
 export function format({ rows, counts, conjuncts, blind }) {
   const out = [];
   out.push("Connector guide evidence — SPEC_CONNECTOR_GUIDE_VERIFICATION §5 (landing#671)");
   out.push("");
   for (const r of rows) {
-    const mark = { evidenced: "  ok  ", unevidenced: "  --  ", blocked: " blkd " }[r.cls];
+    const mark = rowMarker(r);
     out.push(`  [${mark}] ${r.slug.padEnd(20)} ${r.why}`);
   }
   out.push("");
@@ -244,7 +272,7 @@ export function format({ rows, counts, conjuncts, blind }) {
   out.push("  How much work each half of §5's predicate does, measured this run:");
   out.push(`    first-run artifact absent .............. excludes ${conjuncts.artifactHalfExcludes} of ${counts.total}`);
   out.push(
-    `    README has no verification section ..... excludes ${conjuncts.verificationSectionHalfExcludes} of ${conjuncts.readmesConsidered} READMEs`,
+    `    README has no verification section ..... excludes ${conjuncts.verificationSectionHalfExcludes} of ${counts.total} guides`,
   );
   out.push(`    README disowns its own artifact ....... excludes ${conjuncts.readmeStandsBehindHalfExcludes} of ${counts.total}`);
   if (conjuncts.verificationSectionHalfExcludes === 0) {
