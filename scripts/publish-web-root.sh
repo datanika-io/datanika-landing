@@ -104,6 +104,17 @@ until mkdir "$REL" 2>/dev/null; do
     REL="$RELEASES/$STAMP-$SHA.$_n"
 done
 
+# Oldest first, one path per successful mkdir. Written before verification so
+# a rejected build is in the record and a later prune can remove it. This
+# file is not inside the release: that directory is the docroot.
+#
+# Do not replace this with `ls -t` or a sort of the directory name
+# (landing#415). Same-second mtimes tie, so `ls -1dt` tiebreaks by name, and
+# the allocator above recycles a freed unsuffixed base — the newest release
+# can then sort before its older `.1` siblings.
+ORDER="$RELEASES/.publish-order"
+printf '%s\n' "$REL" >> "$ORDER"
+
 echo "publish: dist=$DIST live=$LIVE release=$REL"
 
 # --- stage -----------------------------------------------------------------
@@ -141,41 +152,71 @@ else
 fi
 
 # --- prune -----------------------------------------------------------------
-# Keep the newest $KEEP releases. Never remove the one being served: resolve
-# the live symlink and skip it explicitly, rather than trusting mtime ordering
-# to have placed it in the head of the list.
-#
-# Built as one command substitution rather than an `ls | tail | while` pipeline
-# on purpose: under `set -o pipefail` a SIGPIPE from the head of that pipeline
-# fails the whole script *after* the swap has already succeeded, turning a
-# healthy deploy into a red run.
+# Keep the last $KEEP paths in the allocation record. Never remove the one
+# being served: resolve the live symlink and skip it explicitly. The record is
+# the order. Do not reintroduce `ls -1dt` or a name sort here (landing#415).
 CURRENT="$(readlink -f "$LIVE")"
-# ⚠️ Ordering here is NOT reliable when several releases land in the same second,
-# and the live-release guard below is what makes that survivable. Do not "tidy"
-# this into a name sort — measured, landing#415:
-#
-#   * mtimes TIE at same-second granularity, so `ls -t` falls back to a name
-#     tiebreak unrelated to creation order.
-#   * and sorting by name is no better, because the collision-suffix allocator
-#     above RECYCLES freed names: once a prune removes `<stamp>-<sha>`, the next
-#     publish in that same second re-claims the unsuffixed base, so the NEWEST
-#     release can sort before older `.1`/`.2` siblings.
-#
-# Consequence is cosmetic and bounded: the wrong directory can be pruned and one
-# extra release can survive. The live release is never removed. Real deploys are
-# minutes apart, so neither condition arises in production — it is reachable only
-# by same-second re-runs. Tracked separately rather than fixed here.
-STALE="$(ls -1dt "$RELEASES"/*/ 2>/dev/null | tail -n +"$((KEEP + 1))" || true)"
-if [ -n "$STALE" ]; then
-    while read -r d; do
-        [ -n "$d" ] || continue
+# Directories that predate the record are older than anything it names.
+# Capture them once. `find` walks directory order; a shell glob would sort by
+# name, which this step must not do. Write them back so the next run does not
+# infer them again.
+if [ ! -f "$ORDER" ]; then
+    : > "$ORDER"
+fi
+_extra="$ORDER.extra"
+: > "$_extra"
+while IFS= read -r d; do
+    [ -n "$d" ] || continue
+    if ! grep -F -x -q -- "$d" "$ORDER"; then
+        printf '%s\n' "$d" >> "$_extra"
+    fi
+done < <(find "$RELEASES" -mindepth 1 -maxdepth 1 -type d)
+if [ -s "$_extra" ]; then
+    cat "$_extra" "$ORDER" > "$ORDER.prepend"
+    mv "$ORDER.prepend" "$ORDER"
+fi
+rm -f "$_extra"
+
+_keep="$ORDER.rewrite"
+: > "$_keep"
+_existing=()
+while IFS= read -r d; do
+    [ -n "$d" ] || continue
+    [ -d "$d" ] || continue
+    _existing+=("$d")
+done < "$ORDER"
+_nexist=${#_existing[@]}
+if [ "$_nexist" -gt "$KEEP" ]; then
+    _start=$((_nexist - KEEP))
+else
+    _start=0
+fi
+_i=0
+while [ "$_i" -lt "$_nexist" ]; do
+    d="${_existing[$_i]}"
+    if [ "$_i" -lt "$_start" ]; then
+        case "$d" in
+            "$RELEASES"/*) ;;
+            *)
+                echo "prune: refusing $d"
+                printf '%s\n' "$d" >> "$_keep"
+                _i=$((_i + 1))
+                continue
+                ;;
+        esac
         if [ "$(readlink -f "$d")" = "$CURRENT" ]; then
             echo "prune: skipping live release $d"
+            printf '%s\n' "$d" >> "$_keep"
+            _i=$((_i + 1))
             continue
         fi
         echo "prune: removing $d"
         rm -rf "$d"
-    done <<< "$STALE"
-fi
+    else
+        printf '%s\n' "$d" >> "$_keep"
+    fi
+    _i=$((_i + 1))
+done
+mv "$_keep" "$ORDER"
 
 echo "published: $LIVE -> $CURRENT"
