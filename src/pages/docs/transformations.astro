@@ -46,7 +46,6 @@ import { transformationDestinationConnectors } from "../../data/connectors";
       <tr><td><code>table</code></td><td>Creates a physical table (rebuilt each run)</td><td>Frequently queried, moderate datasets</td></tr>
       <tr><td><code>incremental</code></td><td>Only processes new/changed rows</td><td>Large datasets, append-heavy workloads</td></tr>
       <tr><td><code>ephemeral</code></td><td>Inlined as CTE, not materialized</td><td>Intermediate logic, no direct querying</td></tr>
-      <tr><td><code>snapshot</code></td><td>SCD Type 2 — tracks historical changes</td><td>Slowly changing dimensions</td></tr>
     </tbody>
   </table>
 
@@ -85,7 +84,7 @@ Tests:
     <li>Click <strong>New Transformation</strong></li>
     <li>Enter a model name (e.g., <code>dim_customers</code>) — letters, digits, underscores, and hyphens only</li>
     <li>Select a <strong>Destination Connection</strong> (the database where the model will be built)</li>
-    <li>Choose a <strong>Materialization</strong>: <code>view</code>, <code>table</code>, <code>incremental</code>, <code>ephemeral</code>, or <code>snapshot</code></li>
+    <li>Choose a <strong>Materialization</strong>: <code>view</code>, <code>table</code>, <code>incremental</code>, or <code>ephemeral</code></li>
     <li>Optionally set a target <strong>Schema</strong> (e.g., <code>analytics</code>) and <strong>Tags</strong></li>
     <li>Write your SQL in the editor — use <code set:text={"{{ ref('model_name') }}"} /> to reference other models</li>
     <li>Click <strong>Preview SQL</strong> to compile and verify before running</li>
