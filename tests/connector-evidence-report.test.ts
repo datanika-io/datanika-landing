@@ -19,6 +19,7 @@ import { describe, expect, it } from "vitest";
 import {
   REPO_ROOT,
   classifyGuide,
+  format,
   parseMarkers,
   readCorpus,
   report,
@@ -180,6 +181,60 @@ describe("the field and the README must agree, or nothing is reported", () => {
     ]);
     expect(broken.blind.length).toBeGreaterThan(0);
   });
+
+  it("a named verifier with no README refuses, and does not print the no-claim marker", () => {
+    // landing#707. The two cases above only compare the blocked marker with the field.
+    // A named verifier and an absent README never enter that comparison, so the report
+    // printed the finding with the same `[  --  ]` a guide that claims nothing carries,
+    // and exited 0.
+    const claimed = classifyGuide(
+      guide({ slug: "claimed", readme: null, hasArtifact: false, verifiedBy: "product-ui" }),
+    );
+    const quiet = classifyGuide(
+      guide({
+        slug: "quiet",
+        readme: null,
+        hasArtifact: false,
+        verifiedBy: "draft-pending-verification",
+      }),
+    );
+    expect(claimed.disagreements.join("\n"), "a named verifier with no README must refuse").toMatch(
+      /no README/,
+    );
+    expect(quiet.disagreements, "a guide that claims nothing is not a missing record").toEqual([]);
+
+    const base = [
+      { slug: "evidenced", readme: "## Verification\n", hasArtifact: true, verifiedBy: "qa-ui" },
+      {
+        slug: "unevidenced",
+        readme: "## Verification\n",
+        hasArtifact: false,
+        verifiedBy: "draft-pending-verification",
+      },
+      {
+        slug: "blocked",
+        readme: "<!-- evidence: blocked core#1 -->\n## Verification\n",
+        hasArtifact: false,
+        verifiedBy: "verification-blocked",
+      },
+    ];
+    const quietReport = report([
+      ...base,
+      { slug: "quiet", readme: null, hasArtifact: false, verifiedBy: "draft-pending-verification" },
+    ]);
+    const claimedReport = report([
+      ...base,
+      { slug: "claimed", readme: null, hasArtifact: false, verifiedBy: "product-ui" },
+    ]);
+    expect(quietReport.blind, quietReport.blind.join("\n")).toEqual([]);
+    expect(claimedReport.blind.join("\n")).toMatch(/claimed[\s\S]*no README/);
+    const line = (text: string, slug: string) => text.split("\n").find((l) => l.includes(slug)) ?? "";
+    const quietLine = line(format(quietReport), "quiet");
+    const claimedLine = line(format(claimedReport), "claimed");
+    expect(quietLine).toContain("[  --  ]");
+    expect(claimedLine).not.toContain("[  --  ]");
+    expect(claimedLine).toContain("[ norec ]");
+  });
 });
 
 describe("a marker must be readable and must cite an issue", () => {
@@ -216,6 +271,21 @@ describe("§5's predicate is measured half by half, not assumed (AC2)", () => {
     const { conjuncts } = result;
     expect(conjuncts.readmesConsidered).toBeGreaterThan(30);
     expect(conjuncts.artifactHalfExcludes).toBeGreaterThan(0);
+  });
+
+  it("the verification-section population is guides, so a missing README is visible", () => {
+    // A denominator of "the READMEs that exist" drops the guide that has none, which is
+    // the only guide the clause needs to be able to see (landing#707).
+    const corpus = [
+      { slug: "kept", readme: "## Verification\n", hasArtifact: true, verifiedBy: "product-ui" },
+      { slug: "absent", readme: null, hasArtifact: false, verifiedBy: "draft-pending-verification" },
+    ];
+    const measured = report(corpus);
+    expect(measured.counts.total).toBe(2);
+    expect(measured.conjuncts.verificationSectionHalfExcludes).toBe(1);
+    const text = format(measured);
+    expect(text).toMatch(/excludes 1 of 2/);
+    expect(text).not.toMatch(/of 1 READMEs/);
   });
 
   it("the verification-section clause is reported even while it excludes nobody", () => {
