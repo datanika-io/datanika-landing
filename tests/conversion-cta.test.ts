@@ -217,3 +217,55 @@ describe("Signup CTA destination — must be usable without an account", () => {
     expect(total).toBeGreaterThanOrEqual(20);
   });
 });
+
+// ---------------------------------------------------------------------------
+// landing#515. ConversionCTA emits a Plausible event only when plausibleEvent
+// is set, and Plausible only records a name that is a configured goal.
+//
+// Measured 2026-11-11 against the Stats API, before these attributes were
+// added. /api/v1/stats/breakdown?property=event:goal&period=12mo returned two
+// rows: "Pricing: Start free" and "Pricing: Contact sales". Filtering for
+// "Signup: Start free" returned 400 "is not configured". A new name would
+// look instrumented and record nothing. Every call site therefore uses the
+// one signup goal that already returns a row.
+//
+// Comment examples in ConversionCTA.astro are not call sites. A line whose
+// first non-space characters are // is skipped, so the note that shows an
+// untagged tag does not satisfy this check and does not fail it.
+const CONFIGURED_SIGNUP_GOAL = 'plausibleEvent="Pricing: Start free"';
+const CTA_OPENING = /<ConversionCTA\b[^>]*>/g;
+
+function callSiteOpenings(text: string): string[] {
+  const tags: string[] = [];
+  for (const match of text.matchAll(CTA_OPENING)) {
+    const start = text.lastIndexOf("\n", match.index ?? 0) + 1;
+    const end = text.indexOf("\n", match.index ?? 0);
+    const line = text.slice(start, end === -1 ? text.length : end);
+    if (/^\s*\/\//.test(line)) continue;
+    tags.push(match[0]);
+  }
+  return tags;
+}
+
+describe("Signup CTA event — every ConversionCTA uses the configured goal", () => {
+  const allFiles = walkAstroFiles(SRC);
+
+  it.each(allFiles)("%s tags every ConversionCTA with the goal the Stats API returns", (file) => {
+    const bare = callSiteOpenings(readFileSync(file, "utf-8")).filter(
+      (tag) => !tag.includes(CONFIGURED_SIGNUP_GOAL),
+    );
+    expect(
+      bare,
+      `${file} has a ConversionCTA that does not emit "Pricing: Start free". ` +
+        `That is the signup goal the Stats API returned a row for on 2026-11-11. ` +
+        `A different name is not configured, so the click would emit nothing.`,
+    ).toEqual([]);
+  });
+
+  it("the site actually has ConversionCTA call sites (guard against a vacuous pass)", () => {
+    const total = allFiles
+      .map((file) => callSiteOpenings(readFileSync(file, "utf-8")).length)
+      .reduce((a, b) => a + b, 0);
+    expect(total).toBeGreaterThanOrEqual(20);
+  });
+});
