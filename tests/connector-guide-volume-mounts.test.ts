@@ -12,9 +12,10 @@
  *
  * Four instances of one mental model, found in two sweeps:
  *
- * - `duckdb.md` — core#793. The documented destination path was on no volume at
- *   all, so the "zero credentials" onboarding path landed data the web process
- *   could not read. Fixed.
+ * - `duckdb.md` — core#793. The destination path is the volume stock compose
+ *   and the Helm chart already mount at `/var/datanika/duckdb`. The guide names
+ *   that path and carries no compose snippet. A snippet here would tell the
+ *   reader to insert a volume the install already has. Same shape as `csv.md`.
  * - `sqlite.md`, `json.md`, `parquet.md` — landing#459. All three mounted into
  *   `app` only. `sqlite.md` was the worst of them: its own verification step
  *   (`docker exec datanika-app ls`, then "click Test Connection") **passes**,
@@ -37,7 +38,9 @@
  * A parser that silently matches nothing reports every file as compliant — the
  * `plans >= 5` shape. `test_the_parse_found_something` pins the block count and
  * the file count against zero, so a regex that stops matching fails loudly
- * rather than passing quietly.
+ * rather than passing quietly. The floor dropped by the one `duckdb.md` block
+ * when that guide stopped pasting a volume (4 blocks, 3 files). A further
+ * silent miss still lands under the floor.
  *
  * ## Shown able to fail
  *
@@ -103,7 +106,7 @@ function composeBlocks(file: string, md: string): ComposeBlock[] {
       if (raw.trim() === "") continue;
       const indent = raw.match(/^\s*/)![0].length;
       // A key at or left of `services:` ends the map (e.g. a top-level
-      // `volumes:` block, which duckdb.md and sqlite.md both have).
+      // `volumes:` block, which sqlite.md has). duckdb.md no longer has one.
       if (indent <= baseIndent) break;
       // Exactly one level in is a service name.
       const service = raw.match(/^\s{0,}([A-Za-z0-9_.-]+):\s*$/);
@@ -147,9 +150,10 @@ const dataBlocks = allBlocks.filter((b) =>
 
 describe("connector guide compose snippets", () => {
   it("the parse found something — a matcher that matches nothing passes everything", () => {
-    expect(allBlocks.length).toBeGreaterThanOrEqual(5);
-    expect(dataBlocks.length).toBeGreaterThanOrEqual(5);
-    expect(new Set(dataBlocks.map((b) => b.file)).size).toBeGreaterThanOrEqual(4);
+    expect(allBlocks.length).toBeGreaterThanOrEqual(4);
+    expect(dataBlocks.length).toBeGreaterThanOrEqual(4);
+    expect(new Set(dataBlocks.map((b) => b.file)).size).toBeGreaterThanOrEqual(3);
+    expect(allBlocks.filter((b) => b.file === "duckdb.md")).toEqual([]);
   });
 
   it("every data mount is mounted into BOTH the web app and the worker", () => {
