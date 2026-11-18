@@ -1,6 +1,8 @@
+import { spawnSync } from "node:child_process";
+import { chmodSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { delimiter, join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 
 /**
  * `.github/scripts/promotion_refs.py` decides which issues a promotion closes. It is
@@ -8,15 +10,12 @@ import { resolve } from "node:path";
  * precisely how this repo missed the fix that core shipped in core#636 and kept running
  * the buggy version for all 7 of its generated promotion blocks (landing#315).
  *
- * These are TEXT assertions, deliberately and with their limits stated: they cannot catch
- * a subtly wrong port, only a missing or mis-ported guard. The behavioural tests for the
- * same logic live in core (`tests/test_deploy/test_promotion_refs.py`). What is actually
- * being defended here is the failure that happened — a fix landing in one repo and not the
- * other — plus the specific copy-paste hazard of porting core's version verbatim, where
- * the base-branch filter says `master`.
- *
- * Standing up pytest in a Node repo to do better would cost more than the bug does at this
- * cadence. Revisit if this script grows logic of its own.
+ * Most of these are TEXT assertions, deliberately and with their limits stated: they cannot
+ * catch a subtly wrong port, only a missing or mis-ported guard. One test executes the
+ * script. It is the one that shows an unresolvable number is named, the rendered line
+ * closes nothing, and Coverage still counts the commit. The base-branch filter stays
+ * `main`; porting core's `master` comparison verbatim would re-list every earlier
+ * promotion.
  */
 
 const SCRIPT = resolve(__dirname, "..", ".github", "scripts", "promotion_refs.py");
@@ -144,7 +143,7 @@ describe("promotion_refs.py — tracking references (landing#455)", () => {
     // REST OF THE FILE. The assertion then passed by matching the *closing* loop instead —
     // green, and measuring nothing. Anchor on the next thing that is genuinely a boundary,
     // and assert the anchor was found.
-    const end = source.indexOf("\n    # Computed AFTER the two loops", at);
+    const end = source.indexOf("\n    unresolved_lines = [", at);
     expect(end, "the candidate loop's end anchor moved — re-derive it").toBeGreaterThan(at);
     const block = source.slice(at, end);
     expect(block).toContain('issue.get("state") == "closed"');
@@ -203,38 +202,38 @@ describe("promotion_refs.py — every promoted commit is accounted for (landing#
   });
 
   it("gives an unresolvable reference its own bucket rather than silence", () => {
-    // The open question in landing#493. Both alternatives are wrong in opposite
-    // directions: rendering `#676` invites closing an issue in the wrong repo, and
-    // dropping it silently is what already happened.
-    expect(source).toContain("Referenced an issue that does not exist in this repository");
-    expect(source).toContain("def _unresolve(");
+    // The number is named. The line carries no closing keyword. The commit stays in
+    // Coverage — dropping it from the count was the silent half of landing#493.
+    expect(source).toContain("Referenced a number that does not resolve — closing nothing");
+    expect(source).toContain("does not resolve in this repository");
+    expect(source).toContain("def _unresolvable(");
+    expect(source).toContain('f"- `#{num}` — {why} · via {');
   });
 
-  it("un-accounts a commit whose only reference resolves to nothing", () => {
-    // 🔑 The load-bearing half, and the behavioural difference from core's version.
-    // Without it a commit whose sole reference is `refs #676` counts toward the coverage
-    // line while appearing in no section — landing#493 restated.
-    const at = source.indexOf("def _unresolve(");
-    const block = source.slice(at, source.indexOf("\n    # Don't re-list", at));
-    expect(block.length, "the _unresolve body anchor moved").toBeGreaterThan(100);
-    expect(block).toContain('accounted.get(sha, set()).discard(f"refs #{num}")');
-    expect(block).toContain('accounted.get(sha, set()).discard(f"closes #{num}")');
-  });
-
-  it("computes `unaccounted` AFTER resolution, not before", () => {
-    // Ordering is the whole correctness of the previous test: computed earlier, it reports
-    // the pre-resolution view and the un-accounting has no effect on the coverage line.
-    const unresolveAt = source.indexOf("def _unresolve(");
+  it("keeps an unresolvable reference inside Coverage", () => {
     const unaccountedAt = source.indexOf("unaccounted = [s for s in shas");
-    expect(unresolveAt).toBeGreaterThan(-1);
-    expect(unaccountedAt).toBeGreaterThan(unresolveAt);
+    const resolveAt = source.indexOf("def _unresolvable(");
+    expect(unaccountedAt).toBeGreaterThan(-1);
+    expect(resolveAt).toBeGreaterThan(unaccountedAt);
+    expect(source).toMatch(/Coverage: \*\*\{len\(shas\) - len\(unaccounted\)\}/);
+    expect(source).toContain(
+      "{len(unresolved)} reference(s) did not resolve to an issue here and",
+    );
+    expect(source).toContain("close nothing — see the section above.");
+  });
+
+  it("computes `unaccounted` BEFORE resolution, so the lookup cannot drop the commit", () => {
+    const unaccountedAt = source.indexOf("unaccounted = [s for s in shas");
+    const resolveAt = source.indexOf("def _unresolvable(");
+    expect(unaccountedAt).toBeGreaterThan(-1);
+    expect(resolveAt).toBeGreaterThan(unaccountedAt);
   });
 
   it("distinguishes a 404 from a failed API call", () => {
     // 🚨 Conflating them renders a transient error as "this issue does not exist" — a
     // confident, wrong, permanent-looking line in a promotion body. Only a literal Not
-    // Found makes a reference unresolvable; anything else leaves the commit unaccounted,
-    // which is the honest state and is itself reported.
+    // Found is "does not resolve". A failed call is a different reason in the same
+    // bucket, and neither reason drops the commit from Coverage.
     expect(source).toContain("def gh_issue(");
     const at = source.indexOf("def gh_issue(");
     const block = source.slice(at, source.indexOf("\ndef main(", at));
@@ -271,9 +270,14 @@ describe("promotion_refs.py — the landing#493 guards can fail", () => {
       .length).toBe(0);
   });
 
-  it("control: removing the un-accounting makes the coverage line lie", () => {
-    const broken = mutate('accounted.get(sha, set()).discard(f"refs #{num}")', "pass");
-    expect(broken).not.toContain('accounted.get(sha, set()).discard(f"refs #{num}")');
+  it("control: dropping the does-not-resolve reason is caught", () => {
+    const broken = mutate(
+      'unresolved[num] = ("does not resolve in this repository", via)',
+      'unresolved[num] = ("missing", via)',
+    );
+    expect(broken).not.toContain(
+      'unresolved[num] = ("does not resolve in this repository", via)',
+    );
   });
 
   it("control: collapsing the 404 distinction is caught", () => {
@@ -281,15 +285,13 @@ describe("promotion_refs.py — the landing#493 guards can fail", () => {
     expect(broken).not.toContain('"not found" in stderr or "http 404" in stderr');
   });
 
-  it("control: computing `unaccounted` before resolution is detectable by order", () => {
-    // The one defect the text assertions above genuinely could not see is a reordering,
-    // so it is asserted positionally rather than by presence — this proves the check is
-    // an ordering check and not another substring test.
-    const a = source.indexOf("def _unresolve(");
-    const b = source.indexOf("unaccounted = [s for s in shas");
-    const swapped = a > b;
-    expect(swapped, "if this is ever true the coverage line reports a pre-resolution view")
-      .toBe(false);
+  it("control: computing `unaccounted` after resolution is detectable by order", () => {
+    // Positional, not a substring: moving the snapshot to after the lookup would let a
+    // later discard drop the commit from Coverage while the section still names it.
+    const a = source.indexOf("unaccounted = [s for s in shas");
+    const b = source.indexOf("def _unresolvable(");
+    expect(a, "unaccounted snapshot moved").toBeGreaterThan(-1);
+    expect(b).toBeGreaterThan(a);
   });
 });
 
@@ -371,4 +373,158 @@ describe("promotion_refs.py — the tracking guard can fail", () => {
     const broken = mutate("        if len(commits) >= 3:", "        if False:");
     expect(broken).not.toMatch(/if len\(commits\) >= 3:/);
   });
+});
+
+describe("promotion_refs.py — an unresolvable number is named and closes nothing", () => {
+  // Executes the script. The source assertions above pinned the opposite property
+  // (un-account the commit), and a substring check cannot show that a rendered line
+  // names the number without a closing keyword while Coverage still counts it.
+  function rehearse(message: string): string {
+    const root = mkdtempSync(join(tmpdir(), "landing-promo-"));
+    const bin = join(root, "bin");
+    mkdirSync(bin);
+    writeFileSync(
+      join(bin, "gh-fake.mjs"),
+      [
+        'const args = process.argv.slice(2).join(" ");',
+        'if (/\\/issues\\/\\d+/.test(args)) {',
+        '  process.stderr.write("gh: Not Found (HTTP 404)\\n");',
+        "  process.exit(1);",
+        "}",
+        'process.stdout.write("[]\\n");',
+        "",
+      ].join("\n"),
+    );
+    if (process.platform === "win32") {
+      // CreateProcess looks up `gh.exe` and skips a `gh.cmd`. A .cmd on PATH is
+      // invisible to the script, which calls `gh` the same way CI does.
+      const shim = join(bin, "ghshim.cs");
+      writeFileSync(
+        shim,
+        [
+          "using System;",
+          "using System.Collections.Generic;",
+          "using System.Diagnostics;",
+          "using System.IO;",
+          "class G {",
+          "  static int Main(string[] args) {",
+          "    string dir = AppDomain.CurrentDomain.BaseDirectory;",
+          "    var psi = new ProcessStartInfo();",
+          "    psi.FileName = \"node\";",
+          "    psi.UseShellExecute = false;",
+          "    var quoted = new List<string>();",
+          "    quoted.Add(\"\\\"\" + Path.Combine(dir, \"gh-fake.mjs\") + \"\\\"\");",
+          "    foreach (string a in args) quoted.Add(\"\\\"\" + a + \"\\\"\");",
+          "    psi.Arguments = string.Join(\" \", quoted.ToArray());",
+          "    var p = Process.Start(psi);",
+          "    p.WaitForExit();",
+          "    return p.ExitCode;",
+          "  }",
+          "}",
+          "",
+        ].join("\r\n"),
+      );
+      const csc = join(
+        process.env.WINDIR ?? "C:\\Windows",
+        "Microsoft.NET",
+        "Framework64",
+        "v4.0.30319",
+        "csc.exe",
+      );
+      const compiled = spawnSync(csc, ["/nologo", `/out:${join(bin, "gh.exe")}`, shim], {
+        encoding: "utf8",
+      });
+      if (compiled.status !== 0) {
+        throw new Error(`csc failed\n${compiled.stdout}\n${compiled.stderr}`);
+      }
+    } else {
+      const sh = join(bin, "gh");
+      writeFileSync(sh, '#!/bin/sh\nexec node "$(dirname "$0")/gh-fake.mjs" "$@"\n');
+      chmodSync(sh, 0o755);
+    }
+    // pre-push exports GIT_DIR (and the index). Inherited, `git commit` and
+    // `git config` land on the repository being pushed: the rehearsal's empty
+    // commits ship, and user.email is rewritten to the fixture address.
+    const isolated = (): NodeJS.ProcessEnv => {
+      const env: NodeJS.ProcessEnv = { ...process.env };
+      for (const key of Object.keys(env)) {
+        if (
+          key.toLowerCase() === "path" ||
+          key === "GIT_DIR" ||
+          key === "GIT_WORK_TREE" ||
+          key === "GIT_INDEX_FILE" ||
+          key === "GIT_COMMON_DIR" ||
+          key === "GIT_OBJECT_DIRECTORY" ||
+          key === "GIT_PREFIX" ||
+          key === "GIT_NAMESPACE" ||
+          key === "GIT_IMPLICIT_WORK_TREE" ||
+          key === "GIT_ALTERNATE_OBJECT_DIRECTORIES" ||
+          key.startsWith("GIT_CONFIG_")
+        ) {
+          delete env[key];
+        }
+      }
+      env.PATH = `${bin}${delimiter}${process.env.PATH ?? process.env.Path ?? ""}`;
+      return env;
+    };
+    const git = (args: string[]) => {
+      const result = spawnSync("git", args, {
+        cwd: root,
+        encoding: "utf8",
+        env: isolated(),
+      });
+      if (result.status !== 0) {
+        throw new Error(`git ${args.join(" ")} failed\n${result.stderr}`);
+      }
+    };
+    git(["init", "-b", "main"]);
+    git(["config", "user.email", "infra@example.com"]);
+    git(["config", "user.name", "Infra"]);
+    git(["commit", "--allow-empty", "-m", "base"]);
+    const base = spawnSync("git", ["rev-parse", "HEAD"], {
+      cwd: root,
+      encoding: "utf8",
+      env: isolated(),
+    });
+    git(["commit", "--allow-empty", "-m", message]);
+    const head = spawnSync("git", ["rev-parse", "HEAD"], {
+      cwd: root,
+      encoding: "utf8",
+      env: isolated(),
+    });
+    const py = process.platform === "win32" ? "python" : "python3";
+    // A plain `{...process.env, PATH}` keeps Windows' original `Path` key. The
+    // child then resolves `gh` from that one and the fixture never runs.
+    const env = isolated();
+    env.REPO = "datanika-io/datanika-landing";
+    env.PR_NUMBER = "0";
+    env.BASE_SHA = (base.stdout ?? "").trim();
+    env.HEAD_SHA = (head.stdout ?? "").trim();
+    env.DRY_RUN = "1";
+    const result = spawnSync(py, [SCRIPT], {
+      cwd: root,
+      encoding: "utf8",
+      env,
+    });
+    rmSync(root, { recursive: true, force: true });
+    return `${result.stdout ?? ""}\n${result.stderr ?? ""}\nexit ${result.status}`;
+  }
+
+  it("names an unresolvable number and closes nothing", () => {
+    const caller = spawnSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" });
+    const out = rehearse("[Product] Spec: the sub-processor register (refs #676)");
+    const callerAfter = spawnSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" });
+    // The rehearsal must not move this checkout. Under pre-push, GIT_DIR points here.
+    expect(callerAfter.stdout).toBe(caller.stdout);
+    const line = out.split(/\r?\n/).find((item) => item.startsWith("- `#676`"));
+    expect(line, out).toBeDefined();
+    expect(line).toContain("does not resolve in this repository");
+    expect(line).not.toMatch(/\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s*:?\s+#\d+/i);
+    expect(out).toContain("Referenced a number that does not resolve — closing nothing");
+    expect(out).toMatch(/Coverage: \*\*1 of 1\*\*/);
+    expect(out).toContain("did not resolve to an issue here and close nothing");
+    expect(out).toContain("exit 0");
+    // The Windows fixture compiles a gh.exe. Under a full vitest run that compile
+    // shares the machine with the rest of the suite and exceeds the 5s default.
+  }, 30_000);
 });

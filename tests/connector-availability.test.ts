@@ -82,6 +82,15 @@ describe("the marketed catalogue excludes withdrawn connectors", () => {
     }
   });
 
+  it("a withdrawn connector documents no configuration fields", () => {
+    for (const c of withdrawnConnectors) {
+      expect(
+        c.configFields,
+        `${c.slug} documents configuration fields for a source the app does not offer`,
+      ).toEqual([]);
+    }
+  });
+
   it("a withdrawn connector keeps its page — marking is the remedy, not deletion", () => {
     for (const c of withdrawnConnectors) {
       expect(
@@ -94,6 +103,31 @@ describe("the marketed catalogue excludes withdrawn connectors", () => {
 });
 
 describe("every surface that names a connector respects the withdrawal", () => {
+  it("a withdrawn connector page does not render a configuration table", () => {
+    for (const c of withdrawnConnectors) {
+      const html = readHtml(`connectors/${c.slug}/index.html`);
+      expect(html, `/connectors/${c.slug}/ has no withdrawal marker on its configuration`).toContain(
+        'data-configuration="withdrawn"',
+      );
+      expect(html, `/connectors/${c.slug}/ still renders a configuration table`).not.toContain(
+        ">Field</th>",
+      );
+    }
+  });
+
+  it("an available connector page still renders its configuration table", () => {
+    const marked = availableConnectors
+      .map((c) => c.slug)
+      .filter((slug) =>
+        readHtml(`connectors/${slug}/index.html`).includes('data-configuration="withdrawn"'),
+      );
+    expect(marked, `available pages marked as having no configuration: ${marked.join(", ")}`).toEqual(
+      [],
+    );
+    const sample = readHtml(`connectors/${availableConnectors[0].slug}/index.html`);
+    expect(sample, "an available page lost its configuration table").toContain(">Field</th>");
+  });
+
   it("the withdrawn connector's own page renders the notice and its reason", () => {
     for (const c of withdrawnConnectors) {
       const html = readHtml(`connectors/${c.slug}/index.html`);

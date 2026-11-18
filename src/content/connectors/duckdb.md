@@ -21,35 +21,31 @@ DuckDB is an embedded columnar analytical database — think "SQLite for analyti
 
 - A **Datanika account** with permission to create connections (Admin or Editor role).
 - A **source connection** already wired up in Datanika — PostgreSQL, Stripe, a CSV upload, anything. DuckDB is a destination here, so you need data flowing *into* it from somewhere else.
-- **A volume mounted into both the web and worker containers** on self-hosted Datanika. Not just "a path Datanika can reach" — Step 1 explains why the *both* is the whole ballgame.
+- **Self-hosted Datanika.** Stock compose and the Helm chart already share `/var/datanika/duckdb` between the web process and the worker. Step 1 is that path, and the check that this install still has the mount.
 - The DuckDB Python engine is bundled with Datanika — **you do not need to install it separately**. The `duckdb` standalone CLI binary is NOT bundled; if you want one for ad-hoc inspection, install it separately from [duckdb.org/docs/installation](https://duckdb.org/docs/installation).
 
 ## Step 1 — Pick a file path
 
-DuckDB stores its entire database in a single file. You just need to decide where that file lives.
+DuckDB stores its entire database in a single file. On self-hosted Datanika that file lives under `/var/datanika/duckdb`. Stock compose and the Helm chart already mount that directory. Leave both alone and set Database Path to a file inside it.
 
-🚨 **The one thing to get right: the path must be on a volume mounted into *both* the web container and the worker container.** Datanika runs them as separate containers (`app` and `celery`), and a plain directory inside one of them is invisible to the other. The **load runs in the worker**; **Models, the Data preview and the SQL Editor run in the web app**. Put the file somewhere only one of them can see and you get a run that goes green while the UI shows you nothing — and the file disappears the next time that container is replaced.
+🚨 **The file has to be on that directory.** Datanika runs the web app and the worker as separate containers. The **load runs in the worker**; **Models, the Data preview and the SQL Editor run in the web app**. A file outside the shared directory is visible to one of them and invisible to the other: the run goes green, the UI shows nothing, and the file disappears the next time that container is replaced.
 
-1. **Add a shared volume** for it in your `docker-compose.yml`, on the web service *and* the worker:
-   ```yaml
-   services:
-     app:
-       volumes:
-         - duckdb_data:/var/datanika/duckdb
-     celery:
-       volumes:
-         - duckdb_data:/var/datanika/duckdb
-   volumes:
-     duckdb_data:
-   ```
-   Then `docker compose up -d app celery`. A **named volume** (rather than a directory inside the image) is what makes the file survive a rebuild.
-2. Pick a filename that describes what's going in it, for example `analytics.duckdb` or `raw_stripe.duckdb`. Full path: `/var/datanika/duckdb/analytics.duckdb`.
-3. **Check it before you go further** — the same path, from both containers:
+What the install already mounts, at `/var/datanika/duckdb`:
+
+- Prod compose key `duckdb_data`, on `app`, `app_b`, and `celery`. `app_b` is the other colour, so a blue/green swap opens the same file.
+- Staging compose key `staging_duckdb`, on those same three services.
+- Helm, on the app Deployment and the celery Deployment, from a `ReadWriteMany` claim. `app.duckdbSize` is `5Gi`.
+- `beat` and `scheduler` do not mount the path. They do not open the file.
+
+`/app/uploaded_files` and `/app/dbt_projects` stay the upload archive and the dbt project tree. A DuckDB file does not go on either.
+
+1. Pick a filename that describes what's going in it, for example `analytics.duckdb` or `raw_stripe.duckdb`. Full path: `/var/datanika/duckdb/analytics.duckdb`.
+2. **Check the mount before you go further** — the same path, from both containers:
    ```bash
    docker exec datanika-app    touch /var/datanika/duckdb/.probe
    docker exec datanika-celery ls    /var/datanika/duckdb/.probe
    ```
-   If the second command says `No such file or directory`, the volume is not shared and nothing below will work as described. Fix it here rather than debugging an empty catalog later.
+   If the second command says `No such file or directory`, this install is missing the shared directory and nothing below will work as described. That is a compose file or chart from before the mount. Use a revision that already includes it, and check again here rather than debugging an empty catalog later.
 
 > ⚠️ **On Datanika Cloud this is not yet wired up** — tracked as [core#793](https://github.com/datanika-io/datanika-core/issues/793). DuckDB destinations are a self-hosted feature until it ships; on the hosted plan, use one of the credentialled warehouses.
 
@@ -68,7 +64,7 @@ DuckDB stores its entire database in a single file. You just need to decide wher
 
 > 🚨 **Test Connection is RED for a brand-new DuckDB destination, and that is expected.** It reports `No database at '<path>'. Check the path, or create the file first.` — because the `.duckdb` file does not exist until the first run creates it. **Create Connection succeeds anyway**, which is why Step 2 sends you there and not to Test Connection. Come back and test it *after* your first run, when it will pass.
 >
-> ⚠️ **So do not read that message as a path problem.** It says the same thing whether your volume is mounted correctly or not, so it cannot tell you which you have — Step 1's two-container probe is the check that can. A genuinely missing **parent directory** produces `IO Error: Cannot open file ...: No such file or directory` on the *run*, not on the test; DuckDB creates the file but never the directories above it, and mounting the volume from Step 1 creates the directory for you.
+> ⚠️ **So do not read that message as a path problem.** It says the same thing whether the shared directory is present or not, so it cannot tell you which you have — Step 1's two-container probe is the check that can. A genuinely missing **parent directory** produces `IO Error: Cannot open file ...: No such file or directory` on the *run*, not on the test. DuckDB creates the file but never the directories above it. The stock mount creates `/var/datanika/duckdb`. A Database Path whose parent is somewhere else does not get that directory.
 
 ## Step 3 — Point a load at it
 
@@ -94,7 +90,7 @@ DuckDB supports schemas just like a full warehouse — they're namespaces inside
 ![The /runs table after a load into DuckDB — a run status, which is not the same thing as data having arrived](/docs/connectors/duckdb/04-first-run.png)
 
 3. When the run finishes, open **Models** (`/models`) and browse the landed tables. Each lands in a schema **derived from the upload's name** — spaces become underscores and the whole thing is lower-cased, so an upload named `Sales Daily Load` lands in schema `sales_daily_load` — and you can see column counts and last-run status directly in the Data Catalog, no SQL required.
-4. **Open a table and click `Load first 100 rows`.** The **Data preview** on the model detail page runs a live `SELECT` against the DuckDB file, so it is the cheapest proof that data actually arrived. **For DuckDB this step is doing double duty**: because the web app and the worker are separate containers, an empty or missing preview after a green run is the symptom of a file only the worker can see — go back to Step 1's probe.
+4. **Open a table and click `Load first 100 rows`.** The **Data preview** on the model detail page runs a live `SELECT` against the DuckDB file, so it is the cheapest proof that data actually arrived. **For DuckDB this step is doing double duty**: because the web app and the worker are separate containers, an empty or missing preview after a green run is the symptom of a file that is not under `/var/datanika/duckdb` — go back to Step 1's probe.
 
 ![The Data preview on the model detail page, showing the rows that actually landed in the DuckDB file](/docs/connectors/duckdb/05-data-preview.png)
 5. For a deeper inspection without leaving Datanika, use the **SQL Editor** — ⚠️ **it is a field inside the New Transformation form on `/transformations`, not a page of its own.** There is no SQL Editor in the sidebar and no `/sql-editor` route (it 404s). Open **`/transformations`**, set **Destination Connection** to your DuckDB connection, type into **SQL**, and use **Preview SQL** / **Preview Result** to run something like `SHOW ALL TABLES;` or `SELECT count(*) FROM <upload_name>.<table>;` without creating the transformation. If you'd rather drive DuckDB from outside Datanika, run the Python engine that's already in the container:
@@ -104,7 +100,7 @@ DuckDB supports schemas just like a full warehouse — they're namespaces inside
    ```
    > **Use `/app/.venv/bin/python`, not `python`.** The image's system interpreter has none of the app's packages and answers `ModuleNotFoundError: No module named 'duckdb'`, which looks like a far bigger problem than it is. Open it `read_only=True` unless you mean to write — DuckDB is single-writer, and an open handle will block the next scheduled run.
    >
-   > **Run it in the worker (`datanika-celery`) *and* in the web app (`datanika-app`), and expect the same answer.** The load happens in the worker, so that container definitely sees the file; the web app is where Models and the preview read it. If the two disagree, your volume is not shared — that is the Step 1 mistake, showing up three steps later.
+   > **Run it in the worker (`datanika-celery`) *and* in the web app (`datanika-app`), and expect the same answer.** The load happens in the worker, so that container definitely sees the file; the web app is where Models and the preview read it. If the two disagree, the file is not on `/var/datanika/duckdb` — that is the Step 1 mistake, showing up three steps later.
 
 ## Step 5 — Schedule it
 
@@ -121,7 +117,7 @@ DuckDB supports schemas just like a full warehouse — they're namespaces inside
 
 ### `IO Error: Cannot open file "<path>": No such file or directory`
 **Cause.** The parent directory of the `.duckdb` path doesn't exist. DuckDB creates the file itself, but not the directories above it.
-**Fix.** Run `mkdir -p /var/datanika/duckdb` (or your chosen parent) inside the Datanika container, then re-test the connection. If you're running in Docker, make sure the directory lives on a mounted volume or it'll disappear on the next rebuild.
+**Fix.** Point Database Path at a file under `/var/datanika/duckdb`, for example `/var/datanika/duckdb/analytics.duckdb`. That directory is the mount, and the mount is what creates it. A `mkdir` inside one container creates a directory only that container can see, and the next rebuild drops it.
 
 ### `Conflicting lock is held in <pid>` or `Could not set lock on file`
 **Cause.** Another process has the `.duckdb` file open in write mode. Usually this is a second pipeline run or a background Celery task — or, if you've shelled into the container, a Python / external-CLI session you forgot to close.

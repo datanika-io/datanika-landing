@@ -4,6 +4,11 @@ on:
   pull_request:
     branches: [dev, main]
 
+  # A direct push to `dev` (promotion resync, admin bypass) runs this same
+  # `build` job. `main` is absent on purpose: that push is the deploy. (core#920)
+  push:
+    branches: [dev]
+
   # `build` is the ONLY required status check on `dev`, so a merge queue on that
   # branch is entirely dependent on this trigger existing. Without it GitHub never
   # starts a run for a queue entry, the required check is never reported, and the

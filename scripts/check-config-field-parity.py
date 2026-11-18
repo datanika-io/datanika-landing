@@ -133,15 +133,18 @@ def parse_schema(path: str) -> dict[str, list[str]]:
     return out
 
 
-def parse_connectors_ts(path: str) -> list[tuple[str, list[str]]]:
+def parse_connectors_ts(path: str) -> list[tuple[str, list[str], bool]]:
     ts = open(path, encoding="utf-8").read()
-    rows: list[tuple[str, list[str]]] = []
+    rows: list[tuple[str, list[str], bool]] = []
     for m in re.finditer(r'\n    slug: "([a-z0-9-]+)",', ts):
         slug = m.group(1)
         seg = ts[m.start() :]
-        cf = re.search(r"    configFields: \[\n(.*?)\n    \],\n", seg, re.S)
+        nxt = re.search(r'\n    slug: "', seg[1:])
+        block = seg[: nxt.start() + 1] if nxt else seg
+        cf = re.search(r"    configFields: \[\n(.*?)\n    \],\n", block, re.S)
         fields = re.findall(r'name: "([^"]+)"', cf.group(1)) if cf else []
-        rows.append((slug, fields))
+        withdrawn = "\n    withdrawn:" in block
+        rows.append((slug, fields, withdrawn))
     if not rows:
         sys.exit(
             "Parsed zero connectors out of connectors.ts. The file shape changed — "
@@ -163,11 +166,18 @@ def main() -> int:
     print(f"connectors.ts entries: {len(rows)}\n")
 
     problems: list[str] = []
-    for slug, documented in rows:
+    withdrawn_absent: list[str] = []
+    for slug, documented, withdrawn in rows:
         key = SLUG_ALIASES.get(slug, slug.replace("-", "_"))
         if key in UNMARKETED:
             continue
         if key not in schema:
+            # A withdrawn source has no published configuration. An empty field
+            # list is that fact. Fields on a slug the schema does not have are
+            # still drift — the page would be offering a form core does not.
+            if withdrawn and not documented:
+                withdrawn_absent.append(slug)
+                continue
             problems.append(
                 f"/connectors/{slug}/ — no `{key}` in the published schema. Either the "
                 f"connector was withdrawn in core, or the slug needs a SLUG_ALIASES entry."
@@ -191,8 +201,10 @@ def main() -> int:
 
     if not problems:
         print(
-            f"OK - all {len(rows)} connector pages match the published schema "
-            f"(`/api/v1/meta/connection-types`). This is NOT a check that the fields exist "
+            f"OK - {len(rows) - len(withdrawn_absent)} connector pages match the published schema "
+            f"(`/api/v1/meta/connection-types`). "
+            f"Withdrawn and absent from that schema, with no field list: {withdrawn_absent}. "
+            f"This is NOT a check that the fields exist "
             f"on the Reflex form - see this file's docstring and landing#698 AC6."
         )
         return 0
