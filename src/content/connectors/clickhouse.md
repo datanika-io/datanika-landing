@@ -32,10 +32,12 @@ ClickHouse is the fastest-growing analytics destination on Datanika — teams ch
 
 Create a **dedicated loader user** rather than reusing the `default` admin account. This keeps permissions auditable and revocable.
 
-1. Connect to ClickHouse using `clickhouse-client` or the ClickHouse Cloud SQL console:
+1. Connect with `clickhouse-client`, or use the ClickHouse Cloud SQL console. A TLS server takes the secure native port. A stock self-hosted server listens on plain native port `9000` and refuses `9440`:
    ```bash
    clickhouse-client --host <host> --port 9440 --secure --user default
+   clickhouse-client --host <host> --user default
    ```
+   The first command is the TLS server. The second is the stock self-hosted server.
 2. Create a dedicated database for raw data (if it doesn't exist):
    ```sql
    CREATE DATABASE IF NOT EXISTS raw_data;
@@ -69,7 +71,7 @@ Create a **dedicated loader user** rather than reusing the `default` admin accou
 1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page — there's no separate "New Connection" button to click.
 2. From the **type dropdown** at the top of the form, pick `clickhouse`.
 3. Fill in the form:
-   - **Connection Name** — e.g. `clickhouse-prod` or `clickhouse-analytics`.
+   - **Connection Name** — letters, digits, and spaces. Anything else is removed, so `clickhouse-prod` is saved as `clickhouseprod` and `clickhouse-analytics` is saved as `clickhouseanalytics`.
    - **Host** — the hostname, e.g. `abc123.clickhouse.cloud` or `clickhouse.internal`.
    - **Port** — the **HTTP** port: `8443` (ClickHouse Cloud / TLS) or `8123` (self-hosted plain HTTP). This is the only port field on the form, and it is the HTTP one — Datanika derives ClickHouse's native TCP port from the TLS checkbox below rather than asking for it.
    - **User** — `datanika_loader` (or `default` for ClickHouse Cloud).
