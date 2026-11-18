@@ -13,8 +13,9 @@ References come in kinds, and conflating them is what this script kept getting w
   * **tracking** (`refs`/`part of`/`towards` #N) -- touches it, does not finish it.
     Rendered WITHOUT a keyword, as a candidate the promoter reviews (landing#455).
   * **cross-repo** (`refs core#1040`) -- real, and not closable from here.
-  * **unresolvable** (`refs #676` in a repo whose highest issue is #49x) -- a reference
-    that points at nothing. New here, and see below.
+  * **unresolvable** (`refs #676` where this repository has no such issue) -- named,
+    with the number, under a bucket that closes nothing. The commit still counts
+    toward Coverage, so it is not silently dropped. See below.
 
 🚨 **The promoter must never guess which is which.** The keyword is the owning
 department's declaration and this script only reports it. What it must NOT do is stay
@@ -31,22 +32,15 @@ promoted 9 commits while its generated block spoke for 3, dropping
     36048435 [Product] Spec: the sub-processor register a 30-day notice has to come from
              (refs #676)
 
-with no signal at all. **`landing#676` does not exist** -- the highest issue in this repo
-is in the 490s -- so that is the *unresolvable* case, and it is the one core does NOT
-handle either: core harvests the number, fails to resolve it, drops it from the candidate
-list, and still counts the commit as accounted. Strictly better than vanishing, and still
-a commit that appears nowhere while the coverage line says otherwise. Filed back at core.
+with no signal at all. **`landing#676` does not exist.** The number is now named under
+"Referenced a number that does not resolve — closing nothing", and the commit stays in
+the coverage count. Nothing in that bucket is closed.
 
-Both plausible behaviours for an unresolvable reference are wrong in opposite directions:
-rendering `#676` invites someone to close an issue in the wrong repo, and dropping it
-silently is what already happened. So it gets its own bucket, naming the commit and the
-number and closing nothing -- a typo becomes a visible line instead of an absence, and
-absence is the thing this whole mechanism exists to remove.
-
-⚠️ A 404 and a failed API call must not be conflated here. Only a genuine *Not Found*
-makes a reference unresolvable; a transient error leaves the commit unaccounted, which is
-the honest state and is itself reported. Failing toward visibility, never toward a
-confident wrong line.
+A 404 ("does not resolve in this repository"), a failed lookup ("could not be checked"),
+and a number that is a pull request are three reasons in that same bucket. Collapsing a
+transient error into "does not resolve" would accuse a reference that might be fine.
+Landing's own reconcile prose stays: `post-promotion-reconcile.yml`, and the base-branch
+filter is `main`.
 
 References are gathered from two places, because neither alone is reliable:
   1. the commit messages being promoted -- our convention puts `(closes #N)` there, but
@@ -286,13 +280,12 @@ def gh_issue(repo: str, num: int) -> tuple[str, dict | None]:
     permanent-looking line in a promotion body, about a commit whose reference is fine.
 
     So only a literal `Not Found` / `HTTP 404` on stderr yields `missing`. Anything else
-    is `error`, and an `error` deliberately leaves the commit **unaccounted** — where it
-    surfaces under *"No issue reference derived"* instead. That is the honest state: we
-    could not tell. Failing toward visibility, never toward a confident wrong line.
+    is `error`. The caller names both, with different reasons, under the bucket that
+    closes nothing. Neither reason removes the commit from Coverage.
 
-    ⚠️ A pull request is `missing` for our purposes, not `ok`. `repos/{r}/issues/{n}`
+    ⚠️ A pull request is `pull_request`, not `ok` and not `missing`. `repos/{r}/issues/{n}`
     happily returns a PR — GitHub numbers them in one sequence — and a promotion body
-    must not list a PR as an issue to close.
+    must not list a PR as an issue to close, nor call it a number that does not exist.
     """
     result = subprocess.run(
         ("gh", "api", f"repos/{repo}/issues/{num}"),
@@ -308,7 +301,7 @@ def gh_issue(repo: str, num: int) -> tuple[str, dict | None]:
         if not isinstance(data, dict) or "number" not in data:
             return ("error", None)
         if data.get("pull_request"):
-            return ("missing", None)
+            return ("pull_request", data)
         return ("ok", data)
     stderr = (result.stderr or "").lower()
     if "not found" in stderr or "http 404" in stderr:
@@ -335,9 +328,6 @@ def main() -> int:
     # used to disappear rather than say so.
     accounted: dict[str, set[str]] = {}
     subjects: dict[str, str] = {}
-    # issue number -> the shas that referenced it, so an unresolvable number can name the
-    # commit that wrote it. Without this the promoter sees `#676` and no way to find it.
-    cited_by: dict[int, set[str]] = {}
     mine = repo_aliases(repo)
     shas = []
     for entry in commits:
@@ -349,11 +339,9 @@ def main() -> int:
         for num in find_refs(subject, msg_body):
             refs.setdefault(num, set()).add(f"commit {sha[:7]}")
             accounted[sha].add(f"closes #{num}")
-            cited_by.setdefault(num, set()).add(sha)
         for num in find_tracking_refs(subject, msg_body):
             tracking.setdefault(num, set()).add(f"commit {sha[:7]}")
             accounted[sha].add(f"refs #{num}")
-            cited_by.setdefault(num, set()).add(sha)
         for ref in find_cross_repo_refs(subject, msg_body, mine):
             accounted[sha].add(ref)
 
@@ -369,11 +357,9 @@ def main() -> int:
             for num in find_refs(title, body_text):
                 refs.setdefault(num, set()).add(f"#{pull['number']}")
                 accounted[sha].add(f"closes #{num}")
-                cited_by.setdefault(num, set()).add(sha)
             for num in find_tracking_refs(title, body_text):
                 tracking.setdefault(num, set()).add(f"#{pull['number']}")
                 accounted[sha].add(f"refs #{num}")
-                cited_by.setdefault(num, set()).add(sha)
             for ref in find_cross_repo_refs(title, body_text, mine):
                 accounted[sha].add(ref)
 
@@ -427,32 +413,36 @@ def main() -> int:
         print("  no references found in a short promotion; leaving the body unchanged")
         return 0
 
-    # A reference that resolves to nothing in this repo. Collected across both loops
-    # below so it is reported once, whichever kind of keyword wrote it.
-    unresolvable: dict[int, set[str]] = {}
+    # Taken before resolution. The reference is already in `accounted`, and this
+    # function does not remove it, so a number that does not resolve still counts
+    # toward Coverage. Naming it is the other half: counted and unnamed was the drop.
+    unaccounted = [s for s in shas if not accounted.get(s)]
 
-    def _unresolve(num: int) -> None:
-        """Record #num as pointing at nothing here, and un-account the commits citing it.
+    # num -> (why, the labels that referenced it). No closing keyword is rendered
+    # from this map.
+    unresolved: dict[int, tuple[str, set[str]]] = {}
 
-        Un-accounting is the load-bearing half. Without it a commit whose ONLY reference
-        is `refs #676` counts toward the coverage line while appearing in no section —
-        which is precisely landing#493 restated, and is what core's version still does.
-        A commit that also carries a real reference keeps it and stays accounted.
-        """
-        for sha in cited_by.get(num, set()):
-            accounted.get(sha, set()).discard(f"refs #{num}")
-            accounted.get(sha, set()).discard(f"closes #{num}")
-        unresolvable.setdefault(num, set()).update(cited_by.get(num, set()))
+    def _unresolvable(num: int, status: str, issue: object, via: set[str]) -> bool:
+        """Name a reference this repository cannot close. Leave `accounted` alone."""
+        if status == "pull_request" or (
+            isinstance(issue, dict) and issue.get("pull_request")
+        ):
+            unresolved[num] = ("resolves to a pull request, not an issue", via)
+            return True
+        if status == "missing":
+            unresolved[num] = ("does not resolve in this repository", via)
+            return True
+        if status != "ok" or not isinstance(issue, dict):
+            unresolved[num] = ("could not be checked — the API lookup failed", via)
+            return True
+        return False
 
     # Don't re-list issues that are already closed -- keeps the block honest about what
     # this promotion actually closes.
     lines = []
     for num in sorted(refs):
         status, issue = gh_issue(repo, num)
-        if status == "missing":
-            _unresolve(num)
-            continue
-        if status != "ok" or issue is None:
+        if _unresolvable(num, status, issue, refs[num]):
             continue
         state = issue.get("state")
         title = (issue.get("title") or "").strip()
@@ -473,10 +463,7 @@ def main() -> int:
     suppressed_closed = 0
     for num in sorted(tracking):
         status, issue = gh_issue(repo, num)
-        if status == "missing":
-            _unresolve(num)
-            continue
-        if status != "ok" or issue is None:
+        if _unresolvable(num, status, issue, tracking[num]):
             continue
         if issue.get("state") == "closed":
             # Already reconciled; re-listing it is noise. But it DID account for a
@@ -488,19 +475,10 @@ def main() -> int:
         via = ", ".join(sorted(tracking[num]))
         candidate_lines.append(f"- #{num} — {title} · via {via}")
 
-    # Computed AFTER the two loops above, because `_unresolve` un-accounts commits whose
-    # only reference turned out to point at nothing. Ordering it earlier would report the
-    # pre-resolution view and reintroduce the defect this section exists to remove.
-    unaccounted = [s for s in shas if not accounted.get(s)]
-
-    # The "referenced something that does not exist here" bucket (landing#493).
-    unresolvable_lines = []
-    for num in sorted(unresolvable):
-        who = ", ".join(f"`{s[:7]}`" for s in sorted(unresolvable[num]))
-        subject_hint = "; ".join(
-            subjects.get(s, "") for s in sorted(unresolvable[num]) if subjects.get(s)
-        )
-        unresolvable_lines.append(f"- `#{num}` — cited by {who} — {subject_hint}")
+    unresolved_lines = [
+        f"- `#{num}` — {why} · via {', '.join(sorted(via))}"
+        for num, (why, via) in sorted(unresolved.items())
+    ]
 
     # The "I could not tell" half. Two distinct states, kept distinct: a commit that
     # referenced ANOTHER repo's tracker, and a commit that referenced nothing at all.
@@ -510,7 +488,7 @@ def main() -> int:
     if (
         not lines
         and not candidate_lines
-        and not unresolvable_lines
+        and not unresolved
         and not unaccounted_lines
         and not elsewhere
     ):
@@ -557,19 +535,19 @@ def main() -> int:
             *[f"- `{r}`" for r in elsewhere],
             "",
         ]
-    if unresolvable_lines:
+    if unresolved:
         sections += [
-            "### 🚨 Referenced an issue that does not exist in this repository",
+            "### ⚠️ Referenced a number that does not resolve — closing nothing",
             "",
-            "_These numbers resolve to nothing here. **Nothing is closed and nothing "
-            "should be** — almost certainly a cross-repo reference missing its `core#` / "
-            "`cloud#` prefix, which `WORKFLOW_RULES` §4 requires. Do not close the "
-            "same-numbered issue in another repo on the strength of this line; go and "
-            "read the commit. This bucket exists because the alternative was silence: "
-            "landing PR #492 promoted 9 commits, spoke for 3, and dropped a commit "
-            "carrying `refs #676` with no signal at all (landing#493)._",
+            "_These commits **did** carry a reference, so they are not in the section "
+            "below — but the number could not be turned into an issue in this "
+            "repository, so no line above speaks for them either. The usual cause is a "
+            "cross-repo reference missing its prefix (`refs #676` where `core#676` was "
+            "meant); `WORKFLOW_RULES` §4 requires the prefix for exactly this reason. "
+            "Nothing here is closed, and nothing here is silently dropped — which is "
+            "what used to happen (landing#493)._",
             "",
-            *unresolvable_lines,
+            *unresolved_lines,
             "",
         ]
     if unaccounted_lines:
@@ -580,14 +558,9 @@ def main() -> int:
             "generator can parse, so **nothing above speaks for them**. That may be "
             "correct (a comment-only or tooling commit), or it may be a missed reference. "
             "It is stated rather than omitted because an absent line and a correct "
-            "derivation used to look identical (landing#493). A commit also lands here "
-            "when its only reference could not be checked — a rate limit or a network "
-            "failure, which is reported as an unknown rather than asserted as a typo._",
-            "",
-            "_A commit listed in the section above appears here too when that reference "
-            "was its **only** one. That is not duplication: the first line says what it "
-            "cited, this one says nothing speaks for it, and the coverage figure counts "
-            "the second._",
+            "derivation used to look identical (landing#493). A reference that was "
+            "parsed but did not resolve is named in the section above and still counts "
+            "here in Coverage; it is not listed twice._",
             "",
             *unaccounted_lines,
             "",
@@ -600,6 +573,11 @@ def main() -> int:
         coverage += (
             f" {suppressed_closed} reference(s) resolved to an already-closed issue and "
             "are not listed."
+        )
+    if unresolved:
+        coverage += (
+            f" {len(unresolved)} reference(s) did not resolve to an issue here and "
+            "close nothing — see the section above."
         )
     coverage += "_"
     sections += [coverage, "", END]
@@ -635,10 +613,10 @@ def main() -> int:
     run("gh", "pr", "edit", pr_number, "--repo", repo, "--body-file", path)
     print(
         f"  wrote {len(lines)} closing + {len(candidate_lines)} candidate reference(s), "
-        f"{len(unresolvable_lines)} unresolvable, {len(unaccounted_lines)} unaccounted "
+        f"{len(unresolved_lines)} unresolvable, {len(unaccounted_lines)} unaccounted "
         f"commit(s); coverage {len(shas) - len(unaccounted)}/{len(shas)}:"
     )
-    for line in lines + candidate_lines + unresolvable_lines + unaccounted_lines:
+    for line in lines + candidate_lines + unresolved_lines + unaccounted_lines:
         print(f"    {line}")
     return 0
 
