@@ -145,6 +145,14 @@ function declaresMergeGroup(wf: Workflow): boolean {
   return subBlock(topLevelBlock(wf.raw, "on"), "merge_group") !== null;
 }
 
+/** `push` exists and its branch filter is exactly `dev`. No filter also runs on `main`. */
+function declaresPushToDevOnly(wf: Workflow): boolean {
+  const push = subBlock(topLevelBlock(wf.raw, "on"), "push");
+  if (push === null) return false;
+  const branches = branchFilter(push);
+  return branches !== null && branches.length === 1 && branches[0] === "dev";
+}
+
 /**
  * True when a merge-group run of this workflow can be cancelled by a later one.
  *
@@ -179,6 +187,12 @@ describe("merge-queue triggers", () => {
     expect(missing).toEqual([]);
   });
 
+  it("ci.yml runs the same build on a direct push to dev and not to main", () => {
+    const ci = workflows.find((w) => w.name === "ci.yml")!;
+    expect(declaresMergeGroup(ci)).toBe(true);
+    expect(declaresPushToDevOnly(ci)).toBe(true);
+  });
+
   it("never cancels a merge-group run", () => {
     // A cancelled run is an ABSENT verdict. On a pull request that is free — the answer
     // gets recomputed on the new head. On a queue entry nothing recomputes it: the queue
@@ -202,6 +216,26 @@ describe("the guard itself fails on the mutations it exists to catch", () => {
   // Mutating the REAL artifact, not a synthetic fixture written from the same mental
   // model as the checker. `ci.yml` is the file a merge queue on `dev` depends on.
   const ci = workflows.find((w) => w.name === "ci.yml")!;
+
+  it("goes red when the push-to-dev trigger is deleted", () => {
+    const mutant: Workflow = {
+      name: "ci.yml",
+      raw: ci.raw.replace(/^\s{2}push:.*$(\r?\n\s{4}.*$)*/m, ""),
+    };
+    expect(mutant.raw).not.toEqual(ci.raw);
+    expect(declaresPushToDevOnly(mutant)).toBe(false);
+    expect(declaresMergeGroup(mutant)).toBe(true);
+  });
+
+  it("goes red when push is widened past dev", () => {
+    const mutant: Workflow = {
+      name: "ci.yml",
+      raw: ci.raw.replace(/branches: \[dev\]/, "branches: [dev, main]"),
+    };
+    expect(mutant.raw).not.toEqual(ci.raw);
+    expect(declaresPushToDevOnly(mutant)).toBe(false);
+    expect(declaresMergeGroup(mutant)).toBe(true);
+  });
 
   it("goes red when the merge_group trigger is deleted", () => {
     const mutant: Workflow = {
