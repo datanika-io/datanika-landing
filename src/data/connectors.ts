@@ -878,15 +878,11 @@ export const connectors: Connector[] = [
       "Ingest application logs stored in S3",
       "Process file-based data exports from partners",
     ],
-    configFields: [
-      { name: "bucket_url", description: "S3 bucket URL, e.g. s3://my-bucket/path/prefix/" },
-      { name: "aws_access_key_id", description: "AWS access key ID (optional with IAM role) (encrypted at rest)" },
-      { name: "aws_secret_access_key", description: "AWS secret access key (optional with IAM role) (encrypted at rest)" },
-      { name: "region_name", description: "AWS region, e.g. us-east-1 (optional, auto-detected)" },
-      { name: "endpoint_url", description: "S3-compatible endpoint URL (MinIO, Backblaze B2, Cloudflare R2) (optional)" },
-    ],
+    // No published schema (core#863). A field list here is a configuration the
+    // app does not offer. landing#449.
+    configFields: [],
     withdrawn:
-      "S3 connections cannot currently be created. The S3 transport left the shipped image when an upstream dependency conflict removed s3fs from the lockfile, so fsspec raises ImportError on any s3:// path — the connector is hidden in the app and existing S3 connections will not run. Restoring it is tracked as core#863; this page and the setup guide stay published because the steps are unchanged for when it returns.",
+      "S3 connections cannot currently be created. The connector is hidden in the app, and this page lists no configuration for it. Restoring it is tracked as core#863.",
     related: ["csv", "json", "parquet", "redshift"],
     seoTitle: "S3 to Warehouse — Load S3 Data | Datanika",
     seoDescription: "Load CSV, JSON, and Parquet files from Amazon S3 into Snowflake, BigQuery, or PostgreSQL. Prefix filtering and scheduling built in. Start free on Datanika.",

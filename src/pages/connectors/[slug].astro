@@ -174,10 +174,17 @@ const comparisonSlugs = ["airbyte", "fivetran", "stitch", "hevo"];
     </div>
   </section>
 
-  <!-- Configuration -->
+  <!-- Configuration. A withdrawn source has no fields in the published schema,
+       so the table would be a form the app cannot show. -->
   <section class="py-16">
     <div class="max-w-4xl mx-auto px-6">
       <h2 class="text-2xl font-bold mb-6">Configuration</h2>
+      {connector.withdrawn ? (
+        <p class="text-slate-300 leading-relaxed" data-configuration="withdrawn">
+          There is no configuration to enter. This source is withdrawn, so the app has no fields for it.
+        </p>
+      ) : (
+        <>
       <div class="rounded-2xl border border-slate-800 bg-slate-900/50 backdrop-blur overflow-hidden">
         <table class="w-full text-left">
           <thead>
@@ -199,6 +206,8 @@ const comparisonSlugs = ["airbyte", "fivetran", "stitch", "hevo"];
       <p class="text-sm text-slate-400 mt-4">
         All credentials are <strong class="text-slate-400">encrypted at rest</strong> with Fernet before being stored in the database.
       </p>
+        </>
+      )}
 
       {connector.limitations && connector.limitations.length > 0 && (
         <div class="mt-8 rounded-2xl border border-amber-500/30 bg-amber-500/5 p-6">
@@ -231,7 +240,11 @@ const comparisonSlugs = ["airbyte", "fivetran", "stitch", "hevo"];
           <span class="flex items-center justify-center w-8 h-8 rounded-full bg-violet-500/20 text-violet-300 font-bold text-sm shrink-0">1</span>
           <div>
             <p class="text-white font-medium">Add a {connector.name} connection</p>
-            <p class="text-sm text-slate-400">Navigate to Connections, click New, select {connector.name}, and enter your credentials.</p>
+            {connector.withdrawn ? (
+              <p class="text-sm text-slate-400">This source is withdrawn, so the app does not offer it and there are no credentials to enter.</p>
+            ) : (
+              <p class="text-sm text-slate-400">Navigate to Connections, click New, select {connector.name}, and enter your credentials.</p>
+            )}
           </div>
         </li>
         <li class="flex gap-4">
