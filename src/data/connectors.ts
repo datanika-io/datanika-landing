@@ -463,12 +463,12 @@ export const connectors: Connector[] = [
       "Combine Salesforce with marketing data for attribution",
       "Create executive dashboards from CRM data",
     ],
+    // Two boxes on the form: Access Token and Instance URL. The token is
+    // stored as access_token. api_key is that same value written again, not
+    // a third box.
     configFields: [
-      { name: "client_id", description: "Connected app client ID" },
-      { name: "client_secret", description: "Connected app client secret (encrypted at rest)" },
-      { name: "username", description: "Salesforce username" },
-      { name: "password", description: "Salesforce password (encrypted at rest)" },
-      { name: "security_token", description: "Security token (encrypted at rest)" },
+      { name: "access_token", description: "OAuth access token (encrypted at rest)" },
+      { name: "instance_url", description: "Salesforce instance URL, for example https://yourcompany.my.salesforce.com" },
     ],
     related: ["hubspot", "stripe", "bigquery", "snowflake"],
     seoTitle: "Salesforce ETL — CRM to Warehouse | Datanika",
