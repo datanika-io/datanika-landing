@@ -197,11 +197,14 @@ import Footer from "../components/Footer.astro";
       <section>
         <h2>8. Cookies</h2>
         <p>
-          The Service sets two cookies, and only two. Both are short-lived
-          (10 minutes), <code class="text-violet-400">HttpOnly</code>,
+          The Service sets two short-lived cookies and one preference cookie.
+          The short-lived cookies last 10 minutes, are <code class="text-violet-400">HttpOnly</code>,
           <code class="text-violet-400">SameSite=Lax</code>, and exist to protect the sign-in
           redirect against cross-site request forgery: one for OAuth sign-in and one for
           SAML/OIDC single sign-on. Your session itself is held server-side, not in a cookie.
+          The preference cookie, <code class="text-violet-400">datanika_locale</code>, stores only
+          the language you choose. It is <code class="text-violet-400">SameSite=Lax</code>, not
+          <code class="text-violet-400">HttpOnly</code>, and it lasts one year.
         </p>
         <p class="mt-2">
           We do not use tracking cookies, analytics cookies, or third-party advertising
