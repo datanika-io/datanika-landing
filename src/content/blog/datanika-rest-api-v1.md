@@ -42,7 +42,7 @@ Keys are scoped — you can limit a key to read-only access, run execution only,
 
 ### Rate Limiting
 
-Requests are counted per API key in a fixed 60-second window:
+Requests are counted per account in a fixed 60-second window:
 
 | Plan | Requests/minute |
 |------|----------------|
@@ -50,7 +50,7 @@ Requests are counted per API key in a fixed 60-second window:
 | Pro | 120 |
 | Enterprise | 300 |
 
-Per key, not per organization — two keys get two independent budgets. A per-second burst ceiling runs alongside the per-minute limit; it is the same on every plan, so it isn't a tier dimension.
+Keys of one account share one budget. A second account does not. A per-second burst ceiling runs alongside the per-minute limit; it is the same on every plan, so it isn't a tier dimension.
 
 Rate limit headers (`X-RateLimit-Remaining`, `Retry-After`) are included in every response so your integrations can handle throttling gracefully.
 
