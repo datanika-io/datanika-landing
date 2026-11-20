@@ -1,8 +1,8 @@
 ---
 title: "The Language Switcher Is on the Sign-in Pages"
 description: "Sign-in, sign-up, forgot-password, and reset-password render the same language switcher as the signed-in app. The choice is one cookie both sides read. The language names are written in that language."
-date: 2026-11-20
-publishedAt: 2026-11-20
+date: 2026-11-22
+publishedAt: 2026-11-22
 author: "Datanika Team"
 category: "product"
 tags: ["i18n", "login", "product", "ux"]

@@ -1,8 +1,8 @@
 ---
 title: "An Email Change Is Confirmed at the New Address"
 description: "Settings stores the request and mails the new address. The account address stays where it is until that link is confirmed. A mail scanner fetching the URL does not apply the change."
-date: 2026-11-20
-publishedAt: 2026-11-20
+date: 2026-11-24
+publishedAt: 2026-11-24
 author: "Datanika Team"
 category: "product"
 tags: ["accounts", "email", "security", "product"]

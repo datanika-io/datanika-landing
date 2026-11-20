@@ -190,15 +190,14 @@ const scheduledPosts = [
   { file: "kafka-credentials-on-the-connection.md", date: "2026-11-04", publishedAt: "2026-11-04", category: "tutorial", titleContains: "Kafka Password Does Not Go" },
   { file: "openapi-spec-what-it-must-declare.md", date: "2026-11-06", publishedAt: "2026-11-06", category: "tutorial", titleContains: "If the Spec Declares Three Things" },
   // Growth 2026-11-20 (landing#765). Four posts for behavior already on core
-  // production. publishedAt is 2026-11-20, the UTC day they were written, so
-  // the next production build shows them. They are not future-dated. The
-  // two-day cadence guard below reads only the future queue, which is why
-  // sharing a day does not weaken it. Membership here is what pins the
-  // frontmatter if a later edit moves a date.
+  // production. Founder, 2026-11-20: space them two days apart. Cancel stays
+  // 2026-11-20, so a build on that UTC day shows it. The other three are
+  // future-dated. The cadence guard below reads that future queue, and
+  // MIN_GAP_DAYS stays 2. Membership here pins the frontmatter.
   { file: "cancel-keeps-the-loaded-chunk.md", date: "2026-11-20", publishedAt: "2026-11-20", category: "product", titleContains: "Chunk Already Loaded" },
-  { file: "language-switcher-before-sign-in.md", date: "2026-11-20", publishedAt: "2026-11-20", category: "product", titleContains: "Language Switcher Is on the Sign-in Pages" },
-  { file: "email-change-confirmed-at-the-new-address.md", date: "2026-11-20", publishedAt: "2026-11-20", category: "product", titleContains: "Confirmed at the New Address" },
-  { file: "foreign-backup-needs-confirmation.md", date: "2026-11-20", publishedAt: "2026-11-20", category: "product", titleContains: "Waits for Confirmation" },
+  { file: "language-switcher-before-sign-in.md", date: "2026-11-22", publishedAt: "2026-11-22", category: "product", titleContains: "Language Switcher Is on the Sign-in Pages" },
+  { file: "email-change-confirmed-at-the-new-address.md", date: "2026-11-24", publishedAt: "2026-11-24", category: "product", titleContains: "Confirmed at the New Address" },
+  { file: "foreign-backup-needs-confirmation.md", date: "2026-11-26", publishedAt: "2026-11-26", category: "product", titleContains: "Waits for Confirmation" },
 ];
 
 const publishedScheduledPosts = [
