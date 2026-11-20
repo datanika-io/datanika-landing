@@ -528,7 +528,7 @@ Content-Type: application/json
   <p><code>POST /api/v1/pipelines/yaml</code> takes the same structure as YAML and returns the identical <code>created</code> envelope and the identical <code>errors</code> list. Its one extra failure mode is an unparseable document, which returns <code>400</code> with a YAML parse error message.</p>
 
   <h2 id="rate-limits">Rate Limits</h2>
-  <p>API requests are counted per API key in a fixed 60-second window. The limit depends on your plan:</p>
+  <p>API requests are counted per account in a fixed 60-second window. The limit depends on your plan:</p>
   <table>
     <thead><tr><th>Plan</th><th>Requests / minute</th></tr></thead>
     <tbody>
@@ -537,12 +537,12 @@ Content-Type: application/json
       <tr><td>Enterprise</td><td>300</td></tr>
     </tbody>
   </table>
-  <p>The limit is per key, not per organization — two keys get two independent budgets. <strong>We do not currently cap how many keys an organization may create</strong>, so the figure above is a per-key rate rather than an organization-wide ceiling. Size a worker pool against one key's budget, not against the number of keys you could mint.</p>
-  <p>A second limit runs alongside it: a <strong>per-second ceiling</strong>, applied to the same key in a fixed one-second window. It is the same on every plan, so it is not a tier dimension — which also means it does not grow when your per-minute allowance does. In practice it is the limit most callers meet first, so it is worth designing around before the per-minute one.</p>
+  <p>Keys of one account share one budget. A second account does not. <strong>We do not currently cap how many keys an organization may create</strong>, and another key does not buy another minute. Size a worker pool against the account's budget, not against the number of keys you mint.</p>
+  <p>A second limit runs alongside it: a <strong>per-second ceiling</strong>, applied to the same account in a fixed one-second window. It is the same on every plan, so it is not a tier dimension — which also means it does not grow when your per-minute allowance does. In practice it is the limit most callers meet first, so it is worth designing around before the per-minute one.</p>
   <p>Self-hosted (core edition) defaults to 60 requests/minute, configurable via <code>API_RATE_LIMIT_RPM</code> and <code>API_RATE_LIMIT_BURST</code> environment variables.</p>
 
   <h3 id="pacing">Pacing your requests</h3>
-  <p>Your per-minute allowance is a <em>rate</em>, not a bucket you may drain at once. Because the per-second ceiling is identical on every plan while the per-minute allowance is not, the room to burst <em>relative to what your plan buys</em> shrinks as the plan grows: a Free key can spend most of its minute in one go, an Enterprise key cannot come close. Upgrading raises the allowance; it does not raise the ceiling.</p>
+  <p>Your per-minute allowance is a <em>rate</em>, not a bucket you may drain at once. Because the per-second ceiling is identical on every plan while the per-minute allowance is not, the room to burst <em>relative to what your plan buys</em> shrinks as the plan grows: a Free account can spend most of its minute in one go, an Enterprise account cannot come close. Upgrading raises the allowance; it does not raise the ceiling.</p>
   <p><strong>The rule that holds on every plan: spread requests evenly.</strong> Send at most one request every <code>60 ÷ (your plan's requests per minute)</code> seconds — 2s on Free, 0.5s on Pro, 0.2s on Enterprise. We measured each tier issuing its entire published allowance at that spacing: zero rejections on all three plans. Even pacing needs no knowledge of the ceiling, which is why we give you the rule rather than the number.</p>
   <p><strong>Size concurrency against the ceiling, not the allowance.</strong> The per-second ceiling is what bounds how many requests you may have in flight at once, so a worker pool sized from "requests per minute" will be throttled with most of that allowance still unspent. If you fan out across workers, throttle the pool as a whole rather than each worker independently.</p>
   <p>We deliberately do not print the ceiling as a figure here. It is an operational setting (<code>API_RATE_LIMIT_BURST</code>), not a plan entitlement, and a number on this page would be a commitment we have not made — the per-plan burst column this section used to carry was exactly that mistake. Pace evenly and you do not need it.</p>
@@ -574,7 +574,7 @@ X-RateLimit-Reset: 1711929600
 {
   "error": "Rate limit exceeded (30 requests/minute). Retry after 45 seconds."
 }`} /></pre>
-  <p>The number in <code>X-RateLimit-Limit</code> and in the error message is your plan's limit — 30 above, because that response came from a Free-plan key.</p>
+  <p>The number in <code>X-RateLimit-Limit</code> and in the error message is your plan's limit — 30 above, because that response came from a Free account.</p>
 
   <p>A per-second rejection looks almost the same, and the difference is the part worth reading:</p>
   <pre tabindex="0"><code set:html={`HTTP/1.1 429 Too Many Requests
@@ -586,7 +586,7 @@ X-RateLimit-Reset: 1711929541
 {
   "error": "Rate limit exceeded (300 requests/minute). Retry after 1 seconds."
 }`} /></pre>
-  <p>That is an Enterprise key that sent too many requests inside a single second. It has spent a small fraction of its 300/minute allowance, and the message names the allowance anyway, because the allowance is what your plan sets — not what rejected this request. <code>Retry-After: 1</code> is the tell. See <a href="#pacing">Pacing your requests</a>.</p>
+  <p>That is an Enterprise account that sent too many requests inside a single second. It has spent a small fraction of its 300/minute allowance, and the message names the allowance anyway, because the allowance is what your plan sets — not what rejected this request. <code>Retry-After: 1</code> is the tell. See <a href="#pacing">Pacing your requests</a>.</p>
 
   <h3>Best practices</h3>
   <ul>
@@ -594,7 +594,7 @@ X-RateLimit-Reset: 1711929541
     <li><strong>Throttle a worker pool as a whole</strong>, not each worker — concurrency is bounded by the per-second ceiling, not by your per-minute allowance</li>
     <li>Cache responses when possible to reduce API calls</li>
     <li>Honour <code>Retry-After</code> first — on <code>Retry-After: 1</code> you need to slow down, not stand down. Reserve exponential backoff for rejections that continue <em>after</em> you have already dropped to the rate the header asks for</li>
-    <li>Use separate API keys for different integrations to get independent rate limits</li>
+    <li>Use separate API keys for different integrations. They share the account's rate limit; a second key is for scope and revocation</li>
   </ul>
 
   <h2>Error Responses</h2>

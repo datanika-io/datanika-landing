@@ -235,7 +235,7 @@ Set an expiry on it too, and rotate it on a calendar rather than after an incide
 
 ## Rate limits
 
-Each key is rate-limited independently, per plan, and exceeding it returns **429** with a `Retry-After` header. Current per-plan limits are in [the API reference](/api/reference#rate-limits) — a fan-out matrix build that triggers one pipeline per shard is the realistic way to hit them, so back off on 429 rather than retrying immediately.
+Requests are rate-limited per account. Keys of one account share one budget, and exceeding it returns **429** with a `Retry-After` header. Current per-plan limits are in [the API reference](/api/reference#rate-limits) — a fan-out matrix build that triggers one pipeline per shard is the realistic way to hit them, so back off on 429 rather than retrying immediately.
 
 The polling loop above is well inside every tier: at `sleep 15` it costs 4 requests a minute, and `?wait=true` polls **server-side**, so a 300-second wait is one request against your budget, not 150.
 

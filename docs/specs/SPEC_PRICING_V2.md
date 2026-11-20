@@ -40,8 +40,9 @@
 >
 >    [landing#410]: https://github.com/datanika-io/datanika-landing/issues/410
 >
-> **What is genuinely open in here is §2.5 and §12 question 0: D-RL1 / D-RL2 / D-RL3 / D-RL4, the API rate
-> limit.** Those await a founder decision. Everything else in §12 is resolved and marked so.
+> **What is genuinely open in here is §2.5 and §12 question 0: D-RL1 / D-RL2 / D-RL3, the API rate
+> limit's number, its place on `/pricing/`, and whether burst is a tier.** D-RL4 is decided:
+> founder, 2026-11-20, the allowance is per account. Everything else in §12 is resolved and marked so.
 >
 > [landing#325]: https://github.com/datanika-io/datanika-landing/issues/325
 
@@ -175,8 +176,9 @@ Two things stop this being read as a quiet decision recorded elsewhere:
 
 #### What the number actually buys, stated honestly
 
-- **Free at 30 rpm is one request every two seconds, sustained, per API key.** Not per org — the
-  limiter buckets on `api_key.id`, and nothing quotas how many keys an org may create.
+- **Free at 30 rpm is one request every two seconds, sustained, per account.** Keys of one
+  account share one budget. `plans.max_api_keys` stays empty, so key count is uncapped, and
+  another key does not buy another minute. The allowance bucket is `org:{org_id}`.
 - **It lands hardest on the agent surface we market.** Remote MCP forwards the caller's key to the
   same REST API, so every MCP tool call draws on the same budget. `/ai-agents/` and
   `/docs/mcp-server/` are positioning pages; 30 rpm is the number behind them.
@@ -208,69 +210,62 @@ Free 5 / Pro 15 / Enterprise 30 anyway for four months. [landing#366] removes th
 waiting on a schema change; [core#703] carries the alternative (make it real). If the answer is
 "make it real", this table gains a second column and the pages come back.
 
-**D-RL4 — is the limit per KEY or per ORG?** *Added 2026-09-07 (Growth), from [core#706].* This is the
-one question §2.5 stated as a fact and never turned into a decision, and it is the reason core#706
-says the dimension is *"specced nowhere"* even though this section exists.
+**D-RL4 — the allowance is per account.** *Added 2026-09-07 (Growth), from [core#706]. Decided by
+the founder on 2026-11-20: option 1.* The published minute is one budget per account. Free stays
+30, Pro stays 120, Enterprise stays 300. `plans.max_api_keys` stays empty. No value is written
+into that column, and no migration seeds one. The site does not publish the word unlimited for
+key count. It keeps "we do not currently cap how many keys an organization may create."
 
-The facts, re-measured on production 2026-09-07:
+The 2026-09-07 reading described the allowance before this decision, and one clause of it was
+already the wrong bucket: auth-failure shedding uses `credential_bucket(raw_key)`. The allowance
+does not. Both handler paths in `api_middleware.py` pass `bucket=f"org:{org_id}"`. The per-second
+ceiling stays `settings.api_rate_limit_burst`, one setting for every plan, on that same account
+bucket. Shedding stays on the credential bucket.
 
-- The limiter buckets on the **API key** (`credential_bucket(raw_key)`), and `/api/reference` now says
-  so plainly: *"The limit is per key, not per organization — two keys get two independent budgets."*
-- **`plans.max_api_keys` is NULL on all five rows**, which cloud reads as *uncapped*.
+The options that were open, kept so the decision has a record:
 
-**Multiply those together and the published number is not a ceiling.** An Enterprise org publishing
-300 rpm can create an unbounded number of keys and draw 300 rpm on each. The page is honest about the
-mechanism, so nobody is misled *downward* — they are misled **upward**, which is the direction that
-surfaces only after a customer has built on it and we then cap it.
+1. **Per account** — chosen. The published number is the account's minute.
+2. **Per key, with `max_api_keys` set per tier** — not chosen. The column stays empty.
+3. **Per key, uncapped, stated as a rate** — not chosen.
 
-⚠️ **This is a commercial decision and Growth is not proposing one**, for the same reason as D-RL1:
-there is no usage data, and any figure invented here would be the artifact this section exists to
-flag. What is needed is one of:
-
-1. **Per-org limit** — the published number becomes a real ceiling; needs a bucket change in core.
-2. **Per-key, with `max_api_keys` set per tier** — the ceiling becomes `n × rate_limit_rpm`, which is
-   then the number worth publishing rather than the per-key one. `max_api_keys` already exists and is
-   already NULL, so this is a seed value plus a copy change. [core#706] is where the multiplier lands.
-3. **Per-key, uncapped, stated deliberately** — legitimate, and cheapest, but then it is a *rate* and
-   not an *allowance*, and the tier table should stop presenting it beside quantities that are caps.
-
-🔑 Whichever is chosen, the failure mode to avoid is the current one: **a number that reads as a
-ceiling in a tier table and behaves as a per-key rate in the product.** Free's 500 runs and 10 GiB are
-genuine caps; 30 rpm sits in the same visual column and is not one.
+Free's 500 runs and 10 GiB remain caps of their own. 30 rpm is now the account's request
+allowance for the minute, not a figure each key repeats.
 
 #### 📌 The contract we publish TODAY — normative, and separate from the decisions above
 
 *Added 2026-09-09 (Growth), closing [core#706]'s **"specced nowhere"**.*
 
-D-RL1–D-RL4 are open decisions and will stay open until the founder answers them. **That is not the
-same as having no contract**, and conflating the two is what left this dimension with nothing for
-either the page or the code to be wrong against. What follows is not a proposal: it is the shape the
-product enforces and the site publishes, written down so a future divergence has something to fail
-against. **Change the code or the copy and this paragraph is what you have broken.**
+D-RL1, D-RL2, and D-RL3 stay open. D-RL4 is the founder's 2026-11-20 answer: the allowance is
+per account. **That is not the same as having no contract**, and conflating the two is what left
+this dimension with nothing for either the page or the code to be wrong against. What follows is
+the shape the product enforces and the site publishes, written down so a future divergence has
+something to fail against. **Change the code or the copy and this paragraph is what you have broken.**
 
-1. **The published figure is a per-minute rate, counted per API key, in a fixed 60-second window.**
-   Not per organization, not sliding. (`RateLimitService`, `credential_bucket(raw_key)`.)
+1. **The published figure is a per-minute allowance, counted per account, in a fixed 60-second
+   window.** Keys of one account share one budget. A second account does not. Not sliding.
+   (`api_middleware.py` passes `bucket=f"org:{org_id}"`. Auth-failure shedding uses
+   `credential_bucket` and does not share that bucket.)
 2. **The tiers are Free 30 / Pro 120 / Enterprise 300**, carried by
    `PUBLISHED_RATE_LIMIT_RPM` in core migration `g7h8i9j0k1l2` and bound to this site by
    `.github/workflows/rate-limit-parity.yml`.
 3. **The per-second ceiling is not a tier dimension** and no figure for it is published — deliberately.
-   It is `API_RATE_LIMIT_BURST`, one operational setting applied identically to every plan.
-4. 🆕 **Key count is uncapped, and the site now says so.** `plans.max_api_keys` is NULL on all five
-   rows. So the published figure is **a per-key rate, not an organization-wide ceiling**, and
-   `/api/reference` states it in those words rather than leaving a reader to infer a cap that does
-   not exist.
+   It is `API_RATE_LIMIT_BURST`, one operational setting applied identically to every plan, on the
+   same account bucket as the minute.
+4. 🆕 **Key count stays uncapped.** `plans.max_api_keys` stays empty. `/api/reference` says we do
+   not currently cap how many keys an organization may create. Another key does not buy another
+   minute. The sentence does not say unlimited.
 
 ⚠️ **Item 4 is phrased *"we do not currently cap"*, deliberately — never *"unlimited keys"*.** Those
 are different commitments, and this spec has already paid for the difference once: §4.3 bans
 *"unlimited"* on a metered dimension precisely because a promise is harder to withdraw than a
-description. If D-RL4 lands on option 2 (a per-tier `max_api_keys`), the sentence is replaced by a
-number and nothing has to be retracted.
+description. D-RL4 landed on per account, so the uncapped-count sentence stays. A later decision
+to write `max_api_keys` replaces that sentence with a number.
 
-🔑 **Why the copy moved before the decision did.** The exposure this closes is not that the number is
-wrong — it is measured true. It is that a reader could **only be misled upward**: told the limit is
-per key, told nothing about how many keys exist, and left to assume a ceiling that is not there. That
-direction surfaces in someone else's integration rather than in our support inbox, and it does not
-need a pricing decision to fix — only an honest sentence.
+🔑 **The 2026-09-09 page counted the minute per key, and said so.** That was the exposure the
+sentence closed then: a reader could be told the limit was per key and left to assume a ceiling
+that was not there. The 2026-11-20 decision makes the minute one budget per account, and the
+page now says keys of one account share one budget. Key count stays uncapped, in the words
+"we do not currently cap".
 
 #### Whatever is decided, three things follow
 
@@ -666,7 +661,7 @@ This goes into a branch in `worktrees/datanika-landing-growth/`. The branch live
 
 All cross-spec questions were answered by the 2026-04-15 decisions doc — see `plans/PRICING_PIVOT_DECISIONS.md` Q1–Q6 plus the (a)/(b)/(c) triage. Two of the three Growth-only questions are now resolved; one remains open, and **three more were added on 2026-08-31** when a tier dimension turned out to exist in production and in no spec:
 
-0. **D-RL1 / D-RL2 / D-RL3 / D-RL4 — the API rate limit** (§2.5, added 2026-08-31; D-RL4 added 2026-09-07 from core#706 — is the limit per KEY or per ORG, given `max_api_keys` is NULL on every row?). Is Free 30 rpm the number
+0. **D-RL1 / D-RL2 / D-RL3 — the API rate limit** (§2.5, added 2026-08-31). D-RL4 (added 2026-09-07 from core#706) is decided: founder, 2026-11-20, the allowance is per account, and `max_api_keys` stays empty. Is Free 30 rpm the number
    we want to be held to; does it go on `/pricing/`; is the per-second burst a tier dimension at all.
    ⚠️ **`cloud#114` starts enforcing this on the next core promotion**, so D-RL1 is live rather than
    theoretical — though customer impact is zero today (0 paying users). §2.5 carries the evidence and

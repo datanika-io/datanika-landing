@@ -189,6 +189,15 @@ const scheduledPosts = [
   // keeps the strict 2-day cadence the guard below now enforces.
   { file: "kafka-credentials-on-the-connection.md", date: "2026-11-04", publishedAt: "2026-11-04", category: "tutorial", titleContains: "Kafka Password Does Not Go" },
   { file: "openapi-spec-what-it-must-declare.md", date: "2026-11-06", publishedAt: "2026-11-06", category: "tutorial", titleContains: "If the Spec Declares Three Things" },
+  // Growth 2026-11-20 (landing#765). Four posts for behavior already on core
+  // production. Founder, 2026-11-20: space them two days apart. Cancel stays
+  // 2026-11-20, so a build on that UTC day shows it. The other three are
+  // future-dated. The cadence guard below reads that future queue, and
+  // MIN_GAP_DAYS stays 2. Membership here pins the frontmatter.
+  { file: "cancel-keeps-the-loaded-chunk.md", date: "2026-11-20", publishedAt: "2026-11-20", category: "product", titleContains: "Chunk Already Loaded" },
+  { file: "language-switcher-before-sign-in.md", date: "2026-11-22", publishedAt: "2026-11-22", category: "product", titleContains: "Language Switcher Is on the Sign-in Pages" },
+  { file: "email-change-confirmed-at-the-new-address.md", date: "2026-11-24", publishedAt: "2026-11-24", category: "product", titleContains: "Confirmed at the New Address" },
+  { file: "foreign-backup-needs-confirmation.md", date: "2026-11-26", publishedAt: "2026-11-26", category: "product", titleContains: "Waits for Confirmation" },
 ];
 
 const publishedScheduledPosts = [
