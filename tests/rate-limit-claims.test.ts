@@ -186,13 +186,34 @@ describe("the self-hosted default is not presented as a cloud number", () => {
   });
 });
 
-describe("the limit is described as per-key, because that is what it is", () => {
-  // `api_middleware.py` calls `check_rate_limit(bucket=f"{api_key.id}", …)`.
-  // Per key, not per org — so two keys are two budgets, and nothing quotas the
-  // number of keys an org may create (core#703 §4).
-  it.each([REFERENCE, ANNOUNCE_POST])("%s says per key, not per organization", (path) => {
-    expect(src(path)).toMatch(/per[\s-]key|per API key/i);
+describe("the allowance is one budget per account (core#706)", () => {
+  // Founder, 2026-11-20: both handler paths bucket on the account. Two keys of
+  // one org share that minute. A second org does not. "per API key" is not a
+  // passing description of that — the phrase matches a denial of itself.
+  const ACCOUNT_SURFACES = [
+    REFERENCE,
+    KEYS,
+    AI_AGENTS,
+    ARCHITECTURE,
+    ANNOUNCE_POST,
+    "src/pages/api/index.astro",
+    "src/content/blog/trigger-pipelines-from-ci-cd.md",
+  ];
+
+  it.each(ACCOUNT_SURFACES)("%s counts the allowance per account", (path) => {
+    const text = src(path);
+    expect(text, `${path} must say the allowance is per account`).toMatch(/per account/i);
+    expect(text, `${path} still gives a key its own budget`).not.toMatch(
+      /per API key|\bper key\b|per-key|independent rate limits|two independent budgets|own budget|rate-limited independently|key's budget/i,
+    );
   });
+
+  it.each([REFERENCE, ANNOUNCE_POST, KEYS])(
+    "%s says keys of one account share one budget",
+    (path) => {
+      expect(src(path)).toMatch(/share one budget/i);
+    },
+  );
 });
 
 /**
@@ -612,36 +633,29 @@ describe("the CI/CD post's rate-limit section points somewhere that answers it",
  * the page here as well as to core there.
  */
 /**
- * core#706: the limit is enforced **per API key** while the tier table reads like an
- * organization allowance, and `plans.max_api_keys` is NULL on every row — so the
- * published figure is a per-key *rate*, not a ceiling.
- *
- * 🔑 **The exposure is one-directional and that is why it needed copy rather than a
- * decision.** A reader can only be misled *upward*: told the limit is per key, told
- * nothing about how many keys exist, and left to assume a cap that is not there. Nobody
- * gets less than we publish; someone builds on more than we meant, and it surfaces in
- * their integration rather than in our inbox.
+ * core#706, founder 2026-11-20: the allowance is per account. `plans.max_api_keys`
+ * stays empty, so key count is still uncapped, and another key does not buy another
+ * minute. The uncapped-count sentence stays. It must not say unlimited.
  *
  * Asserted as **presence of the qualification**, never as absence of a word — a ban is
- * satisfied by the sentence that denies it (WORKFLOW_RULES §4).
+ * satisfied by the sentence that denies it (WORKFLOW_RULES §4). The unlimited-keys
+ * check below is the narrow exception that spec already required.
  */
-describe("the per-key limit is published as a rate, not as a ceiling (core#706)", () => {
+describe("key count stays uncapped and the allowance is still one account budget (core#706)", () => {
   const REF_PAGE = "src/pages/api/reference.astro";
 
   it("the reference states that key count is not currently capped", () => {
     const text = src(REF_PAGE);
     expect(
       text,
-      `${REF_PAGE} says the limit is per key. It must also say we do not currently cap how ` +
-        "many keys an org may create — otherwise a reader infers an organization ceiling " +
-        "that does not exist. SPEC_PRICING_V2 §2.5, 'The contract we publish today', item 4.",
+      `${REF_PAGE} must say we do not currently cap how many keys an org may create. ` +
+        "Empty max_api_keys is no cap. The sentence must not say unlimited.",
     ).toMatch(/do not currently cap how many keys/i);
   });
 
-  it("it frames the figure as a per-key rate rather than an org-wide ceiling", () => {
-    // The qualification is only useful if the reader is told what it means for the
-    // number above it. Pinning the consequence, not just the disclosure.
-    expect(src(REF_PAGE)).toMatch(/per-key rate rather than an organization-wide ceiling/i);
+  it("it says keys of one account share one budget", () => {
+    expect(src(REF_PAGE)).toMatch(/share one budget/i);
+    expect(src(REF_PAGE)).toMatch(/per account/i);
   });
 
   it("does not promise unlimited keys", () => {
