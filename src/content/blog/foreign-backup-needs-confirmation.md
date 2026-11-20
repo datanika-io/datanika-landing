@@ -1,8 +1,8 @@
 ---
 title: "A Backup from Another Organization Waits for Confirmation"
 description: "A restore refuses a backup exported from another organization unless the caller confirms it. Matching the organization id is not enough. A missing slug is treated as foreign."
-date: 2026-11-20
-publishedAt: 2026-11-20
+date: 2026-11-26
+publishedAt: 2026-11-26
 author: "Datanika Team"
 category: "product"
 tags: ["backup", "organizations", "security", "product"]
