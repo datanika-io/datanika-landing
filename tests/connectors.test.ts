@@ -505,18 +505,19 @@ describe("connector pages answer the destination question (#378, #379)", () => {
 });
 
 describe("Salesforce connector page — the two boxes on the form", () => {
-  // Measured on core master: salesforce_fields() renders an Access Token box
+  // Measured on core af2ab047: salesforce_fields() renders an Access Token box
   // (the input's name is api_key) and an Instance URL box. The save path writes
-  // the token as access_token and again as api_key. client_id, client_secret,
-  // username, password and security_token are not on the form.
+  // the token as access_token and again as api_key. The published schema lists
+  // both names. client_id, client_secret, username, password and security_token
+  // are not on the form.
   const salesforce = connectors.find((c) => c.slug === "salesforce")!;
 
-  it("names access_token and instance_url, and no other field", () => {
+  it("names access_token, instance_url and the stored api_key alias", () => {
     const names = salesforce.configFields.map((f) => f.name);
-    expect(names).toEqual(["access_token", "instance_url"]);
-    expect(["client_id", "client_secret", "username", "password", "security_token", "api_key"]).not.toEqual(
-      names,
-    );
+    expect(names).toEqual(["access_token", "instance_url", "api_key"]);
+    for (const absent of ["client_id", "client_secret", "username", "password", "security_token"]) {
+      expect(names, absent).not.toContain(absent);
+    }
   });
 
   it("says the token is stored encrypted and names the instance URL", () => {
@@ -527,10 +528,11 @@ describe("Salesforce connector page — the two boxes on the form", () => {
     expect("a description that names no instance").not.toContain("https://yourcompany.my.salesforce.com");
   });
 
-  it("renders those two names on the public page", () => {
+  it("renders those names on the public page", () => {
     const html = readHtml("connectors/salesforce/index.html");
     expect(html).toContain("access_token");
     expect(html).toContain("instance_url");
+    expect(html).toContain("api_key");
     expect(html).not.toContain("Connected app client ID");
     expect("a page that still lists the connected app").not.toContain("access_token");
   });

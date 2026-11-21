@@ -168,7 +168,7 @@ export const connectors: Connector[] = [
       { name: "user", description: "Username" },
       { name: "password", description: "Password (encrypted at rest)" },
       { name: "secure", description: "Use HTTPS (enable for ClickHouse Cloud and TLS instances) (optional)" },
-      { name: "cluster_replication", description: "Enable cluster replication (ReplicatedMergeTree) (optional)" },
+      { name: "table_engine_type", description: "Table engine the destination stores. The cluster-replication checkbox writes replicated_merge_tree; any other stored engine is kept" },
     ],
     limitations: [
       "Connections are plaintext unless you tick Use HTTPS (TLS) on the connection — both the HTTP port and the native TCP port derived from it. With TLS on, the server's certificate is verified against public certificate authorities and there is no field for a private or self-signed authority, so a self-hosted server using its own CA cannot be connected to over TLS.",
@@ -463,12 +463,14 @@ export const connectors: Connector[] = [
       "Combine Salesforce with marketing data for attribution",
       "Create executive dashboards from CRM data",
     ],
-    // Two boxes on the form: Access Token and Instance URL. The token is
-    // stored as access_token. api_key is that same value written again, not
-    // a third box.
+    // Two boxes on the form: Access Token (the input's name is api_key) and
+    // Instance URL. Save writes the token as access_token and again as
+    // api_key. The published schema lists both names. client_id,
+    // client_secret, username, password and security_token are absent.
     configFields: [
       { name: "access_token", description: "OAuth access token (encrypted at rest)" },
       { name: "instance_url", description: "Salesforce instance URL, for example https://yourcompany.my.salesforce.com" },
+      { name: "api_key", description: "The same access token, stored again under the form input's name. One box on the form." },
     ],
     related: ["hubspot", "stripe", "bigquery", "snowflake"],
     seoTitle: "Salesforce ETL — CRM to Warehouse | Datanika",
@@ -488,8 +490,9 @@ export const connectors: Connector[] = [
       "Analyze product performance and inventory",
     ],
     configFields: [
-      { name: "shop_url", description: "Shopify store URL (e.g., mystore.myshopify.com)" },
-      { name: "access_token", description: "Admin API access token (encrypted at rest)" },
+      { name: "api_key", description: "Admin API access token (encrypted at rest). One token box on the form; access_token stores the same value." },
+      { name: "store", description: "Shop name. The loader builds {store}.myshopify.com" },
+      { name: "access_token", description: "The same Admin API token, stored again under this name. One box on the form." },
     ],
     related: ["stripe", "google_analytics", "facebook_ads", "bigquery"],
     seoTitle: "Shopify Data Pipeline | Datanika",
@@ -509,9 +512,10 @@ export const connectors: Connector[] = [
       "Monitor project health across teams",
     ],
     configFields: [
-      { name: "server_url", description: "Jira server URL" },
+      { name: "api_key", description: "API token (encrypted at rest). One token box on the form; api_token stores the same value." },
       { name: "email", description: "Account email" },
-      { name: "api_token", description: "API token (encrypted at rest)" },
+      { name: "domain", description: "Atlassian subdomain. The loader builds https://{domain}.atlassian.net" },
+      { name: "api_token", description: "The same API token, stored again under this name. One box on the form." },
     ],
     related: ["github", "slack", "bigquery", "postgresql", "asana"],
     seoTitle: "Jira Data Export & Analytics | Datanika",
@@ -531,7 +535,8 @@ export const connectors: Connector[] = [
       "Archive Slack data for compliance",
     ],
     configFields: [
-      { name: "token", description: "Slack bot token (encrypted at rest)" },
+      { name: "api_key", description: "Slack bot token (encrypted at rest). One token box on the form; bot_token stores the same value." },
+      { name: "bot_token", description: "The same bot token, stored again under this name. One box on the form." },
     ],
     related: ["jira", "github", "bigquery", "postgresql"],
     seoTitle: "Slack Data Export & Archive | Datanika",
@@ -634,9 +639,11 @@ export const connectors: Connector[] = [
       "Analyze support trends and common issues",
     ],
     configFields: [
-      { name: "subdomain", description: "Zendesk subdomain (e.g., mycompany)" },
+      { name: "subdomain", description: "Zendesk subdomain (e.g., mycompany). The form's subdomain box also stores this value as domain." },
       { name: "email", description: "Agent email address" },
-      { name: "api_token", description: "Zendesk API token (encrypted at rest)" },
+      { name: "api_key", description: "Zendesk API token (encrypted at rest). One token box on the form; api_token stores the same value." },
+      { name: "api_token", description: "The same API token, stored again under this name. One box on the form." },
+      { name: "domain", description: "The same subdomain, stored again under the form input's name. One box on the form." },
     ],
     related: ["hubspot", "salesforce", "slack", "bigquery", "freshdesk"],
     seoTitle: "Zendesk Data Export & Analytics | Datanika",
@@ -739,6 +746,7 @@ export const connectors: Connector[] = [
     ],
     configFields: [
       { name: "api_key", description: "Asana personal access token (encrypted at rest)" },
+      { name: "workspace", description: "Workspace GID (optional). Blank loads every project the token can reach." },
     ],
     related: ["jira", "notion", "github", "bigquery"],
     seoTitle: "Asana Data Export & Reporting | Datanika",
@@ -759,9 +767,8 @@ export const connectors: Connector[] = [
     ],
     configFields: [
       { name: "base_url", description: "API base URL" },
-      { name: "auth_token", description: "Auth token (for bearer/api_key) (encrypted at rest, optional)" },
-      { name: "auth_user", description: "Username (for basic auth) (optional)" },
-      { name: "auth_password", description: "Password (for basic auth) (encrypted at rest, optional)" },
+      { name: "auth", description: "Auth object the source reads: type bearer, api_key, or http_basic. The form also has an optional API key box." },
+      { name: "headers", description: "Optional static request headers. The Extra Headers box writes this object." },
     ],
     related: ["postgresql", "bigquery", "snowflake", "csv"],
     seoTitle: "REST API to Warehouse Connector | Datanika",
@@ -781,27 +788,21 @@ export const connectors: Connector[] = [
       "Pull from an internal service that publishes a spec",
       "Pick a handful of endpoints out of a spec with hundreds",
     ],
-    // ⚠️ Read off `connection_schemas.py["openapi"]` and held to an EXACT set
-    // match with it — `check-config-field-parity.py` reports ghosts AND
-    // omissions, and this entry is the first thing it has ever checked for
-    // this type (landing#519 emptied UNMARKETED).
+    // Exact set match with connection_schemas.py["openapi"]. `resources` is
+    // derived when the spec is saved. `auth` is filled from the optional API
+    // key box when the spec declares a security scheme. `headers` is the
+    // published optional object.
     //
-    // Two, not five: the parity parser models a config field as a **typed
-    // scalar** (`_str`/`_int`/`_bool`), so the schema's three raw-dict entries
-    // — `auth`, `headers`, `resources` — are outside it, as they are for every
-    // other connector. That is also the honest reader-facing answer: these two
-    // are what you fill in. `resources` is derived by the spec parser rather
-    // than typed, and the other two are optional objects.
-    //
-    // 🔴 landing#519's body prescribed `openapi_spec`, `base_url`, `api_key`
-    // and stated there is no headers field. Measured on core `master` and
-    // `dev` (byte-identical): `openapi_spec` appears **0 times anywhere** in
-    // that file, `api_key` is not an openapi field, and `headers` does exist.
-    // Following the issue would have turned this check red at the moment it
-    // started running.
+    // landing#519's body prescribed `openapi_spec`, `base_url`, `api_key` and
+    // stated there is no headers field. The published names are spec_inline,
+    // base_url, auth, headers and resources. `api_key` is the form input, and
+    // save writes `auth`.
     configFields: [
       { name: "spec_inline", description: "The OpenAPI 3.x or Swagger 2.0 document, JSON or YAML" },
       { name: "base_url", description: "API base URL — taken from the spec's servers, override if needed" },
+      { name: "auth", description: "Auth object filled from the optional API key when the spec declares a security scheme." },
+      { name: "headers", description: "Optional static request headers." },
+      { name: "resources", description: "Endpoint catalog derived from the spec when the connection is saved." },
     ],
     related: ["rest-api", "postgresql", "bigquery", "snowflake"],
     seoTitle: "OpenAPI Spec to Warehouse Connector | Datanika",
@@ -822,7 +823,8 @@ export const connectors: Connector[] = [
       "Quick data ingestion without API setup",
     ],
     configFields: [
-      { name: "path", description: "Path to CSV file or directory" },
+      { name: "bucket_url", description: "Bucket URL or path of the CSV file or directory. One of bucket_url or an uploaded file is enough." },
+      { name: "uploaded_file_id", description: "Uploaded file id, when a file was uploaded instead of a path." },
     ],
     related: ["json", "parquet", "google-sheets", "s3"],
     seoTitle: "CSV to Database — Import CSV Files | Datanika",
@@ -841,7 +843,8 @@ export const connectors: Connector[] = [
       "Ingest nested data with automatic schema detection",
     ],
     configFields: [
-      { name: "path", description: "Path to JSON file or directory" },
+      { name: "bucket_url", description: "Bucket URL or path of the JSON file or directory. One of bucket_url or an uploaded file is enough." },
+      { name: "uploaded_file_id", description: "Uploaded file id, when a file was uploaded instead of a path." },
     ],
     related: ["csv", "parquet", "rest-api", "s3"],
     seoTitle: "JSON to Database — Import JSON Files | Datanika",
@@ -860,7 +863,8 @@ export const connectors: Connector[] = [
       "Migrate Spark/Hadoop outputs into a SQL warehouse",
     ],
     configFields: [
-      { name: "path", description: "Path to Parquet file or directory" },
+      { name: "bucket_url", description: "Bucket URL or path of the Parquet file or directory. One of bucket_url or an uploaded file is enough." },
+      { name: "uploaded_file_id", description: "Uploaded file id, when a file was uploaded instead of a path." },
     ],
     related: ["csv", "json", "s3", "duckdb"],
     seoTitle: "Parquet to Warehouse — Load Parquet Files | Datanika",
@@ -901,7 +905,7 @@ export const connectors: Connector[] = [
       "Automate reporting from shared team sheets",
     ],
     configFields: [
-      { name: "spreadsheet_id", description: "Google Sheets spreadsheet ID" },
+      { name: "spreadsheet_url", description: "Google Sheets spreadsheet URL" },
       { name: "service_account_json", description: "Service account JSON (encrypted at rest)" },
     ],
     related: ["csv", "airtable", "notion", "bigquery"],
