@@ -510,6 +510,23 @@ describe("promotion_refs.py — an unresolvable number is named and closes nothi
     return `${result.stdout ?? ""}\n${result.stderr ?? ""}\nexit ${result.status}`;
   }
 
+  it("keeps the second reference when one commit names two", () => {
+    // Landing promotion PR 526, commit f229676c. The keyword pattern matches
+    // once, so `(refs #519, #508)` used to render 519 and drop 508 while
+    // Coverage still said the commit was accounted for.
+    const out = rehearse(
+      "[Product] openapi enters the published count (refs #519, #508)",
+    );
+    for (const num of ["519", "508"]) {
+      const line = out.split(/\r?\n/).find((item) => item.startsWith(`- \`#${num}\``));
+      expect(line, out).toBeDefined();
+      expect(line).toContain("does not resolve in this repository");
+      expect(line).not.toMatch(/\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s*:?\s+#\d+/i);
+    }
+    expect(out).toMatch(/Coverage: \*\*1 of 1\*\*/);
+    expect(out).toContain("exit 0");
+  }, 30_000);
+
   it("names an unresolvable number and closes nothing", () => {
     const caller = spawnSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" });
     const out = rehearse("[Product] Spec: the sub-processor register (refs #676)");
