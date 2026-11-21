@@ -86,7 +86,7 @@
         },
         {
           "name": "Control",
-          "description": "Mark runs cancelled (this does not stop a run), monitor run history, stream logs, browse the data catalog.",
+          "description": "Stop further loading: rows already written stay. A run that has not started does not read or write. A model already running finishes, and an append re-run duplicates the partial rows. Do not cancel and then retry an append to clear them. Monitor run history, stream logs, browse the data catalog.",
           "endpoints": [
             "POST /api/v1/runs/{id}/cancel",
             "GET /api/v1/runs",
