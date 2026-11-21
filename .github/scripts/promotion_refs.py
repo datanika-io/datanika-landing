@@ -161,6 +161,35 @@ def strip_non_declarative(text: str) -> str:
     return text
 
 
+# A second number in the same declaration, with no second keyword.
+# Measured on landing promotion PR 526, commit f229676c:
+# `(refs #519, #508)` — the pattern above kept 519 and dropped 508, and the
+# commit-level coverage line still read complete. A repeated keyword
+# (`refs #1534, refs #1311`) already matches twice and must stay that way.
+# `see #602, #603` has no keyword, so this continuation never starts.
+_CONTINUATION = re.compile(r"\s*(?:,|/)\s*#(\d+)\b")
+
+
+def _harvest(pattern: re.Pattern, text: str) -> set[int]:
+    """Numbers from `pattern`, plus `, #N` / `/#N` glued to each match.
+
+    A repeating capture inside the keyword pattern cannot do this: `findall`
+    keeps only the last repeat, so the middle number of three would vanish.
+    """
+    found: set[int] = set()
+    blob = text or ""
+    for match in pattern.finditer(blob):
+        found.add(int(match.group(1)))
+        rest = blob[match.end() :]
+        while True:
+            cont = _CONTINUATION.match(rest)
+            if cont is None:
+                break
+            found.add(int(cont.group(1)))
+            rest = rest[cont.end() :]
+    return found
+
+
 def find_refs(subject: str, body: str) -> set[int]:
     """Closing refs from a subject/title (a declaration by convention) and a body.
 
@@ -168,8 +197,8 @@ def find_refs(subject: str, body: str) -> set[int]:
     is scanned only for line-initial declarations, after code and quotes are stripped, so
     a paragraph *about* closing keywords is not mistaken for one.
     """
-    found = {int(n) for n in KEYWORD.findall(subject or "")}
-    found |= {int(n) for n in DECLARATION.findall(strip_non_declarative(body or ""))}
+    found = _harvest(KEYWORD, subject or "")
+    found |= _harvest(DECLARATION, strip_non_declarative(body or ""))
     return found
 
 
@@ -182,8 +211,8 @@ def find_tracking_refs(subject: str, body: str) -> set[int]:
     that shape rather than inventing a second one means the false-positive class this
     script already closed stays closed on the new path too.
     """
-    found = {int(n) for n in TRACKING.findall(subject or "")}
-    found |= {int(n) for n in TRACKING_DECLARATION.findall(strip_non_declarative(body or ""))}
+    found = _harvest(TRACKING, subject or "")
+    found |= _harvest(TRACKING_DECLARATION, strip_non_declarative(body or ""))
     return found
 
 
