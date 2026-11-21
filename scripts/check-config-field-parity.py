@@ -108,23 +108,86 @@ SLUG_ALIASES = {
 UNMARKETED: set[str] = set()
 
 
+# A property is a typed scalar or a raw object/array at the properties-dict
+# indent. Nested keys such as openapi `items` sit further in, so they are not
+# fields. Inline scalars (`notion`, `stripe`) have no indent to rely on.
+_SCALAR_PROP = re.compile(r'"([a-z0-9_]+)":\s*_(?:str|int|bool)\(')
+_OBJECT_PROP = re.compile(r'^            "([a-z0-9_]+)":\s*\{', re.M)
+
+
+def _call_body(src: str, open_paren: int) -> str:
+    i = open_paren + 1
+    depth = 1
+    while i < len(src) and depth:
+        if src[i] == "(":
+            depth += 1
+        elif src[i] == ")":
+            depth -= 1
+        i += 1
+    if depth != 0:
+        sys.exit(
+            "Unbalanced call in the schema. The file shape changed — "
+            "fix this parser rather than letting it pass vacuously."
+        )
+    return src[open_paren + 1 : i - 1]
+
+
+def _property_names(body: str) -> list[str]:
+    hits = [(m.start(), m.group(1)) for m in _SCALAR_PROP.finditer(body)]
+    hits += [(m.start(), m.group(1)) for m in _OBJECT_PROP.finditer(body)]
+    ordered: list[str] = []
+    seen: set[str] = set()
+    for _, name in sorted(hits, key=lambda item: item[0]):
+        if name not in seen:
+            seen.add(name)
+            ordered.append(name)
+    return ordered
+
+
+def _file_locator_fields(src: str) -> list[str]:
+    """csv/json/parquet call this helper. Its body is the published field list."""
+    helper = re.search(r"^def _file_locator_schema\(", src, re.M)
+    if helper is None:
+        sys.exit(
+            "No _file_locator_schema in the schema. The file shape changed — "
+            "fix this parser rather than letting it pass vacuously."
+        )
+    nxt = re.search(r"^def ", src[helper.end() :], re.M)
+    end = helper.end() + nxt.start() if nxt else len(src)
+    region = src[helper.start() : end]
+    # `_file_locator_schema(` itself ends in `_schema(`. Require a non-word
+    # character before the call so the function name is not the match.
+    call = re.search(r"(?<![A-Za-z0-9_])_schema\(", region)
+    if call is None:
+        sys.exit(
+            "_file_locator_schema has no _schema call. The file shape changed — "
+            "fix this parser rather than letting it pass vacuously."
+        )
+    names = _property_names(_call_body(src, helper.start() + call.end() - 1))
+    if set(names) != {"bucket_url", "uploaded_file_id"}:
+        sys.exit(
+            "Parsed _file_locator_schema without bucket_url and uploaded_file_id "
+            f"({names}). The file shape changed — fix this parser rather than "
+            "letting it pass vacuously."
+        )
+    return names
+
+
 def parse_schema(path: str) -> dict[str, list[str]]:
     src = open(path, encoding="utf-8").read()
+    locator = _file_locator_fields(src)
     out: dict[str, list[str]] = {}
     for m in re.finditer(r'^    "([a-z0-9_]+)": _schema\(', src, re.M):
         name = m.group(1)
-        i = m.end()
-        depth = 1
-        while i < len(src) and depth > 0:
-            if src[i] == "(":
-                depth += 1
-            elif src[i] == ")":
-                depth -= 1
-            i += 1
-        body = src[m.end() : i]
-        out[name] = re.findall(
-            r'"([a-z0-9_]+)":\s*_(?:str|int|bool)\(', body
-        )
+        names = _property_names(_call_body(src, m.end() - 1))
+        if not names:
+            sys.exit(
+                f"Parsed zero fields for `{name}`. The file shape changed — "
+                "fix this parser rather than letting it pass vacuously."
+            )
+        out[name] = names
+    for m in re.finditer(r'^    "([a-z0-9_]+)": _file_locator_schema\(', src, re.M):
+        out[m.group(1)] = list(locator)
     if not out:
         sys.exit(
             "Parsed zero connectors out of the schema. The file shape changed — "
