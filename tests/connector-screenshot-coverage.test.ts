@@ -100,7 +100,7 @@ describe("connector guide screenshots (landing#395)", () => {
     // 🔒 Floors, measured off disk on 2026-09-25. Raise as captures land; never lower one without
     // saying why in the same commit.
     { file: "03-configure-upload.png", floor: 11, what: "the upload form" },
-    { file: "04-first-run.png", floor: 18, what: "data landing in the destination" },
+    { file: "04-first-run.png", floor: 19, what: "data landing in the destination" },
     { file: "05-schedule.png", floor: 3, what: "the schedule form" },
   ];
 
@@ -136,7 +136,8 @@ describe("connector guide screenshots (landing#395)", () => {
     // which took the capture and did not raise the floor** — the second time this number has lagged
     // disk by one, after reading 8 while 9 captures existed. **17 since the Google Sheets walk of
     // 2026-11-23**, which added `google-sheets/04-first-run.png`. **18 since the Oracle walk of
-    // 2026-11-23**, which added `oracle/04-first-run.png`. Re-derive it from disk when you
+    // 2026-11-23**, which added `oracle/04-first-run.png`. **19 since the BigQuery walk of
+    // 2026-11-24**, which added `bigquery/04-first-run.png`. Re-derive it from disk when you
     // touch it; the floor is a tripwire against deletion, not a record of how many exist.
     //
     // It is one number rather than a hand-written list of covered connectors, because that list is
