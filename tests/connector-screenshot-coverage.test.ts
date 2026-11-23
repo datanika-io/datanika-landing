@@ -100,7 +100,7 @@ describe("connector guide screenshots (landing#395)", () => {
     // 🔒 Floors, measured off disk on 2026-09-25. Raise as captures land; never lower one without
     // saying why in the same commit.
     { file: "03-configure-upload.png", floor: 11, what: "the upload form" },
-    { file: "04-first-run.png", floor: 16, what: "data landing in the destination" },
+    { file: "04-first-run.png", floor: 17, what: "data landing in the destination" },
     { file: "05-schedule.png", floor: 3, what: "the schedule form" },
   ];
 
@@ -134,8 +134,9 @@ describe("connector guide screenshots (landing#395)", () => {
     // destination's tables then (landing#604); the 2026-09-22 walk, on a stack carrying that fix
     // (core#1397), took it (landing#618). **16 since the HubSpot walk of 2026-09-23 (landing#670),
     // which took the capture and did not raise the floor** — the second time this number has lagged
-    // disk by one, after reading 8 while 9 captures existed. Re-derive it from disk when you touch
-    // it; the floor is a tripwire against deletion, not a record of how many exist.
+    // disk by one, after reading 8 while 9 captures existed. **17 since the Google Sheets walk of
+    // 2026-11-23**, which added `google-sheets/04-first-run.png`. Re-derive it from disk when you
+    // touch it; the floor is a tripwire against deletion, not a record of how many exist.
     //
     // It is one number rather than a hand-written list of covered connectors, because that list is
     // derivable from disk and a hand-maintained copy of a derivable fact is what landing#508 was
