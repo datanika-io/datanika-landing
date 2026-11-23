@@ -85,6 +85,10 @@ Extract-load is configured at **`/uploads`**, not on the connection. There is no
 3. When it finishes, open **Models** (`/models`) and browse the landed tables. The upload lands them in a schema **derived from the upload's name**: spaces become underscores and the whole thing is lower-cased. So `sheetsdailysync` creates schema `sheetsdailysync`, and an upload named `Sheets Daily Sync` creates schema `sheets_daily_sync` — worth knowing, since the name field accepts spaces. dlt also creates its own `_dlt_loads` / `_dlt_pipeline_state` / `_dlt_version` bookkeeping tables in that schema, but **Models does not list them** — seeing only your own tables there is correct, not a partial load. There is no target-schema field to choose.
 4. Spot-check the row count against the source. **Verify in the destination rather than trusting the status badge** — a green run means the load finished, not that it moved what you expected.
 
+Open the landed table from **Models** and click **Load first 100 rows**. That runs a live `SELECT` against your destination, so what you see is the warehouse rather than a status badge:
+
+![The Data preview of the landed sheet, three rows read live from the destination warehouse](/docs/connectors/google-sheets/04-first-run.png)
+
 ## Step 5 — Schedule it
 
 Schedules live on their own page and reference the upload **by name**.
