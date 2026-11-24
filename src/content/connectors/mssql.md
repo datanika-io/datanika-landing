@@ -61,7 +61,7 @@ Create a **dedicated read-only login** rather than reusing an existing account. 
 1. In Datanika, open **`/connections`**. The New Connection form is already rendered on the page.
 2. From the **type dropdown** at the top, pick `mssql`.
 3. Fill in:
-   - **Connection Name** — e.g. `mssql-erp-readonly` or `sqlserver-prod`.
+   - **Connection Name** — letters, digits, and spaces. Anything else is removed, so `mssql-erp-readonly` is saved as `mssqlerpreadonly` and `sqlserver-prod` is saved as `sqlserverprod`.
    - **Host** — the hostname or IP address. For Azure SQL, use `<server>.database.windows.net`.
    - **Port** — default `1433`. Change only if your instance uses a non-standard port.
    - **Database** — the database to extract from, e.g. `erp_prod` or `sales`.
